@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Users } from "lucide-react"; // Alterado de LogIn para Users
+import { Users } from "lucide-react";
 import Image from "next/image";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -31,10 +31,10 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  if (loading || (user && !useMockAuth)) { // Adjusted condition slightly for clarity
+  if (loading || (user && !useMockAuth)) { 
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-gray-100">
-         <svg className="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+         <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -48,7 +48,7 @@ export default function LoginPage() {
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
         <Image 
           src="https://placehold.co/800x1200.png" 
-          data-ai-hint="geometric pattern" 
+          data-ai-hint="geometric pattern yellow black" 
           layout="fill" 
           objectFit="cover" 
           alt="Decorative pattern"
@@ -60,9 +60,9 @@ export default function LoginPage() {
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center justify-center p-6 sm:p-12">
         <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-xl">
           <div>
-            <div className="flex items-center justify-center text-indigo-600">
+            <div className="flex items-center justify-center text-primary">
               <Users className="h-10 w-10" />
-              <span className="ml-3 text-4xl font-bold text-indigo-600 font-headline">BoardCo.</span>
+              <span className="ml-3 text-4xl font-bold text-primary font-headline">3A RIVA Hub</span>
             </div>
             <h2 className="mt-6 text-center text-3xl font-bold text-gray-800 font-headline">
               Acesse sua conta
@@ -71,7 +71,7 @@ export default function LoginPage() {
           
           <Button
             variant="default"
-            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-body"
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring font-body"
             onClick={signInWithGoogle}
             disabled={loading}
           >
@@ -83,5 +83,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
