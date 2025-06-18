@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -162,6 +163,9 @@ const Sidebar = React.forwardRef<
     side?: "left" | "right"
     variant?: "sidebar" | "floating" | "inset"
     collapsible?: "offcanvas" | "icon" | "none"
+    // defaultOpen prop is passed from AppLayout, but should not be spread to the div.
+    // It is however valid for the Sheet component (Radix Dialog Root).
+    defaultOpen?: boolean; 
   }
 >(
   (
@@ -171,7 +175,11 @@ const Sidebar = React.forwardRef<
       collapsible = "offcanvas",
       className,
       children,
-      ...props
+      // Capture defaultOpen explicitly if it's part of the expected props,
+      // otherwise it will be in '...rest'.
+      // Since AppLayout.tsx passes it, we expect it.
+      defaultOpen,
+      ...rest // other div props
     },
     ref
   ) => {
@@ -185,7 +193,7 @@ const Sidebar = React.forwardRef<
             className
           )}
           ref={ref}
-          {...props}
+          {...rest} // Spread only valid div props
         >
           {children}
         </div>
@@ -193,8 +201,9 @@ const Sidebar = React.forwardRef<
     }
 
     if (isMobile) {
+      // Sheet component (using Radix Dialog Root) can accept defaultOpen
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <Sheet open={openMobile} onOpenChange={setOpenMobile} defaultOpen={defaultOpen} {...rest}>
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
@@ -244,7 +253,7 @@ const Sidebar = React.forwardRef<
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
             className
           )}
-          {...props}
+          {...rest} // Spread only valid div props (defaultOpen is not spread)
         >
           <div
             data-sidebar="sidebar"
@@ -761,3 +770,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    
