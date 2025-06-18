@@ -2,9 +2,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogIn } from "lucide-react";
+import { Users } from "lucide-react"; // Alterado de LogIn para Users
 import Image from "next/image";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -23,6 +22,8 @@ const GoogleIcon = () => (
 export default function LoginPage() {
   const { signInWithGoogle, user, loading } = useAuth();
   const router = useRouter();
+  const { useMockAuth } = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === 'true' ? { useMockAuth: true } : { useMockAuth: false };
+
 
   useEffect(() => {
     if (!loading && user) {
@@ -30,10 +31,10 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  if (loading || user) {
+  if (loading || (user && !useMockAuth)) { // Adjusted condition slightly for clarity
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-         <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+      <div className="flex h-screen w-screen items-center justify-center bg-gray-100">
+         <svg className="animate-spin h-10 w-10 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -42,29 +43,45 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground">
-            <LogIn className="h-8 w-8" />
+    <div className="min-h-screen flex bg-gray-100">
+      {/* Left Pane - Decorative Image */}
+      <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
+        <Image 
+          src="https://placehold.co/800x1200.png" 
+          data-ai-hint="geometric pattern" 
+          layout="fill" 
+          objectFit="cover" 
+          alt="Decorative pattern"
+          priority
+        />
+      </div>
+
+      {/* Right Pane - Login Form */}
+      <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center justify-center p-6 sm:p-12">
+        <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-xl">
+          <div>
+            <div className="flex items-center justify-center text-indigo-600">
+              <Users className="h-10 w-10" />
+              <span className="ml-3 text-4xl font-bold text-indigo-600 font-headline">BoardCo.</span>
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-bold text-gray-800 font-headline">
+              Acesse sua conta
+            </h2>
           </div>
-          <CardTitle className="font-headline text-3xl font-bold">3A RIVA Hub</CardTitle>
-          <CardDescription className="font-body">
-            Acesse a plataforma utilizando sua conta Google.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+          
           <Button
-            variant="outline"
-            className="w-full text-base py-6 border-primary/50 hover:bg-accent/20"
+            variant="default"
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 font-body"
             onClick={signInWithGoogle}
             disabled={loading}
           >
             <GoogleIcon />
-            <span className="ml-2 font-body">Entrar com Google</span>
+            <span className="ml-2">Entrar com Google</span>
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
+
+    
