@@ -60,9 +60,9 @@ export default function LoginPage() {
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center justify-center p-6 sm:p-12">
         <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-xl">
           <div>
-            <div className="flex items-center justify-center text-primary">
+            <div className="flex items-center justify-center text-[#A37549]">
               <Users className="h-10 w-10" />
-              <span className="ml-3 text-4xl font-bold text-primary font-headline">3A RIVA Hub</span>
+              <span className="ml-3 text-4xl font-bold text-[#A37549] font-headline">3A RIVA Hub</span>
             </div>
             <h2 className="mt-6 text-center text-3xl font-bold text-gray-800 font-headline">
               Acesse sua conta

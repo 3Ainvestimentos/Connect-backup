@@ -20,10 +20,10 @@ export function Header({ userNav }: HeaderProps) {
       <div className="flex items-center">
         <Link href="/dashboard" className="flex items-center gap-2">
           {/* Placeholder Logo from Sidebar */}
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-primary">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-[#A37549]">
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
           </svg>
-          <span className="hidden md:block font-headline text-xl font-bold text-primary">
+          <span className="hidden md:block font-headline text-xl font-bold text-[#A37549]">
             3A RIVA Hub
           </span>
         </Link>
@@ -49,4 +49,3 @@ export function Header({ userNav }: HeaderProps) {
     </header>
   );
 }
-
