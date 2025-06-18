@@ -82,7 +82,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-   const { setOpen: setSidebarOpen } = useSidebar();
+  const { setOpen: setSidebarOpen } = useSidebar();
 
 
   useEffect(() => {
@@ -110,6 +110,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   return (
+    <>
       <Sidebar collapsible="icon" variant="sidebar" defaultOpen={false}>
         <SidebarHeader className="p-4 border-b border-sidebar-border items-center">
           <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
@@ -125,11 +126,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
-                  asChild
                   isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
                   tooltip={{children: item.label, className: "font-body"}}
                   onClick={handleLinkClick}
                   className="font-body"
+                  asChild
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -148,13 +149,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <UserNav />
             </div>
         </SidebarFooter>
-        <SidebarInset>
-          <Header userNav={<UserNav />}/>
-          <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-muted/20 min-h-[calc(100vh-4rem)]"> {/* Adjust 4rem based on header height */}
-            {children}
-          </main>
-        </SidebarInset>
       </Sidebar>
+      
+      <SidebarInset>
+        <Header userNav={<UserNav />}/>
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-muted/20 min-h-[calc(100vh-4rem)]"> {/* Adjust 4rem based on header height */}
+          {children}
+        </main>
+      </SidebarInset>
+    </>
   );
 }
 
