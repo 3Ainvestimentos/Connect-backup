@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
 
 interface HeaderProps {
   userNav?: React.ReactNode;
@@ -19,13 +20,13 @@ export function Header({ userNav }: HeaderProps) {
       {/* Logo Section */}
       <div className="flex items-center">
         <Link href="/dashboard" className="flex items-center gap-2">
-          {/* Placeholder Logo from Sidebar */}
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-7 h-7 text-[#A37549]">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-          </svg>
-          <span className="hidden md:block font-headline text-xl font-bold text-[#A37549]">
-            3A RIVA Hub
-          </span>
+          <Image 
+            src="https://i.ibb.co/mF4W7Q7/LOGO-BRANCA.png" 
+            alt="3A RIVA Hub Logo" 
+            width={142} 
+            height={32} 
+            priority 
+          />
         </Link>
       </div>
 
