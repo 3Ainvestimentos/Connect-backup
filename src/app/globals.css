@@ -81,9 +81,7 @@ body {
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  /* Removed the global border rule: * { @apply border-border; } */
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
