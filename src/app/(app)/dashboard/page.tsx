@@ -1,67 +1,165 @@
 
-import { PageHeader } from '@/components/layout/PageHeader';
-import NewsCarousel from '@/components/dashboard/NewsCarousel';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, BarChart, Users } from 'lucide-react';
-import Image from 'next/image';
+"use client"; 
 
-const quickStats = [
-  { title: "Novos Documentos", value: "12", icon: Activity, change: "+5%", changeType: "positive" },
-  { title: "Notícias Publicadas", value: "8", icon: BarChart, change: "+2", changeType: "positive" },
-  { title: "Usuários Ativos", value: "150", icon: Users, change: "-1%", changeType: "negative" },
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Calendar } from '@/components/ui/calendar';
+import Image from 'next/image';
+import Link from 'next/link';
+import { UserCircle, Zap, Briefcase, Building, Phone } from 'lucide-react';
+
+const whatsNewItems = [
+  {
+    title: 'Employee Happiness Conference 2023',
+    description: 'Registration is on',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAiHint: 'conference team',
+    link: '#', // Placeholder link
+    gridClass: 'md:col-span-1 md:row-span-1',
+  },
+  {
+    title: 'New well-being packages',
+    description: 'Discover our new offerings',
+    imageUrl: 'https://placehold.co/800x800.png', // Adjusted for potentially larger span
+    dataAiHint: 'wellness nature',
+    link: '#', // Placeholder link
+    gridClass: 'md:col-span-1 md:row-span-2',
+  },
+  {
+    title: 'Bring your dog to the office day is back!',
+    description: 'Prepare for paw-sitivity',
+    imageUrl: 'https://placehold.co/600x400.png',
+    dataAiHint: 'dog office',
+    link: '#', // Placeholder link
+    gridClass: 'md:col-span-1 md:row-span-1',
+  },
+];
+
+const applications = [
+  { name: 'My Profile', icon: UserCircle, href: '#' },
+  { name: 'Safe Ag', icon: Zap, href: '#' },
+  { name: 'Jira', icon: Briefcase, href: '#' },
+  { name: 'Wall', icon: Building, href: '#' },
+];
+
+const contacts = [
+  { name: 'Martin Coles', phone: '+000 111 222 333', avatarUrl: 'https://placehold.co/100x100.png', dataAiHint: 'man portrait' },
+  { name: 'Adrien Wilson', phone: '+000 444 555 666', avatarUrl: 'https://placehold.co/100x100.png', dataAiHint: 'woman portrait' },
 ];
 
 export default function DashboardPage() {
+  const [date, setDate] = useState<Date | undefined>(new Date());
+
   return (
-    <div className="space-y-6">
-      <PageHeader title="Painel Inicial" description="Bem-vindo ao 3A RIVA Hub." />
-      
+    <div className="space-y-8">
       <section>
-        <h2 className="text-xl font-headline font-semibold mb-4 text-primary">Destaques e Anúncios</h2>
-        <NewsCarousel />
+        <h2 className="text-3xl font-headline font-bold mb-6 text-foreground">What's new</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:grid-rows-2" style={{ minHeight: '450px' }}>
+          {/* Explicitly order items for the 2-column layout */}
+          {/* Column 1 */}
+          <div className="flex flex-col gap-6">
+            <Link href={whatsNewItems[0].link} className="relative h-full rounded-lg overflow-hidden group shadow-lg block">
+              <Image
+                src={whatsNewItems[0].imageUrl}
+                alt={whatsNewItems[0].title}
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300 group-hover:scale-105"
+                data-ai-hint={whatsNewItems[0].dataAiHint}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[0].title}</h3>
+                <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
+              </div>
+            </Link>
+            <Link href={whatsNewItems[2].link} className="relative h-full rounded-lg overflow-hidden group shadow-lg block">
+              <Image
+                src={whatsNewItems[2].imageUrl}
+                alt={whatsNewItems[2].title}
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300 group-hover:scale-105"
+                data-ai-hint={whatsNewItems[2].dataAiHint}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[2].title}</h3>
+                <p className="text-sm text-gray-200 font-body">{whatsNewItems[2].description}</p>
+              </div>
+            </Link>
+          </div>
+          {/* Column 2 */}
+          <Link href={whatsNewItems[1].link} className={`${whatsNewItems[1].gridClass} relative rounded-lg overflow-hidden group shadow-lg block`}>
+            <Image
+              src={whatsNewItems[1].imageUrl}
+              alt={whatsNewItems[1].title}
+              layout="fill"
+              objectFit="cover"
+              className="transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint={whatsNewItems[1].dataAiHint}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+              <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[1].title}</h3>
+              <p className="text-sm text-gray-200 font-body">{whatsNewItems[1].description}</p>
+            </div>
+          </Link>
+        </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {quickStats.map((stat) => (
-          <Card key={stat.title} className="shadow-md hover:shadow-lg transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium font-body">{stat.title}</CardTitle>
-              <stat.icon className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-headline">{stat.value}</div>
-              <p className={`text-xs font-body ${stat.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
-                {stat.change} desde o último mês
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </section>
-
-      <section className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-md">
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline">Documentos Recentes</CardTitle>
-            <CardDescription className="font-body">Acompanhe os últimos documentos adicionados.</CardDescription>
+            <CardTitle className="font-headline text-primary text-xl">Events</CardTitle>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-3 font-body">
-              <li className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-md"><span>Relatório Anual 2023.pdf</span><span className="text-xs text-muted-foreground">2 dias atrás</span></li>
-              <li className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-md"><span>Nova Política de Compliance.docx</span><span className="text-xs text-muted-foreground">5 dias atrás</span></li>
-              <li className="flex justify-between items-center p-2 hover:bg-muted/50 rounded-md"><span>Apresentação Institucional.pptx</span><span className="text-xs text-muted-foreground">1 semana atrás</span></li>
-            </ul>
+            <Calendar
+              mode="single"
+              selected={date}
+              onSelect={setDate}
+              className="rounded-md p-0 [&_button]:text-xs [&_caption_label]:text-sm"
+              month={date} // Ensure calendar displays current month
+              onMonthChange={setDate} // Allow month navigation
+            />
           </CardContent>
         </Card>
-        <Card className="shadow-md">
+
+        <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline">Links Rápidos</CardTitle>
-            <CardDescription className="font-body">Acesse recursos importantes rapidamente.</CardDescription>
+            <CardTitle className="font-headline text-primary text-xl">Applications</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 font-body">
-            <a href="#" className="p-3 bg-accent/20 text-accent-foreground hover:bg-accent/30 rounded-md text-center transition-colors">Portal Interno</a>
-            <a href="#" className="p-3 bg-accent/20 text-accent-foreground hover:bg-accent/30 rounded-md text-center transition-colors">Suporte TI</a>
-            <a href="#" className="p-3 bg-accent/20 text-accent-foreground hover:bg-accent/30 rounded-md text-center transition-colors">Treinamentos</a>
-            <a href="#" className="p-3 bg-accent/20 text-accent-foreground hover:bg-accent/30 rounded-md text-center transition-colors">FAQ</a>
+          <CardContent className="grid grid-cols-2 gap-3">
+            {applications.map((app) => (
+              <Button key={app.name} variant="outline" className="flex flex-col items-center justify-center h-24 p-2 text-center font-body hover:bg-primary/5 border-border text-foreground hover:text-primary" asChild>
+                <Link href={app.href}>
+                  <app.icon className="h-7 w-7 mb-1.5 text-primary/80 group-hover:text-primary" />
+                  <span className="text-xs">{app.name}</span>
+                </Link>
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-1 shadow-lg">
+          <CardHeader>
+            <CardTitle className="font-headline text-primary text-xl">Contacts</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {contacts.map((contact) => (
+              <div key={contact.name} className="flex items-center gap-3 p-2.5 hover:bg-muted/40 rounded-lg transition-colors">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={contact.avatarUrl} alt={contact.name} data-ai-hint={contact.dataAiHint} />
+                  <AvatarFallback>{contact.name.substring(0, 1)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold font-body text-sm text-foreground">{contact.name}</p>
+                  <p className="text-xs text-muted-foreground font-body flex items-center">
+                    <Phone className="h-3 w-3 mr-1.5"/>
+                    {contact.phone}
+                  </p>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </section>
