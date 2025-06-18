@@ -110,47 +110,55 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <>
-      <Sidebar collapsible="icon" variant="sidebar" defaultOpen={false}>
-        <SidebarHeader className="p-4 border-b border-sidebar-border items-center">
-          {/* Logo removed from here, height is now content-driven */}
-        </SidebarHeader>
-        <SidebarContent className="p-2">
-          <SidebarMenu>
-            {navItems.map((item) => (
-               <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
-                  tooltip={{children: item.label, className: "font-body"}}
-                  onClick={handleLinkClick}
-                  className="font-body"
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter className="p-4 border-t border-sidebar-border items-center group-data-[collapsible=icon]:justify-center">
+    <> {/* This fragment is a child of SidebarProvider's root div (which is now flex-col) */}
+      <Header userNav={<UserNav />} /> {/* First item in flex-col, takes its natural height */}
+      
+      {/* This div is the second item in flex-col, takes remaining vertical space (flex-1), and arranges its children in a row */}
+      <div className="flex flex-1 w-full"> 
+        <Sidebar collapsible="icon" variant="sidebar"> 
+          <SidebarHeader className="p-4 border-b border-sidebar-border items-center">
+            {/* Logo removed from here */}
+          </SidebarHeader>
+          <SidebarContent className="p-2">
+            <SidebarMenu>
+              {navItems.map((item) => (
+                 <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
+                    tooltip={{children: item.label, className: "font-body"}}
+                    onClick={handleLinkClick}
+                    className="font-body"
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter className="p-4 border-t border-sidebar-border items-center group-data-[collapsible=icon]:justify-center">
             <div className="group-data-[collapsible=icon]:hidden w-full flex items-center justify-between">
               <p className="text-xs text-muted-foreground font-body">© {new Date().getFullYear()} 3A RIVA</p>
             </div>
              <div className="hidden group-data-[collapsible=icon]:block">
                 <UserNav />
             </div>
-        </SidebarFooter>
-      </Sidebar>
-      
-      <SidebarInset>
-        <Header userNav={<UserNav />}/>
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto bg-muted/20 min-h-[calc(100vh-var(--header-height))]">
-          {children}
-        </main>
-      </SidebarInset>
+          </SidebarFooter>
+        </Sidebar>
+        
+        {/* SidebarInset IS the <main> tag. It's flex-1 in the new "flex flex-1 w-full" row.
+            It will be pushed to the right by the Sidebar's placeholder.
+            overflow-y-auto for its content. bg-muted/20 for background.
+        */}
+        <SidebarInset className="flex-1 bg-muted/20 overflow-y-auto"> 
+          <div className="p-6 md:p-8"> {/* Inner div for padding the actual page content */}
+            {children}
+          </div>
+        </SidebarInset>
+      </div>
     </>
   );
 }

@@ -142,10 +142,11 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+              "group/sidebar-wrapper flex flex-col min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
               className
             )}
             ref={ref}
+            data-state={state} // Added data-state here for easier access by children
             {...props}
           >
             {children}
@@ -163,7 +164,6 @@ const Sidebar = React.forwardRef<
     side?: "left" | "right"
     variant?: "sidebar" | "floating" | "inset"
     collapsible?: "offcanvas" | "icon" | "none"
-    defaultOpen?: boolean; 
   }
 >(
   (
@@ -173,12 +173,11 @@ const Sidebar = React.forwardRef<
       collapsible = "offcanvas",
       className,
       children,
-      defaultOpen,
-      ...rest 
+      ...rest
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const { isMobile, state: sidebarState, openMobile, setOpenMobile } = useSidebar() // Renamed state to sidebarState to avoid conflict
 
     if (collapsible === "none") {
       return (
@@ -188,16 +187,35 @@ const Sidebar = React.forwardRef<
             className
           )}
           ref={ref}
-          {...rest} 
+          {...rest}
         >
           {children}
         </div>
       )
     }
 
+    // Placeholder div for desktop sidebar to occupy space in flex layout
+    // This div is part of the flex layout of the new container in AppLayout
+    const DesktopSidebarPlaceholder = () => (
+      <div
+        className={cn(
+            "hidden md:block duration-200 bg-transparent transition-[width] ease-linear",
+            // This placeholder's height is full because its parent flex item is flex-1 (takes full height)
+            "h-full", 
+            sidebarState === "expanded" ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
+            collapsible === "offcanvas" && sidebarState === "expanded" ? "w-[--sidebar-width]" : "",
+            collapsible === "offcanvas" && sidebarState === "collapsed" ? "w-0" : "",
+            variant === "floating" || variant === "inset" ?
+              (sidebarState === "collapsed" ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]" : "w-[--sidebar-width]") :
+              (sidebarState === "collapsed" ? "w-[--sidebar-width-icon]" : "w-[--sidebar-width]")
+        )}
+      />
+    );
+
+
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} defaultOpen={defaultOpen} {...rest}>
+        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...rest}>
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
@@ -205,8 +223,8 @@ const Sidebar = React.forwardRef<
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-                top: 'var(--header-height)',
-                height: 'calc(100svh - var(--header-height))',
+                top: 'var(--header-height)', // Position below header
+                height: 'calc(100svh - var(--header-height))', // Full height below header
               } as React.CSSProperties
             }
             side={side}
@@ -218,49 +236,46 @@ const Sidebar = React.forwardRef<
     }
 
     return (
-      <div
-        ref={ref}
-        className="group peer hidden md:block text-sidebar-foreground"
-        data-state={state}
-        data-collapsible={state === "collapsed" ? collapsible : ""}
-        data-variant={variant}
-        data-side={side}
-      >
-        {/* This is what handles the sidebar gap on desktop */}
+      <>
+        <DesktopSidebarPlaceholder />
         <div
-          className={cn(
-            "duration-200 relative w-[--sidebar-width] bg-transparent transition-[width] ease-linear",
-            // Desktop sidebar now also starts below the header, so its effective height for gap calculation is reduced.
-            "top-[var(--header-height)] h-[calc(100svh_-_var(--header-height))]", 
-            "group-data-[collapsible=offcanvas]:w-0",
-            "group-data-[side=right]:rotate-180",
-            variant === "floating" || variant === "inset"
-              ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
-          )}
-        />
-        <div
-          className={cn(
-            "duration-200 fixed z-10 hidden transition-[left,right,width] ease-linear md:flex",
-            "top-[var(--header-height)] h-[calc(100svh_-_var(--header-height))]", // Changed from inset-y-0 h-svh
-            side === "left"
-              ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-              : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
-            variant === "floating" || variant === "inset"
-              ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-              : "group-data-[collapsible=icon]:w-[--sidebar-width-icon] group-data-[side=left]:border-r group-data-[side=right]:border-l",
-            className
-          )}
-          {...rest}
+            ref={ref}
+            className="group hidden md:flex text-sidebar-foreground fixed z-40" // z-40 so Header (z-60) is on top
+            data-state={sidebarState}
+            data-collapsible={sidebarState === "collapsed" ? collapsible : ""}
+            data-variant={variant}
+            data-side={side}
+            style={{
+                top: 'var(--header-height)',
+                height: 'calc(100svh - var(--header-height))',
+            }}
         >
-          <div
-            data-sidebar="sidebar"
-            className="flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:border-sidebar-border group-data-[variant=floating]:shadow"
-          >
-            {children}
-          </div>
+            <div
+            className={cn(
+                "duration-200 transition-[width] ease-linear",
+                side === "left" ? "left-0" : "right-0",
+                variant === "floating" || variant === "inset"
+                ? "p-2" 
+                : (side === "left" ? "border-r border-sidebar-border" : "border-l border-sidebar-border"),
+                (sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "w-[var(--sidebar-width-icon)]"),
+                collapsible === "offcanvas" && sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "",
+                collapsible === "offcanvas" && sidebarState === "collapsed" ? "!w-0 opacity-0 p-0 border-0" : "", // Hide completely if offcanvas and collapsed
+                className
+            )}
+            >
+            <div
+                data-sidebar="sidebar"
+                className={cn(
+                    "flex h-full w-full flex-col bg-sidebar",
+                    (variant === "floating") && "rounded-lg border border-sidebar-border shadow",
+                    (sidebarState === "collapsed" && collapsible === "offcanvas") && "hidden" // Ensure content is hidden too
+                )}
+            >
+                {children}
+            </div>
+            </div>
         </div>
-      </div>
+      </>
     )
   }
 )
@@ -326,11 +341,14 @@ const SidebarInset = React.forwardRef<
   React.ComponentProps<"main">
 >(({ className, ...props }, ref) => {
   return (
+    // This is the <main> tag for the page content.
+    // It's now a direct flex child in a row, so its margin is handled by the Sidebar's placeholder.
+    // It needs flex-1 to take remaining width.
     <main
       ref={ref}
       className={cn(
-        "relative flex min-h-svh flex-1 flex-col bg-background",
-        "peer-data-[variant=inset]:min-h-[calc(100svh-theme(spacing.4))] md:peer-data-[variant=inset]:m-2 md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow",
+        "relative flex-1 flex-col bg-background", // Removed min-h-svh as parent div controls height
+        // The margin logic is effectively handled by the sibling placeholder div for the sidebar
         className
       )}
       {...props}
