@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserCircle, Zap, Briefcase, Building, Phone } from 'lucide-react';
+import { UserCircle, Zap, Briefcase, Building, Phone, Users } from 'lucide-react';
 
 const whatsNewItems = [
   {
@@ -47,6 +47,13 @@ const applications = [
 const contacts = [
   { name: 'Martin Coles', phone: '+000 111 222 333', avatarUrl: 'https://placehold.co/100x100.png', dataAiHint: 'man portrait' },
   { name: 'Adrien Wilson', phone: '+000 444 555 666', avatarUrl: 'https://placehold.co/100x100.png', dataAiHint: 'woman portrait' },
+];
+
+const teams = [
+  { name: 'Operations', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'team meeting office', link: '#' },
+  { name: 'Finance', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'finance charts computer', link: '#' },
+  { name: 'Sales', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'sales team presentation', link: '#' },
+  { name: 'Customer Support', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'customer support headset', link: '#' },
 ];
 
 export default function DashboardPage() {
@@ -162,6 +169,33 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </section>
+
+      <section>
+        <h2 className="text-3xl font-headline font-bold mb-6 text-foreground">Teams</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {teams.map((team) => (
+            <Link key={team.name} href={team.link} className="block group">
+              <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
+                <div className="relative h-48 w-full">
+                  <Image
+                    src={team.imageUrl}
+                    alt={team.name}
+                    layout="fill"
+                    objectFit="cover"
+                    className="transition-transform duration-300 group-hover:scale-105"
+                    data-ai-hint={team.dataAiHint}
+                  />
+                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-70 group-hover:opacity-50 transition-opacity duration-300"></div>
+                </div>
+                <div className="p-4 text-center bg-card">
+                  <h3 className="text-md font-semibold text-foreground font-body">{team.name}</h3>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
+
