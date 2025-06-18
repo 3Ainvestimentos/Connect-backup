@@ -16,15 +16,15 @@ const whatsNewItems = [
     description: 'Registration is on',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'conference team',
-    link: '#', // Placeholder link
+    link: '#', 
     gridClass: 'md:col-span-1 md:row-span-1',
   },
   {
     title: 'New well-being packages',
     description: 'Discover our new offerings',
-    imageUrl: 'https://placehold.co/800x800.png', // Adjusted for potentially larger span
+    imageUrl: 'https://placehold.co/800x800.png', 
     dataAiHint: 'wellness nature',
-    link: '#', // Placeholder link
+    link: '#', 
     gridClass: 'md:col-span-1 md:row-span-2',
   },
   {
@@ -32,7 +32,7 @@ const whatsNewItems = [
     description: 'Prepare for paw-sitivity',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'dog office',
-    link: '#', // Placeholder link
+    link: '#', 
     gridClass: 'md:col-span-1 md:row-span-1',
   },
 ];
@@ -53,12 +53,11 @@ export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4 sm:px-6 md:px-8">
       <section>
         <h2 className="text-3xl font-headline font-bold mb-6 text-foreground">What's new</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:grid-rows-2" style={{ minHeight: '450px' }}>
-          {/* Explicitly order items for the 2-column layout */}
-          {/* Column 1 */}
+          
           <div className="flex flex-col gap-6">
             <Link href={whatsNewItems[0].link} className="relative h-full rounded-lg overflow-hidden group shadow-lg block">
               <Image
@@ -89,7 +88,7 @@ export default function DashboardPage() {
               </div>
             </Link>
           </div>
-          {/* Column 2 */}
+          
           <Link href={whatsNewItems[1].link} className={`${whatsNewItems[1].gridClass} relative rounded-lg overflow-hidden group shadow-lg block`}>
             <Image
               src={whatsNewItems[1].imageUrl}
@@ -118,8 +117,8 @@ export default function DashboardPage() {
               selected={date}
               onSelect={setDate}
               className="rounded-md p-0 [&_button]:text-xs [&_caption_label]:text-sm"
-              month={date} // Ensure calendar displays current month
-              onMonthChange={setDate} // Allow month navigation
+              month={date} 
+              onMonthChange={setDate} 
             />
           </CardContent>
         </Card>
