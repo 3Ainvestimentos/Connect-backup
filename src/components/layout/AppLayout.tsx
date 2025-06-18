@@ -126,11 +126,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
+                  asChild
                   isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
                   tooltip={{children: item.label, className: "font-body"}}
                   onClick={handleLinkClick}
                   className="font-body"
-                  asChild
                 >
                   <Link href={item.href}>
                     <item.icon />
@@ -165,8 +165,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 // Main AppLayout component that wraps SidebarProvider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppLayout>{children}</AppLayout>
     </SidebarProvider>
   )
 }
+
