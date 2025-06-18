@@ -112,8 +112,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar collapsible="icon" variant="sidebar" defaultOpen={false}>
-        <SidebarHeader className="p-4 border-b border-sidebar-border items-center h-[var(--header-height)]">
-          {/* Logo removed from here */}
+        <SidebarHeader className="p-4 border-b border-sidebar-border items-center">
+          {/* Logo removed from here, height is now content-driven */}
         </SidebarHeader>
         <SidebarContent className="p-2">
           <SidebarMenu>
@@ -147,7 +147,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       
       <SidebarInset>
         <Header userNav={<UserNav />}/>
-        <main className="flex-1 p-6 md:p-8 overflow-y-auto bg-muted/20 min-h-[calc(100vh-var(--header-height))]"> {/* Increased padding */}
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto bg-muted/20 min-h-[calc(100vh-var(--header-height))]">
           {children}
         </main>
       </SidebarInset>
@@ -164,3 +164,4 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
     </SidebarProvider>
   )
 }
+
