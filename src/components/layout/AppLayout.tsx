@@ -143,9 +143,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="group-data-[collapsible=icon]:hidden w-full flex items-center justify-between">
               <p className="text-xs text-muted-foreground font-body">© {new Date().getFullYear()} 3A RIVA</p>
             </div>
-             <div className="hidden group-data-[collapsible=icon]:block">
-                <UserNav />
-            </div>
+            {/* Removed UserNav from here for collapsed state */}
           </SidebarFooter>
         </Sidebar>
         
@@ -172,4 +170,3 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
     </SidebarProvider>
   )
 }
-
