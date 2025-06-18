@@ -112,19 +112,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar collapsible="icon" variant="sidebar" defaultOpen={false}>
-        <SidebarHeader className="p-4 border-b border-sidebar-border items-center">
-          <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
-            {/* Placeholder Logo */}
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-primary">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-            </svg>
-            <span className="font-headline text-xl font-bold text-primary group-data-[collapsible=icon]:hidden">3A RIVA Hub</span>
-          </Link>
+        <SidebarHeader className="p-4 border-b border-sidebar-border items-center h-[var(--header-height)]">
+          {/* Logo removed from here */}
         </SidebarHeader>
         <SidebarContent className="p-2">
           <SidebarMenu>
             {navItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
+               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
                   isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
@@ -153,7 +147,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       
       <SidebarInset>
         <Header userNav={<UserNav />}/>
-        <main className="flex-1 p-4 md:p-6 overflow-y-auto bg-muted/20 min-h-[calc(100vh-4rem)]"> {/* Adjust 4rem based on header height */}
+        <main className="flex-1 p-6 md:p-8 overflow-y-auto bg-muted/20 min-h-[calc(100vh-var(--header-height))]"> {/* Increased padding */}
           {children}
         </main>
       </SidebarInset>
@@ -165,9 +159,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 // Main AppLayout component that wraps SidebarProvider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={false}> 
       <AppLayout>{children}</AppLayout>
     </SidebarProvider>
   )
 }
-

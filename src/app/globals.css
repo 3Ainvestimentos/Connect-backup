@@ -44,6 +44,8 @@ body {
     --sidebar-accent-foreground: 220 20% 90%;
     --sidebar-border: 250 30% 15%; /* Darker border */
     --sidebar-ring: 250 60% 65%;
+
+    --header-height: 4rem; /* 64px */
   }
 
   .dark {
