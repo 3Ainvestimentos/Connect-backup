@@ -16,19 +16,56 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const mockUser: User = {
+  uid: 'mock-user-uid',
+  displayName: 'Usuário Mockado',
+  email: 'mock@example.com',
+  photoURL: 'https://placehold.co/100x100.png?text=Mock',
+  emailVerified: true,
+  isAnonymous: false,
+  metadata: {},
+  providerData: [],
+  refreshToken: '',
+  tenantId: null,
+  delete: async () => {},
+  getIdToken: async () => 'mock-token',
+  getIdTokenResult: async () => ({
+    token: 'mock-token',
+    expirationTime: '',
+    authTime: '',
+    issuedAtTime: '',
+    signInProvider: null,
+    signInSecondFactor: null,
+    claims: {},
+  }),
+  reload: async () => {},
+  toJSON: () => ({}),
+  providerId: 'mockProvider',
+  phoneNumber: null,
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
+  const useMockAuth = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === 'true';
+
   useEffect(() => {
+    if (useMockAuth) {
+      setUser(mockUser);
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [useMockAuth]);
 
   useEffect(() => {
     if (!loading) {
@@ -36,12 +73,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!user && !isAuthPage) {
         router.push('/login');
       } else if (user && isAuthPage) {
-        router.push('/dashboard');
+        // If using mock auth and on login page, redirect to dashboard
+        if (useMockAuth || user) { 
+            router.push('/dashboard');
+        }
       }
     }
-  }, [user, loading, router, pathname]);
+  }, [user, loading, router, pathname, useMockAuth]);
 
   const signInWithGoogle = async () => {
+    if (useMockAuth) {
+      setUser(mockUser);
+      setLoading(false);
+      toast({ title: "Login Mock", description: "Logado com usuário mockado." });
+      router.push('/dashboard');
+      return;
+    }
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
@@ -58,6 +105,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    if (useMockAuth) {
+      setUser(null);
+      toast({ title: "Logout Mock", description: "Deslogado do usuário mockado." });
+      router.push('/login');
+      return;
+    }
     setLoading(true);
     try {
       await firebaseSignOut(auth);
@@ -73,9 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  if (loading && !['/login'].includes(pathname) && !user) {
-     // Show a global loading spinner or a blank page while checking auth state
-     // This prevents flicker to login page if user is already authenticated.
+  if (loading && !useMockAuth && !['/login'].includes(pathname) && !user) {
      return (
         <div className="flex h-screen w-screen items-center justify-center bg-background">
           <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
