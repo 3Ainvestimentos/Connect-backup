@@ -53,7 +53,7 @@ export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-8 px-4 sm:px-6 md:px-8">
+    <div className="space-y-8 px-8 sm:px-12 md:px-16">
       <section>
         <h2 className="text-3xl font-headline font-bold mb-6 text-foreground">What's new</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:grid-rows-2" style={{ minHeight: '450px' }}>
