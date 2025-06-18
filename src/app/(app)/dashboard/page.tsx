@@ -16,24 +16,22 @@ const whatsNewItems = [
     description: 'Registration is on',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'conference team',
-    link: '#', 
-    gridClass: 'md:col-span-1 md:row-span-1',
+    link: '#',
   },
   {
     title: 'New well-being packages',
     description: 'Discover our new offerings',
     imageUrl: 'https://placehold.co/800x800.png', 
     dataAiHint: 'wellness nature',
-    link: '#', 
-    gridClass: 'md:col-span-1 md:row-span-2',
+    link: '#',
+    gridClass: 'md:col-span-1 md:row-span-2', // This item will span 2 rows on medium screens and up
   },
   {
     title: 'Bring your dog to the office day is back!',
     description: 'Prepare for paw-sitivity',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'dog office',
-    link: '#', 
-    gridClass: 'md:col-span-1 md:row-span-1',
+    link: '#',
   },
 ];
 
@@ -60,12 +58,12 @@ export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-8 px-8 sm:px-12 md:px-16">
+    <div className="space-y-4 px-4 sm:px-6 md:px-8">
       <section>
-        <h2 className="text-3xl font-headline font-bold mb-6 text-foreground">What's new</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:grid-rows-2" style={{ minHeight: '450px' }}>
+        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">What's new</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:grid-rows-2" style={{ minHeight: '450px' }}>
           
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
             <Link href={whatsNewItems[0].link} className="relative h-full rounded-lg overflow-hidden group shadow-lg block">
               <Image
                 src={whatsNewItems[0].imageUrl}
@@ -113,7 +111,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Events</CardTitle>
@@ -134,7 +132,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Applications</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-3">
+          <CardContent className="grid grid-cols-2 gap-2">
             {applications.map((app) => (
               <Button key={app.name} variant="outline" className="flex flex-col items-center justify-center h-24 p-2 text-center font-body hover:bg-primary/5 border-border text-foreground hover:text-primary" asChild>
                 <Link href={app.href}>
@@ -150,9 +148,9 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Contacts</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {contacts.map((contact) => (
-              <div key={contact.name} className="flex items-center gap-3 p-2.5 hover:bg-muted/40 rounded-lg transition-colors">
+              <div key={contact.name} className="flex items-center gap-2 p-2.5 hover:bg-muted/40 rounded-lg transition-colors">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={contact.avatarUrl} alt={contact.name} data-ai-hint={contact.dataAiHint} />
                   <AvatarFallback>{contact.name.substring(0, 1)}</AvatarFallback>
@@ -171,8 +169,8 @@ export default function DashboardPage() {
       </section>
 
       <section>
-        <h2 className="text-3xl font-headline font-bold mb-6 text-foreground">Teams</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">Teams</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {teams.map((team) => (
             <Link key={team.name} href={team.link} className="block group">
               <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
