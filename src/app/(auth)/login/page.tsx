@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -61,7 +60,7 @@ export default function LoginPage() {
           <div>
             <div className="flex items-center justify-center">
               <Image 
-                src="https://i.ibb.co/mF4W7Q7/LOGO-BRANCA.png" 
+                src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
                 alt="3A RIVA Hub Logo" 
                 width={267} 
                 height={60} 
