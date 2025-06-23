@@ -50,7 +50,7 @@ export default function LoginPage() {
           data-ai-hint="geometric pattern yellow black" 
           layout="fill" 
           objectFit="cover" 
-          alt="Decorative pattern"
+          alt="Padrão decorativo"
           priority
         />
       </div>
@@ -62,7 +62,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-center">
               <Image 
                 src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
-                alt="3A RIVA Hub Logo" 
+                alt="Logo 3A RIVA Hub" 
                 width={187} 
                 height={42} 
                 priority 

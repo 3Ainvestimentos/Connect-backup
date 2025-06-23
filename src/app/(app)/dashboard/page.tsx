@@ -12,23 +12,23 @@ import { UserCircle, Zap, Briefcase, Building, Phone, Users } from 'lucide-react
 
 const whatsNewItems = [
   {
-    title: 'Employee Happiness Conference 2023',
-    description: 'Registration is on',
+    title: 'Conferência de Felicidade do Colaborador',
+    description: 'Inscrições abertas',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'conference team',
     link: '#',
   },
   {
-    title: 'New well-being packages',
-    description: 'Discover our new offerings',
+    title: 'Novos pacotes de bem-estar',
+    description: 'Descubra nossas novas ofertas',
     imageUrl: 'https://placehold.co/800x800.png', 
     dataAiHint: 'wellness nature',
     link: '#',
     gridClass: 'md:col-span-1 md:row-span-2', // This item will span 2 rows on medium screens and up
   },
   {
-    title: 'Bring your dog to the office day is back!',
-    description: 'Prepare for paw-sitivity',
+    title: 'O dia de trazer seu cão para o escritório está de volta!',
+    description: 'Prepare-se para a fofura!',
     imageUrl: 'https://placehold.co/600x400.png',
     dataAiHint: 'dog office',
     link: '#',
@@ -36,10 +36,10 @@ const whatsNewItems = [
 ];
 
 const applications = [
-  { name: 'My Profile', icon: UserCircle, href: '#' },
-  { name: 'Safe Ag', icon: Zap, href: '#' },
+  { name: 'Meu Perfil', icon: UserCircle, href: '#' },
+  { name: 'Agro Seguro', icon: Zap, href: '#' },
   { name: 'Jira', icon: Briefcase, href: '#' },
-  { name: 'Wall', icon: Building, href: '#' },
+  { name: 'Mural', icon: Building, href: '#' },
 ];
 
 const contacts = [
@@ -48,10 +48,10 @@ const contacts = [
 ];
 
 const teams = [
-  { name: 'Operations', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'team meeting office', link: '#' },
-  { name: 'Finance', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'finance charts computer', link: '#' },
-  { name: 'Sales', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'sales team presentation', link: '#' },
-  { name: 'Customer Support', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'customer support headset', link: '#' },
+  { name: 'Operações', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'team meeting office', link: '#' },
+  { name: 'Finanças', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'finance charts computer', link: '#' },
+  { name: 'Vendas', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'sales team presentation', link: '#' },
+  { name: 'Suporte ao Cliente', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'customer support headset', link: '#' },
 ];
 
 export default function DashboardPage() {
@@ -60,7 +60,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4 px-4 sm:px-6 md:px-8">
       <section>
-        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">What's new</h2>
+        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">O que há de novo</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:grid-rows-2" style={{ minHeight: '450px' }}>
           
           <div className="flex flex-col gap-3">
@@ -114,7 +114,7 @@ export default function DashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Events</CardTitle>
+            <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
           <CardContent>
             <Calendar
@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
         <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Applications</CardTitle>
+            <CardTitle className="font-headline text-primary text-xl">Aplicações</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-2">
             {applications.map((app) => (
@@ -146,7 +146,7 @@ export default function DashboardPage() {
 
         <Card className="lg:col-span-1 shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Contacts</CardTitle>
+            <CardTitle className="font-headline text-primary text-xl">Contatos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {contacts.map((contact) => (
@@ -169,7 +169,7 @@ export default function DashboardPage() {
       </section>
 
       <section>
-        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">Teams</h2>
+        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">Equipes</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {teams.map((team) => (
             <Link key={team.name} href={team.link} className="block group">
@@ -196,4 +196,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

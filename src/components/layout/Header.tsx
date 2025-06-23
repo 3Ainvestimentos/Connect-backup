@@ -23,8 +23,8 @@ export function Header({ userNav }: HeaderProps) {
           <Image 
             src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
             alt="3A RIVA Hub Logo" 
-            width={99} 
-            height={22} 
+            width={135} 
+            height={30} 
             priority 
           />
         </Link>
