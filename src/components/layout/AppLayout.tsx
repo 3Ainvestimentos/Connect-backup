@@ -110,7 +110,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <> {/* This fragment is a child of SidebarProvider's root div (which is now flex-col) */}
-      <Header /> {/* First item in flex-col, takes its natural height */}
+      <Header userNav={<UserNav />} /> {/* First item in flex-col, takes its natural height */}
       
       {/* This div is the second item in flex-col, takes remaining vertical space (flex-1), and arranges its children in a row */}
       <div className="flex flex-1 w-full"> 
@@ -135,16 +135,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 flex items-center justify-center">
-            <UserNav />
-          </SidebarFooter>
         </Sidebar>
         
         {/* SidebarInset IS the <main> tag. It's flex-1 in the new "flex flex-1 w-full" row.
             It will be pushed to the right by the Sidebar's placeholder.
-            overflow-y-auto for its content. bg-muted/20 for background.
+            overflow-y-auto for its content. bg-background for background.
         */}
-        <SidebarInset className="flex-1 bg-muted/20 overflow-y-auto"> 
+        <SidebarInset className="flex-1 bg-background overflow-y-auto"> 
           <div className="p-6 md:p-8"> {/* Inner div for padding the actual page content */}
             {children}
           </div>
