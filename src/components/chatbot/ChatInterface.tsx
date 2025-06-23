@@ -147,7 +147,7 @@ export default function ChatInterface() {
 
 
   return (
-    <Card className="flex flex-col flex-grow shadow-md overflow-hidden">
+    <Card className="flex flex-col flex-grow shadow overflow-hidden">
       <CardContent className="flex-1 p-0 flex flex-col">
         <ScrollArea className="flex-grow p-4 space-y-4" ref={scrollAreaRef}>
           {messages.map((msg) => (
@@ -160,7 +160,7 @@ export default function ChatInterface() {
                 </Avatar>
               )}
               <div
-                className={`max-w-[70%] p-3 rounded-xl shadow-sm font-body ${
+                className={`max-w-[70%] p-3 rounded-xl font-body ${
                   msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 
                   msg.role === 'assistant' ? 'bg-muted text-foreground rounded-bl-none' :
                   'bg-accent/20 text-accent-foreground rounded-none border border-accent italic'
@@ -188,7 +188,7 @@ export default function ChatInterface() {
               <Avatar className="h-8 w-8">
                  <AvatarFallback className="bg-primary text-primary-foreground"><Bot size={18} /></AvatarFallback>
               </Avatar>
-              <div className="max-w-[70%] p-3 rounded-lg shadow-sm bg-muted text-foreground rounded-bl-none">
+              <div className="max-w-[70%] p-3 rounded-lg bg-muted text-foreground rounded-bl-none">
                 <Loader2 className="h-5 w-5 animate-spin" />
               </div>
             </div>

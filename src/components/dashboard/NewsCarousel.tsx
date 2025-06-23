@@ -34,7 +34,7 @@ export default function NewsCarousel() {
   const currentItem = newsItems[currentIndex];
 
   return (
-    <Card className="overflow-hidden shadow-lg relative group">
+    <Card className="overflow-hidden shadow-md relative group">
       <div className="relative w-full h-64 md:h-80">
         <Image
           src={currentItem.imageUrl}

@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export function Header({ userNav }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-60 flex h-[var(--header-height)] w-full items-center gap-x-4 border-b bg-card px-4 md:px-6 shadow-sm">
+    <header className="sticky top-0 z-60 flex h-[var(--header-height)] w-full items-center gap-x-4 border-b bg-card px-4 md:px-6">
       {/* Sidebar Trigger for mobile, hidden on md+ */}
       <SidebarTrigger className="md:hidden" />
 

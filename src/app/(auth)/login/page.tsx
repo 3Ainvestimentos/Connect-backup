@@ -57,7 +57,7 @@ export default function LoginPage() {
 
       {/* Right Pane - Login Form */}
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center justify-center p-6 sm:p-12">
-        <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-lg">
+        <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-md">
           <div>
             <div className="flex items-center justify-center">
               <Image 
