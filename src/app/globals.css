@@ -36,14 +36,14 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific */
-    --sidebar-background: 0 0% 18%; /* Dark Gray */
-    --sidebar-foreground: 0 0% 85%; /* Light Gray for text */
+    --sidebar-background: 0 0% 100%; /* White */
+    --sidebar-foreground: 0 0% 45%; /* Medium Gray for icons/text */
     --sidebar-primary: 36 60% 69%; /* Active item background - Gold */
     --sidebar-primary-foreground: 0 0% 10%; /* Dark text on active gold */
-    --sidebar-accent: 0 0% 25%; /* Hover item background - slightly lighter dark gray */
-    --sidebar-accent-foreground: 0 0% 90%;
-    --sidebar-border: 0 0% 15%; /* Darker border */
-    --sidebar-ring: 36 60% 69%;
+    --sidebar-accent: 0 0% 94%; /* Hover item background - light gray */
+    --sidebar-accent-foreground: 0 0% 13%; /* Hover item text - dark gray */
+    --sidebar-border: 0 0% 89%; /* Light gray border */
+    --sidebar-ring: 36 60% 69%; /* Gold ring */
 
     --header-height: 4rem; /* 64px */
   }
