@@ -113,7 +113,7 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
 
   return (
     <div>
-      <div className="mb-6 p-4 bg-card rounded-lg shadow sticky top-16 z-30"> {/* Adjust top-16 if header height changes */}
+      <div className="mb-6 p-4 bg-card rounded-lg shadow sticky top-[var(--header-height)] z-30">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
           <div className="relative md:col-span-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

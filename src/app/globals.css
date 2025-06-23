@@ -45,7 +45,7 @@ body {
     --sidebar-border: 0 0% 89%; /* Light gray border */
     --sidebar-ring: 36 60% 69%; /* Gold ring */
 
-    --header-height: 4rem; /* 64px */
+    --header-height: 3.25rem; /* 52px, was 4rem */
   }
 
   .dark {
