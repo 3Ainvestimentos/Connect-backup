@@ -112,7 +112,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 shadow-sm">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
@@ -128,7 +128,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 shadow-sm">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Aplicações</CardTitle>
           </CardHeader>
@@ -144,7 +144,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1">
+        <Card className="lg:col-span-1 shadow-sm">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Contatos</CardTitle>
           </CardHeader>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {teams.map((team) => (
             <Link key={team.name} href={team.link} className="block group">
-              <Card className="overflow-hidden hover:shadow-sm transition-shadow duration-300 rounded-lg">
+              <Card className="overflow-hidden hover:shadow-sm transition-shadow duration-300 rounded-lg shadow-sm">
                 <div className="relative h-48 w-full">
                   <Image
                     src={team.imageUrl}
