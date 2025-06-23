@@ -52,7 +52,7 @@ export default function NewsFeedClient({ initialNewsItems, categories }: NewsFee
 
   return (
     <div>
-      <div className="mb-6 p-4 bg-card rounded-lg shadow sticky top-[var(--header-height)] z-30">
+      <div className="mb-6 p-4 bg-card rounded-lg shadow-sm sticky top-[var(--header-height)] z-30">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative md:col-span-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
@@ -93,7 +93,7 @@ export default function NewsFeedClient({ initialNewsItems, categories }: NewsFee
       {filteredAndSortedNews.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedNews.map(item => (
-            <Card key={item.id} className="flex flex-col overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
+            <Card key={item.id} className="flex flex-col overflow-hidden shadow hover:shadow-lg transition-shadow duration-300">
               <div className="relative w-full h-48">
                 <Image
                   src={item.imageUrl}

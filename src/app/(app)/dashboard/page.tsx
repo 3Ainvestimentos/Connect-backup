@@ -64,7 +64,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:grid-rows-2" style={{ minHeight: '450px' }}>
           
           <div className="flex flex-col gap-3">
-            <Link href={whatsNewItems[0].link} className="relative h-full rounded-lg overflow-hidden group shadow-lg block">
+            <Link href={whatsNewItems[0].link} className="relative h-full rounded-lg overflow-hidden group shadow-md block">
               <Image
                 src={whatsNewItems[0].imageUrl}
                 alt={whatsNewItems[0].title}
@@ -78,7 +78,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
               </div>
             </Link>
-            <Link href={whatsNewItems[2].link} className="relative h-full rounded-lg overflow-hidden group shadow-lg block">
+            <Link href={whatsNewItems[2].link} className="relative h-full rounded-lg overflow-hidden group shadow-md block">
               <Image
                 src={whatsNewItems[2].imageUrl}
                 alt={whatsNewItems[2].title}
@@ -94,7 +94,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           
-          <Link href={whatsNewItems[1].link} className={`${whatsNewItems[1].gridClass} relative rounded-lg overflow-hidden group shadow-lg block`}>
+          <Link href={whatsNewItems[1].link} className={`${whatsNewItems[1].gridClass} relative rounded-lg overflow-hidden group shadow-md block`}>
             <Image
               src={whatsNewItems[1].imageUrl}
               alt={whatsNewItems[1].title}
@@ -112,7 +112,7 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card className="lg:col-span-1 shadow-lg">
+        <Card className="lg:col-span-1 shadow-md">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
@@ -128,7 +128,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1 shadow-lg">
+        <Card className="lg:col-span-1 shadow-md">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Aplicações</CardTitle>
           </CardHeader>
@@ -144,7 +144,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1 shadow-lg">
+        <Card className="lg:col-span-1 shadow-md">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Contatos</CardTitle>
           </CardHeader>
@@ -173,7 +173,7 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {teams.map((team) => (
             <Link key={team.name} href={team.link} className="block group">
-              <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-lg">
+              <Card className="overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 rounded-lg">
                 <div className="relative h-48 w-full">
                   <Image
                     src={team.imageUrl}
