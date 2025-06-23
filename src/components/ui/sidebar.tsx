@@ -254,9 +254,7 @@ const Sidebar = React.forwardRef<
             className={cn(
                 "duration-200 transition-[width] ease-linear",
                 side === "left" ? "left-0" : "right-0",
-                variant === "floating" || variant === "inset"
-                ? "p-2" 
-                : (side === "left" ? "border-r border-sidebar-border" : "border-l border-sidebar-border"),
+                variant === "floating" || variant === "inset" ? "p-2" : "",
                 (sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "w-[var(--sidebar-width-icon)]"),
                 collapsible === "offcanvas" && sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "",
                 collapsible === "offcanvas" && sidebarState === "collapsed" ? "!w-0 opacity-0 p-0 border-0" : "", // Hide completely if offcanvas and collapsed
