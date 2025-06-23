@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -62,8 +63,8 @@ export default function LoginPage() {
               <Image 
                 src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
                 alt="3A RIVA Hub Logo" 
-                width={267} 
-                height={60} 
+                width={187} 
+                height={42} 
                 priority 
               />
             </div>

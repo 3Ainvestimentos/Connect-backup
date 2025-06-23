@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -22,8 +23,8 @@ export function Header({ userNav }: HeaderProps) {
           <Image 
             src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
             alt="3A RIVA Hub Logo" 
-            width={142} 
-            height={32} 
+            width={99} 
+            height={22} 
             priority 
           />
         </Link>
