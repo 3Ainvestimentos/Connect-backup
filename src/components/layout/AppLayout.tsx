@@ -5,7 +5,6 @@ import React, { useEffect } from 'react';
 import {
   SidebarProvider,
   Sidebar,
-  SidebarHeader,
   SidebarContent,
   SidebarFooter,
   SidebarMenu,
@@ -111,14 +110,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <> {/* This fragment is a child of SidebarProvider's root div (which is now flex-col) */}
-      <Header userNav={<UserNav />} /> {/* First item in flex-col, takes its natural height */}
+      <Header /> {/* First item in flex-col, takes its natural height */}
       
       {/* This div is the second item in flex-col, takes remaining vertical space (flex-1), and arranges its children in a row */}
       <div className="flex flex-1 w-full"> 
         <Sidebar collapsible="icon" variant="sidebar"> 
-          <SidebarHeader className="p-4 border-b border-sidebar-border items-center">
-            {/* Logo removed from here */}
-          </SidebarHeader>
           <SidebarContent className="p-2">
             <SidebarMenu>
               {navItems.map((item) => (
@@ -139,11 +135,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter className="p-4 border-t border-sidebar-border items-center group-data-[collapsible=icon]:justify-center">
-            <div className="group-data-[collapsible=icon]:hidden w-full flex items-center justify-between">
-              <p className="text-xs text-muted-foreground font-body">© {new Date().getFullYear()} 3A RIVA</p>
-            </div>
-            {/* Removed UserNav from here for collapsed state */}
+          <SidebarFooter className="p-4 flex items-center justify-center">
+            <UserNav />
           </SidebarFooter>
         </Sidebar>
         
