@@ -58,12 +58,13 @@ export default function ApplicationsPage() {
                   variant={isPrimary ? 'default' : 'outline'}
                   className={cn(
                     "flex flex-col items-center justify-center w-60 h-60 p-2 text-center font-body group bg-card",
-                    !isPrimary && "hover:bg-primary/5 hover:text-primary"
+                    !isPrimary && "hover:bg-primary/5 hover:text-primary",
+                    "[&_svg]:w-32 [&_svg]:h-32"
                   )}
                   onClick={() => setIsVacationModalOpen(true)}
                 >
                   <app.icon className={cn(
-                    "h-48 w-48 mb-1 transition-colors",
+                    "mb-2 transition-colors",
                     isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
                   )} />
                   <span className="text-lg font-bold">{app.name}</span>
@@ -77,13 +78,14 @@ export default function ApplicationsPage() {
                 variant={isPrimary ? 'default' : 'outline'}
                 className={cn(
                   "flex flex-col items-center justify-center w-60 h-60 p-2 text-center font-body group bg-card",
-                  !isPrimary && "hover:bg-primary/5 hover:text-primary"
+                  !isPrimary && "hover:bg-primary/5 hover:text-primary",
+                  "[&_svg]:w-32 [&_svg]:h-32"
                 )}
                 asChild
               >
                 <Link href={app.href}>
                   <app.icon className={cn(
-                    "h-48 w-48 mb-1 transition-colors",
+                    "mb-2 transition-colors",
                     isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
                   )} />
                   <span className="text-lg font-bold">{app.name}</span>
