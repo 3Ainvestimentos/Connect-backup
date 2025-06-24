@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -65,7 +64,7 @@ export default function AdminModal({ open, onOpenChange }: AdminModalProps) {
                 </ul>
                 <div>
                   <p className="font-bold text-sm">Link:</p>
-                   <Button variant="link" asChild className="p-0 h-auto font-normal text-base text-accent -translate-x-1 text-left break-all">
+                   <Button variant="link" asChild className="p-0 h-auto font-normal text-base text-accent -translate-x-1 text-left break-all whitespace-normal">
                     <Link href={sharepointLink} target="_blank" rel="noopener noreferrer">
                       {sharepointLink}
                     </Link>
