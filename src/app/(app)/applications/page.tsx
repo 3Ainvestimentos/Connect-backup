@@ -63,10 +63,10 @@ export default function ApplicationsPage() {
                   onClick={() => setIsVacationModalOpen(true)}
                 >
                   <app.icon className={cn(
-                    "h-16 w-16 mb-3 transition-colors",
+                    "h-20 w-20 mb-4 transition-colors",
                     isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
                   )} />
-                  <span className="text-base">{app.name}</span>
+                  <span className="text-lg">{app.name}</span>
                 </Button>
               );
             }
@@ -83,10 +83,10 @@ export default function ApplicationsPage() {
               >
                 <Link href={app.href}>
                   <app.icon className={cn(
-                    "h-16 w-16 mb-3 transition-colors",
+                    "h-20 w-20 mb-4 transition-colors",
                     isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
                   )} />
-                  <span className="text-base">{app.name}</span>
+                  <span className="text-lg">{app.name}</span>
                 </Link>
               </Button>
             );
