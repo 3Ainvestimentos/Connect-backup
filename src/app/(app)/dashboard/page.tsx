@@ -8,7 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Phone, Users, CakeSlice, BrainCircuit, GlassOfWine, TrendingUp, Clock } from 'lucide-react';
+import { Phone, Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const whatsNewItems = [
@@ -40,7 +40,7 @@ const events: { title: string; time: string; icon: LucideIcon }[] = [
     { title: "Reunião de Alinhamento Semanal", time: "10:00 - 11:00", icon: Users },
     { title: "Aniversário da Empresa", time: "Dia Todo", icon: CakeSlice },
     { title: "Workshop de Design Thinking", time: "14:00 - 16:00", icon: BrainCircuit },
-    { title: "Happy Hour de Fim de Mês", time: "A partir das 17:30", icon: GlassOfWine },
+    { title: "Happy Hour de Fim de Mês", time: "A partir das 17:30", icon: Wine },
     { title: "Apresentação de Resultados Q2", time: "09:00 - 10:00", icon: TrendingUp },
 ];
 
