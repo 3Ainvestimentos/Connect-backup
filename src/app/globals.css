@@ -46,6 +46,8 @@ body {
     --sidebar-ring: 36 60% 69%; /* Gold ring */
 
     --header-height: 3.25rem; /* 52px, was 4rem */
+    --header-background: 30 2% 16%; /* #2B2A27 */
+    --header-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -79,6 +81,9 @@ body {
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 10%;
     --sidebar-ring: 36 60% 69%;
+    
+    --header-background: 30 2% 16%; /* #2B2A27 */
+    --header-foreground: 0 0% 100%;
   }
 }
 
