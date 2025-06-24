@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import VacationRequestModal from '@/components/applications/VacationRequestModal';
+import SupportModal from '@/components/applications/SupportModal';
 import Link from 'next/link';
 import { 
   LayoutGrid, 
@@ -38,6 +39,7 @@ const applicationsList: AppLink[] = [
 
 export default function ApplicationsPage() {
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
   return (
     <>
@@ -62,6 +64,27 @@ export default function ApplicationsPage() {
                     "[&_svg]:w-16 [&_svg]:h-16"
                   )}
                   onClick={() => setIsVacationModalOpen(true)}
+                >
+                  <app.icon className={cn(
+                    "mb-2 transition-colors",
+                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                  )} />
+                  <span className="text-lg font-bold">{app.name}</span>
+                </Button>
+              );
+            }
+
+            if (app.id === 'support') {
+              return (
+                <Button
+                  key={app.name}
+                  variant={isPrimary ? 'default' : 'outline'}
+                  className={cn(
+                    "flex flex-col items-center justify-center w-48 h-48 p-2 text-center font-body group bg-card",
+                    !isPrimary && "hover:bg-primary/5 hover:text-primary",
+                    "[&_svg]:w-16 [&_svg]:h-16"
+                  )}
+                  onClick={() => setIsSupportModalOpen(true)}
                 >
                   <app.icon className={cn(
                     "mb-2 transition-colors",
@@ -98,6 +121,10 @@ export default function ApplicationsPage() {
       <VacationRequestModal 
         open={isVacationModalOpen} 
         onOpenChange={setIsVacationModalOpen} 
+      />
+      <SupportModal 
+        open={isSupportModalOpen} 
+        onOpenChange={setIsSupportModalOpen} 
       />
     </>
   );
