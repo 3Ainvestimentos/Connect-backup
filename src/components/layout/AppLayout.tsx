@@ -137,7 +137,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </Sidebar>
         
         <SidebarInset className="flex-1 bg-background overflow-y-auto"> 
-          <div className="p-6 md:p-8">
+           <div className={pathname === '/dashboard' ? "py-6 px-12 md:py-8 md:px-16" : "p-6 md:p-8"}>
             {children}
           </div>
         </SidebarInset>
