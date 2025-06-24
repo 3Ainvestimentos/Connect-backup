@@ -30,7 +30,6 @@ const whatsNewItems = [
     imageUrl: 'https://i.ibb.co/mrC2Tr5b/homem-correndo-na-estrada-contra-as-montanhas-durante-o-por-do-sol-1048944-7722076.jpg', 
     dataAiHint: 'wellness running',
     link: '#',
-    gridClass: 'md:col-span-1 md:row-span-2',
   },
   {
     title: 'O dia de trazer seu cão para o escritório está de volta!',
@@ -86,40 +85,26 @@ export default function DashboardPage() {
           icon={Megaphone}
           description="Veja os últimos anúncios e destaques."
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:grid-rows-2" style={{ minHeight: '450px' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3" style={{ minHeight: '450px' }}>
           
-          <div className="flex flex-col gap-3">
-            <Link href={whatsNewItems[0].link} className="relative h-full rounded-lg overflow-hidden group block">
-              <Image
-                src={whatsNewItems[0].imageUrl}
-                alt={whatsNewItems[0].title}
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-300 group-hover:scale-105"
-                data-ai-hint={whatsNewItems[0].dataAiHint}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[0].title}</h3>
-                <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
-              </div>
-            </Link>
-            <Link href={whatsNewItems[2].link} className="relative h-full rounded-lg overflow-hidden group block">
-              <Image
-                src={whatsNewItems[2].imageUrl}
-                alt={whatsNewItems[2].title}
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-300 group-hover:scale-105"
-                data-ai-hint={whatsNewItems[2].dataAiHint}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[2].title}</h3>
-                <p className="text-sm text-gray-200 font-body">{whatsNewItems[2].description}</p>
-              </div>
-            </Link>
-          </div>
+          {/* Top Left */}
+          <Link href={whatsNewItems[0].link} className="relative rounded-lg overflow-hidden group block">
+            <Image
+              src={whatsNewItems[0].imageUrl}
+              alt={whatsNewItems[0].title}
+              layout="fill"
+              objectFit="cover"
+              className="transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint={whatsNewItems[0].dataAiHint}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+              <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[0].title}</h3>
+              <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
+            </div>
+          </Link>
           
-          <Link href={whatsNewItems[1].link} className={`${whatsNewItems[1].gridClass} relative rounded-lg overflow-hidden group block`}>
+          {/* Right Column - Spans two rows */}
+          <Link href={whatsNewItems[1].link} className="relative md:row-span-2 rounded-lg overflow-hidden group block">
             <Image
               src={whatsNewItems[1].imageUrl}
               alt={whatsNewItems[1].title}
@@ -131,6 +116,22 @@ export default function DashboardPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
               <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[1].title}</h3>
               <p className="text-sm text-gray-200 font-body">{whatsNewItems[1].description}</p>
+            </div>
+          </Link>
+
+          {/* Bottom Left */}
+          <Link href={whatsNewItems[2].link} className="relative rounded-lg overflow-hidden group block">
+            <Image
+              src={whatsNewItems[2].imageUrl}
+              alt={whatsNewItems[2].title}
+              layout="fill"
+              objectFit="cover"
+              className="transition-transform duration-300 group-hover:scale-105"
+              data-ai-hint={whatsNewItems[2].dataAiHint}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+              <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[2].title}</h3>
+              <p className="text-sm text-gray-200 font-body">{whatsNewItems[2].description}</p>
             </div>
           </Link>
         </div>
