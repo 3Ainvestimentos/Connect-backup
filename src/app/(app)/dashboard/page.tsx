@@ -3,12 +3,13 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
 import Link from 'next/link';
-import { UserCircle, Zap, Briefcase, Building, Phone, Users } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Phone, Users, CakeSlice, BrainCircuit, GlassOfWine, TrendingUp, Clock } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 const whatsNewItems = [
   {
@@ -35,11 +36,12 @@ const whatsNewItems = [
   },
 ];
 
-const applications = [
-  { name: 'Meu Perfil', icon: UserCircle, href: '#' },
-  { name: 'Agro Seguro', icon: Zap, href: '#' },
-  { name: 'Jira', icon: Briefcase, href: '#' },
-  { name: 'Mural', icon: Building, href: '#' },
+const events: { title: string; time: string; icon: LucideIcon }[] = [
+    { title: "Reunião de Alinhamento Semanal", time: "10:00 - 11:00", icon: Users },
+    { title: "Aniversário da Empresa", time: "Dia Todo", icon: CakeSlice },
+    { title: "Workshop de Design Thinking", time: "14:00 - 16:00", icon: BrainCircuit },
+    { title: "Happy Hour de Fim de Mês", time: "A partir das 17:30", icon: GlassOfWine },
+    { title: "Apresentação de Resultados Q2", time: "09:00 - 10:00", icon: TrendingUp },
 ];
 
 const contacts = [
@@ -112,35 +114,41 @@ export default function DashboardPage() {
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card className="lg:col-span-1 shadow-sm">
+        <Card className="lg:col-span-2 shadow-sm">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md p-0 [&_button]:text-xs [&_caption_label]:text-sm"
-              month={date} 
-              onMonthChange={setDate} 
-            />
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-1 shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Aplicações</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-2">
-            {applications.map((app) => (
-              <Button key={app.name} variant="outline" className="flex flex-col items-center justify-center h-24 p-2 text-center font-body hover:bg-primary/5 border-border text-foreground hover:text-primary" asChild>
-                <Link href={app.href}>
-                  <app.icon className="h-7 w-7 mb-1.5 text-primary/80 group-hover:text-primary" />
-                  <span className="text-xs">{app.name}</span>
-                </Link>
-              </Button>
-            ))}
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex justify-center items-center">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                className="rounded-md p-0 [&_button]:text-xs [&_caption_label]:text-sm"
+                month={date}
+                onMonthChange={setDate}
+              />
+            </div>
+            <div className="relative">
+              <ScrollArea className="h-72 w-full">
+                <div className="space-y-3 pr-4">
+                  {events.map((event, index) => (
+                    <div key={index} className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg hover:bg-muted/80 transition-colors">
+                      <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg p-2">
+                        <event.icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-grow">
+                        <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
+                        <p className="text-xs text-muted-foreground font-body flex items-center">
+                          <Clock className="h-3 w-3 mr-1.5" />
+                          {event.time}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           </CardContent>
         </Card>
 
