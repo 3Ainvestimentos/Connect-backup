@@ -1,4 +1,3 @@
-
 "use client"; 
 
 import React, { useState } from 'react';
@@ -78,7 +77,7 @@ export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-4 px-4 sm:px-6 md:px-8">
+    <div className="space-y-4 px-6 md:px-8">
       <section>
         <PageHeader
           title="O que há de novo"
