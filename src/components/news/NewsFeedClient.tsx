@@ -3,11 +3,10 @@
 
 import React, { useState, useMemo } from 'react';
 import type { NewsItemType } from '@/app/(app)/news/page';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Search, CalendarDays, Tag } from 'lucide-react';
+import { Search, CalendarDays } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '../ui/button';
 
@@ -17,19 +16,11 @@ interface NewsFeedClientProps {
 }
 
 export default function NewsFeedClient({ initialNewsItems, categories }: NewsFeedClientProps) {
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'title_asc' | 'title_desc'>('date_desc');
 
   const filteredAndSortedNews = useMemo(() => {
     let items = initialNewsItems;
-
-    if (searchTerm) {
-      items = items.filter(item =>
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.snippet.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
 
     if (selectedCategory !== 'all') {
       items = items.filter(item => item.category === selectedCategory);
@@ -48,23 +39,12 @@ export default function NewsFeedClient({ initialNewsItems, categories }: NewsFee
                 return new Date(b.date).getTime() - new Date(a.date).getTime();
         }
     });
-  }, [initialNewsItems, searchTerm, selectedCategory, sortBy]);
+  }, [initialNewsItems, selectedCategory, sortBy]);
 
   return (
     <div>
       <div className="mb-6 p-4 bg-card rounded-lg sticky top-[var(--header-height)] z-30">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative md:col-span-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Pesquisar notícias..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 font-body"
-              aria-label="Pesquisar notícias"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="font-body" aria-label="Filtrar por categoria">
               <SelectValue placeholder="Todas as Categorias" />
@@ -126,7 +106,7 @@ export default function NewsFeedClient({ initialNewsItems, categories }: NewsFee
         <div className="text-center py-12">
           <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-xl font-semibold text-muted-foreground font-headline">Nenhuma notícia encontrada.</p>
-          <p className="text-muted-foreground font-body">Tente ajustar seus filtros ou termos de pesquisa.</p>
+          <p className="text-muted-foreground font-body">Tente ajustar seus filtros.</p>
         </div>
       )}
     </div>
