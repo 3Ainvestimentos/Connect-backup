@@ -137,7 +137,7 @@ export default function DashboardPage() {
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-start">
+            <div className="flex items-start justify-center">
               <Calendar
                 mode="single"
                 selected={date}
@@ -149,15 +149,15 @@ export default function DashboardPage() {
             </div>
             <div className="relative">
               <ScrollArea className="h-80 w-full">
-                <div className="space-y-3 pr-4">
+                <div className="space-y-4 pr-4">
                   {events.map((event, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg hover:bg-muted/80 transition-colors">
-                      <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg p-2">
+                    <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
+                      <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
                         <event.icon className="h-5 w-5" />
                       </div>
                       <div className="flex-grow">
                         <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
-                        <p className="text-xs text-muted-foreground font-body flex items-center">
+                        <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
                           <Clock className="h-3 w-3 mr-1.5" />
                           {event.time}
                         </p>
