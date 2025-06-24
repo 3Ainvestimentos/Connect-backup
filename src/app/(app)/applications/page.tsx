@@ -29,7 +29,7 @@ interface AppLink {
 const applicationsList: AppLink[] = [
   { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#' },
   { id: 'slack', name: 'Slack', icon: MessagesSquare, href: '#' },
-  { id: 'contacts', name: 'Contatos', icon: BookUser, href: '#' },
+  { id: 'contacts', name: 'Contatos', icon: BookUser, href: '/contacts' },
   { id: 'vacation', name: 'Férias', icon: Plane, href: '#' },
   { id: 'events', name: 'Eventos', icon: Calendar, href: '#' },
   { id: 'support', name: 'Suporte TI', icon: Headset, href: '#' },
