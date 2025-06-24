@@ -1,7 +1,7 @@
 
 import { PageHeader } from '@/components/layout/PageHeader';
 import NewsFeedClient from '@/components/news/NewsFeedClient';
-import { Newspaper, Search, Filter } from 'lucide-react';
+import { Newspaper } from 'lucide-react';
 
 // Mock data for news items
 const mockNewsItems = [
@@ -12,8 +12,6 @@ const mockNewsItems = [
   { id: '5', title: "Parceria Estratégica com Empresa X Anunciada", snippet: "Saiba mais sobre a nova parceria e suas implicações para o futuro.", category: "Estratégia", date: "2024-06-28", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "business partnership" },
   { id: '6', title: "Voluntariado Corporativo: Resultados da Campanha", snippet: "Veja o impacto positivo das nossas ações de voluntariado na comunidade.", category: "ESG", date: "2024-06-20", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "corporate volunteering" },
 ];
-
-const categories = Array.from(new Set(mockNewsItems.map(item => item.category)));
 
 export interface NewsItemType {
   id: string;
@@ -33,7 +31,7 @@ export default function NewsPage() {
         icon={Newspaper}
         description="Mantenha-se atualizado com as últimas notícias e comunicados."
       />
-      <NewsFeedClient initialNewsItems={mockNewsItems} categories={categories} />
+      <NewsFeedClient initialNewsItems={mockNewsItems} />
     </div>
   );
 }

@@ -1,9 +1,8 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import type { NewsItemType } from '@/app/(app)/news/page';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { Search, CalendarDays } from 'lucide-react';
@@ -12,67 +11,18 @@ import { Button } from '../ui/button';
 
 interface NewsFeedClientProps {
   initialNewsItems: NewsItemType[];
-  categories: string[];
 }
 
-export default function NewsFeedClient({ initialNewsItems, categories }: NewsFeedClientProps) {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'title_asc' | 'title_desc'>('date_desc');
-
-  const filteredAndSortedNews = useMemo(() => {
-    let items = initialNewsItems;
-
-    if (selectedCategory !== 'all') {
-      items = items.filter(item => item.category === selectedCategory);
-    }
-    
-    return [...items].sort((a, b) => {
-        switch (sortBy) {
-            case 'date_asc':
-                return new Date(a.date).getTime() - new Date(b.date).getTime();
-            case 'title_asc':
-                return a.title.localeCompare(b.title);
-            case 'title_desc':
-                return b.title.localeCompare(a.title);
-            case 'date_desc':
-            default:
-                return new Date(b.date).getTime() - new Date(a.date).getTime();
-        }
-    });
-  }, [initialNewsItems, selectedCategory, sortBy]);
+export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps) {
+  // Sort by most recent by default
+  const sortedNews = [...initialNewsItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
     <div>
-      <div className="mb-6 p-4 bg-card rounded-lg sticky top-[var(--header-height)] z-30">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="font-body" aria-label="Filtrar por categoria">
-              <SelectValue placeholder="Todas as Categorias" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all" className="font-body">Todas as Categorias</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category} value={category} className="font-body">{category}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-           <Select value={sortBy} onValueChange={(value) => setSortBy(value as any)}>
-            <SelectTrigger className="font-body" aria-label="Ordenar por">
-              <SelectValue placeholder="Ordenar por..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date_desc" className="font-body">Mais Recentes</SelectItem>
-              <SelectItem value="date_asc" className="font-body">Mais Antigas</SelectItem>
-              <SelectItem value="title_asc" className="font-body">Título (A-Z)</SelectItem>
-              <SelectItem value="title_desc" className="font-body">Título (Z-A)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {filteredAndSortedNews.length > 0 ? (
+      {/* Filter and sort controls removed */}
+      {sortedNews.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedNews.map(item => (
+          {sortedNews.map(item => (
             <Card key={item.id} className="flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">
               <div className="relative w-full h-48">
                 <Image
@@ -106,7 +56,7 @@ export default function NewsFeedClient({ initialNewsItems, categories }: NewsFee
         <div className="text-center py-12">
           <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <p className="text-xl font-semibold text-muted-foreground font-headline">Nenhuma notícia encontrada.</p>
-          <p className="text-muted-foreground font-body">Tente ajustar seus filtros.</p>
+          <p className="text-muted-foreground font-body">Não há notícias disponíveis no momento.</p>
         </div>
       )}
     </div>
