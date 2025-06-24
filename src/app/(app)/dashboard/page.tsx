@@ -14,6 +14,7 @@ import {
   Wrench, Receipt, Banknote, Gavel, Megaphone, Network, ShieldCheck 
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 const whatsNewItems = [
   {
@@ -80,7 +81,11 @@ export default function DashboardPage() {
   return (
     <div className="space-y-4 px-4 sm:px-6 md:px-8">
       <section>
-        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">O que há de novo</h2>
+        <PageHeader
+          title="O que há de novo"
+          icon={Megaphone}
+          description="Veja os últimos anúncios e destaques."
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:grid-rows-2" style={{ minHeight: '450px' }}>
           
           <div className="flex flex-col gap-3">
