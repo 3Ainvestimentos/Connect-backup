@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, MessageCircle, LogOut, UserCircle, Bot } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, MessageCircle, LogOut, UserCircle, Bot, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -34,6 +34,7 @@ const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper },
   { href: '/documents', label: 'Documentos', icon: FolderOpen },
+  { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
   { href: '/chatbot', label: 'Chatbot Bob', icon: Bot },
 ];
 
@@ -109,13 +110,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <> {/* This fragment is a child of SidebarProvider's root div (which is now flex-col) */}
-      <Header userNav={<UserNav />} /> {/* First item in flex-col, takes its natural height */}
-      
-      {/* This div is the second item in flex-col, takes remaining vertical space (flex-1), and arranges its children in a row */}
+    <>
+      <Header userNav={<UserNav />} />
       <div className="flex flex-1 w-full"> 
         <Sidebar collapsible="icon" variant="sidebar"> 
-          <SidebarContent className="p-2">
+          <SidebarContent className="flex-1 p-2">
             <SidebarMenu>
               {navItems.map((item) => (
                  <SidebarMenuItem key={item.href}>
@@ -137,12 +136,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
         </Sidebar>
         
-        {/* SidebarInset IS the <main> tag. It's flex-1 in the new "flex flex-1 w-full" row.
-            It will be pushed to the right by the Sidebar's placeholder.
-            overflow-y-auto for its content. bg-background for background.
-        */}
         <SidebarInset className="flex-1 bg-background overflow-y-auto"> 
-          <div className="p-6 md:p-8"> {/* Inner div for padding the actual page content */}
+          <div className="p-6 md:p-8">
             {children}
           </div>
         </SidebarInset>
