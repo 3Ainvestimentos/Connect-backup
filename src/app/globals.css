@@ -14,22 +14,22 @@ body {
     --card-foreground: 0 0% 13%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 13%;
-    --primary: 36 60% 69%; /* #DFB87F Gold/Brown */
+    --primary: 30 39% 46%; /* #A37549 Gold/Brown */
     --primary-foreground: 0 0% 100%; /* White for contrast on gold */
     --secondary: 0 0% 94%; /* Light gray */
     --secondary-foreground: 0 0% 20%; /* Darker gray */
     --muted: 0 0% 94%; 
     --muted-foreground: 0 0% 45%; /* Medium gray */
-    --accent: 36 60% 75%; /* Lighter #DFB87F */
-    --accent-foreground: 0 0% 100%; /* White for contrast on lighter gold */
+    --accent: 30 39% 52%; /* Lighter #A37549 */
+    --accent-foreground: 0 0% 10%; /* Dark for contrast on lighter gold */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89%; /* Slightly darker gray border */
     --input: 0 0% 93%; /* Lighter gray for input */
-    --ring: 36 60% 69%; /* Primary gold for rings */
+    --ring: 30 39% 46%; /* Primary gold for rings */
     
-    --chart-1: 36 60% 69%;
-    --chart-2: 36 50% 78%;
+    --chart-1: 30 39% 46%;
+    --chart-2: 30 35% 55%;
     --chart-3: 0 0% 40%;
     --chart-4: 0 0% 60%;
     --chart-5: 0 0% 75%;
@@ -38,12 +38,12 @@ body {
     /* Sidebar specific */
     --sidebar-background: 0 0% 100%; /* White */
     --sidebar-foreground: 0 0% 45%; /* Medium Gray for icons/text */
-    --sidebar-primary: 36 60% 69%; /* Active item background - Gold */
+    --sidebar-primary: 30 39% 46%; /* Active item background - Gold */
     --sidebar-primary-foreground: 0 0% 10%; /* Dark text on active gold */
     --sidebar-accent: 0 0% 94%; /* Hover item background - light gray */
     --sidebar-accent-foreground: 0 0% 13%; /* Hover item text - dark gray */
     --sidebar-border: 0 0% 89%; /* Light gray border */
-    --sidebar-ring: 36 60% 69%; /* Gold ring */
+    --sidebar-ring: 30 39% 46%; /* Gold ring */
 
     --header-height: 3.25rem; /* 52px, was 4rem */
     --header-background: 30 2% 16%; /* #2B2A27 */
@@ -57,30 +57,30 @@ body {
     --card-foreground: 0 0% 95%;
     --popover: 0 0% 10%;
     --popover-foreground: 0 0% 95%;
-    --primary: 36 60% 69%; /* #DFB87F Gold/Brown */
+    --primary: 30 39% 46%; /* #A37549 Gold/Brown */
     --primary-foreground: 0 0% 10%; /* Dark text for contrast on gold */
     --secondary: 0 0% 15%; 
     --secondary-foreground: 0 0% 95%;
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 65%;
-    --accent: 36 60% 75%; /* Lighter #DFB87F */
+    --accent: 30 39% 52%; /* Lighter #A37549 */
     --accent-foreground: 0 0% 10%; /* Dark text for contrast on lighter gold */
     --border: 0 0% 20%;
     --input: 0 0% 20%;
-    --ring: 36 60% 69%;
+    --ring: 30 39% 46%;
 
-    --chart-1: 36 60% 69%;
-    --chart-2: 36 50% 78%;
+    --chart-1: 30 39% 46%;
+    --chart-2: 30 35% 55%;
 
     /* Sidebar specific for dark */
     --sidebar-background: 0 0% 12%; /* Even Darker Gray */
     --sidebar-foreground: 0 0% 85%; 
-    --sidebar-primary: 36 60% 69%; 
+    --sidebar-primary: 30 39% 46%; 
     --sidebar-primary-foreground: 0 0% 10%;
     --sidebar-accent: 0 0% 22%;
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 10%;
-    --sidebar-ring: 36 60% 69%;
+    --sidebar-ring: 30 39% 46%;
     
     --header-background: 30 2% 16%; /* #2B2A27 */
     --header-foreground: 0 0% 100%;
