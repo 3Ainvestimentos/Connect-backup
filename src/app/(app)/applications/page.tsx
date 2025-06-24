@@ -57,9 +57,9 @@ export default function ApplicationsPage() {
                   key={app.name}
                   variant={isPrimary ? 'default' : 'outline'}
                   className={cn(
-                    "flex flex-col items-center justify-center w-60 h-60 p-2 text-center font-body group bg-card",
+                    "flex flex-col items-center justify-center w-40 h-40 p-2 text-center font-body group bg-card",
                     !isPrimary && "hover:bg-primary/5 hover:text-primary",
-                    "[&_svg]:w-32 [&_svg]:h-32"
+                    "[&_svg]:w-20 [&_svg]:h-20"
                   )}
                   onClick={() => setIsVacationModalOpen(true)}
                 >
@@ -77,9 +77,9 @@ export default function ApplicationsPage() {
                 key={app.name}
                 variant={isPrimary ? 'default' : 'outline'}
                 className={cn(
-                  "flex flex-col items-center justify-center w-60 h-60 p-2 text-center font-body group bg-card",
+                  "flex flex-col items-center justify-center w-40 h-40 p-2 text-center font-body group bg-card",
                   !isPrimary && "hover:bg-primary/5 hover:text-primary",
-                  "[&_svg]:w-32 [&_svg]:h-32"
+                  "[&_svg]:w-20 [&_svg]:h-20"
                 )}
                 asChild
               >
