@@ -8,7 +8,11 @@ import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Phone, Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock } from 'lucide-react';
+import { 
+  Phone, Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
+  ArrowRightLeft, Handshake, Landmark, MousePointerClick, Target, Move, 
+  Wrench, Receipt, Banknote, Gavel, Megaphone, Network, ShieldCheck 
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 const whatsNewItems = [
@@ -49,12 +53,26 @@ const contacts = [
   { name: 'Adrien Wilson', phone: '+000 444 555 666', avatarUrl: 'https://placehold.co/100x100.png', dataAiHint: 'woman portrait' },
 ];
 
-const teams = [
-  { name: 'Operações', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'team meeting office', link: '#' },
-  { name: 'Finanças', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'finance charts computer', link: '#' },
-  { name: 'Vendas', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'sales team presentation', link: '#' },
-  { name: 'Suporte ao Cliente', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'customer support headset', link: '#' },
+const teams: { name: string, icon: LucideIcon }[] = [
+  { name: 'Alocação', icon: ArrowRightLeft },
+  { name: 'Business Intelligence', icon: BrainCircuit },
+  { name: 'Canal MFC', icon: Users },
+  { name: 'Comercial', icon: Handshake },
+  { name: 'Corporate', icon: Landmark },
+  { name: 'Digital', icon: MousePointerClick },
+  { name: 'Estratégia', icon: Target },
+  { name: 'Expansão', icon: Move },
+  { name: 'Facilities e Serviços', icon: Wrench },
+  { name: 'Fee Fixo e Variável', icon: Receipt },
+  { name: 'Financeiro', icon: Banknote },
+  { name: 'Gente e Gestão', icon: Users },
+  { name: 'Investors', icon: TrendingUp },
+  { name: 'Jurídico', icon: Gavel },
+  { name: 'Marketing', icon: Megaphone },
+  { name: 'Middle', icon: Network },
+  { name: 'Private Solutions', icon: ShieldCheck },
 ];
+
 
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -174,32 +192,24 @@ export default function DashboardPage() {
             ))}
           </CardContent>
         </Card>
-      </section>
 
-      <section>
-        <h2 className="text-3xl font-headline font-bold mb-3 text-foreground">Equipes</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {teams.map((team) => (
-            <Link key={team.name} href={team.link} className="block group">
-              <Card className="overflow-hidden hover:shadow-sm transition-shadow duration-300 rounded-lg shadow-sm">
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={team.imageUrl}
-                    alt={team.name}
-                    layout="fill"
-                    objectFit="cover"
-                    className="transition-transform duration-300 group-hover:scale-105"
-                    data-ai-hint={team.dataAiHint}
-                  />
-                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-70 group-hover:opacity-50 transition-opacity duration-300"></div>
-                </div>
-                <div className="p-4 text-center bg-card">
-                  <h3 className="text-md font-semibold text-foreground font-body">{team.name}</h3>
-                </div>
-              </Card>
-            </Link>
-          ))}
-        </div>
+        <Card className="lg:col-span-3 shadow-sm">
+          <CardHeader>
+            <CardTitle className="font-headline text-primary text-xl">Equipes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-4">
+              {teams.map((team) => (
+                <Link key={team.name} href="#" className="group flex items-center gap-3 hover:text-primary transition-colors">
+                  <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg p-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                      <team.icon className="h-5 w-5" />
+                  </div>
+                  <p className="font-semibold font-body text-sm text-foreground group-hover:text-primary transition-colors">{team.name}</p>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </section>
     </div>
   );
