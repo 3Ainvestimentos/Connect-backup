@@ -40,7 +40,7 @@ export default function ApplicationsPage() {
         icon={LayoutGrid}
         description="Acesse rapidamente os sistemas e serviços essenciais."
       />
-      <div className="mx-auto grid max-w-max grid-cols-2 gap-8 sm:grid-cols-4">
+      <div className="mx-auto grid max-w-max grid-cols-2 gap-6 sm:grid-cols-4">
         {applicationsList.map((app) => {
           const isPrimary = app.primary;
           return (
@@ -48,17 +48,17 @@ export default function ApplicationsPage() {
               key={app.name}
               variant={isPrimary ? 'default' : 'outline'}
               className={cn(
-                "flex flex-col items-center justify-center w-64 h-64 p-4 text-center font-body group bg-card",
+                "flex flex-col items-center justify-center w-52 h-52 p-4 text-center font-body group bg-card",
                 !isPrimary && "hover:bg-primary/5 hover:text-primary"
               )}
               asChild
             >
               <Link href={app.href}>
                 <app.icon className={cn(
-                  "h-20 w-20 mb-4 transition-colors",
+                  "h-16 w-16 mb-3 transition-colors",
                   isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
                 )} />
-                <span className="text-xl">{app.name}</span>
+                <span className="text-base">{app.name}</span>
               </Link>
             </Button>
           )
