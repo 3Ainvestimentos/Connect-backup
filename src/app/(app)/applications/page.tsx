@@ -57,16 +57,16 @@ export default function ApplicationsPage() {
                   key={app.name}
                   variant={isPrimary ? 'default' : 'outline'}
                   className={cn(
-                    "flex flex-col items-center justify-center w-52 h-52 p-4 text-center font-body group bg-card",
+                    "flex flex-col items-center justify-center w-52 h-52 p-2 text-center font-body group bg-card",
                     !isPrimary && "hover:bg-primary/5 hover:text-primary"
                   )}
                   onClick={() => setIsVacationModalOpen(true)}
                 >
                   <app.icon className={cn(
-                    "h-20 w-20 mb-4 transition-colors",
+                    "h-40 w-40 mb-1 transition-colors",
                     isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
                   )} />
-                  <span className="text-lg">{app.name}</span>
+                  <span className="text-lg font-bold">{app.name}</span>
                 </Button>
               );
             }
@@ -76,17 +76,17 @@ export default function ApplicationsPage() {
                 key={app.name}
                 variant={isPrimary ? 'default' : 'outline'}
                 className={cn(
-                  "flex flex-col items-center justify-center w-52 h-52 p-4 text-center font-body group bg-card",
+                  "flex flex-col items-center justify-center w-52 h-52 p-2 text-center font-body group bg-card",
                   !isPrimary && "hover:bg-primary/5 hover:text-primary"
                 )}
                 asChild
               >
                 <Link href={app.href}>
                   <app.icon className={cn(
-                    "h-20 w-20 mb-4 transition-colors",
+                    "h-40 w-40 mb-1 transition-colors",
                     isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
                   )} />
-                  <span className="text-lg">{app.name}</span>
+                  <span className="text-lg font-bold">{app.name}</span>
                 </Link>
               </Button>
             );
