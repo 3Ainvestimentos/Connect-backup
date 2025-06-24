@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -5,6 +6,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import VacationRequestModal from '@/components/applications/VacationRequestModal';
 import SupportModal from '@/components/applications/SupportModal';
+import AdminModal from '@/components/applications/AdminModal';
 import Link from 'next/link';
 import { 
   LayoutGrid, 
@@ -40,6 +42,7 @@ const applicationsList: AppLink[] = [
 export default function ApplicationsPage() {
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   return (
     <>
@@ -95,6 +98,27 @@ export default function ApplicationsPage() {
               );
             }
 
+            if (app.id === 'admin') {
+              return (
+                <Button
+                  key={app.name}
+                  variant={isPrimary ? 'default' : 'outline'}
+                  className={cn(
+                    "flex flex-col items-center justify-center w-48 h-48 p-2 text-center font-body group bg-card",
+                    !isPrimary && "hover:bg-primary/5 hover:text-primary",
+                    "[&_svg]:w-16 [&_svg]:h-16"
+                  )}
+                  onClick={() => setIsAdminModalOpen(true)}
+                >
+                  <app.icon className={cn(
+                    "mb-2 transition-colors",
+                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                  )} />
+                  <span className="text-lg font-bold">{app.name}</span>
+                </Button>
+              );
+            }
+
             return (
               <Button
                 key={app.name}
@@ -125,6 +149,10 @@ export default function ApplicationsPage() {
       <SupportModal 
         open={isSupportModalOpen} 
         onOpenChange={setIsSupportModalOpen} 
+      />
+      <AdminModal 
+        open={isAdminModalOpen} 
+        onOpenChange={setIsAdminModalOpen} 
       />
     </>
   );
