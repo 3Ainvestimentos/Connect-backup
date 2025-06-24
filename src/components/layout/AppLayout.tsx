@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect } from 'react';
@@ -29,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home },
@@ -136,10 +136,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
         </Sidebar>
         
-        <SidebarInset className="flex-1 bg-background overflow-y-auto"> 
-           <div className={pathname === '/dashboard' ? "py-6 px-12 md:py-8 md:px-16" : "p-6 md:p-8"}>
-            {children}
-          </div>
+        <SidebarInset className={cn(
+            "flex-1 bg-background overflow-y-auto",
+            pathname === '/dashboard' ? "py-6 px-12 md:py-8 md:px-16" : "p-6 md:p-8"
+          )}> 
+          {children}
         </SidebarInset>
       </div>
     </>

@@ -87,7 +87,6 @@ export default function DashboardPage() {
         />
         <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3" style={{ minHeight: '450px' }}>
           
-          {/* Top Left */}
           <Link href={whatsNewItems[0].link} className="relative rounded-lg overflow-hidden group block">
             <Image
               src={whatsNewItems[0].imageUrl}
@@ -103,7 +102,6 @@ export default function DashboardPage() {
             </div>
           </Link>
           
-          {/* Right Column - Spans two rows */}
           <Link href={whatsNewItems[1].link} className="relative md:row-span-2 rounded-lg overflow-hidden group block">
             <Image
               src={whatsNewItems[1].imageUrl}
@@ -119,7 +117,6 @@ export default function DashboardPage() {
             </div>
           </Link>
 
-          {/* Bottom Left */}
           <Link href={whatsNewItems[2].link} className="relative rounded-lg overflow-hidden group block">
             <Image
               src={whatsNewItems[2].imageUrl}
