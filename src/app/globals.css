@@ -38,12 +38,12 @@ body {
     /* Sidebar specific */
     --sidebar-background: 0 0% 100%; /* White */
     --sidebar-foreground: 0 0% 45%; /* Medium Gray for icons/text */
-    --sidebar-primary: 30 39% 46%; /* Active item background - Gold */
+    --sidebar-primary: 38 59% 68%; /* #DFB87F */
     --sidebar-primary-foreground: 0 0% 10%; /* Dark text on active gold */
     --sidebar-accent: 0 0% 94%; /* Hover item background - light gray */
     --sidebar-accent-foreground: 0 0% 13%; /* Hover item text - dark gray */
     --sidebar-border: 0 0% 89%; /* Light gray border */
-    --sidebar-ring: 30 39% 46%; /* Gold ring */
+    --sidebar-ring: 38 59% 68%; /* #DFB87F */
 
     --header-height: 3.25rem; /* 52px, was 4rem */
     --header-background: 30 2% 16%; /* #2B2A27 */
@@ -75,12 +75,12 @@ body {
     /* Sidebar specific for dark */
     --sidebar-background: 0 0% 12%; /* Even Darker Gray */
     --sidebar-foreground: 0 0% 85%; 
-    --sidebar-primary: 30 39% 46%; 
+    --sidebar-primary: 38 59% 68%; /* #DFB87F */
     --sidebar-primary-foreground: 0 0% 10%;
     --sidebar-accent: 0 0% 22%;
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-border: 0 0% 10%;
-    --sidebar-ring: 30 39% 46%;
+    --sidebar-ring: 38 59% 68%; /* #DFB87F */
     
     --header-background: 30 2% 16%; /* #2B2A27 */
     --header-foreground: 0 0% 100%;
