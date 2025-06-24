@@ -170,47 +170,53 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-1 shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Contatos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {contacts.map((contact) => (
-              <div key={contact.name} className="flex items-center gap-2 p-2.5 hover:bg-muted/40 rounded-lg transition-colors">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={contact.avatarUrl} alt={contact.name} data-ai-hint={contact.dataAiHint} />
-                  <AvatarFallback>{contact.name.substring(0, 1)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold font-body text-sm text-foreground">{contact.name}</p>
-                  <p className="text-xs text-muted-foreground font-body flex items-center">
-                    <Phone className="h-3 w-3 mr-1.5"/>
-                    {contact.phone}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="lg:col-span-3 shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Equipes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-4">
-              {teams.map((team) => (
-                <Link key={team.name} href="#" className="group flex items-center gap-3 hover:text-primary transition-colors">
-                  <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg p-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                      <team.icon className="h-5 w-5" />
+        <div className="lg:col-span-1 flex flex-col gap-3">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="font-headline text-primary text-xl">Contatos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {contacts.map((contact) => (
+                  <div key={contact.name} className="flex items-center gap-2 p-2.5 hover:bg-muted/40 rounded-lg transition-colors">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={contact.avatarUrl} alt={contact.name} data-ai-hint={contact.dataAiHint} />
+                      <AvatarFallback>{contact.name.substring(0, 1)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold font-body text-sm text-foreground">{contact.name}</p>
+                      <p className="text-xs text-muted-foreground font-body flex items-center">
+                        <Phone className="h-3 w-3 mr-1.5"/>
+                        {contact.phone}
+                      </p>
+                    </div>
                   </div>
-                  <p className="font-semibold font-body text-sm text-foreground group-hover:text-primary transition-colors">{team.name}</p>
-                </Link>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="font-headline text-primary text-xl">Equipes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-60 w-full">
+                  <div className="space-y-1 pr-4">
+                    {teams.map((team) => (
+                      <Link key={team.name} href="#" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors">
+                        <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg p-2">
+                            <team.icon className="h-5 w-5" />
+                        </div>
+                        <p className="font-semibold font-body text-sm text-foreground">{team.name}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+        </div>
       </section>
     </div>
   );
 }
+
+    
