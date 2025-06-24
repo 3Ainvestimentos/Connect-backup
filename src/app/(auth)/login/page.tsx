@@ -73,8 +73,7 @@ export default function LoginPage() {
           </div>
           
           <Button
-            variant="default"
-            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-header-foreground bg-header hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring font-body"
+            className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
             onClick={signInWithGoogle}
             disabled={loading}
           >
