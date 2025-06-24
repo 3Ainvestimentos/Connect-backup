@@ -40,7 +40,7 @@ export default function ApplicationsPage() {
         icon={LayoutGrid}
         description="Acesse rapidamente os sistemas e serviços essenciais."
       />
-      <div className="flex flex-wrap justify-center gap-4">
+      <div className="mx-auto grid max-w-max grid-cols-2 gap-4 sm:grid-cols-4">
         {applicationsList.map((app) => {
           const isPrimary = app.primary;
           return (
