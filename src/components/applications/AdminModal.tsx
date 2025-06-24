@@ -47,11 +47,14 @@ export default function AdminModal({ open, onOpenChange }: AdminModalProps) {
                 </ul>
                 <div>
                   <p className="font-bold text-sm">Link:</p>
-                  <Button variant="link" asChild className="p-0 h-auto font-normal text-base text-accent -translate-x-1">
-                    <Link href="https://bit.ly/3AQEGIh" target="_blank" rel="noopener noreferrer">
-                      https://bit.ly/3AQEGIh
-                    </Link>
-                  </Button>
+                  <Link 
+                    href="https://bit.ly/3AQEGIh" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-base text-accent hover:underline break-all"
+                  >
+                    https://bit.ly/3AQEGIh
+                  </Link>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -64,11 +67,14 @@ export default function AdminModal({ open, onOpenChange }: AdminModalProps) {
                 </ul>
                 <div>
                   <p className="font-bold text-sm">Link:</p>
-                   <Button variant="link" asChild className="p-0 h-auto font-normal text-base text-accent -translate-x-1 text-left break-all whitespace-normal">
-                    <Link href={sharepointLink} target="_blank" rel="noopener noreferrer">
-                      {sharepointLink}
-                    </Link>
-                  </Button>
+                   <Link 
+                    href={sharepointLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-base text-accent hover:underline break-all"
+                  >
+                    {sharepointLink}
+                  </Link>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -77,11 +83,14 @@ export default function AdminModal({ open, onOpenChange }: AdminModalProps) {
               <AccordionContent className="pt-2">
                 <div>
                   <p className="font-bold text-sm">Link:</p>
-                  <Button variant="link" asChild className="p-0 h-auto font-normal text-base text-accent -translate-x-1">
-                    <Link href="https://forms.office.com/r/jB8iCrsHy7" target="_blank" rel="noopener noreferrer">
-                      https://forms.office.com/r/jB8iCrsHy7
-                    </Link>
-                  </Button>
+                  <Link 
+                    href="https://forms.office.com/r/jB8iCrsHy7" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-base text-accent hover:underline break-all"
+                  >
+                    https://forms.office.com/r/jB8iCrsHy7
+                  </Link>
                 </div>
               </AccordionContent>
             </AccordionItem>
