@@ -131,13 +131,13 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <Card className="shadow-sm">
+      <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        <Card className="shadow-sm lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-6">
-            <div className="flex justify-center items-center">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex justify-center items-start">
               <Calendar
                 mode="single"
                 selected={date}
@@ -148,7 +148,7 @@ export default function DashboardPage() {
               />
             </div>
             <div className="relative">
-              <ScrollArea className="h-72 w-full">
+              <ScrollArea className="h-80 w-full">
                 <div className="space-y-3 pr-4">
                   {events.map((event, index) => (
                     <div key={index} className="flex items-center gap-3 p-3 bg-muted/40 rounded-lg hover:bg-muted/80 transition-colors">
