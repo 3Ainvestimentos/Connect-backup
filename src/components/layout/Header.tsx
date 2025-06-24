@@ -20,7 +20,7 @@ export function Header({ userNav }: HeaderProps) {
       <div className="flex items-center">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image 
-            src="https://i.ibb.co/7jZ6bJd/logo-oficial-branca.png"
+            src="https://i.ibb.co/rftRcFdL/logo-oficial-branca.png"
             alt="Logo 3A RIVA Hub" 
             width={135} 
             height={30} 
