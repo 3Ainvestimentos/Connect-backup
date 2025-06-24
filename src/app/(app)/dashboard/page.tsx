@@ -137,12 +137,12 @@ export default function DashboardPage() {
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex justify-center items-start">
+            <div className="flex items-start">
               <Calendar
                 mode="single"
                 selected={date}
                 onSelect={setDate}
-                className="rounded-md p-0 [&_button]:text-xs [&_caption_label]:text-sm"
+                className="rounded-md p-0"
                 month={date}
                 onMonthChange={setDate}
               />
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             <CardTitle className="font-headline text-primary text-xl">Equipes</CardTitle>
           </CardHeader>
           <CardContent>
-            <ScrollArea className="h-60 w-full">
+            <ScrollArea className="h-80 w-full">
               <div className="space-y-1 pr-4">
                 {teams.map((team) => (
                   <Link key={team.name} href="#" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors">
