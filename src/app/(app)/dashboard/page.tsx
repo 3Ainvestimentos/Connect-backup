@@ -78,7 +78,7 @@ export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-6 px-12 md:p-8 md:px-16">
       <section>
         <PageHeader
           title="O que há de novo"

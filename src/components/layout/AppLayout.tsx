@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect } from 'react';
@@ -136,10 +137,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
         </Sidebar>
         
-        <SidebarInset className={cn(
-            "flex-1 bg-background overflow-y-auto",
-            pathname === '/dashboard' ? "py-6 px-12 md:py-8 md:px-16" : "p-6 md:p-8"
-          )}> 
+        <SidebarInset className="flex-1 bg-background overflow-y-auto"> 
           {children}
         </SidebarInset>
       </div>

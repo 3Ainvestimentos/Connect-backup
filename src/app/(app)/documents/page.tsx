@@ -29,7 +29,7 @@ export interface DocumentType {
 
 export default function DocumentsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 md:p-8">
       <PageHeader 
         title="Repositório de Documentos" 
         icon={FolderOpen}

@@ -31,7 +31,7 @@ const mockContacts: Contact[] = [
 
 export default function ContactsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 md:p-8">
       <PageHeader 
         title="Contatos" 
         icon={BookUser}

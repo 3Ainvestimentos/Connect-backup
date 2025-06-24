@@ -5,7 +5,7 @@ import { Bot, MessageCircle, Sparkles } from 'lucide-react';
 
 export default function ChatbotPage() {
   return (
-    <div className="h-[calc(100vh-var(--header-height)-2rem)] flex flex-col"> {/* Adjust var if header height differs */}
+    <div className="h-full flex flex-col p-6 md:p-8"> {/* Adjust var if header height differs */}
       <PageHeader 
         title="Chatbot Bob" 
         icon={Bot}

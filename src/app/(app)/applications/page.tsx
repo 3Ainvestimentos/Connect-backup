@@ -45,7 +45,7 @@ export default function ApplicationsPage() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
 
   return (
-    <>
+    <div className="p-6 md:p-8">
       <div className="space-y-6">
         <PageHeader
           title="Aplicações"
@@ -154,6 +154,6 @@ export default function ApplicationsPage() {
         open={isAdminModalOpen} 
         onOpenChange={setIsAdminModalOpen} 
       />
-    </>
+    </div>
   );
 }
