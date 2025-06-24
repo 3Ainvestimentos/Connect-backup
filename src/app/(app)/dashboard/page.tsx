@@ -136,7 +136,7 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 md:h-80">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center justify-center">
               <Calendar
                 mode="single"
@@ -147,9 +147,9 @@ export default function DashboardPage() {
                 onMonthChange={setDate}
               />
             </div>
-            <div className="relative">
-              <ScrollArea className="h-full w-full">
-                <div className="space-y-4 pr-4">
+            <div className="relative min-h-0">
+              <ScrollArea className="absolute inset-0 pr-4">
+                <div className="space-y-4">
                   {events.map((event, index) => (
                     <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
                       <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
