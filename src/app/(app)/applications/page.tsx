@@ -48,7 +48,7 @@ export default function ApplicationsPage() {
               key={app.name}
               variant={isPrimary ? 'default' : 'outline'}
               className={cn(
-                "flex flex-col items-center justify-center h-32 p-4 text-center font-body group bg-card",
+                "flex flex-col items-center justify-center aspect-square p-4 text-center font-body group bg-card",
                 !isPrimary && "hover:bg-primary/5 hover:text-primary"
               )}
               asChild
