@@ -1,3 +1,4 @@
+
 "use client"; 
 
 import React, { useState } from 'react';
@@ -135,8 +136,8 @@ export default function DashboardPage() {
           <CardHeader>
             <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-start justify-center">
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 md:h-80">
+            <div className="flex items-center justify-center">
               <Calendar
                 mode="single"
                 selected={date}
@@ -147,7 +148,7 @@ export default function DashboardPage() {
               />
             </div>
             <div className="relative">
-              <ScrollArea className="h-80 w-full">
+              <ScrollArea className="h-full w-full">
                 <div className="space-y-4 pr-4">
                   {events.map((event, index) => (
                     <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
