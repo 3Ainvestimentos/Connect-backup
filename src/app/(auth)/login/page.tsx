@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -75,7 +74,7 @@ export default function LoginPage() {
           
           <Button
             variant="default"
-            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring font-body"
+            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-header-foreground bg-header hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring font-body"
             onClick={signInWithGoogle}
             disabled={loading}
           >
