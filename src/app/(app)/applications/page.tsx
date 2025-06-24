@@ -10,8 +10,7 @@ import {
   Plane, 
   Calendar, 
   Headset, 
-  Briefcase,
-  Plus
+  Briefcase
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,7 +30,6 @@ const applicationsList: AppLink[] = [
   { name: 'Eventos', icon: Calendar, href: '#' },
   { name: 'Suporte TI', icon: Headset, href: '#' },
   { name: 'Administrativo', icon: Briefcase, href: '#' },
-  { name: 'Adicionar App', icon: Plus, href: '#', primary: true },
 ];
 
 export default function ApplicationsPage() {
@@ -42,7 +40,7 @@ export default function ApplicationsPage() {
         icon={LayoutGrid}
         description="Acesse rapidamente os sistemas e serviços essenciais."
       />
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {applicationsList.map((app) => {
           const isPrimary = app.primary;
           return (
