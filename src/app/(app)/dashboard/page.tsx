@@ -1,3 +1,4 @@
+
 "use client"; 
 
 import React from 'react';
@@ -57,17 +58,18 @@ const events: { title: string; time: string; icon: LucideIcon }[] = [
 ];
 
 const initialMessages = [
-  { id: '1', title: 'Atualização da Política de Férias', content: 'Lembrete: A nova política de férias entrará em vigor a partir de 1º de Agosto. Todos os colaboradores devem revisar o documento disponível na intranet para entender as mudanças nos processos de solicitação e aprovação. O documento detalha os novos períodos aquisitivos e as regras para venda de dias de férias. Qualquer dúvida, entre em contato com o departamento de RH.', sender: 'RH', date: '2024-07-25' },
-  { id: '2', title: 'Confraternização de Fim de Mês', content: 'Não se esqueçam do nosso happy hour amanhã, às 17h30! Teremos petiscos, bebidas e música ao vivo no terraço. Contamos com a presença de todos!', sender: 'Comunicação', date: '2024-07-24' },
-  { id: '3', title: 'Manutenção Programada', content: 'O sistema de TI passará por uma manutenção no sábado, das 8h às 12h. Durante este período, o acesso aos servidores de arquivos e ao sistema de CRM poderá ficar indisponível.', sender: 'Suporte TI', date: '2024-07-22' },
-  { id: '4', title: 'Pesquisa de Clima Organizacional', content: 'Sua opinião é muito importante! Por favor, responda à pesquisa de clima até o final desta semana. O link foi enviado para o seu e-mail. A participação é anônima.', sender: 'RH', date: '2024-07-26' },
-  { id: '5', title: 'Nova Máquina de Café na Copa', content: 'Boas notícias para os amantes de café! Instalamos uma nova máquina de café expresso na copa do 2º andar. Aproveitem!', sender: 'Administrativo', date: '2024-07-26' },
-  { id: '6', title: 'Exercício de Evacuação de Emergência', content: 'Realizaremos um exercício de evacuação de emergência na próxima quarta-feira, às 15h. A participação de todos é obrigatória. Por favor, familiarize-se com as rotas de fuga mais próximas da sua estação de trabalho. Mais instruções serão dadas pelos líderes de cada andar no dia do exercício.', sender: 'Segurança', date: '2024-07-27' },
+  { id: '1', title: 'Atualização da Política de Férias', content: 'Lembrete: A nova política de férias entrará em vigor a partir de 1º de Agosto. Todos os colaboradores devem revisar o documento disponível na intranet para entender as mudanças nos processos de solicitação e aprovação. O documento detalha os novos períodos aquisitivos e as regras para venda de dias de férias. Qualquer dúvida, entre em contato com o departamento de RH.', sender: 'RH', date: '2024-07-25', isRead: false },
+  { id: '2', title: 'Confraternização de Fim de Mês', content: 'Não se esqueçam do nosso happy hour amanhã, às 17h30! Teremos petiscos, bebidas e música ao vivo no terraço. Contamos com a presença de todos!', sender: 'Comunicação', date: '2024-07-24', isRead: false },
+  { id: '3', title: 'Manutenção Programada', content: 'O sistema de TI passará por uma manutenção no sábado, das 8h às 12h. Durante este período, o acesso aos servidores de arquivos e ao sistema de CRM poderá ficar indisponível.', sender: 'Suporte TI', date: '2024-07-22', isRead: true },
+  { id: '4', title: 'Pesquisa de Clima Organizacional', content: 'Sua opinião é muito importante! Por favor, responda à pesquisa de clima até o final desta semana. O link foi enviado para o seu e-mail. A participação é anônima.', sender: 'RH', date: '2024-07-26', isRead: false },
+  { id: '5', title: 'Nova Máquina de Café na Copa', content: 'Boas notícias para os amantes de café! Instalamos uma nova máquina de café expresso na copa do 2º andar. Aproveitem!', sender: 'Administrativo', date: '2024-07-26', isRead: true },
+  { id: '6', title: 'Exercício de Evacuação de Emergência', content: 'Realizaremos um exercício de evacuação de emergência na próxima quarta-feira, às 15h. A participação de todos é obrigatória. Por favor, familiarize-se com as rotas de fuga mais próximas da sua estação de trabalho. Mais instruções serão dadas pelos líderes de cada andar no dia do exercício.', sender: 'Segurança', date: '2024-07-27', isRead: false },
+  { id: '7', title: 'Resultados do Q2', content: 'A apresentação dos resultados do segundo trimestre será na sexta-feira às 10h na sala de reuniões principal. Venha conferir o crescimento da empresa e os próximos passos.', sender: 'Diretoria', date: '2024-07-28', isRead: false },
+  { id: '8', title: 'Campanha do Agasalho', content: 'A campanha do agasalho está na reta final! As doações podem ser entregues na caixa da recepção até amanhã. Sua contribuição faz a diferença!', sender: 'Comunicação', date: '2024-07-29', isRead: true },
 ];
 
-type Message = (typeof initialMessages)[0] & { isRead: boolean };
+type Message = (typeof initialMessages)[0];
 
-// From applications/page.tsx
 interface AppLink {
   id: string;
   name: string;
@@ -88,52 +90,34 @@ const applicationsList: AppLink[] = [
 
 export default function DashboardPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const [messages, setMessages] = React.useState<Message[]>(
-    initialMessages.map(m => ({ ...m, isRead: false }))
-  );
+  const [messages, setMessages] = React.useState<Message[]>(initialMessages);
   const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null);
 
-  // State for modals from applications page
   const [isVacationModalOpen, setIsVacationModalOpen] = React.useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = React.useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
   const [isMarketingModalOpen, setIsMarketingModalOpen] = React.useState(false);
-
-  const unreadCount = React.useMemo(() => {
-    return messages.filter(msg => !msg.isRead).length;
-  }, [messages]);
+  
+  const unreadCount = React.useMemo(() => messages.filter(msg => !msg.isRead).length, [messages]);
 
   const handleViewMessage = (messageToView: Message) => {
-    if (!messageToView.isRead) {
-      setMessages(currentMessages =>
-        currentMessages.map(m =>
-          m.id === messageToView.id ? { ...m, isRead: true } : m
-        )
-      );
-    }
+    setMessages(currentMessages =>
+      currentMessages.map(m =>
+        m.id === messageToView.id ? { ...m, isRead: true } : m
+      )
+    );
     setSelectedMessage({ ...messageToView, isRead: true });
   };
   
-  // Helper to handle application clicks
   const handleAppClick = (appId: string) => {
     switch (appId) {
-      case 'vacation':
-        setIsVacationModalOpen(true);
-        break;
-      case 'support':
-        setIsSupportModalOpen(true);
-        break;
-      case 'admin':
-        setIsAdminModalOpen(true);
-        break;
-      case 'marketing':
-        setIsMarketingModalOpen(true);
-        break;
-      default:
-        break;
+      case 'vacation': setIsVacationModalOpen(true); break;
+      case 'support': setIsSupportModalOpen(true); break;
+      case 'admin': setIsAdminModalOpen(true); break;
+      case 'marketing': setIsMarketingModalOpen(true); break;
+      default: break;
     }
   };
-
 
   return (
     <>
@@ -145,7 +129,6 @@ export default function DashboardPage() {
             description="Veja os últimos anúncios e destaques."
           />
           <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3" style={{ minHeight: '450px' }}>
-            
             <Link href={whatsNewItems[0].link} className="relative rounded-lg overflow-hidden group block">
               <Image src={whatsNewItems[0].imageUrl} alt={whatsNewItems[0].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[0].dataAiHint} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
@@ -153,7 +136,6 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
               </div>
             </Link>
-            
             <Link href={whatsNewItems[1].link} className="relative md:row-span-2 rounded-lg overflow-hidden group block">
               <Image src={whatsNewItems[1].imageUrl} alt={whatsNewItems[1].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[1].dataAiHint} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
@@ -161,7 +143,6 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-200 font-body">{whatsNewItems[1].description}</p>
               </div>
             </Link>
-
             <Link href={whatsNewItems[2].link} className="relative rounded-lg overflow-hidden group block">
               <Image src={whatsNewItems[2].imageUrl} alt={whatsNewItems[2].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[2].dataAiHint} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
@@ -172,16 +153,16 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-          {/* Eventos Card */}
-          <Card className="shadow-sm flex flex-col lg:col-span-2">
+        <section className="flex flex-col lg:flex-row gap-3">
+          
+          <Card className="shadow-sm flex flex-col lg:w-1/2">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                 <CalendarDays className="h-6 w-6 text-accent"/>
                 Eventos
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 grid md:grid-cols-2 gap-6">
+            <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex items-start justify-center">
                     <Calendar
                         mode="single"
@@ -192,7 +173,7 @@ export default function DashboardPage() {
                         onMonthChange={setDate}
                     />
                 </div>
-                <div className="relative min-h-[200px] md:min-h-0">
+                <div className="relative min-h-[300px] md:min-h-0">
                     <ScrollArea className="absolute inset-0 pr-4">
                         <div className="space-y-4">
                         {events.map((event, index) => (
@@ -214,9 +195,8 @@ export default function DashboardPage() {
                 </div>
             </CardContent>
           </Card>
-
-          {/* Mensagens Card */}
-          <Card className="shadow-sm flex flex-col">
+          
+          <Card className="shadow-sm flex flex-col lg:w-1/4">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
                  <div className="flex items-center gap-2">
@@ -231,14 +211,17 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                       {messages.map((msg) => (
                           <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
-                              <div className="flex justify-between items-start gap-4">
-                                  <div className="flex items-center gap-3">
+                              <div className="flex justify-between items-start gap-2">
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
                                       <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                      <div className={cn("font-body text-sm text-foreground", { 'font-bold': !msg.isRead })}>{msg.title}</div>
+                                      <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !msg.isRead })}>{msg.title}</div>
                                   </div>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                               </div>
-                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-semibold': !msg.isRead, 'font-normal': msg.isRead })}>{msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}</p>
+                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold': !msg.isRead, 'font-normal': msg.isRead })}>
+                                {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
+                                {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
+                              </p>
                               <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                           </div>
                       ))}
@@ -246,9 +229,8 @@ export default function DashboardPage() {
               </ScrollArea>
             </CardContent>
           </Card>
-
-          {/* Aplicações Card */}
-          <Card className="shadow-sm flex flex-col">
+          
+          <Card className="shadow-sm flex flex-col lg:w-1/4">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                 <LayoutGrid className="h-6 w-6 text-accent"/>
@@ -260,22 +242,23 @@ export default function DashboardPage() {
                     <div className="space-y-3">
                         {applicationsList.map((app) => {
                             const isModal = ['vacation', 'support', 'admin', 'marketing'].includes(app.id);
-                            
-                            return (
-                              isModal ? (
+                            const Comp = isModal ? Button : 'div';
+                            const linkContent = (
+                                <>
+                                    <app.icon className="mr-4 h-6 w-6 text-accent" />
+                                    <span>{app.name}</span>
+                                </>
+                            );
+
+                            return isModal ? (
                                 <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" onClick={() => handleAppClick(app.id)}>
-                                  <app.icon className="mr-4 h-6 w-6 text-accent" />
-                                  <span>{app.name}</span>
+                                  {linkContent}
                                 </Button>
                               ) : (
                                 <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" asChild>
-                                  <Link href={app.href}>
-                                    <app.icon className="mr-4 h-6 w-6 text-accent" />
-                                    <span>{app.name}</span>
-                                  </Link>
+                                  <Link href={app.href}>{linkContent}</Link>
                                 </Button>
-                              )
-                            );
+                              );
                         })}
                     </div>
                 </ScrollArea>
@@ -285,7 +268,6 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      {/* Message Modal */}
       <Dialog open={!!selectedMessage} onOpenChange={(isOpen) => !isOpen && setSelectedMessage(null)}>
         <DialogContent className="sm:max-w-xl">
           {selectedMessage && (
@@ -305,7 +287,6 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Application Modals */}
       <VacationRequestModal open={isVacationModalOpen} onOpenChange={setIsVacationModalOpen} />
       <SupportModal open={isSupportModalOpen} onOpenChange={setIsSupportModalOpen} />
       <AdminModal open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen} />
@@ -313,3 +294,4 @@ export default function DashboardPage() {
     </>
   );
 }
+
