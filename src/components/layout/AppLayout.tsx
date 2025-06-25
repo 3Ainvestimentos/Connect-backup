@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, MessageCircle, LogOut, UserCircle, Bot, LayoutGrid } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, MessageCircle, LogOut, UserCircle, Bot, LayoutGrid, FlaskConical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -35,6 +35,7 @@ const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper },
   { href: '/documents', label: 'Documentos', icon: FolderOpen },
+  { href: '/labs', label: 'Labs', icon: FlaskConical },
   { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
   { href: '/chatbot', label: 'Chatbot Bob', icon: Bot },
 ];

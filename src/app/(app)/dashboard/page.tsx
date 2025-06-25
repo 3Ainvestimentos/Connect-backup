@@ -78,10 +78,10 @@ export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-4 p-6 px-12 md:p-8 md:px-16">
+    <div className="space-y-6 p-6 md:p-8 md:px-16">
       <section>
         <PageHeader
-          title="O que há de novo"
+          title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
           icon={Megaphone}
           description="Veja os últimos anúncios e destaques."
         />
