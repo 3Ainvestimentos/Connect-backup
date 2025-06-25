@@ -67,7 +67,6 @@ export default function DashboardPage() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
 
   const handleViewMessage = (messageToView: Message) => {
-    // Mark the message as read in the list
     if (!messageToView.isRead) {
       setMessages(currentMessages =>
         currentMessages.map(m =>
@@ -75,7 +74,6 @@ export default function DashboardPage() {
         )
       );
     }
-    // Set the selected message to open the modal (with the updated read status)
     setSelectedMessage({ ...messageToView, isRead: true });
   };
 
@@ -205,8 +203,10 @@ export default function DashboardPage() {
                                       {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                                   </span>
                               </div>
-                              <p className="text-sm text-muted-foreground font-body pl-8">{msg.content}</p>
-                              <div className="flex justify-end">
+                              <p className="text-sm text-muted-foreground font-body pl-8">
+                                {msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}
+                              </p>
+                              <div className="flex justify-end mt-auto">
                                   <Badge variant="outline" className="font-body">{msg.sender}</Badge>
                               </div>
                           </div>
