@@ -1,3 +1,4 @@
+
 "use client"; 
 
 import React, { useState } from 'react';
@@ -6,12 +7,10 @@ import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 import { 
   Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
-  Megaphone, MessageSquare, Send, Loader2, CalendarDays
+  Megaphone, MessageSquare, CalendarDays
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -48,32 +47,14 @@ const events: { title: string; time: string; icon: LucideIcon }[] = [
     { title: "Apresentação de Resultados Q2", time: "09:00 - 10:00", icon: TrendingUp },
 ];
 
+const officialMessages = [
+  { id: '1', title: 'Atualização da Política de Férias', content: 'Lembrete: A nova política de férias entrará em vigor a partir de 1º de Agosto.', sender: 'RH', date: '2024-07-25' },
+  { id: '2', title: 'Confraternização de Fim de Mês', content: 'Não se esqueçam do nosso happy hour amanhã, às 17h30!', sender: 'Comunicação', date: '2024-07-24' },
+  { id: '3', title: 'Manutenção Programada', content: 'O sistema de TI passará por uma manutenção no sábado, das 8h às 12h.', sender: 'Suporte TI', date: '2024-07-22' },
+];
+
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [message, setMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const { toast } = useToast();
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!message.trim()) {
-      toast({
-        title: "Erro",
-        description: "A mensagem não pode estar vazia.",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsSending(true);
-    // Simulate sending message
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsSending(false);
-    setMessage('');
-    toast({
-      title: "Mensagem Enviada!",
-      description: "Seu comunicado foi enviado para todos os colaboradores.",
-    });
-  };
 
   return (
     <div className="space-y-6 p-6 md:p-8">
@@ -175,31 +156,32 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="shadow-sm lg:col-span-2">
-            <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                    <MessageSquare className="h-6 w-6" />
-                    Mensagens
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSendMessage} className="space-y-4">
-                    <Textarea
-                        placeholder="Escreva seu comunicado oficial aqui..."
-                        className="resize-none font-body"
-                        rows={5}
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                    />
-                    <Button type="submit" className="w-full font-body" disabled={isSending}>
-                        {isSending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Send className="mr-2 h-4 w-4" />
-                        )}
-                        Enviar Comunicado
-                    </Button>
-                </form>
-            </CardContent>
+          <CardHeader>
+            <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+              <MessageSquare className="h-6 w-6" />
+              Mensagens e Comunicados
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[260px] pr-4">
+                <div className="space-y-4">
+                    {officialMessages.map((msg) => (
+                        <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2">
+                            <div className="flex justify-between items-start">
+                                <h4 className="font-semibold font-body text-sm text-foreground">{msg.title}</h4>
+                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                                </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground font-body">{msg.content}</p>
+                            <div className="flex justify-end">
+                                <Badge variant="outline" className="font-body">{msg.sender}</Badge>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </ScrollArea>
+          </CardContent>
         </Card>
       </section>
     </div>
