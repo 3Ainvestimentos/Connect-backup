@@ -1,4 +1,3 @@
-
 "use client"; 
 
 import React from 'react';
@@ -182,8 +181,8 @@ export default function DashboardPage() {
                 Eventos
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 flex flex-col md:flex-row gap-6">
-                <div className="flex-none md:w-1/2 flex items-center justify-center">
+            <CardContent className="flex-1 min-h-0 grid md:grid-cols-2 gap-6">
+                <div className="flex items-start justify-center">
                     <Calendar
                         mode="single"
                         selected={date}
@@ -193,7 +192,7 @@ export default function DashboardPage() {
                         onMonthChange={setDate}
                     />
                 </div>
-                <div className="flex-1 md:w-1/2 relative min-h-[200px] md:min-h-0">
+                <div className="relative min-h-[200px] md:min-h-0">
                     <ScrollArea className="absolute inset-0 pr-4">
                         <div className="space-y-4">
                         {events.map((event, index) => (
