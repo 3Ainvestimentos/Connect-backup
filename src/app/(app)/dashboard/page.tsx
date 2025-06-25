@@ -55,6 +55,9 @@ const initialMessages = [
   { id: '1', title: 'Atualização da Política de Férias', content: 'Lembrete: A nova política de férias entrará em vigor a partir de 1º de Agosto. Todos os colaboradores devem revisar o documento disponível na intranet para entender as mudanças nos processos de solicitação e aprovação. O documento detalha os novos períodos aquisitivos e as regras para venda de dias de férias. Qualquer dúvida, entre em contato com o departamento de RH.', sender: 'RH', date: '2024-07-25' },
   { id: '2', title: 'Confraternização de Fim de Mês', content: 'Não se esqueçam do nosso happy hour amanhã, às 17h30! Teremos petiscos, bebidas e música ao vivo no terraço. Contamos com a presença de todos!', sender: 'Comunicação', date: '2024-07-24' },
   { id: '3', title: 'Manutenção Programada', content: 'O sistema de TI passará por uma manutenção no sábado, das 8h às 12h. Durante este período, o acesso aos servidores de arquivos e ao sistema de CRM poderá ficar indisponível.', sender: 'Suporte TI', date: '2024-07-22' },
+  { id: '4', title: 'Pesquisa de Clima Organizacional', content: 'Sua opinião é muito importante! Por favor, responda à pesquisa de clima até o final desta semana. O link foi enviado para o seu e-mail. A participação é anônima.', sender: 'RH', date: '2024-07-26' },
+  { id: '5', title: 'Nova Máquina de Café na Copa', content: 'Boas notícias para os amantes de café! Instalamos uma nova máquina de café expresso na copa do 2º andar. Aproveitem!', sender: 'Administrativo', date: '2024-07-26' },
+  { id: '6', title: 'Exercício de Evacuação de Emergência', content: 'Realizaremos um exercício de evacuação de emergência na próxima quarta-feira, às 15h. A participação de todos é obrigatória. Por favor, familiarize-se com as rotas de fuga mais próximas da sua estação de trabalho. Mais instruções serão dadas pelos líderes de cada andar no dia do exercício.', sender: 'Segurança', date: '2024-07-27' },
 ];
 
 type Message = (typeof initialMessages)[0] & { isRead: boolean };
@@ -197,13 +200,15 @@ export default function DashboardPage() {
                               <div className="flex justify-between items-start gap-4">
                                   <div className="flex items-center gap-3">
                                       <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                      <h4 className="font-semibold font-body text-sm text-foreground">{msg.title}</h4>
+                                      <div className={cn("font-body text-sm text-foreground", { 'font-semibold': !msg.isRead })}>
+                                        {msg.title}
+                                      </div>
                                   </div>
                                   <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">
                                       {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                                   </span>
                               </div>
-                              <p className="text-sm text-muted-foreground font-body pl-8">
+                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-semibold': !msg.isRead })}>
                                 {msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}
                               </p>
                               <div className="flex justify-end mt-auto">
@@ -245,3 +250,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
