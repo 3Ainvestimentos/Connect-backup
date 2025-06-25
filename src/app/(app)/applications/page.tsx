@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import VacationRequestModal from '@/components/applications/VacationRequestModal';
 import SupportModal from '@/components/applications/SupportModal';
 import AdminModal from '@/components/applications/AdminModal';
+import MarketingModal from '@/components/applications/MarketingModal';
 import Link from 'next/link';
 import { 
   LayoutGrid, 
@@ -16,7 +17,8 @@ import {
   Plane, 
   Calendar, 
   Headset, 
-  Briefcase
+  Briefcase,
+  Megaphone
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,12 +39,14 @@ const applicationsList: AppLink[] = [
   { id: 'events', name: 'Eventos', icon: Calendar, href: '#' },
   { id: 'support', name: 'Suporte TI', icon: Headset, href: '#' },
   { id: 'admin', name: 'Administrativo', icon: Briefcase, href: '#' },
+  { id: 'marketing', name: 'Marketing', icon: Megaphone, href: '#' },
 ];
 
 export default function ApplicationsPage() {
   const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isMarketingModalOpen, setIsMarketingModalOpen] = useState(false);
 
   return (
     <div className="p-6 md:p-8">
@@ -119,6 +123,27 @@ export default function ApplicationsPage() {
               );
             }
 
+            if (app.id === 'marketing') {
+              return (
+                <Button
+                  key={app.name}
+                  variant={isPrimary ? 'default' : 'outline'}
+                  className={cn(
+                    "flex flex-col items-center justify-center w-48 h-48 p-2 text-center font-body group bg-card",
+                    !isPrimary && "hover:bg-primary/5 hover:text-primary",
+                    "[&_svg]:w-16 [&_svg]:h-16"
+                  )}
+                  onClick={() => setIsMarketingModalOpen(true)}
+                >
+                  <app.icon className={cn(
+                    "mb-2 transition-colors",
+                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                  )} />
+                  <span className="text-lg font-bold">{app.name}</span>
+                </Button>
+              );
+            }
+
             return (
               <Button
                 key={app.name}
@@ -153,6 +178,10 @@ export default function ApplicationsPage() {
       <AdminModal 
         open={isAdminModalOpen} 
         onOpenChange={setIsAdminModalOpen} 
+      />
+      <MarketingModal 
+        open={isMarketingModalOpen} 
+        onOpenChange={setIsMarketingModalOpen} 
       />
     </div>
   );
