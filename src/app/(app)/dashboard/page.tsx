@@ -10,10 +10,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
-  Megaphone, MessageSquare, CalendarDays
+  Megaphone, MessageSquare, CalendarDays, Check
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 const whatsNewItems = [
   {
@@ -47,143 +51,197 @@ const events: { title: string; time: string; icon: LucideIcon }[] = [
     { title: "Apresentação de Resultados Q2", time: "09:00 - 10:00", icon: TrendingUp },
 ];
 
-const officialMessages = [
-  { id: '1', title: 'Atualização da Política de Férias', content: 'Lembrete: A nova política de férias entrará em vigor a partir de 1º de Agosto.', sender: 'RH', date: '2024-07-25' },
-  { id: '2', title: 'Confraternização de Fim de Mês', content: 'Não se esqueçam do nosso happy hour amanhã, às 17h30!', sender: 'Comunicação', date: '2024-07-24' },
-  { id: '3', title: 'Manutenção Programada', content: 'O sistema de TI passará por uma manutenção no sábado, das 8h às 12h.', sender: 'Suporte TI', date: '2024-07-22' },
+const initialMessages = [
+  { id: '1', title: 'Atualização da Política de Férias', content: 'Lembrete: A nova política de férias entrará em vigor a partir de 1º de Agosto. Todos os colaboradores devem revisar o documento disponível na intranet para entender as mudanças nos processos de solicitação e aprovação. O documento detalha os novos períodos aquisitivos e as regras para venda de dias de férias. Qualquer dúvida, entre em contato com o departamento de RH.', sender: 'RH', date: '2024-07-25' },
+  { id: '2', title: 'Confraternização de Fim de Mês', content: 'Não se esqueçam do nosso happy hour amanhã, às 17h30! Teremos petiscos, bebidas e música ao vivo no terraço. Contamos com a presença de todos!', sender: 'Comunicação', date: '2024-07-24' },
+  { id: '3', title: 'Manutenção Programada', content: 'O sistema de TI passará por uma manutenção no sábado, das 8h às 12h. Durante este período, o acesso aos servidores de arquivos e ao sistema de CRM poderá ficar indisponível.', sender: 'Suporte TI', date: '2024-07-22' },
 ];
+
+type Message = (typeof initialMessages)[0] & { isRead: boolean };
 
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [messages, setMessages] = useState<Message[]>(
+    initialMessages.map(m => ({ ...m, isRead: false }))
+  );
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+
+  const handleViewMessage = (messageToView: Message) => {
+    // Mark the message as read in the list
+    if (!messageToView.isRead) {
+      setMessages(currentMessages =>
+        currentMessages.map(m =>
+          m.id === messageToView.id ? { ...m, isRead: true } : m
+        )
+      );
+    }
+    // Set the selected message to open the modal (with the updated read status)
+    setSelectedMessage({ ...messageToView, isRead: true });
+  };
+
 
   return (
-    <div className="space-y-6 p-6 md:p-8">
-      <section>
-        <PageHeader
-          title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
-          icon={Megaphone}
-          description="Veja os últimos anúncios e destaques."
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3" style={{ minHeight: '450px' }}>
-          
-          <Link href={whatsNewItems[0].link} className="relative rounded-lg overflow-hidden group block">
-            <Image
-              src={whatsNewItems[0].imageUrl}
-              alt={whatsNewItems[0].title}
-              layout="fill"
-              objectFit="cover"
-              className="transition-transform duration-300 group-hover:scale-105"
-              data-ai-hint={whatsNewItems[0].dataAiHint}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-              <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[0].title}</h3>
-              <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
-            </div>
-          </Link>
-          
-          <Link href={whatsNewItems[1].link} className="relative md:row-span-2 rounded-lg overflow-hidden group block">
-            <Image
-              src={whatsNewItems[1].imageUrl}
-              alt={whatsNewItems[1].title}
-              layout="fill"
-              objectFit="cover"
-              className="transition-transform duration-300 group-hover:scale-105"
-              data-ai-hint={whatsNewItems[1].dataAiHint}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-              <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[1].title}</h3>
-              <p className="text-sm text-gray-200 font-body">{whatsNewItems[1].description}</p>
-            </div>
-          </Link>
-
-          <Link href={whatsNewItems[2].link} className="relative rounded-lg overflow-hidden group block">
-            <Image
-              src={whatsNewItems[2].imageUrl}
-              alt={whatsNewItems[2].title}
-              layout="fill"
-              objectFit="cover"
-              className="transition-transform duration-300 group-hover:scale-105"
-              data-ai-hint={whatsNewItems[2].dataAiHint}
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-              <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[2].title}</h3>
-              <p className="text-sm text-gray-200 font-body">{whatsNewItems[2].description}</p>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-        <Card className="shadow-sm lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-              <CalendarDays className="h-6 w-6"/>
-              Eventos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="flex items-center justify-center">
-              <Calendar
-                mode="single"
-                selected={date}
-                onSelect={setDate}
-                className="rounded-md p-0"
-                month={date}
-                onMonthChange={setDate}
+    <>
+      <div className="space-y-6 p-6 md:p-8">
+        <section>
+          <PageHeader
+            title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
+            icon={Megaphone}
+            description="Veja os últimos anúncios e destaques."
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3" style={{ minHeight: '450px' }}>
+            
+            <Link href={whatsNewItems[0].link} className="relative rounded-lg overflow-hidden group block">
+              <Image
+                src={whatsNewItems[0].imageUrl}
+                alt={whatsNewItems[0].title}
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300 group-hover:scale-105"
+                data-ai-hint={whatsNewItems[0].dataAiHint}
               />
-            </div>
-            <div className="relative min-h-0">
-              <ScrollArea className="absolute inset-0 pr-4">
-                <div className="space-y-4">
-                  {events.map((event, index) => (
-                    <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
-                      <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
-                        <event.icon className="h-5 w-5" />
-                      </div>
-                      <div className="flex-grow">
-                        <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
-                        <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
-                          <Clock className="h-3 w-3 mr-1.5" />
-                          {event.time}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[0].title}</h3>
+                <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
+              </div>
+            </Link>
+            
+            <Link href={whatsNewItems[1].link} className="relative md:row-span-2 rounded-lg overflow-hidden group block">
+              <Image
+                src={whatsNewItems[1].imageUrl}
+                alt={whatsNewItems[1].title}
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300 group-hover:scale-105"
+                data-ai-hint={whatsNewItems[1].dataAiHint}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[1].title}</h3>
+                <p className="text-sm text-gray-200 font-body">{whatsNewItems[1].description}</p>
+              </div>
+            </Link>
 
-        <Card className="shadow-sm lg:col-span-2 flex flex-col">
-          <CardHeader>
-            <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-              <MessageSquare className="h-6 w-6" />
-              Mensagens
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 min-h-0">
-            <ScrollArea className="h-full pr-4">
-                <div className="space-y-4">
-                    {officialMessages.map((msg) => (
-                        <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2">
-                            <div className="flex justify-between items-start">
-                                <h4 className="font-semibold font-body text-sm text-foreground">{msg.title}</h4>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                    {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                                </span>
-                            </div>
-                            <p className="text-sm text-muted-foreground font-body">{msg.content}</p>
-                            <div className="flex justify-end">
-                                <Badge variant="outline" className="font-body">{msg.sender}</Badge>
-                            </div>
+            <Link href={whatsNewItems[2].link} className="relative rounded-lg overflow-hidden group block">
+              <Image
+                src={whatsNewItems[2].imageUrl}
+                alt={whatsNewItems[2].title}
+                layout="fill"
+                objectFit="cover"
+                className="transition-transform duration-300 group-hover:scale-105"
+                data-ai-hint={whatsNewItems[2].dataAiHint}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[2].title}</h3>
+                <p className="text-sm text-gray-200 font-body">{whatsNewItems[2].description}</p>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+          <Card className="shadow-sm lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+                <CalendarDays className="h-6 w-6"/>
+                Eventos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex items-center justify-center">
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={setDate}
+                  className="rounded-md p-0"
+                  month={date}
+                  onMonthChange={setDate}
+                />
+              </div>
+              <div className="relative min-h-0">
+                <ScrollArea className="absolute inset-0 pr-4">
+                  <div className="space-y-4">
+                    {events.map((event, index) => (
+                      <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
+                        <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
+                          <event.icon className="h-5 w-5" />
                         </div>
+                        <div className="flex-grow">
+                          <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
+                          <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
+                            <Clock className="h-3 w-3 mr-1.5" />
+                            {event.time}
+                          </p>
+                        </div>
+                      </div>
                     ))}
-                </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
-      </section>
-    </div>
+                  </div>
+                </ScrollArea>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm lg:col-span-2 flex flex-col">
+            <CardHeader>
+              <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+                <MessageSquare className="h-6 w-6" />
+                Mensagens
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-0">
+              <ScrollArea className="h-full pr-4">
+                  <div className="space-y-4">
+                      {messages.map((msg) => (
+                          <div 
+                            key={msg.id} 
+                            className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => handleViewMessage(msg)}
+                          >
+                              <div className="flex justify-between items-start">
+                                  <div className="flex items-center gap-3">
+                                      <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
+                                      <h4 className="font-semibold font-body text-sm text-foreground">{msg.title}</h4>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">
+                                      {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                                  </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground font-body pl-8 truncate">{msg.content}</p>
+                              <div className="flex justify-end">
+                                  <Badge variant="outline" className="font-body">{msg.sender}</Badge>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </section>
+      </div>
+
+      <Dialog open={!!selectedMessage} onOpenChange={(isOpen) => !isOpen && setSelectedMessage(null)}>
+        <DialogContent className="sm:max-w-xl">
+          {selectedMessage && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="font-headline text-2xl">{selectedMessage.title}</DialogTitle>
+                <DialogDescription className="text-left pt-2">
+                  De: {selectedMessage.sender}
+                  <br />
+                  Data: {new Date(selectedMessage.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 text-sm text-foreground max-h-[60vh] overflow-y-auto">
+                {selectedMessage.content.split('\n').map((line, index) => (
+                  <p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSelectedMessage(null)}>Fechar</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
