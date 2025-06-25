@@ -10,7 +10,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
-  Megaphone, MessageSquare, CalendarDays, Check
+  Megaphone, MessageSquare, CalendarDays, Check, LayoutGrid,
+  UserCircle, MessagesSquare as SlackIcon, BookUser, Plane, Headset, Briefcase,
+  Megaphone as MarketingIcon
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -18,6 +20,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import VacationRequestModal from '@/components/applications/VacationRequestModal';
+import SupportModal from '@/components/applications/SupportModal';
+import AdminModal from '@/components/applications/AdminModal';
+import MarketingModal from '@/components/applications/MarketingModal';
 
 const whatsNewItems = [
   {
@@ -62,12 +68,37 @@ const initialMessages = [
 
 type Message = (typeof initialMessages)[0] & { isRead: boolean };
 
+// From applications/page.tsx
+interface AppLink {
+  id: string;
+  name: string;
+  icon: LucideIcon;
+  href: string;
+}
+
+const applicationsList: AppLink[] = [
+  { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#' },
+  { id: 'slack', name: 'Slack', icon: SlackIcon, href: '#' },
+  { id: 'contacts', name: 'Contatos', icon: BookUser, href: '/contacts' },
+  { id: 'vacation', name: 'Férias', icon: Plane, href: '#' },
+  { id: 'events', name: 'Eventos', icon: CalendarDays, href: '#' },
+  { id: 'support', name: 'Suporte TI', icon: Headset, href: '#' },
+  { id: 'admin', name: 'Administrativo', icon: Briefcase, href: '#' },
+  { id: 'marketing', name: 'Marketing', icon: MarketingIcon, href: '#' },
+];
+
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [messages, setMessages] = useState<Message[]>(
     initialMessages.map(m => ({ ...m, isRead: false }))
   );
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+
+  // State for modals from applications page
+  const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isMarketingModalOpen, setIsMarketingModalOpen] = useState(false);
 
   const unreadCount = useMemo(() => {
     return messages.filter(msg => !msg.isRead).length;
@@ -83,6 +114,26 @@ export default function DashboardPage() {
     }
     setSelectedMessage({ ...messageToView, isRead: true });
   };
+  
+  // Helper to handle application clicks
+  const handleAppClick = (appId: string) => {
+    switch (appId) {
+      case 'vacation':
+        setIsVacationModalOpen(true);
+        break;
+      case 'support':
+        setIsSupportModalOpen(true);
+        break;
+      case 'admin':
+        setIsAdminModalOpen(true);
+        break;
+      case 'marketing':
+        setIsMarketingModalOpen(true);
+        break;
+      default:
+        break;
+    }
+  };
 
 
   return (
@@ -97,14 +148,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3" style={{ minHeight: '450px' }}>
             
             <Link href={whatsNewItems[0].link} className="relative rounded-lg overflow-hidden group block">
-              <Image
-                src={whatsNewItems[0].imageUrl}
-                alt={whatsNewItems[0].title}
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-300 group-hover:scale-105"
-                data-ai-hint={whatsNewItems[0].dataAiHint}
-              />
+              <Image src={whatsNewItems[0].imageUrl} alt={whatsNewItems[0].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[0].dataAiHint} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
                 <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[0].title}</h3>
                 <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
@@ -112,14 +156,7 @@ export default function DashboardPage() {
             </Link>
             
             <Link href={whatsNewItems[1].link} className="relative md:row-span-2 rounded-lg overflow-hidden group block">
-              <Image
-                src={whatsNewItems[1].imageUrl}
-                alt={whatsNewItems[1].title}
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-300 group-hover:scale-105"
-                data-ai-hint={whatsNewItems[1].dataAiHint}
-              />
+              <Image src={whatsNewItems[1].imageUrl} alt={whatsNewItems[1].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[1].dataAiHint} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
                 <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[1].title}</h3>
                 <p className="text-sm text-gray-200 font-body">{whatsNewItems[1].description}</p>
@@ -127,14 +164,7 @@ export default function DashboardPage() {
             </Link>
 
             <Link href={whatsNewItems[2].link} className="relative rounded-lg overflow-hidden group block">
-              <Image
-                src={whatsNewItems[2].imageUrl}
-                alt={whatsNewItems[2].title}
-                layout="fill"
-                objectFit="cover"
-                className="transition-transform duration-300 group-hover:scale-105"
-                data-ai-hint={whatsNewItems[2].dataAiHint}
-              />
+              <Image src={whatsNewItems[2].imageUrl} alt={whatsNewItems[2].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[2].dataAiHint} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
                 <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[2].title}</h3>
                 <p className="text-sm text-gray-200 font-body">{whatsNewItems[2].description}</p>
@@ -143,111 +173,123 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-          <Card className="shadow-sm lg:col-span-2">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {/* Eventos Card */}
+          <Card className="shadow-sm flex flex-col">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                 <CalendarDays className="h-6 w-6 text-accent"/>
                 Eventos
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center justify-center">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md p-0"
-                  month={date}
-                  onMonthChange={setDate}
-                />
-              </div>
-              <div className="relative min-h-0">
-                <ScrollArea className="absolute inset-0 pr-4">
-                  <div className="space-y-4">
-                    {events.map((event, index) => (
-                      <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
-                        <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
-                          <event.icon className="h-5 w-5" />
+            <CardContent className="flex-1 min-h-0 flex flex-col gap-6">
+                <div className="flex items-center justify-center">
+                    <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md p-0" month={date} onMonthChange={setDate} />
+                </div>
+                <div className="flex-1 relative min-h-0">
+                    <ScrollArea className="absolute inset-0 pr-4">
+                        <div className="space-y-4">
+                        {events.map((event, index) => (
+                            <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
+                            <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
+                                <event.icon className="h-5 w-5" />
+                            </div>
+                            <div className="flex-grow">
+                                <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
+                                <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
+                                <Clock className="h-3 w-3 mr-1.5" />
+                                {event.time}
+                                </p>
+                            </div>
+                            </div>
+                        ))}
                         </div>
-                        <div className="flex-grow">
-                          <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
-                          <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
-                            <Clock className="h-3 w-3 mr-1.5" />
-                            {event.time}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
+                    </ScrollArea>
+                </div>
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm lg:col-span-2 flex flex-col">
+          {/* Mensagens Card */}
+          <Card className="shadow-sm flex flex-col">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
                  <div className="flex items-center gap-2">
                     <MessageSquare className="h-6 w-6 text-accent" />
                     <span>Mensagens</span>
                   </div>
-                  {unreadCount > 0 && (
-                    <Badge variant="default">{unreadCount}</Badge>
-                  )}
+                  {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
               <ScrollArea className="h-full pr-4">
                   <div className="space-y-4">
                       {messages.map((msg) => (
-                          <div 
-                            key={msg.id} 
-                            className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => handleViewMessage(msg)}
-                          >
+                          <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
                               <div className="flex justify-between items-start gap-4">
                                   <div className="flex items-center gap-3">
                                       <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                      <div className={cn("font-body text-sm text-foreground", { 'font-bold': !msg.isRead })}>
-                                        {msg.title}
-                                      </div>
+                                      <div className={cn("font-body text-sm text-foreground", { 'font-bold': !msg.isRead })}>{msg.title}</div>
                                   </div>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">
-                                      {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                                  </span>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                               </div>
-                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold': !msg.isRead })}>
-                                {msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}
-                              </p>
-                              <div className="flex justify-end mt-auto">
-                                  <Badge variant="outline" className="font-body">{msg.sender}</Badge>
-                              </div>
+                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold': !msg.isRead })}>{msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}</p>
+                              <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                           </div>
                       ))}
                   </div>
               </ScrollArea>
             </CardContent>
           </Card>
+
+          {/* Aplicações Card */}
+          <Card className="shadow-sm flex flex-col">
+            <CardHeader>
+              <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+                <LayoutGrid className="h-6 w-6 text-accent"/>
+                Aplicações
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 min-h-0">
+                <ScrollArea className="h-full pr-4">
+                    <div className="space-y-3">
+                        {applicationsList.map((app) => {
+                            const isModal = ['vacation', 'support', 'admin', 'marketing'].includes(app.id);
+                            
+                            return (
+                              isModal ? (
+                                <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" onClick={() => handleAppClick(app.id)}>
+                                  <app.icon className="mr-4 h-6 w-6 text-accent" />
+                                  <span>{app.name}</span>
+                                </Button>
+                              ) : (
+                                <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" asChild>
+                                  <Link href={app.href}>
+                                    <app.icon className="mr-4 h-6 w-6 text-accent" />
+                                    <span>{app.name}</span>
+                                  </Link>
+                                </Button>
+                              )
+                            );
+                        })}
+                    </div>
+                </ScrollArea>
+            </CardContent>
+          </Card>
+
         </section>
       </div>
 
+      {/* Message Modal */}
       <Dialog open={!!selectedMessage} onOpenChange={(isOpen) => !isOpen && setSelectedMessage(null)}>
         <DialogContent className="sm:max-w-xl">
           {selectedMessage && (
             <>
               <DialogHeader>
                 <DialogTitle className="font-headline text-2xl">{selectedMessage.title}</DialogTitle>
-                <DialogDescription className="text-left pt-2">
-                  De: {selectedMessage.sender}
-                  <br />
-                  Data: {new Date(selectedMessage.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                </DialogDescription>
+                <DialogDescription className="text-left pt-2">De: {selectedMessage.sender}<br />Data: {new Date(selectedMessage.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</DialogDescription>
               </DialogHeader>
               <div className="py-4 text-sm text-foreground max-h-[60vh] overflow-y-auto">
-                {selectedMessage.content.split('\n').map((line, index) => (
-                  <p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>
-                ))}
+                {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>))}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setSelectedMessage(null)}>Fechar</Button>
@@ -256,6 +298,12 @@ export default function DashboardPage() {
           )}
         </DialogContent>
       </Dialog>
+      
+      {/* Application Modals */}
+      <VacationRequestModal open={isVacationModalOpen} onOpenChange={setIsVacationModalOpen} />
+      <SupportModal open={isSupportModalOpen} onOpenChange={setIsSupportModalOpen} />
+      <AdminModal open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen} />
+      <MarketingModal open={isMarketingModalOpen} onOpenChange={setIsMarketingModalOpen} />
     </>
   );
 }

@@ -36,7 +36,6 @@ const navItems = [
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper },
   { href: '/documents', label: 'Documentos', icon: FolderOpen },
   { href: '/labs', label: 'Labs', icon: FlaskConical },
-  { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
   { href: '/chatbot', label: 'Bob', icon: Bot },
 ];
