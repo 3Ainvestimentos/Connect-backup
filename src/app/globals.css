@@ -20,8 +20,8 @@ body {
     --secondary-foreground: 220 10% 23%; /* Dark blueish gray */
     --muted: 0 0% 94%; 
     --muted-foreground: 220 10% 45%; /* Medium blueish gray */
-    --accent: 30 39% 52%; /* Lighter #A37549 */
-    --accent-foreground: 0 0% 10%; /* Dark for contrast on lighter gold */
+    --accent: 38 59% 68%; /* #DFB87F */
+    --accent-foreground: 0 0% 10%; /* Dark text on active gold */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89%; /* Slightly darker gray border */
@@ -63,8 +63,8 @@ body {
     --secondary-foreground: 0 0% 95%;
     --muted: 0 0% 15%;
     --muted-foreground: 0 0% 65%;
-    --accent: 30 39% 52%; /* Lighter #A37549 */
-    --accent-foreground: 0 0% 10%; /* Dark text for contrast on lighter gold */
+    --accent: 38 59% 68%; /* #DFB87F */
+    --accent-foreground: 0 0% 10%; /* Dark text on active gold */
     --border: 0 0% 20%;
     --input: 0 0% 20%;
     --ring: 30 39% 46%;
