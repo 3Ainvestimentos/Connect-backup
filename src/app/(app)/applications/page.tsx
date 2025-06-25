@@ -74,7 +74,7 @@ export default function ApplicationsPage() {
                 >
                   <app.icon className={cn(
                     "mb-2 transition-colors",
-                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                    isPrimary ? "text-primary-foreground" : "text-accent"
                   )} />
                   <span className="text-lg font-bold">{app.name}</span>
                 </Button>
@@ -95,7 +95,7 @@ export default function ApplicationsPage() {
                 >
                   <app.icon className={cn(
                     "mb-2 transition-colors",
-                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                    isPrimary ? "text-primary-foreground" : "text-accent"
                   )} />
                   <span className="text-lg font-bold">{app.name}</span>
                 </Button>
@@ -116,7 +116,7 @@ export default function ApplicationsPage() {
                 >
                   <app.icon className={cn(
                     "mb-2 transition-colors",
-                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                    isPrimary ? "text-primary-foreground" : "text-accent"
                   )} />
                   <span className="text-lg font-bold">{app.name}</span>
                 </Button>
@@ -137,7 +137,7 @@ export default function ApplicationsPage() {
                 >
                   <app.icon className={cn(
                     "mb-2 transition-colors",
-                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                    isPrimary ? "text-primary-foreground" : "text-accent"
                   )} />
                   <span className="text-lg font-bold">{app.name}</span>
                 </Button>
@@ -158,7 +158,7 @@ export default function ApplicationsPage() {
                 <Link href={app.href}>
                   <app.icon className={cn(
                     "mb-2 transition-colors",
-                    isPrimary ? "text-primary-foreground" : "text-primary/80 group-hover:text-primary"
+                    isPrimary ? "text-primary-foreground" : "text-accent"
                   )} />
                   <span className="text-lg font-bold">{app.name}</span>
                 </Link>
