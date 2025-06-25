@@ -1,7 +1,7 @@
 
 "use client"; 
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
@@ -68,6 +68,10 @@ export default function DashboardPage() {
     initialMessages.map(m => ({ ...m, isRead: false }))
   );
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+
+  const unreadCount = useMemo(() => {
+    return messages.filter(msg => !msg.isRead).length;
+  }, [messages]);
 
   const handleViewMessage = (messageToView: Message) => {
     if (!messageToView.isRead) {
@@ -183,9 +187,14 @@ export default function DashboardPage() {
 
           <Card className="shadow-sm lg:col-span-2 flex flex-col">
             <CardHeader>
-              <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                <MessageSquare className="h-6 w-6 text-accent" />
-                Mensagens
+              <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                    <MessageSquare className="h-6 w-6 text-accent" />
+                    <span>Mensagens</span>
+                  </div>
+                  {unreadCount > 0 && (
+                    <Badge variant="default">{unreadCount}</Badge>
+                  )}
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 min-h-0">
@@ -200,7 +209,7 @@ export default function DashboardPage() {
                               <div className="flex justify-between items-start gap-4">
                                   <div className="flex items-center gap-3">
                                       <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                      <div className={cn("font-body text-sm text-foreground", { 'font-semibold': !msg.isRead })}>
+                                      <div className={cn("font-body text-sm text-foreground", { 'font-bold': !msg.isRead })}>
                                         {msg.title}
                                       </div>
                                   </div>
@@ -208,7 +217,7 @@ export default function DashboardPage() {
                                       {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                                   </span>
                               </div>
-                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-semibold': !msg.isRead })}>
+                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold': !msg.isRead })}>
                                 {msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}
                               </p>
                               <div className="flex justify-end mt-auto">
