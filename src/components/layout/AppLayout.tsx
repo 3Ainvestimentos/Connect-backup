@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, MessageCircle, LogOut, UserCircle, Bot, LayoutGrid, FlaskConical } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, MessageCircle, LogOut, UserCircle, Bot, LayoutGrid, FlaskConical, ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -38,6 +38,7 @@ const navItems = [
   { href: '/labs', label: 'Labs', icon: FlaskConical },
   { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
   { href: '/chatbot', label: 'Chatbot Bob', icon: Bot },
+  { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
 ];
 
 function UserNav() {
@@ -122,12 +123,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                  <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))}
+                    isActive={!item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))}
                     tooltip={{children: item.label, className: "font-body"}}
                     onClick={handleLinkClick}
                     className="font-body"
                   >
-                    <Link href={item.href}>
+                    <Link 
+                      href={item.href}
+                      {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    >
                       <item.icon />
                       <span>{item.label}</span>
                     </Link>
