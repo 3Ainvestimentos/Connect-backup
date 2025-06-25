@@ -151,115 +151,120 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        <section className="flex flex-col lg:flex-row gap-3">
           
-          <Card className="shadow-sm flex flex-col lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                <CalendarDays className="h-6 w-6 text-accent"/>
-                Eventos
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex items-start justify-center">
-                    <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        className="rounded-md border"
-                        month={date}
-                        onMonthChange={setDate}
-                    />
-                </div>
-                <div className="relative min-h-[300px] md:min-h-0">
-                    <ScrollArea className="absolute inset-0 pr-4">
-                        <div className="space-y-4">
-                        {events.map((event, index) => (
-                            <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
-                            <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
-                                <event.icon className="h-5 w-5" />
-                            </div>
-                            <div className="flex-grow">
-                                <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
-                                <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
-                                <Clock className="h-3 w-3 mr-1.5" />
-                                {event.time}
+          <div className="lg:w-1/2">
+            <Card className="shadow-sm flex flex-col h-full">
+              <CardHeader>
+                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+                  <CalendarDays className="h-6 w-6 text-accent"/>
+                  Eventos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex items-start justify-center">
+                      <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          className="rounded-md border"
+                          month={date}
+                          onMonthChange={setDate}
+                      />
+                  </div>
+                  <div className="relative min-h-0">
+                      <ScrollArea className="absolute inset-0 pr-4">
+                          <div className="space-y-4">
+                          {events.map((event, index) => (
+                              <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
+                              <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
+                                  <event.icon className="h-5 w-5" />
+                              </div>
+                              <div className="flex-grow">
+                                  <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
+                                  <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
+                                  <Clock className="h-3 w-3 mr-1.5" />
+                                  {event.time}
+                                  </p>
+                              </div>
+                              </div>
+                          ))}
+                          </div>
+                      </ScrollArea>
+                  </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="lg:w-1/4">
+            <Card className="shadow-sm flex flex-col h-full">
+              <CardHeader>
+                <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                      <MessageSquare className="h-6 w-6 text-accent" />
+                      <span>Mensagens</span>
+                    </div>
+                    {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0">
+                <ScrollArea className="h-full pr-4">
+                    <div className="space-y-4">
+                        {messages.map((msg) => (
+                            <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
+                                <div className="flex justify-between items-start gap-2">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
+                                        <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !msg.isRead })}>{msg.title}</div>
+                                    </div>
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                </div>
+                                <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !msg.isRead, 'font-normal': msg.isRead })}>
+                                  {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
+                                  {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
                                 </p>
-                            </div>
+                                <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                             </div>
                         ))}
-                        </div>
-                    </ScrollArea>
-                </div>
-            </CardContent>
-          </Card>
+                    </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
           
-          <Card className="shadow-sm flex flex-col lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
-                 <div className="flex items-center gap-2">
-                    <MessageSquare className="h-6 w-6 text-accent" />
-                    <span>Mensagens</span>
-                  </div>
-                  {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 min-h-0">
-              <ScrollArea className="h-full pr-4">
-                  <div className="space-y-4">
-                      {messages.map((msg) => (
-                          <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
-                              <div className="flex justify-between items-start gap-2">
-                                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                                      <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                      <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !msg.isRead })}>{msg.title}</div>
-                                  </div>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
-                              </div>
-                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !msg.isRead, 'font-normal': msg.isRead })}>
-                                {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
-                              </p>
-                              <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
-                          </div>
-                      ))}
-                  </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-sm flex flex-col lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                <LayoutGrid className="h-6 w-6 text-accent"/>
-                Aplicações
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-3">
-                    {applicationsList.map((app) => {
-                        const isModal = ['vacation', 'support', 'admin', 'marketing'].includes(app.id);
-                        const Comp = isModal ? Button : 'div';
-                        const linkContent = (
-                            <>
-                                <app.icon className="mr-4 h-6 w-6 text-accent" />
-                                <span>{app.name}</span>
-                            </>
-                        );
-
-                        return isModal ? (
-                            <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" onClick={() => handleAppClick(app.id)}>
-                              {linkContent}
-                            </Button>
-                          ) : (
-                            <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" asChild>
-                              <Link href={app.href}>{linkContent}</Link>
-                            </Button>
+          <div className="lg:w-1/4">
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+                  <LayoutGrid className="h-6 w-6 text-accent"/>
+                  Aplicações
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <div className="space-y-3">
+                      {applicationsList.map((app) => {
+                          const isModal = ['vacation', 'support', 'admin', 'marketing'].includes(app.id);
+                          const linkContent = (
+                              <>
+                                  <app.icon className="mr-4 h-6 w-6 text-accent" />
+                                  <span>{app.name}</span>
+                              </>
                           );
-                    })}
-                </div>
-            </CardContent>
-          </Card>
+
+                          return isModal ? (
+                              <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" onClick={() => handleAppClick(app.id)}>
+                                {linkContent}
+                              </Button>
+                            ) : (
+                              <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" asChild>
+                                <Link href={app.href}>{linkContent}</Link>
+                              </Button>
+                            );
+                      })}
+                  </div>
+              </CardContent>
+            </Card>
+          </div>
 
         </section>
       </div>
@@ -290,5 +295,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
