@@ -47,9 +47,6 @@ export default function LabsPage() {
                 </div>
               </div>
             </Link>
-            <Button asChild className="mt-4 w-full max-w-sm mx-auto">
-              <Link href={video.href} target="_blank" rel="noopener noreferrer">Acessar</Link>
-            </Button>
           </div>
         ))}
       </div>
