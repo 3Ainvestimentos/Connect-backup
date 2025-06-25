@@ -173,9 +173,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Eventos Card */}
-          <Card className="shadow-sm flex flex-col lg:col-span-2">
+          <Card className="shadow-sm flex flex-col">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                 <CalendarDays className="h-6 w-6 text-accent"/>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 min-h-0 flex flex-col md:flex-row md:items-start gap-6">
-                <div>
+                <div className="flex-1">
                     <Calendar
                         mode="single"
                         selected={date}
@@ -193,7 +193,7 @@ export default function DashboardPage() {
                         onMonthChange={setDate}
                     />
                 </div>
-                <div className="flex-1 relative min-h-0">
+                <div className="flex-1 relative min-h-0 self-stretch">
                     <ScrollArea className="absolute inset-0 pr-4">
                         <div className="space-y-4">
                         {events.map((event, index) => (
