@@ -1,7 +1,7 @@
 
 "use client"; 
 
-import React, from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
@@ -182,8 +182,8 @@ export default function DashboardPage() {
                 Eventos
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 flex flex-col md:flex-row md:items-start gap-6">
-                <div className="flex-1">
+            <CardContent className="flex-1 min-h-0 flex flex-col md:flex-row gap-6">
+                <div className="flex-none md:w-1/2 flex items-center justify-center">
                     <Calendar
                         mode="single"
                         selected={date}
@@ -193,7 +193,7 @@ export default function DashboardPage() {
                         onMonthChange={setDate}
                     />
                 </div>
-                <div className="flex-1 relative min-h-0 self-stretch">
+                <div className="flex-1 md:w-1/2 relative min-h-[200px] md:min-h-0">
                     <ScrollArea className="absolute inset-0 pr-4">
                         <div className="space-y-4">
                         {events.map((event, index) => (
@@ -239,7 +239,7 @@ export default function DashboardPage() {
                                   </div>
                                   <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                               </div>
-                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-semibold': !msg.isRead })}>{msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}</p>
+                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-semibold': !msg.isRead, 'font-normal': msg.isRead })}>{msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}</p>
                               <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                           </div>
                       ))}
