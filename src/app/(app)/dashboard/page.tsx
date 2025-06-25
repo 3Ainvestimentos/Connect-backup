@@ -235,31 +235,29 @@ export default function DashboardPage() {
                 Aplicações
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0">
-                <ScrollArea className="h-full pr-4">
-                    <div className="space-y-3">
-                        {applicationsList.map((app) => {
-                            const isModal = ['vacation', 'support', 'admin', 'marketing'].includes(app.id);
-                            const Comp = isModal ? Button : 'div';
-                            const linkContent = (
-                                <>
-                                    <app.icon className="mr-4 h-6 w-6 text-accent" />
-                                    <span>{app.name}</span>
-                                </>
-                            );
+            <CardContent>
+                <div className="space-y-3">
+                    {applicationsList.map((app) => {
+                        const isModal = ['vacation', 'support', 'admin', 'marketing'].includes(app.id);
+                        const Comp = isModal ? Button : 'div';
+                        const linkContent = (
+                            <>
+                                <app.icon className="mr-4 h-6 w-6 text-accent" />
+                                <span>{app.name}</span>
+                            </>
+                        );
 
-                            return isModal ? (
-                                <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" onClick={() => handleAppClick(app.id)}>
-                                  {linkContent}
-                                </Button>
-                              ) : (
-                                <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" asChild>
-                                  <Link href={app.href}>{linkContent}</Link>
-                                </Button>
-                              );
-                        })}
-                    </div>
-                </ScrollArea>
+                        return isModal ? (
+                            <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" onClick={() => handleAppClick(app.id)}>
+                              {linkContent}
+                            </Button>
+                          ) : (
+                            <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" asChild>
+                              <Link href={app.href}>{linkContent}</Link>
+                            </Button>
+                          );
+                    })}
+                </div>
             </CardContent>
           </Card>
 
