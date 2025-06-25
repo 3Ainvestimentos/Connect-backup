@@ -6,14 +6,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 const labVideos = [
-  { title: 'HOME EQUITY', subtitle: 'com Victor Huerara | XP', href: '#' },
-  { title: 'ESTRUTURAS DE PROTEÇÃO', subtitle: 'com Lucas Prado', href: '#' },
-  { title: 'ESTRUTURADAS', subtitle: '(cases práticos)', href: '#' },
-  { title: 'PAINEL PREVIDÊNCIA', subtitle: '', href: '#' },
-  { title: 'PAINEL INTERNACIONAL', subtitle: '', href: '#' },
-  { title: 'PAINEL PJ', subtitle: 'com Paulo Caus', href: '#' },
-  { title: 'PAINEL CÂMBIO', subtitle: 'com Ágata Panoutsos', href: '#' },
-  { title: 'ANÁLISE DE MERCADO', subtitle: 'Q3 2024', href: '#' },
+  { title: 'HOME EQUITY', subtitle: 'com Victor Huerara | XP', href: 'https://drive.google.com/file/d/1Ic8JAuB_QNwG7wp4Yrw8PQui4086Gs9A/view' },
+  { title: 'ESTRUTURAS DE PROTEÇÃO', subtitle: 'com Lucas Prado', href: 'https://drive.google.com/file/d/1OtAD5ieAgs6ppxuWCChuLrqNpQExjln0/view' },
+  { title: 'ESTRUTURADAS', subtitle: '(cases práticos)', href: 'https://drive.google.com/file/d/1SHV3zJNdejwSO0BhLwNyKozxv8ZEUeGo/view' },
+  { title: 'PAINEL PREVIDÊNCIA', subtitle: '', href: 'https://drive.google.com/file/d/12Q1gS_faJpw7jYRBsRyHqyikEvVv6-hF/view' },
+  { title: 'PAINEL INTERNACIONAL', subtitle: '', href: 'https://drive.google.com/file/d/1gJ4qrl7Pl5hlhkWmx03ZZAgyDdcphMDE/view' },
+  { title: 'PAINEL PJ', subtitle: 'com Paulo Caus', href: 'https://drive.google.com/file/d/1uUUhjQ4FwDBMAluwFPzSSEce4xm81gQ0/view' },
+  { title: 'PAINEL CÂMBIO', subtitle: 'com Ágata Panoutsos', href: 'https://drive.google.com/file/d/1cqTusqhlRw4laV1zdeBYlM8ja93l7hfE/view' },
 ];
 
 export default function LabsPage() {
@@ -27,7 +26,7 @@ export default function LabsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
         {labVideos.map((video, index) => (
           <div key={index} className="flex flex-col text-center">
-            <Link href={video.href} className="w-full group">
+            <Link href={video.href} className="w-full group" target="_blank" rel="noopener noreferrer">
               <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-gray-900">
                 <Image
                   src="https://placehold.co/400x533.png"
@@ -49,7 +48,7 @@ export default function LabsPage() {
               </div>
             </Link>
             <Button asChild className="mt-4 w-full max-w-sm mx-auto">
-              <Link href={video.href}>Acessar</Link>
+              <Link href={video.href} target="_blank" rel="noopener noreferrer">Acessar</Link>
             </Button>
           </div>
         ))}
