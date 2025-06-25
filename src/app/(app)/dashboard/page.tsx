@@ -1,7 +1,7 @@
 
 "use client"; 
 
-import React, { useState, useMemo } from 'react';
+import React, from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
@@ -88,19 +88,19 @@ const applicationsList: AppLink[] = [
 ];
 
 export default function DashboardPage() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [messages, setMessages] = useState<Message[]>(
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [messages, setMessages] = React.useState<Message[]>(
     initialMessages.map(m => ({ ...m, isRead: false }))
   );
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null);
 
   // State for modals from applications page
-  const [isVacationModalOpen, setIsVacationModalOpen] = useState(false);
-  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [isMarketingModalOpen, setIsMarketingModalOpen] = useState(false);
+  const [isVacationModalOpen, setIsVacationModalOpen] = React.useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = React.useState(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
+  const [isMarketingModalOpen, setIsMarketingModalOpen] = React.useState(false);
 
-  const unreadCount = useMemo(() => {
+  const unreadCount = React.useMemo(() => {
     return messages.filter(msg => !msg.isRead).length;
   }, [messages]);
 
@@ -173,9 +173,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
           {/* Eventos Card */}
-          <Card className="shadow-sm flex flex-col">
+          <Card className="shadow-sm flex flex-col lg:col-span-2">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                 <CalendarDays className="h-6 w-6 text-accent"/>
@@ -232,7 +232,7 @@ export default function DashboardPage() {
                                   </div>
                                   <span className="text-xs text-muted-foreground whitespace-nowrap pl-2">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                               </div>
-                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold': !msg.isRead })}>{msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}</p>
+                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-semibold': !msg.isRead })}>{msg.content.length > 150 ? `${msg.content.substring(0, 150)}...` : msg.content}</p>
                               <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                           </div>
                       ))}
