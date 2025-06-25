@@ -161,8 +161,8 @@ export default function DashboardPage() {
                   Eventos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
-                  <div className="flex items-start justify-center">
+              <CardContent className="flex-1 grid md:grid-cols-5 gap-6 min-h-0">
+                  <div className="md:col-span-3 flex items-start justify-center">
                       <Calendar
                           mode="single"
                           selected={date}
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                           onMonthChange={setDate}
                       />
                   </div>
-                  <div className="relative min-h-0">
+                  <div className="md:col-span-2 relative min-h-0">
                       <ScrollArea className="absolute inset-0 pr-4">
                           <div className="space-y-4">
                           {events.map((event, index) => (
@@ -208,8 +208,8 @@ export default function DashboardPage() {
                     {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 min-h-0">
-                <ScrollArea className="h-full pr-4">
+              <CardContent className="flex-1 min-h-0 p-0">
+                <ScrollArea className="h-full p-6">
                     <div className="space-y-4">
                         {messages.map((msg) => (
                             <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
@@ -296,3 +296,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
