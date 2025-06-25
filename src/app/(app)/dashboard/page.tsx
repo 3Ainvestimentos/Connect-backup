@@ -233,7 +233,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="lg:w-1/4">
-            <Card className="shadow-sm h-full">
+            <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                   <LayoutGrid className="h-6 w-6 text-accent"/>
@@ -295,3 +295,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    
