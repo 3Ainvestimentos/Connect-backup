@@ -80,9 +80,7 @@ interface AppLink {
 const applicationsList: AppLink[] = [
   { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#' },
   { id: 'slack', name: 'Slack', icon: SlackIcon, href: '#' },
-  { id: 'contacts', name: 'Contatos', icon: BookUser, href: '/contacts' },
   { id: 'vacation', name: 'Férias', icon: Plane, href: '#' },
-  { id: 'events', name: 'Eventos', icon: CalendarDays, href: '#' },
   { id: 'support', name: 'Suporte TI', icon: Headset, href: '#' },
   { id: 'admin', name: 'Administrativo', icon: Briefcase, href: '#' },
   { id: 'marketing', name: 'Marketing', icon: MarketingIcon, href: '#' },
@@ -218,7 +216,7 @@ export default function DashboardPage() {
                                   </div>
                                   <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                               </div>
-                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold': !msg.isRead, 'font-normal': msg.isRead })}>
+                              <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !msg.isRead, 'font-normal': msg.isRead })}>
                                 {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
                                 {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
                               </p>
