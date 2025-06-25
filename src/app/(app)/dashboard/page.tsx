@@ -64,7 +64,7 @@ const initialMessages = [
   { id: '4', title: 'Pesquisa de Clima Organizacional', content: 'Sua opinião é muito importante! Por favor, responda à pesquisa de clima até o final desta semana. O link foi enviado para o seu e-mail. A participação é anônima.', sender: 'RH', date: '2024-07-26', isRead: false },
   { id: '5', title: 'Nova Máquina de Café na Copa', content: 'Boas notícias para os amantes de café! Instalamos uma nova máquina de café expresso na copa do 2º andar. Aproveitem!', sender: 'Administrativo', date: '2024-07-26', isRead: true },
   { id: '6', title: 'Exercício de Evacuação de Emergência', content: 'Realizaremos um exercício de evacuação de emergência na próxima quarta-feira, às 15h. A participação de todos é obrigatória. Por favor, familiarize-se com as rotas de fuga mais próximas da sua estação de trabalho. Mais instruções serão dadas pelos líderes de cada andar no dia do exercício.', sender: 'Segurança', date: '2024-07-27', isRead: false },
-  { id: '7', title: 'Resultados do Q2', content: 'A apresentação dos resultados do segundo trimestre será na sexta-feira às 10h na sala de reuniões principal. Venha conferir o crescimento da empresa e os próximos passos.', sender: 'Diretoria', date: '2024-07-28', isRead: false },
+  { id: '7', title: 'Resultados do Q2', content: 'Apresentação dos resultados do segundo trimestre será na sexta-feira às 10h na sala de reuniões principal. Venha conferir o crescimento da empresa e os próximos passos.', sender: 'Diretoria', date: '2024-07-28', isRead: false },
   { id: '8', title: 'Campanha do Agasalho', content: 'A campanha do agasalho está na reta final! As doações podem ser entregues na caixa da recepção até amanhã. Sua contribuição faz a diferença!', sender: 'Comunicação', date: '2024-07-29', isRead: true },
 ];
 
@@ -161,7 +161,7 @@ export default function DashboardPage() {
                   Eventos
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
                   <div className="flex items-start justify-center">
                       <Calendar
                           mode="single"
@@ -233,7 +233,7 @@ export default function DashboardPage() {
           </div>
           
           <div className="lg:w-1/4">
-            <Card className="shadow-sm">
+            <Card className="shadow-sm h-full">
               <CardHeader>
                 <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                   <LayoutGrid className="h-6 w-6 text-accent"/>
