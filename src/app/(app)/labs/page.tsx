@@ -29,11 +29,8 @@ export default function LabsPage() {
                 data-ai-hint="dark texture"
               >
                 <div className="absolute inset-0 flex flex-col justify-center items-center p-4 text-white">
-                  <h3 className="font-headline text-lg tracking-wider">
-                    3A RIVA <span className="text-primary font-bold">LAB</span>
-                  </h3>
                   <div className="flex-grow flex items-center">
-                    <p className="font-bold text-xl mt-6 uppercase tracking-wide leading-tight">{video.title}</p>
+                    <p className="font-bold text-xl uppercase tracking-wide leading-tight">{video.title}</p>
                   </div>
                   {video.subtitle && <p className="text-sm mt-2 font-light">{video.subtitle}</p>}
                 </div>
