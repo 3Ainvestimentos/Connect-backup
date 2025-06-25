@@ -8,7 +8,7 @@ body {
 
 @layer base {
   :root {
-    --background: 210 40% 98%; /* #f9fafb */
+    --background: 0 0% 100%; /* white */
     --foreground: 0 0% 13%; /* Dark gray */
     --card: 0 0% 100%; /* White */
     --card-foreground: 0 0% 13%;
@@ -36,7 +36,7 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific */
-    --sidebar-background: 0 0% 100%; /* White */
+    --sidebar-background: 220 20% 96%; /* hsl(220, 20%, 96%) */
     --sidebar-foreground: 0 0% 45%; /* Medium Gray for icons/text */
     --sidebar-primary: 38 59% 68%; /* #DFB87F */
     --sidebar-primary-foreground: 0 0% 10%; /* Dark text on active gold */
