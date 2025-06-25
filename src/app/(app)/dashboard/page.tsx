@@ -142,7 +142,7 @@ export default function DashboardPage() {
           <Card className="shadow-sm lg:col-span-2">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                <CalendarDays className="h-6 w-6"/>
+                <CalendarDays className="h-6 w-6 text-accent"/>
                 Eventos
               </CardTitle>
             </CardHeader>
@@ -183,7 +183,7 @@ export default function DashboardPage() {
           <Card className="shadow-sm lg:col-span-2 flex flex-col">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                <MessageSquare className="h-6 w-6" />
+                <MessageSquare className="h-6 w-6 text-accent" />
                 Mensagens
               </CardTitle>
             </CardHeader>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
                             className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors"
                             onClick={() => handleViewMessage(msg)}
                           >
-                              <div className="flex justify-between items-start">
+                              <div className="flex justify-between items-start gap-4">
                                   <div className="flex items-center gap-3">
                                       <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
                                       <h4 className="font-semibold font-body text-sm text-foreground">{msg.title}</h4>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                                       {new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                                   </span>
                               </div>
-                              <p className="text-sm text-muted-foreground font-body pl-8 truncate">{msg.content}</p>
+                              <p className="text-sm text-muted-foreground font-body pl-8">{msg.content}</p>
                               <div className="flex justify-end">
                                   <Badge variant="outline" className="font-body">{msg.sender}</Badge>
                               </div>
