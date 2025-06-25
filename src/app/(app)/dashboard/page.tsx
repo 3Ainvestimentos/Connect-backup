@@ -153,9 +153,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <section className="flex flex-col lg:flex-row gap-3">
+        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
           
-          <Card className="shadow-sm flex flex-col lg:w-1/2">
+          <Card className="shadow-sm flex flex-col lg:col-span-2">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                 <CalendarDays className="h-6 w-6 text-accent"/>
@@ -196,7 +196,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <Card className="shadow-sm flex flex-col lg:w-1/4">
+          <Card className="shadow-sm flex flex-col lg:col-span-1">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
                  <div className="flex items-center gap-2">
@@ -230,7 +230,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
           
-          <Card className="shadow-sm flex flex-col lg:w-1/4">
+          <Card className="shadow-sm flex flex-col lg:col-span-1">
             <CardHeader>
               <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                 <LayoutGrid className="h-6 w-6 text-accent"/>
@@ -295,3 +295,4 @@ export default function DashboardPage() {
   );
 }
 
+    
