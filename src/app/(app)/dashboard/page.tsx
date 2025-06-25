@@ -182,9 +182,16 @@ export default function DashboardPage() {
                 Eventos
               </CardTitle>
             </CardHeader>
-            <CardContent className="flex-1 min-h-0 flex flex-col gap-6">
-                <div className="flex items-center justify-center">
-                    <Calendar mode="single" selected={date} onSelect={setDate} className="rounded-md p-0" month={date} onMonthChange={setDate} />
+            <CardContent className="flex-1 min-h-0 flex flex-col md:flex-row md:items-start gap-6">
+                <div>
+                    <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        className="rounded-md border"
+                        month={date}
+                        onMonthChange={setDate}
+                    />
                 </div>
                 <div className="flex-1 relative min-h-0">
                     <ScrollArea className="absolute inset-0 pr-4">
