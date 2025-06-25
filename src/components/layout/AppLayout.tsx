@@ -37,7 +37,7 @@ const navItems = [
   { href: '/documents', label: 'Documentos', icon: FolderOpen },
   { href: '/labs', label: 'Labs', icon: FlaskConical },
   { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
-  { href: '/chatbot', label: 'Chatbot Bob', icon: Bot },
+  { href: '/chatbot', label: 'Bob', icon: Bot },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
 ];
 
@@ -142,7 +142,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
         </Sidebar>
         
-        <SidebarInset className="flex-1 bg-background overflow-y-auto"> 
+        <SidebarInset className="flex-1 bg-background overflow-y-auto">
           {children}
         </SidebarInset>
       </div>

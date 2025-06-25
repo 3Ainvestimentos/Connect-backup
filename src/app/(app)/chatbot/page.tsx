@@ -7,7 +7,7 @@ export default function ChatbotPage() {
   return (
     <div className="h-full flex flex-col p-6 md:p-8"> {/* Adjust var if header height differs */}
       <PageHeader 
-        title="Chatbot Bob" 
+        title="Bob" 
         icon={Bot}
         description="Converse com Bob para obter ajuda e informações."
       />
