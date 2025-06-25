@@ -78,7 +78,7 @@ export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   return (
-    <div className="space-y-6 p-6 md:p-8 md:px-16">
+    <div className="space-y-6 p-6 md:p-8">
       <section>
         <PageHeader
           title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
@@ -137,7 +137,7 @@ export default function DashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
         <Card className="shadow-sm lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Eventos</CardTitle>
+            <CardTitle className="font-headline text-foreground text-xl">Eventos</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center justify-center">
@@ -175,7 +175,7 @@ export default function DashboardPage() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Contatos</CardTitle>
+            <CardTitle className="font-headline text-foreground text-xl">Contatos</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {contacts.map((contact) => (
@@ -198,7 +198,7 @@ export default function DashboardPage() {
 
         <Card className="shadow-sm">
           <CardHeader>
-            <CardTitle className="font-headline text-primary text-xl">Equipes</CardTitle>
+            <CardTitle className="font-headline text-foreground text-xl">Equipes</CardTitle>
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-80 w-full">
