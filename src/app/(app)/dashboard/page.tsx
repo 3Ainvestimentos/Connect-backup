@@ -155,15 +155,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm lg:col-span-2">
+        <Card className="shadow-sm lg:col-span-2 flex flex-col">
           <CardHeader>
             <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
               <MessageSquare className="h-6 w-6" />
-              Mensagens e Comunicados
+              Mensagens
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[260px] pr-4">
+          <CardContent className="flex-1 min-h-0">
+            <ScrollArea className="h-full pr-4">
                 <div className="space-y-4">
                     {officialMessages.map((msg) => (
                         <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2">
