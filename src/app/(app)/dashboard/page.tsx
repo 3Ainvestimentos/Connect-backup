@@ -1,17 +1,17 @@
-
 "use client"; 
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { 
-  Phone, Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
-  ArrowRightLeft, Handshake, Landmark, MousePointerClick, Target, Move, 
-  Wrench, Receipt, Banknote, Gavel, Megaphone, Network, ShieldCheck 
+  Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
+  Megaphone, MessageSquare, Send, Loader2, CalendarDays
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -48,34 +48,32 @@ const events: { title: string; time: string; icon: LucideIcon }[] = [
     { title: "Apresentação de Resultados Q2", time: "09:00 - 10:00", icon: TrendingUp },
 ];
 
-const contacts = [
-  { name: 'Martin Coles', phone: '+000 111 222 333', avatarUrl: 'https://placehold.co/100x100.png', dataAiHint: 'man portrait' },
-  { name: 'Adrien Wilson', phone: '+000 444 555 666', avatarUrl: 'https://placehold.co/100x100.png', dataAiHint: 'woman portrait' },
-];
-
-const teams: { name: string, icon: LucideIcon }[] = [
-  { name: 'Alocação', icon: ArrowRightLeft },
-  { name: 'Business Intelligence', icon: BrainCircuit },
-  { name: 'Canal MFC', icon: Users },
-  { name: 'Comercial', icon: Handshake },
-  { name: 'Corporate', icon: Landmark },
-  { name: 'Digital', icon: MousePointerClick },
-  { name: 'Estratégia', icon: Target },
-  { name: 'Expansão', icon: Move },
-  { name: 'Facilities e Serviços', icon: Wrench },
-  { name: 'Fee Fixo e Variável', icon: Receipt },
-  { name: 'Financeiro', icon: Banknote },
-  { name: 'Gente e Gestão', icon: Users },
-  { name: 'Investors', icon: TrendingUp },
-  { name: 'Jurídico', icon: Gavel },
-  { name: 'Marketing', icon: Megaphone },
-  { name: 'Middle', icon: Network },
-  { name: 'Private Solutions', icon: ShieldCheck },
-];
-
-
 export default function DashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [message, setMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) {
+      toast({
+        title: "Erro",
+        description: "A mensagem não pode estar vazia.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsSending(true);
+    // Simulate sending message
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setIsSending(false);
+    setMessage('');
+    toast({
+      title: "Mensagem Enviada!",
+      description: "Seu comunicado foi enviado para todos os colaboradores.",
+    });
+  };
 
   return (
     <div className="space-y-6 p-6 md:p-8">
@@ -137,7 +135,10 @@ export default function DashboardPage() {
       <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
         <Card className="shadow-sm lg:col-span-2">
           <CardHeader>
-            <CardTitle className="font-headline text-foreground text-xl">Eventos</CardTitle>
+            <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+              <CalendarDays className="h-6 w-6"/>
+              Eventos
+            </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex items-center justify-center">
@@ -173,47 +174,32 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-headline text-foreground text-xl">Contatos</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {contacts.map((contact) => (
-              <div key={contact.name} className="flex items-center gap-2 p-2.5 hover:bg-muted/40 rounded-lg transition-colors">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={contact.avatarUrl} alt={contact.name} data-ai-hint={contact.dataAiHint} />
-                  <AvatarFallback>{contact.name.substring(0, 1)}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold font-body text-sm text-foreground">{contact.name}</p>
-                  <p className="text-xs text-muted-foreground font-body flex items-center">
-                    <Phone className="h-3 w-3 mr-1.5"/>
-                    {contact.phone}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="font-headline text-foreground text-xl">Equipes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-80 w-full">
-              <div className="space-y-1 pr-4">
-                {teams.map((team) => (
-                  <Link key={team.name} href="#" className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/40 transition-colors">
-                    <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg p-2">
-                        <team.icon className="h-5 w-5" />
-                    </div>
-                    <p className="font-semibold font-body text-sm text-foreground">{team.name}</p>
-                  </Link>
-                ))}
-              </div>
-            </ScrollArea>
-          </CardContent>
+        <Card className="shadow-sm lg:col-span-2">
+            <CardHeader>
+                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+                    <MessageSquare className="h-6 w-6" />
+                    Mensagens
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleSendMessage} className="space-y-4">
+                    <Textarea
+                        placeholder="Escreva seu comunicado oficial aqui..."
+                        className="resize-none font-body"
+                        rows={5}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                    />
+                    <Button type="submit" className="w-full font-body" disabled={isSending}>
+                        {isSending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Send className="mr-2 h-4 w-4" />
+                        )}
+                        Enviar Comunicado
+                    </Button>
+                </form>
+            </CardContent>
         </Card>
       </section>
     </div>
