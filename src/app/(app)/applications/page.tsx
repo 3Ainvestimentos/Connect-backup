@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -21,11 +22,12 @@ interface AppLink {
   icon: LucideIcon;
   href: string;
   isModal?: boolean;
+  external?: boolean;
 }
 
 const applicationsList: AppLink[] = [
   { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#', isModal: true },
-  { id: 'slack', name: 'Slack', icon: SlackIcon, href: '#' },
+  { id: 'slack', name: 'Slack', icon: SlackIcon, href: 'https://slack.com/intl/pt-br/', external: true },
   { id: 'vacation', name: 'Férias', icon: Plane, href: '#', isModal: true },
   { id: 'support', name: 'Suporte TI', icon: Headset, href: '#', isModal: true },
   { id: 'admin', name: 'Administrativo', icon: Briefcase, href: '#', isModal: true },
@@ -76,7 +78,12 @@ export default function ApplicationsPage() {
                 <CardContent className="p-0">{content}</CardContent>
               </Card>
             ) : (
-              <Link href={app.href} key={app.id} className="focus:outline-none focus:ring-2 focus:ring-ring rounded-lg">
+              <Link 
+                href={app.href} 
+                key={app.id} 
+                className="focus:outline-none focus:ring-2 focus:ring-ring rounded-lg"
+                {...(app.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+              >
                 <Card {...cardProps}>
                    <CardContent className="p-0">{content}</CardContent>
                 </Card>
