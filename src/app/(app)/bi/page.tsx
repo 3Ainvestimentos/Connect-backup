@@ -16,7 +16,6 @@ export default function BusinessIntelligencePage() {
         <iframe
           src="https://lookerstudio.google.com/embed/reporting/7be211eb-41e9-4d89-8e83-8e6cacaf3180/page/p_dxz9m19rtd"
           frameBorder="0"
-          style={{ border: 0 }}
           allowFullScreen
           sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
           className="w-full h-full border rounded-lg bg-card"
