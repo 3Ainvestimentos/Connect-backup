@@ -28,11 +28,11 @@ export default function LabsPage() {
                 className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted"
                 data-ai-hint="dark texture"
               >
-                <div className="absolute inset-0 flex flex-col justify-center items-center p-4 text-white">
+                <div className="absolute inset-0 flex flex-col justify-center items-center p-4 text-muted-foreground dark:text-white">
                   <div className="flex-grow flex items-center">
                     <p className="font-bold text-xl uppercase tracking-wide leading-tight">{video.title}</p>
                   </div>
-                  {video.subtitle && <p className="text-sm mt-2 font-light">{video.subtitle}</p>}
+                  {video.subtitle && <p className="text-sm mt-2 font-light opacity-80">{video.subtitle}</p>}
                 </div>
               </div>
             </Link>
