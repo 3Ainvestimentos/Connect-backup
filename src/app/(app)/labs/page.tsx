@@ -25,7 +25,7 @@ export default function LabsPage() {
           <div key={index} className="flex flex-col text-center">
             <Link href={video.href} className="w-full group" target="_blank" rel="noopener noreferrer">
               <div
-                className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-gray-900"
+                className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted"
                 data-ai-hint="dark texture"
               >
                 <div className="absolute inset-0 flex flex-col justify-center items-center p-4 text-white">
