@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ export default function LoginPage() {
       {/* Left Pane - Decorative Image */}
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
         <Image 
-          src="https://i.ibb.co/1GBLwjn/Corporate-Commercial-EXPERTIS.jpg" 
+          src="https://i.ibb.co/1GBLwjnz/Corporate-Commercial-EXPERTIS.jpg" 
           data-ai-hint="office interior" 
           layout="fill" 
           objectFit="cover" 
