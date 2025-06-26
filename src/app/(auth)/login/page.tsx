@@ -55,7 +55,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Pane - Login Form */}
-      <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center p-6 sm:p-12">
+      <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center px-6 pt-6 pb-4 sm:px-12 sm:pt-12">
         <div className="flex-grow flex items-center justify-center w-full">
             <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl border shadow-md">
                 <div className="flex items-center justify-center">
@@ -80,10 +80,7 @@ export default function LoginPage() {
         </div>
         <footer className="flex-shrink-0 mt-8 text-center max-w-xl">
           <p className="text-xs text-muted-foreground font-body">
-            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA. O modelo pode cometer erros. Por isso, é bom checar as respostas.
-          </p>
-          <p className="text-xs text-muted-foreground font-body mt-2">
-            © 2024 Bob 1.0. Todos os direitos reservados.
+            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA. O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
           </p>
         </footer>
       </div>
