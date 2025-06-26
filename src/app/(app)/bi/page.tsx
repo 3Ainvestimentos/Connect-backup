@@ -1,6 +1,6 @@
 
 import { PageHeader } from '@/components/layout/PageHeader';
-import { BrainCircuit } from 'lucide-react';
+import { AreaChart } from 'lucide-react';
 
 export default function BusinessIntelligencePage() {
   return (
@@ -8,7 +8,7 @@ export default function BusinessIntelligencePage() {
       <div className="p-6 md:p-8 pb-0">
         <PageHeader 
           title="Business Intelligence" 
-          icon={BrainCircuit}
+          icon={AreaChart}
           description="Visualize dados e insights através de painéis interativos."
         />
       </div>
