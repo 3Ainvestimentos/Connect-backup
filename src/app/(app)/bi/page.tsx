@@ -4,15 +4,15 @@ import { AreaChart } from 'lucide-react';
 
 export default function BusinessIntelligencePage() {
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-6 md:p-8 pb-0">
+    <div className="flex flex-col h-full p-6 md:p-8">
+      <div className="mb-4">
         <PageHeader 
           title="Business Intelligence" 
           icon={AreaChart}
           description="Visualize dados e insights através de painéis interativos."
         />
       </div>
-      <div className="flex-grow p-6 md:p-8 pt-2">
+      <div className="flex-grow -mt-6">
         <iframe
           src="https://lookerstudio.google.com/embed/reporting/7be211eb-41e9-4d89-8e83-8e6cacaf3180/page/p_dxz9m19rtd"
           frameBorder="0"
