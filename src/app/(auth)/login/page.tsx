@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -41,22 +42,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="min-h-screen flex bg-white">
       {/* Left Pane - Decorative Image */}
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
         <Image 
-          src="https://placehold.co/800x1200.png" 
-          data-ai-hint="geometric pattern yellow black" 
+          src="https://i.ibb.co/jvVKhw2/360-F-122204437-cka92j-J8-XOTh4vr-Pu9f-Gq686qlt-Km-NWE.jpg" 
+          data-ai-hint="office interior" 
           layout="fill" 
           objectFit="cover" 
-          alt="Padrão decorativo"
+          alt="Escritório moderno"
           priority
         />
       </div>
 
       {/* Right Pane - Login Form */}
       <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center justify-center p-6 sm:p-12">
-        <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-md">
+        <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl">
           <div className="flex items-center justify-center">
             <Image 
               src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
