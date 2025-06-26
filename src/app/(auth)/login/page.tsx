@@ -77,6 +77,11 @@ export default function LoginPage() {
             <span className="ml-2">Entrar com Google</span>
           </Button>
         </div>
+        <footer className="mt-8 text-center max-w-sm">
+          <p className="text-xs text-muted-foreground font-body">
+            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA. O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
+          </p>
+        </footer>
       </div>
     </div>
   );
