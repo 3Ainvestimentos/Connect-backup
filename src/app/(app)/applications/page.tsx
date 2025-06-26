@@ -13,6 +13,7 @@ import VacationRequestModal from '@/components/applications/VacationRequestModal
 import SupportModal from '@/components/applications/SupportModal';
 import AdminModal from '@/components/applications/AdminModal';
 import MarketingModal from '@/components/applications/MarketingModal';
+import ProfileModal from '@/components/applications/ProfileModal';
 
 interface AppLink {
   id: string;
@@ -23,7 +24,7 @@ interface AppLink {
 }
 
 const applicationsList: AppLink[] = [
-  { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#' },
+  { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#', isModal: true },
   { id: 'slack', name: 'Slack', icon: SlackIcon, href: '#' },
   { id: 'vacation', name: 'Férias', icon: Plane, href: '#', isModal: true },
   { id: 'support', name: 'Suporte TI', icon: Headset, href: '#', isModal: true },
@@ -32,6 +33,7 @@ const applicationsList: AppLink[] = [
 ];
 
 export default function ApplicationsPage() {
+  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
   const [isVacationModalOpen, setIsVacationModalOpen] = React.useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = React.useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
@@ -39,6 +41,7 @@ export default function ApplicationsPage() {
 
   const handleAppClick = (appId: string) => {
     switch (appId) {
+      case 'profile': setIsProfileModalOpen(true); break;
       case 'vacation': setIsVacationModalOpen(true); break;
       case 'support': setIsSupportModalOpen(true); break;
       case 'admin': setIsAdminModalOpen(true); break;
@@ -83,6 +86,7 @@ export default function ApplicationsPage() {
         </div>
       </div>
       
+      <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
       <VacationRequestModal open={isVacationModalOpen} onOpenChange={setIsVacationModalOpen} />
       <SupportModal open={isSupportModalOpen} onOpenChange={setIsSupportModalOpen} />
       <AdminModal open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen} />
