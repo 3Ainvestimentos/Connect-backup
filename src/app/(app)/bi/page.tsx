@@ -14,7 +14,7 @@ export default function BusinessIntelligencePage() {
       </div>
       <div className="flex-grow p-6 md:p-8 pt-2">
         <iframe
-          src="https://lookerstudio.google.com/embed/reporting/afa01a14-8768-48f6-b8af-9b4c08f5ec24/page/XBOPF"
+          src="https://lookerstudio.google.com/embed/reporting/7be211eb-41e9-4d89-8e83-8e6cacaf3180/page/p_dxz9m19rtd"
           frameBorder="0"
           style={{ border: 0 }}
           allowFullScreen
