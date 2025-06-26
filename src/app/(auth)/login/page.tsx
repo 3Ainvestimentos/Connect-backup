@@ -16,9 +16,9 @@ const GoogleIcon = () => (
 
 
 export default function LoginPage() {
-  const { signInWithGoogle, loading } = useAuth();
+  const { user, signInWithGoogle, loading } = useAuth();
   
-  if (loading) { 
+  if (loading && !user) { 
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
          <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -34,7 +34,7 @@ export default function LoginPage() {
       {/* Left Pane - Decorative Image */}
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
         <Image 
-          src="https://i.ibb.co/1GBLwjnz/Corporate-Commercial-EXPERTIS.jpg" 
+          src="https://i.ibb.co/20Gg3K4c/pexels-photo-12328431.jpg" 
           data-ai-hint="office interior" 
           layout="fill" 
           objectFit="cover" 
