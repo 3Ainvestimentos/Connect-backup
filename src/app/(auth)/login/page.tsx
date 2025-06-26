@@ -3,8 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 // Placeholder for Google icon SVG
 const GoogleIcon = () => (
@@ -18,18 +16,9 @@ const GoogleIcon = () => (
 
 
 export default function LoginPage() {
-  const { signInWithGoogle, user, loading } = useAuth();
-  const router = useRouter();
-  const { useMockAuth } = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === 'true' ? { useMockAuth: true } : { useMockAuth: false };
-
-
-  useEffect(() => {
-    if (!loading && user) {
-      router.push("/dashboard");
-    }
-  }, [user, loading, router]);
-
-  if (loading || (user && !useMockAuth)) { 
+  const { signInWithGoogle, loading } = useAuth();
+  
+  if (loading) { 
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
          <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">

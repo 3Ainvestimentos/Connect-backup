@@ -72,14 +72,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const isAuthPage = pathname === '/login';
       if (!user && !isAuthPage) {
         router.push('/login');
-      } else if (user && isAuthPage) {
-        // If using mock auth and on login page, redirect to dashboard
-        if (useMockAuth || user) { 
-            router.push('/dashboard');
-        }
       }
     }
-  }, [user, loading, router, pathname, useMockAuth]);
+  }, [user, loading, router, pathname]);
 
   const signInWithGoogle = async () => {
     if (useMockAuth) {
@@ -92,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      // onAuthStateChanged will handle setUser and navigation
+      router.push('/dashboard');
     } catch (error: any) {
       console.error("Error signing in with Google: ", error);
       toast({
