@@ -115,6 +115,45 @@ export default function DashboardPage() {
         </section>
         
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          {/* Messages Card */}
+          <div className="lg:col-span-1">
+            <Card className="shadow-sm flex flex-col h-full">
+              <CardHeader>
+                <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                      <MessageSquare className="h-6 w-6 text-accent" />
+                      <span>Mensagens</span>
+                    </div>
+                    {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 relative">
+                 <div className="absolute inset-0">
+                    <ScrollArea className="h-full">
+                        <div className="space-y-4 p-6 pt-0">
+                            {messages.map((msg) => (
+                                <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
+                                    <div className="flex justify-between items-start gap-2">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
+                                            <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !msg.isRead })}>{msg.title}</div>
+                                        </div>
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                    </div>
+                                    <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !msg.isRead, 'font-normal': msg.isRead })}>
+                                      {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
+                                      {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
+                                    </p>
+                                    <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                  </div>
+              </CardContent>
+            </Card>
+          </div>
+            
           {/* Events Card */}
           <div className="lg:col-span-2">
             <Card className="shadow-sm flex flex-col h-full">
@@ -156,45 +195,6 @@ export default function DashboardPage() {
                           </div>
                       </ScrollArea>
                     </div>
-                  </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Messages Card */}
-          <div className="lg:col-span-1">
-            <Card className="shadow-sm flex flex-col h-full">
-              <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                      <MessageSquare className="h-6 w-6 text-accent" />
-                      <span>Mensagens</span>
-                    </div>
-                    {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 min-h-0 relative">
-                 <div className="absolute inset-0">
-                    <ScrollArea className="h-full p-6 -m-6">
-                        <div className="space-y-4">
-                            {messages.map((msg) => (
-                                <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
-                                    <div className="flex justify-between items-start gap-2">
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                            <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !msg.isRead })}>{msg.title}</div>
-                                        </div>
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
-                                    </div>
-                                    <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !msg.isRead, 'font-normal': msg.isRead })}>
-                                      {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                      {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
-                                    </p>
-                                    <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
-                                </div>
-                            ))}
-                        </div>
-                    </ScrollArea>
                   </div>
               </CardContent>
             </Card>
