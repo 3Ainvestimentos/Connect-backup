@@ -80,7 +80,9 @@ export default function LoginPage() {
         </div>
         <footer className="flex-shrink-0 mt-8 text-center max-w-xl">
           <p className="text-xs text-muted-foreground font-body">
-            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA. O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
+            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA. 
+            <br />
+            O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
           </p>
         </footer>
       </div>
