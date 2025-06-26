@@ -46,7 +46,7 @@ export default function LoginPage() {
       {/* Left Pane - Decorative Image */}
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
         <Image 
-          src="https://i.ibb.co/1GBLwjnz/Corporate-Commercial-EXPERTIS.jpg" 
+          src="https://i.ibb.co/1GBLwjn/Corporate-Commercial-EXPERTIS.jpg" 
           data-ai-hint="office interior" 
           layout="fill" 
           objectFit="cover" 
@@ -56,28 +56,30 @@ export default function LoginPage() {
       </div>
 
       {/* Right Pane - Login Form */}
-      <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center justify-center p-6 sm:p-12">
-        <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl border shadow-md">
-          <div className="flex items-center justify-center">
-            <Image 
-              src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
-              alt="Logo 3A RIVA Hub" 
-              width={187} 
-              height={42} 
-              priority 
-            />
-          </div>
-          
-          <Button
-            className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
-            onClick={signInWithGoogle}
-            disabled={loading}
-          >
-            <GoogleIcon />
-            <span className="ml-2">Entrar com Google</span>
-          </Button>
+      <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center p-6 sm:p-12">
+        <div className="flex-grow flex items-center justify-center w-full">
+            <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl border shadow-md">
+                <div className="flex items-center justify-center">
+                    <Image 
+                    src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
+                    alt="Logo 3A RIVA Hub" 
+                    width={187} 
+                    height={42} 
+                    priority 
+                    />
+                </div>
+                
+                <Button
+                    className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
+                    onClick={signInWithGoogle}
+                    disabled={loading}
+                >
+                    <GoogleIcon />
+                    <span className="ml-2">Entrar com Google</span>
+                </Button>
+            </div>
         </div>
-        <footer className="mt-8 text-center max-w-sm">
+        <footer className="flex-shrink-0 mt-8 text-center max-w-sm">
           <p className="text-xs text-muted-foreground font-body">
             Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA. O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
           </p>
