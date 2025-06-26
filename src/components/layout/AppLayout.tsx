@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, BrainCircuit, AreaChart } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -35,8 +35,8 @@ const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper },
   { href: '/documents', label: 'Documentos', icon: FolderOpen },
+  { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
   { href: '/labs', label: 'Labs', icon: FlaskConical },
-  { href: '/bi', label: 'Business Intelligence', icon: AreaChart },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
   { href: '/chatbot', label: 'Bob', icon: Bot },
 ];

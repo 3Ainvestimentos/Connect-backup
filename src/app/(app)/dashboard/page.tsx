@@ -10,9 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
-  Megaphone, MessageSquare, CalendarDays, Check, LayoutGrid,
-  UserCircle, MessagesSquare as SlackIcon, BookUser, Plane, Headset, Briefcase,
-  Megaphone as MarketingIcon
+  Megaphone, MessageSquare, CalendarDays, Check
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -20,10 +18,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import VacationRequestModal from '@/components/applications/VacationRequestModal';
-import SupportModal from '@/components/applications/SupportModal';
-import AdminModal from '@/components/applications/AdminModal';
-import MarketingModal from '@/components/applications/MarketingModal';
 
 const whatsNewItems = [
   {
@@ -70,31 +64,10 @@ const initialMessages = [
 
 type Message = (typeof initialMessages)[0];
 
-interface AppLink {
-  id: string;
-  name: string;
-  icon: LucideIcon;
-  href: string;
-}
-
-const applicationsList: AppLink[] = [
-  { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#' },
-  { id: 'slack', name: 'Slack', icon: SlackIcon, href: '#' },
-  { id: 'vacation', name: 'Férias', icon: Plane, href: '#' },
-  { id: 'support', name: 'Suporte TI', icon: Headset, href: '#' },
-  { id: 'admin', name: 'Administrativo', icon: Briefcase, href: '#' },
-  { id: 'marketing', name: 'Marketing', icon: MarketingIcon, href: '#' },
-];
-
 export default function DashboardPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [messages, setMessages] = React.useState<Message[]>(initialMessages);
   const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null);
-
-  const [isVacationModalOpen, setIsVacationModalOpen] = React.useState(false);
-  const [isSupportModalOpen, setIsSupportModalOpen] = React.useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
-  const [isMarketingModalOpen, setIsMarketingModalOpen] = React.useState(false);
   
   const unreadCount = React.useMemo(() => messages.filter(msg => !msg.isRead).length, [messages]);
 
@@ -107,16 +80,6 @@ export default function DashboardPage() {
     setSelectedMessage({ ...messageToView, isRead: true });
   };
   
-  const handleAppClick = (appId: string) => {
-    switch (appId) {
-      case 'vacation': setIsVacationModalOpen(true); break;
-      case 'support': setIsSupportModalOpen(true); break;
-      case 'admin': setIsAdminModalOpen(true); break;
-      case 'marketing': setIsMarketingModalOpen(true); break;
-      default: break;
-    }
-  };
-
   return (
     <>
       <div className="space-y-6 p-6 md:p-8">
@@ -151,7 +114,7 @@ export default function DashboardPage() {
           </div>
         </section>
         
-        <section className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Events Card */}
           <div className="lg:col-span-2">
             <Card className="shadow-sm flex flex-col h-full">
@@ -173,7 +136,8 @@ export default function DashboardPage() {
                       />
                   </div>
                   <div className="md:col-span-2 relative min-h-0">
-                      <ScrollArea className="absolute inset-0 pr-4">
+                    <div className="absolute inset-0">
+                      <ScrollArea className="h-full pr-4">
                           <div className="space-y-4">
                           {events.map((event, index) => (
                               <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
@@ -191,6 +155,7 @@ export default function DashboardPage() {
                           ))}
                           </div>
                       </ScrollArea>
+                    </div>
                   </div>
               </CardContent>
             </Card>
@@ -208,61 +173,28 @@ export default function DashboardPage() {
                     {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="flex-1 min-h-0 p-0">
-                <ScrollArea className="h-full p-6">
-                    <div className="space-y-4">
-                        {messages.map((msg) => (
-                            <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
-                                <div className="flex justify-between items-start gap-2">
-                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                        <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                        <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !msg.isRead })}>{msg.title}</div>
+              <CardContent className="flex-1 min-h-0 relative">
+                 <div className="absolute inset-0">
+                    <ScrollArea className="h-full p-6 -m-6">
+                        <div className="space-y-4">
+                            {messages.map((msg) => (
+                                <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
+                                    <div className="flex justify-between items-start gap-2">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <Checkbox checked={msg.isRead} disabled className="pointer-events-none" aria-label={msg.isRead ? "Mensagem lida" : "Mensagem não lida"} />
+                                            <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !msg.isRead })}>{msg.title}</div>
+                                        </div>
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                                     </div>
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                    <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !msg.isRead, 'font-normal': msg.isRead })}>
+                                      {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
+                                      {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
+                                    </p>
+                                    <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                                 </div>
-                                <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !msg.isRead, 'font-normal': msg.isRead })}>
-                                  {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                  {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
-                                </p>
-                                <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Applications Card */}
-          <div className="lg:col-span-1">
-            <Card className="shadow-sm flex flex-col h-full">
-              <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                  <LayoutGrid className="h-6 w-6 text-accent"/>
-                  Aplicações
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <div className="space-y-3">
-                      {applicationsList.map((app) => {
-                          const isModal = ['vacation', 'support', 'admin', 'marketing'].includes(app.id);
-                          const linkContent = (
-                              <>
-                                  <app.icon className="mr-4 h-6 w-6 text-accent" />
-                                  <span>{app.name}</span>
-                              </>
-                          );
-
-                          return isModal ? (
-                              <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" onClick={() => handleAppClick(app.id)}>
-                                {linkContent}
-                              </Button>
-                            ) : (
-                              <Button key={app.id} variant="outline" className="w-full justify-start h-14 p-4 text-base" asChild>
-                                <Link href={app.href}>{linkContent}</Link>
-                              </Button>
-                            );
-                      })}
+                            ))}
+                        </div>
+                    </ScrollArea>
                   </div>
               </CardContent>
             </Card>
@@ -288,13 +220,6 @@ export default function DashboardPage() {
           )}
         </DialogContent>
       </Dialog>
-      
-      <VacationRequestModal open={isVacationModalOpen} onOpenChange={setIsVacationModalOpen} />
-      <SupportModal open={isSupportModalOpen} onOpenChange={setIsSupportModalOpen} />
-      <AdminModal open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen} />
-      <MarketingModal open={isMarketingModalOpen} onOpenChange={setIsMarketingModalOpen} />
     </>
   );
 }
-
-    
