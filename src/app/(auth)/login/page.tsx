@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 // Placeholder for Google icon SVG
@@ -18,39 +17,30 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
   const { user, signInWithGoogle, loading } = useAuth();
-  const router = useRouter();
-
-  if (loading && !user) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-         <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-      </div>
-    );
-  }
-
+  
   const handleSignIn = async () => {
     await signInWithGoogle();
-    // The redirection is handled inside signInWithGoogle now.
   }
 
   return (
-    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-6">
-      {/* Background Video */}
-      <video
-        src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.appspot.com/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=4259a5cb-2489-49c9-a038-16c17d23d858"
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
-      />
-      <div className="absolute top-0 left-0 w-full h-full bg-black/40 -z-10"></div> {/* Overlay */}
-      
-      {/* Login Form Content */}
-      <div className="flex-grow flex items-center justify-center w-full">
+    <>
+      {/* Background Layers */}
+      <div className="fixed top-0 left-0 w-full h-full -z-20">
+        <video
+          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.appspot.com/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=4259a5cb-2489-49c9-a038-16c17d23d858"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+        />
+      </div>
+      <div className="fixed top-0 left-0 w-full h-full bg-black/40 -z-10"></div>
+
+      {/* Content Layer */}
+      <div className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center p-6">
+        
+        <main className="flex-grow flex items-center justify-center w-full">
           <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-lg">
               <div className="flex items-center justify-center">
                   <Image 
@@ -71,16 +61,16 @@ export default function LoginPage() {
                   <span className="ml-2">Entrar com Google</span>
               </Button>
           </div>
+        </main>
+        
+        <footer className="flex-shrink-0 mt-8 text-center max-w-xl pb-2">
+          <p className="text-xs text-white/80 font-body">
+            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.
+            <br />
+            O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
+          </p>
+        </footer>
       </div>
-      
-      {/* Footer */}
-      <footer className="flex-shrink-0 mt-8 text-center max-w-xl pb-2">
-        <p className="text-xs text-white/80 font-body">
-          Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.
-          <br />
-          O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
-        </p>
-      </footer>
-    </div>
+    </>
   );
 }
