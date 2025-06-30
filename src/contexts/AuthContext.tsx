@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!loading) {
       const isAuthPage = pathname === '/login';
-      if (!user && !isAuthPage) {
+       if (!user && !isAuthPage) {
         router.push('/login');
       }
     }
@@ -84,17 +84,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       router.push('/dashboard');
       return;
     }
+
+    // Placeholder list of allowed emails. 
+    // In a production app, fetch this from a secure backend.
+    const allowedEmails = [
+      'mock@example.com', // Included for mock user testing
+      // 'colaborador1@suaempresa.com',
+      // 'colaborador2@suaempresa.com',
+    ];
+
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      router.push('/dashboard');
+      const result = await signInWithPopup(auth, googleProvider);
+      const userEmail = result.user.email;
+
+      if (userEmail && allowedEmails.includes(userEmail)) {
+        router.push('/dashboard');
+        // setLoading will be turned false by onAuthStateChanged triggering a re-render
+      } else {
+        // If email is not in the list, sign out immediately.
+        await firebaseSignOut(auth); 
+        toast({
+          title: "Acesso não autorizado",
+          description: "Seu e-mail não tem permissão para acessar esta aplicação. Por favor, contate o administrador.",
+          variant: "destructive",
+        });
+        setLoading(false); // Stop the loading spinner on the button
+      }
     } catch (error: any) {
       console.error("Error signing in with Google: ", error);
-      toast({
-        title: "Erro de Autenticação",
-        description: error.message || "Não foi possível fazer login com o Google.",
-        variant: "destructive",
-      });
+      // Handle cases where the user closes the popup, etc.
+      if (error.code !== 'auth/popup-closed-by-user') {
+          toast({
+            title: "Erro de Autenticação",
+            description: error.message || "Não foi possível fazer login com o Google.",
+            variant: "destructive",
+          });
+      }
       setLoading(false);
     }
   };
@@ -109,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       await firebaseSignOut(auth);
-      // onAuthStateChanged will handle setUser and navigation
+      router.push('/login');
     } catch (error: any) {
       console.error("Error signing out: ", error);
       toast({
