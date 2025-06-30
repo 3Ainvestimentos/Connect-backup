@@ -51,7 +51,7 @@ export default function LoginPage() {
       
       {/* Login Form Content */}
       <div className="flex-grow flex items-center justify-center w-full">
-          <div className="max-w-sm w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 sm:p-10 rounded-xl border shadow-lg">
+          <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-lg">
               <div className="flex items-center justify-center">
                   <Image 
                   src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
