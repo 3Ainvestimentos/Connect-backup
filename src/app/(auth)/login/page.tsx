@@ -28,7 +28,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 -z-20">
         <video
           key="login-video"
-          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.appspot.com/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=4259a5cb-2489-49c9-a038-16c17d23d858"
+          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=18622e58-e88a-4702-9bde-3b1ee002784b"
           autoPlay
           loop
           muted
