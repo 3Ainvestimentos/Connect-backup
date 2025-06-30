@@ -37,52 +37,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Pane - Decorative Video */}
-      <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
-        <video
-          src="https://videos.pexels.com/video-files/853875/853875-hd_1920_1080_30fps.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/30"></div> {/* Optional overlay for text contrast */}
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-center p-6">
+      {/* Background Video */}
+      <video
+        src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.appspot.com/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=4259a5cb-2489-49c9-a038-16c17d23d858"
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+      />
+      <div className="absolute top-0 left-0 w-full h-full bg-black/40 -z-10"></div> {/* Overlay */}
+      
+      {/* Login Form Content */}
+      <div className="flex-grow flex items-center justify-center w-full">
+          <div className="max-w-sm w-full space-y-8 bg-white/90 backdrop-blur-sm p-8 sm:p-10 rounded-xl border shadow-lg">
+              <div className="flex items-center justify-center">
+                  <Image 
+                  src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
+                  alt="Logo 3A RIVA Hub" 
+                  width={187} 
+                  height={42} 
+                  priority 
+                  />
+              </div>
+              
+              <Button
+                  className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
+                  onClick={handleSignIn}
+                  disabled={loading}
+              >
+                  <GoogleIcon />
+                  <span className="ml-2">Entrar com Google</span>
+              </Button>
+          </div>
       </div>
-
-      {/* Right Pane - Login Form */}
-      <div className="w-full md:w-1/2 lg:w-3/5 flex flex-col items-center px-6 pt-6 pb-4 sm:px-12 sm:pt-12">
-        <div className="flex-grow flex items-center justify-center w-full">
-            <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl border shadow-md">
-                <div className="flex items-center justify-center">
-                    <Image 
-                    src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
-                    alt="Logo 3A RIVA Hub" 
-                    width={187} 
-                    height={42} 
-                    priority 
-                    />
-                </div>
-                
-                <Button
-                    className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
-                    onClick={handleSignIn}
-                    disabled={loading}
-                >
-                    <GoogleIcon />
-                    <span className="ml-2">Entrar com Google</span>
-                </Button>
-            </div>
-        </div>
-        <footer className="flex-shrink-0 mt-8 text-center max-w-xl pb-2">
-          <p className="text-xs text-muted-foreground font-body">
-            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.
-            <br />
-            O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
-          </p>
-        </footer>
-      </div>
+      
+      {/* Footer */}
+      <footer className="flex-shrink-0 mt-8 text-center max-w-xl pb-2">
+        <p className="text-xs text-white/80 font-body">
+          Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.
+          <br />
+          O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
+        </p>
+      </footer>
     </div>
   );
 }
