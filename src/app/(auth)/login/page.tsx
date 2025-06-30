@@ -27,7 +27,7 @@ export default function LoginPage() {
       {/* Background layers */}
       <div className="absolute inset-0 -z-20">
         <video
-          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=18622e58-e88a-4702-9bde-3b1ee002784b"
+          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/banner-inicial-3a-invest.mp4?alt=media&token=6934039d-1180-4b84-aa41-de70b9388be5"
           autoPlay
           loop
           muted
