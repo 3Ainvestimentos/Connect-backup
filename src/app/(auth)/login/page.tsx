@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 // Placeholder for Google icon SVG
@@ -17,8 +18,9 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
   const { user, signInWithGoogle, loading } = useAuth();
-  
-  if (loading && !user) { 
+  const router = useRouter();
+
+  if (loading && !user) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
          <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -29,18 +31,24 @@ export default function LoginPage() {
     );
   }
 
+  const handleSignIn = async () => {
+    await signInWithGoogle();
+    // The redirection is handled inside signInWithGoogle now.
+  }
+
   return (
     <div className="min-h-screen flex bg-white">
-      {/* Left Pane - Decorative Image */}
+      {/* Left Pane - Decorative Video */}
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
-        <Image 
-          src="https://i.ibb.co/20Gg3K4c/pexels-photo-12328431.jpg" 
-          data-ai-hint="office interior" 
-          layout="fill" 
-          objectFit="cover" 
-          alt="Escritório moderno"
-          priority
+        <video
+          src="https://videos.pexels.com/video-files/853874/853874-hd_1920_1080_30fps.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute w-full h-full object-cover"
         />
+        <div className="absolute inset-0 bg-black/30"></div> {/* Optional overlay for text contrast */}
       </div>
 
       {/* Right Pane - Login Form */}
@@ -59,7 +67,7 @@ export default function LoginPage() {
                 
                 <Button
                     className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
-                    onClick={signInWithGoogle}
+                    onClick={handleSignIn}
                     disabled={loading}
                 >
                     <GoogleIcon />
@@ -67,9 +75,9 @@ export default function LoginPage() {
                 </Button>
             </div>
         </div>
-        <footer className="flex-shrink-0 mt-8 text-center max-w-xl">
+        <footer className="flex-shrink-0 mt-8 text-center max-w-xl pb-2">
           <p className="text-xs text-muted-foreground font-body">
-            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA. 
+            Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.
             <br />
             O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
           </p>
