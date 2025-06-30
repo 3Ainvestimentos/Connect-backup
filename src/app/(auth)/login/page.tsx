@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   return (
     // Use a single root element for positioning context
-    <div className="relative min-h-screen w-full bg-black">
+    <div className="relative min-h-screen w-full">
       {/* Background layers */}
       <div className="absolute inset-0 -z-20">
         <video
