@@ -14,7 +14,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-
 export default function LoginPage() {
   const { user, signInWithGoogle, loading } = useAuth();
   
@@ -23,47 +22,47 @@ export default function LoginPage() {
   }
 
   return (
-    <>
-      {/* Background Layers */}
-      <div className="fixed top-0 left-0 w-full h-full -z-20">
+    // Use a single root element for positioning context
+    <div className="relative min-h-screen w-full">
+      {/* Background layers */}
+      <div className="absolute inset-0 -z-20">
         <video
+          key="login-video"
           src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.appspot.com/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=4259a5cb-2489-49c9-a038-16c17d23d858"
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover"
         />
       </div>
-      <div className="fixed top-0 left-0 w-full h-full bg-black/40 -z-10"></div>
+      <div className="absolute inset-0 -z-10 bg-black/40" />
 
-      {/* Content Layer */}
-      <div className="relative z-10 min-h-screen w-full flex flex-col items-center justify-center p-6">
-        
-        <main className="flex-grow flex items-center justify-center w-full">
-          <div className="max-w-sm w-full space-y-8 bg-white p-8 sm:p-10 rounded-xl shadow-lg">
-              <div className="flex items-center justify-center">
-                  <Image 
-                  src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
-                  alt="Logo 3A RIVA Hub" 
-                  width={187} 
-                  height={42} 
-                  priority 
-                  />
-              </div>
-              
-              <Button
-                  className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
-                  onClick={handleSignIn}
-                  disabled={loading}
-              >
-                  <GoogleIcon />
-                  <span className="ml-2">Entrar com Google</span>
-              </Button>
+      {/* Centered Content */}
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-6">
+        {/* Main login card */}
+        <main className="w-full max-w-sm space-y-8 rounded-xl bg-white p-8 shadow-lg sm:p-10">
+          <div className="flex items-center justify-center">
+            <Image 
+              src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
+              alt="Logo 3A RIVA Hub" 
+              width={187} 
+              height={42} 
+              priority 
+            />
           </div>
+          <Button
+            className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary font-body"
+            onClick={handleSignIn}
+            disabled={loading}
+          >
+            <GoogleIcon />
+            <span className="ml-2">Entrar com Google</span>
+          </Button>
         </main>
         
-        <footer className="flex-shrink-0 mt-8 text-center max-w-xl pb-2">
+        {/* Absolutely positioned footer at the bottom */}
+        <footer className="absolute bottom-6 px-6 text-center">
           <p className="text-xs text-white/80 font-body">
             Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.
             <br />
@@ -71,6 +70,6 @@ export default function LoginPage() {
           </p>
         </footer>
       </div>
-    </>
+    </div>
   );
 }
