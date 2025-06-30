@@ -41,7 +41,7 @@ export default function LoginPage() {
       {/* Left Pane - Decorative Video */}
       <div className="hidden md:block md:w-1/2 lg:w-2/5 relative">
         <video
-          src="https://storage.googleapis.com/a-riva-hub.appspot.com/Generated%20File%20June%2030,%202025%20-%2010_56AM.mp4"
+          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.appspot.com/o/Generated%20File%20June%2030%2C%202025%20-%2010_56AM.mp4?alt=media&token=e93f6b4d-3d4b-4b2a-8c7a-4c2517865768"
           autoPlay
           loop
           muted
