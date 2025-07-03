@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -14,7 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { User, Mail, Building, Briefcase, Calendar, Link as LinkIcon } from 'lucide-react';
+import { User, Mail, Building, Briefcase, Calendar, Link as LinkIcon, Shield } from 'lucide-react';
+import Link from 'next/link';
 
 interface ProfileModalProps {
   open: boolean;
@@ -32,6 +34,9 @@ const userProfileData = {
 
 export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const { user } = useAuth();
+  
+  // Simple check for admin role. In a real app, this should be based on roles from a backend.
+  const isAdmin = user?.email === 'mock@example.com';
 
   if (!user) return null;
 
@@ -92,8 +97,13 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                         <a href="#"><LinkIcon className="mr-2 h-4 w-4" />Meus Documentos</a>
                     </Button>
                     <Button variant="outline" size="sm" asChild>
-                        <a href="/contacts"><LinkIcon className="mr-2 h-4 w-4" />Ver Organograma</a>
+                        <Link href="/contacts"><LinkIcon className="mr-2 h-4 w-4" />Ver Organograma</Link>
                     </Button>
+                    {isAdmin && (
+                        <Button variant="destructive" size="sm" asChild>
+                            <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Painel Admin</Link>
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>

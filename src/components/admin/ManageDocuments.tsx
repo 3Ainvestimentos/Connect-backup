@@ -1,0 +1,166 @@
+
+"use client";
+import React, { useState } from 'react';
+import { mockDocuments, DocumentType } from '@/app/(app)/documents/page';
+import { Button } from '@/components/ui/button';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { toast } from '@/hooks/use-toast';
+
+const documentSchema = z.object({
+    id: z.string().optional(),
+    name: z.string().min(1, "Nome é obrigatório"),
+    category: z.string().min(1, "Categoria é obrigatória"),
+    type: z.string().min(1, "Tipo é obrigatório"),
+    size: z.string().min(1, "Tamanho é obrigatório"),
+    lastModified: z.string().min(1, "Data é obrigatória"),
+    dataAiHint: z.string().optional(),
+});
+
+type DocumentFormValues = z.infer<typeof documentSchema>;
+
+export function ManageDocuments() {
+    const [documents, setDocuments] = useState<DocumentType[]>(mockDocuments);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
+
+    const { register, handleSubmit, reset, formState: { errors } } = useForm<DocumentFormValues>({
+        resolver: zodResolver(documentSchema),
+    });
+
+    const handleDialogOpen = (doc: DocumentType | null) => {
+        setEditingDocument(doc);
+        if (doc) {
+            const formattedDoc = {
+              ...doc,
+              lastModified: new Date(doc.lastModified).toISOString().split('T')[0],
+            };
+            reset(formattedDoc);
+        } else {
+            reset({
+                id: undefined,
+                name: '',
+                category: '',
+                type: 'pdf',
+                size: '1MB',
+                lastModified: new Date().toISOString().split('T')[0],
+                dataAiHint: '',
+            });
+        }
+        setIsDialogOpen(true);
+    };
+
+    const handleDelete = (id: string) => {
+        if (window.confirm("Tem certeza que deseja excluir este documento?")) {
+            setDocuments(documents.filter(item => item.id !== id));
+            toast({ title: "Documento excluído com sucesso." });
+        }
+    };
+    
+    const onSubmit = (data: DocumentFormValues) => {
+        if (editingDocument) {
+            setDocuments(documents.map(item => item.id === editingDocument.id ? { ...item, ...data } : item));
+            toast({ title: "Documento atualizado com sucesso." });
+        } else {
+            const newDoc = { ...data, id: `doc-${Date.now()}` };
+            setDocuments([newDoc, ...documents]);
+            toast({ title: "Documento adicionado com sucesso." });
+        }
+        setIsDialogOpen(false);
+        setEditingDocument(null);
+    };
+    
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Gerenciar Documentos</CardTitle>
+                    <CardDescription>Adicione, edite ou remova documentos do repositório.</CardDescription>
+                </div>
+                <Button onClick={() => handleDialogOpen(null)}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Adicionar Documento
+                </Button>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Nome</TableHead>
+                                <TableHead>Categoria</TableHead>
+                                <TableHead>Modificado em</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {documents.map(item => (
+                                <TableRow key={item.id}>
+                                    <TableCell className="font-medium">{item.name}</TableCell>
+                                    <TableCell>{item.category}</TableCell>
+                                    <TableCell>{new Date(item.lastModified).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+
+             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingDocument(null); setIsDialogOpen(isOpen); }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingDocument ? 'Editar Documento' : 'Adicionar Documento'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <div>
+                            <Label htmlFor="name">Nome do Arquivo</Label>
+                            <Input id="name" {...register('name')} />
+                            {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="category">Categoria</Label>
+                            <Input id="category" {...register('category')} />
+                            {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
+                        </div>
+                         <div>
+                            <Label htmlFor="type">Tipo (ex: pdf, docx)</Label>
+                            <Input id="type" {...register('type')} />
+                            {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
+                        </div>
+                         <div>
+                            <Label htmlFor="size">Tamanho (ex: 2.5MB)</Label>
+                            <Input id="size" {...register('size')} />
+                            {errors.size && <p className="text-sm text-destructive mt-1">{errors.size.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="lastModified">Data de Modificação</Label>
+                            <Input id="lastModified" type="date" {...register('lastModified')} />
+                            {errors.lastModified && <p className="text-sm text-destructive mt-1">{errors.lastModified.message}</p>}
+                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline">Cancelar</Button>
+                            </DialogClose>
+                            <Button type="submit">Salvar</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </Card>
+    );
+}
