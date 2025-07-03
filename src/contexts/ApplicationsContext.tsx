@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface ApplicationLinkItem {
   id: string;
@@ -59,25 +59,25 @@ const initialApplications: Application[] = [
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const [applications, setApplications] = useState<Application[]>(initialApplications);
 
-  const addApplication = useCallback((appData: Omit<Application, 'id'>) => {
+  const addApplication = (appData: Omit<Application, 'id'>) => {
     const newApp: Application = { ...appData, id: `app-${Date.now()}` };
     setApplications(prev => [newApp, ...prev]);
-  }, []);
+  };
 
-  const updateApplication = useCallback((updatedApp: Application) => {
+  const updateApplication = (updatedApp: Application) => {
     setApplications(prev => prev.map(app => (app.id === updatedApp.id ? updatedApp : app)));
-  }, []);
+  };
 
-  const deleteApplication = useCallback((id: string) => {
+  const deleteApplication = (id: string) => {
     setApplications(prev => prev.filter(app => app.id !== id));
-  }, []);
+  };
   
-  const value = useMemo(() => ({ 
+  const value = { 
       applications, 
       addApplication, 
       updateApplication, 
       deleteApplication 
-  }), [applications, addApplication, updateApplication, deleteApplication]);
+  };
 
   return (
     <ApplicationsContext.Provider value={value}>

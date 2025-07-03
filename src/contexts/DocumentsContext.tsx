@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface DocumentType {
   id: string;
@@ -35,25 +35,25 @@ const DocumentsContext = createContext<DocumentsContextType | undefined>(undefin
 export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
   const [documents, setDocuments] = useState<DocumentType[]>(initialDocuments);
 
-  const addDocument = useCallback((docData: Omit<DocumentType, 'id'>) => {
+  const addDocument = (docData: Omit<DocumentType, 'id'>) => {
     const newDoc: DocumentType = { ...docData, id: `doc-${Date.now()}` };
     setDocuments(prev => [newDoc, ...prev].sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
-  }, []);
+  };
 
-  const updateDocument = useCallback((updatedDoc: DocumentType) => {
+  const updateDocument = (updatedDoc: DocumentType) => {
     setDocuments(prev => prev.map(doc => (doc.id === updatedDoc.id ? updatedDoc : doc)));
-  }, []);
+  };
 
-  const deleteDocument = useCallback((id: string) => {
+  const deleteDocument = (id: string) => {
     setDocuments(prev => prev.filter(doc => doc.id !== id));
-  }, []);
+  };
 
-  const value = useMemo(() => ({
+  const value = {
     documents,
     addDocument,
     updateDocument,
     deleteDocument,
-  }), [documents, addDocument, updateDocument, deleteDocument]);
+  };
 
 
   return (

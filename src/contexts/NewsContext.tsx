@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface NewsItemType {
   id: string;
@@ -33,25 +33,25 @@ const NewsContext = createContext<NewsContextType | undefined>(undefined);
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const [newsItems, setNewsItems] = useState<NewsItemType[]>(initialNewsItems);
 
-  const addNewsItem = useCallback((itemData: Omit<NewsItemType, 'id'>) => {
+  const addNewsItem = (itemData: Omit<NewsItemType, 'id'>) => {
     const newItem: NewsItemType = { ...itemData, id: `news-${Date.now()}` };
     setNewsItems(prev => [newItem, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
+  };
 
-  const updateNewsItem = useCallback((updatedItem: NewsItemType) => {
+  const updateNewsItem = (updatedItem: NewsItemType) => {
     setNewsItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
-  }, []);
+  };
 
-  const deleteNewsItem = useCallback((id: string) => {
+  const deleteNewsItem = (id: string) => {
     setNewsItems(prev => prev.filter(item => item.id !== id));
-  }, []);
+  };
 
-  const value = useMemo(() => ({
+  const value = {
     newsItems,
     addNewsItem,
     updateNewsItem,
     deleteNewsItem,
-  }), [newsItems, addNewsItem, updateNewsItem, deleteNewsItem]);
+  };
 
   return (
     <NewsContext.Provider value={value}>
