@@ -83,6 +83,7 @@ export function ManageApplications() {
 
     const watchType = form.watch('type');
     const watchModalId = form.watch('modalId');
+    const watchIcon = form.watch('icon');
 
     const handleDialogOpen = (app: Application | null) => {
         setEditingApplication(app);
@@ -187,12 +188,34 @@ export function ManageApplications() {
                                 <Controller
                                     name="icon"
                                     control={form.control}
-                                    render={({ field }) => (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent><ScrollArea className="h-72">{iconList.map(iconName => <SelectItem key={iconName} value={iconName}>{iconName}</SelectItem>)}</ScrollArea></SelectContent>
-                                    </Select>
-                                    )}
+                                    render={({ field }) => {
+                                        const SelectedIcon = watchIcon ? getIcon(watchIcon) : null;
+                                        return (
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger>
+                                                    <div className="flex items-center gap-2">
+                                                        {SelectedIcon && <SelectedIcon className="h-4 w-4" />}
+                                                        <SelectValue />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <ScrollArea className="h-72">
+                                                        {iconList.map(iconName => {
+                                                            const Icon = getIcon(iconName);
+                                                            return (
+                                                                <SelectItem key={iconName} value={iconName}>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Icon className="h-4 w-4" />
+                                                                        <span>{iconName}</span>
+                                                                    </div>
+                                                                </SelectItem>
+                                                            )
+                                                        })}
+                                                    </ScrollArea>
+                                                </SelectContent>
+                                            </Select>
+                                        );
+                                    }}
                                 />
                                 {form.formState.errors.icon && <p className="text-sm text-destructive mt-1">{form.formState.errors.icon.message}</p>}
                             </div>
