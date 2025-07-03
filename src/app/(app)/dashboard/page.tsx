@@ -89,15 +89,7 @@ export default function DashboardPage() {
                   </>
               );
           default:
-              return (
-                  <div className="col-span-1 md:col-span-2 flex items-center justify-center bg-muted rounded-lg min-h-[450px]">
-                      <div className="text-center text-muted-foreground">
-                          <ImageIcon className="mx-auto h-12 w-12 mb-4" />
-                          <h3 className="text-xl font-headline">Nenhum Destaque Ativo</h3>
-                          <p className="font-body">Vá para o painel do administrador para ativar os destaques.</p>
-                      </div>
-                  </div>
-              );
+              return null;
       }
   };
   
@@ -117,16 +109,18 @@ export default function DashboardPage() {
   return (
     <>
       <div className="space-y-6 p-6 md:p-8">
-        <section>
-          <PageHeader
-            title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
-            icon={Megaphone}
-            description="Veja os últimos anúncios e destaques."
-          />
-          <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>
-            {renderHighlights()}
-          </div>
-        </section>
+        {activeHighlights.length > 0 && (
+          <section>
+            <PageHeader
+              title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
+              icon={Megaphone}
+              description="Veja os últimos anúncios e destaques."
+            />
+            <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>
+              {renderHighlights()}
+            </div>
+          </section>
+        )}
         
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Messages Card */}
