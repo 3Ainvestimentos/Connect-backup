@@ -1,7 +1,7 @@
-
 "use client";
 import React, { useState } from 'react';
-import { mockDocuments, DocumentType } from '@/app/(app)/documents/page';
+import { useDocuments } from '@/contexts/DocumentsContext';
+import type { DocumentType } from '@/contexts/DocumentsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -28,7 +28,7 @@ const documentSchema = z.object({
 type DocumentFormValues = z.infer<typeof documentSchema>;
 
 export function ManageDocuments() {
-    const [documents, setDocuments] = useState<DocumentType[]>(mockDocuments);
+    const { documents, addDocument, updateDocument, deleteDocument } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
 
@@ -61,18 +61,17 @@ export function ManageDocuments() {
 
     const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este documento?")) {
-            setDocuments(currentDocs => currentDocs.filter(item => item.id !== id));
+            deleteDocument(id);
             toast({ title: "Documento excluído com sucesso." });
         }
     };
     
     const onSubmit = (data: DocumentFormValues) => {
         if (editingDocument) {
-            setDocuments(currentDocs => currentDocs.map(item => item.id === editingDocument.id ? { ...item, ...data } as DocumentType : item));
+            updateDocument({ ...data, id: editingDocument.id } as DocumentType);
             toast({ title: "Documento atualizado com sucesso." });
         } else {
-            const newDoc = { ...data, id: `doc-${Date.now()}` } as DocumentType;
-            setDocuments(currentDocs => [newDoc, ...currentDocs]);
+            addDocument(data);
             toast({ title: "Documento adicionado com sucesso." });
         }
         setIsDialogOpen(false);

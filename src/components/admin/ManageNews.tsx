@@ -1,7 +1,7 @@
-
 "use client";
 import React, { useState } from 'react';
-import { mockNewsItems, NewsItemType } from '@/app/(app)/news/page';
+import { useNews } from '@/contexts/NewsContext';
+import type { NewsItemType } from '@/contexts/NewsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -28,7 +28,7 @@ const newsSchema = z.object({
 type NewsFormValues = z.infer<typeof newsSchema>;
 
 export function ManageNews() {
-    const [news, setNews] = useState<NewsItemType[]>(mockNewsItems);
+    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItem } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
 
@@ -60,18 +60,17 @@ export function ManageNews() {
 
     const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
-            setNews(currentNews => currentNews.filter(item => item.id !== id));
+            deleteNewsItem(id);
             toast({ title: "Notícia excluída com sucesso." });
         }
     };
     
     const onSubmit = (data: NewsFormValues) => {
         if (editingNews) {
-            setNews(currentNews => currentNews.map(item => item.id === editingNews.id ? { ...item, ...data } : item));
+            updateNewsItem({ ...editingNews, ...data });
             toast({ title: "Notícia atualizada com sucesso." });
         } else {
-            const newNewsItem = { ...data, id: `news-${Date.now()}` };
-            setNews(currentNews => [newNewsItem, ...currentNews]);
+            addNewsItem(data);
             toast({ title: "Notícia adicionada com sucesso." });
         }
         setIsDialogOpen(false);
@@ -102,7 +101,7 @@ export function ManageNews() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {news.map(item => (
+                            {newsItems.map(item => (
                                 <TableRow key={item.id}>
                                     <TableCell className="font-medium">{item.title}</TableCell>
                                     <TableCell>{item.category}</TableCell>
