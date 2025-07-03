@@ -87,7 +87,6 @@ import {
   ThumbsUp,
   ToggleLeft,
   ToggleRight,
-  Tool,
   Trash,
   TrendingUp,
   Truck,
@@ -101,6 +100,7 @@ import {
   Watch,
   Wifi,
   Wind,
+  Wrench,
   Zap,
 } from 'lucide-react';
 
@@ -192,7 +192,6 @@ export const iconMap: Record<string, LucideIcon> = {
   ThumbsUp,
   ToggleLeft,
   ToggleRight,
-  Tool,
   Trash,
   TrendingUp,
   Truck,
@@ -206,6 +205,7 @@ export const iconMap: Record<string, LucideIcon> = {
   Watch,
   Wifi,
   Wind,
+  Wrench,
   Zap,
 };
 
