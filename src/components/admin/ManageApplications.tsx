@@ -190,7 +190,14 @@ export function ManageApplications() {
                                     render={({ field }) => (
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <SelectTrigger>
-                                                <SelectValue />
+                                                <SelectValue>
+                                                     {field.value && (
+                                                        <div className="flex items-center gap-2">
+                                                            {getIcon(field.value)({ className: 'h-4 w-4' })}
+                                                            <span>{field.value}</span>
+                                                        </div>
+                                                     )}
+                                                </SelectValue>
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <ScrollArea className="h-72">
