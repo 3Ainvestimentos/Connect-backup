@@ -61,18 +61,18 @@ export function ManageDocuments() {
 
     const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este documento?")) {
-            setDocuments(documents.filter(item => item.id !== id));
+            setDocuments(currentDocs => currentDocs.filter(item => item.id !== id));
             toast({ title: "Documento excluído com sucesso." });
         }
     };
     
     const onSubmit = (data: DocumentFormValues) => {
         if (editingDocument) {
-            setDocuments(documents.map(item => item.id === editingDocument.id ? { ...item, ...data } as DocumentType : item));
+            setDocuments(currentDocs => currentDocs.map(item => item.id === editingDocument.id ? { ...item, ...data } as DocumentType : item));
             toast({ title: "Documento atualizado com sucesso." });
         } else {
             const newDoc = { ...data, id: `doc-${Date.now()}` } as DocumentType;
-            setDocuments([newDoc, ...documents]);
+            setDocuments(currentDocs => [newDoc, ...currentDocs]);
             toast({ title: "Documento adicionado com sucesso." });
         }
         setIsDialogOpen(false);

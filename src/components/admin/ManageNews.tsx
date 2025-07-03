@@ -60,18 +60,18 @@ export function ManageNews() {
 
     const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
-            setNews(news.filter(item => item.id !== id));
+            setNews(currentNews => currentNews.filter(item => item.id !== id));
             toast({ title: "Notícia excluída com sucesso." });
         }
     };
     
     const onSubmit = (data: NewsFormValues) => {
         if (editingNews) {
-            setNews(news.map(item => item.id === editingNews.id ? { ...item, ...data } : item));
+            setNews(currentNews => currentNews.map(item => item.id === editingNews.id ? { ...item, ...data } : item));
             toast({ title: "Notícia atualizada com sucesso." });
         } else {
             const newNewsItem = { ...data, id: `news-${Date.now()}` };
-            setNews([newNewsItem, ...news]);
+            setNews(currentNews => [newNewsItem, ...currentNews]);
             toast({ title: "Notícia adicionada com sucesso." });
         }
         setIsDialogOpen(false);
