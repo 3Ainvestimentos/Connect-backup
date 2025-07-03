@@ -4,6 +4,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import { HighlightsProvider } from '@/contexts/HighlightsContext';
 
 export const metadata: Metadata = {
   title: '3A RIVA Hub',
@@ -26,8 +27,10 @@ export default function RootLayout({
       <body className={cn("font-body antialiased")}>
         <ThemeProvider>
           <AuthProvider>
-            {children}
-            <Toaster />
+            <HighlightsProvider>
+              {children}
+              <Toaster />
+            </HighlightsProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

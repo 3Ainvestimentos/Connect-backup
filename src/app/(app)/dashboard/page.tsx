@@ -1,4 +1,3 @@
-
 "use client"; 
 
 import React from 'react';
@@ -10,7 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
-  Megaphone, MessageSquare, CalendarDays, Check
+  Megaphone, MessageSquare, CalendarDays, Check, Image as ImageIcon
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -18,30 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-
-const whatsNewItems = [
-  {
-    title: 'Conferência de Felicidade do Colaborador',
-    description: 'Inscrições abertas',
-    imageUrl: 'https://i.ibb.co/nszMYNWJ/carreira-felicidade-corporativa.jpg',
-    dataAiHint: 'conference team',
-    link: '#',
-  },
-  {
-    title: 'Novos pacotes de bem-estar',
-    description: 'Descubra nossas novas ofertas',
-    imageUrl: 'https://i.ibb.co/mrC2Tr5b/homem-correndo-na-estrada-contra-as-montanhas-durante-o-por-do-sol-1048944-7722076.jpg', 
-    dataAiHint: 'wellness running',
-    link: '#',
-  },
-  {
-    title: 'O dia de trazer seu cão para o escritório está de volta!',
-    description: 'Prepare-se para a fofura!',
-    imageUrl: 'https://i.ibb.co/SpBph6N/1-photo-1535930749574-1399327ce78f-303764.jpg',
-    dataAiHint: 'dog office',
-    link: '#',
-  },
-];
+import { useHighlights } from '@/contexts/HighlightsContext';
 
 const events: { title: string; time: string; icon: LucideIcon }[] = [
     { title: "Reunião de Alinhamento Semanal", time: "10:00 - 11:00", icon: Users },
@@ -64,10 +40,23 @@ const initialMessages = [
 
 type Message = (typeof initialMessages)[0];
 
+const HighlightCard = ({ item, className = "" }: { item: any, className?: string }) => (
+    <Link href={item.link} className={cn("relative rounded-lg overflow-hidden group block", className)}>
+        <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={item.dataAiHint} />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+        <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
+        <p className="text-sm text-gray-200 font-body">{item.description}</p>
+        </div>
+    </Link>
+);
+
+
 export default function DashboardPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [messages, setMessages] = React.useState<Message[]>(initialMessages);
   const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null);
+  const { getActiveHighlights } = useHighlights();
+  const activeHighlights = getActiveHighlights();
   
   const unreadCount = React.useMemo(() => messages.filter(msg => !msg.isRead).length, [messages]);
 
@@ -80,6 +69,51 @@ export default function DashboardPage() {
     setSelectedMessage({ ...messageToView, isRead: true });
   };
   
+  const renderHighlights = () => {
+      switch (activeHighlights.length) {
+          case 1:
+              return <HighlightCard item={activeHighlights[0]} />;
+          case 2:
+              return (
+                  <>
+                      <HighlightCard item={activeHighlights[0]} />
+                      <HighlightCard item={activeHighlights[1]} />
+                  </>
+              );
+          case 3:
+              return (
+                  <>
+                      <HighlightCard item={activeHighlights[0]} />
+                      <HighlightCard item={activeHighlights[1]} className="md:row-span-2" />
+                      <HighlightCard item={activeHighlights[2]} />
+                  </>
+              );
+          default:
+              return (
+                  <div className="col-span-1 md:col-span-2 flex items-center justify-center bg-muted rounded-lg min-h-[450px]">
+                      <div className="text-center text-muted-foreground">
+                          <ImageIcon className="mx-auto h-12 w-12 mb-4" />
+                          <h3 className="text-xl font-headline">Nenhum Destaque Ativo</h3>
+                          <p className="font-body">Vá para o painel do administrador para ativar os destaques.</p>
+                      </div>
+                  </div>
+              );
+      }
+  };
+  
+  const getGridClass = () => {
+    switch (activeHighlights.length) {
+      case 1:
+        return "grid-cols-1";
+      case 2:
+        return "grid-cols-1 md:grid-cols-2";
+      case 3:
+        return "grid-cols-1 md:grid-cols-2 md:grid-rows-2";
+      default:
+        return "grid-cols-1";
+    }
+  }
+
   return (
     <>
       <div className="space-y-6 p-6 md:p-8">
@@ -89,28 +123,8 @@ export default function DashboardPage() {
             icon={Megaphone}
             description="Veja os últimos anúncios e destaques."
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3" style={{ minHeight: '450px' }}>
-            <Link href={whatsNewItems[0].link} className="relative rounded-lg overflow-hidden group block">
-              <Image src={whatsNewItems[0].imageUrl} alt={whatsNewItems[0].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[0].dataAiHint} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[0].title}</h3>
-                <p className="text-sm text-gray-200 font-body">{whatsNewItems[0].description}</p>
-              </div>
-            </Link>
-            <Link href={whatsNewItems[1].link} className="relative md:row-span-2 rounded-lg overflow-hidden group block">
-              <Image src={whatsNewItems[1].imageUrl} alt={whatsNewItems[1].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[1].dataAiHint} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[1].title}</h3>
-                <p className="text-sm text-gray-200 font-body">{whatsNewItems[1].description}</p>
-              </div>
-            </Link>
-            <Link href={whatsNewItems[2].link} className="relative rounded-lg overflow-hidden group block">
-              <Image src={whatsNewItems[2].imageUrl} alt={whatsNewItems[2].title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={whatsNewItems[2].dataAiHint} />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-                <h3 className="text-xl font-headline font-bold text-white">{whatsNewItems[2].title}</h3>
-                <p className="text-sm text-gray-200 font-body">{whatsNewItems[2].description}</p>
-              </div>
-            </Link>
+          <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>
+            {renderHighlights()}
           </div>
         </section>
         
