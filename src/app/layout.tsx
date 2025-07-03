@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { HighlightsProvider } from '@/contexts/HighlightsContext';
+import { ApplicationsProvider } from '@/contexts/ApplicationsContext';
 
 export const metadata: Metadata = {
   title: '3A RIVA Hub',
@@ -28,8 +29,10 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <HighlightsProvider>
-              {children}
-              <Toaster />
+              <ApplicationsProvider>
+                {children}
+                <Toaster />
+              </ApplicationsProvider>
             </HighlightsProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -1,56 +1,41 @@
-
 "use client";
 
 import React from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import Link from 'next/link';
-import { LayoutGrid, UserCircle, Briefcase, Plane, Headset, Megaphone as MarketingIcon } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
-import { MessagesSquare as SlackIcon } from 'lucide-react';
+import { LayoutGrid } from 'lucide-react';
+import { getIcon } from '@/lib/icons';
 import { Card, CardContent } from '@/components/ui/card';
+import { useApplications, Application } from '@/contexts/ApplicationsContext';
 
-// Import modals
+// Import all modals
 import VacationRequestModal from '@/components/applications/VacationRequestModal';
 import SupportModal from '@/components/applications/SupportModal';
 import AdminModal from '@/components/applications/AdminModal';
 import MarketingModal from '@/components/applications/MarketingModal';
 import ProfileModal from '@/components/applications/ProfileModal';
-
-interface AppLink {
-  id: string;
-  name: string;
-  icon: LucideIcon;
-  href: string;
-  isModal?: boolean;
-  external?: boolean;
-}
-
-const applicationsList: AppLink[] = [
-  { id: 'profile', name: 'Meu Perfil', icon: UserCircle, href: '#', isModal: true },
-  { id: 'slack', name: 'Slack', icon: SlackIcon, href: 'https://slack.com/intl/pt-br/', external: true },
-  { id: 'vacation', name: 'Férias', icon: Plane, href: '#', isModal: true },
-  { id: 'support', name: 'Suporte TI', icon: Headset, href: '#', isModal: true },
-  { id: 'admin', name: 'Administrativo', icon: Briefcase, href: '#', isModal: true },
-  { id: 'marketing', name: 'Marketing', icon: MarketingIcon, href: '#', isModal: true },
-];
+import GenericInfoModal from '@/components/applications/GenericInfoModal';
 
 export default function ApplicationsPage() {
-  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
-  const [isVacationModalOpen, setIsVacationModalOpen] = React.useState(false);
-  const [isSupportModalOpen, setIsSupportModalOpen] = React.useState(false);
-  const [isAdminModalOpen, setIsAdminModalOpen] = React.useState(false);
-  const [isMarketingModalOpen, setIsMarketingModalOpen] = React.useState(false);
+  const { applications } = useApplications();
+  const [activeModal, setActiveModal] = React.useState<Application | null>(null);
 
-  const handleAppClick = (appId: string) => {
-    switch (appId) {
-      case 'profile': setIsProfileModalOpen(true); break;
-      case 'vacation': setIsVacationModalOpen(true); break;
-      case 'support': setIsSupportModalOpen(true); break;
-      case 'admin': setIsAdminModalOpen(true); break;
-      case 'marketing': setIsMarketingModalOpen(true); break;
-      default: break;
+  const handleAppClick = (app: Application) => {
+    if (app.type === 'modal') {
+      setActiveModal(app);
     }
   };
+  
+  const handleCloseModal = () => {
+    setActiveModal(null);
+  }
+
+  const genericModalContent = React.useMemo(() => {
+    if (activeModal?.modalId === 'generic' && activeModal.content) {
+      return activeModal.content;
+    }
+    return null;
+  }, [activeModal]);
 
   return (
     <>
@@ -61,10 +46,11 @@ export default function ApplicationsPage() {
           description="Acesse as ferramentas e serviços da empresa."
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {applicationsList.map((app) => {
+          {applications.map((app) => {
+            const Icon = getIcon(app.icon);
             const content = (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <app.icon className="mb-3 h-8 w-8 text-accent" />
+                <Icon className="mb-3 h-8 w-8 text-accent" />
                 <span className="font-semibold font-body text-card-foreground">{app.name}</span>
               </div>
             );
@@ -73,16 +59,16 @@ export default function ApplicationsPage() {
               className: "flex items-center justify-center p-6 h-36 hover:bg-muted/50 transition-colors cursor-pointer"
             };
 
-            return app.isModal ? (
-              <Card key={app.id} {...cardProps} onClick={() => handleAppClick(app.id)} onKeyDown={(e) => e.key === 'Enter' && handleAppClick(app.id)} tabIndex={0}>
+            return app.type === 'modal' ? (
+              <Card key={app.id} {...cardProps} onClick={() => handleAppClick(app)} onKeyDown={(e) => e.key === 'Enter' && handleAppClick(app)} tabIndex={0}>
                 <CardContent className="p-0">{content}</CardContent>
               </Card>
             ) : (
               <Link 
-                href={app.href} 
+                href={app.href || '#'} 
                 key={app.id} 
                 className="focus:outline-none focus:ring-2 focus:ring-ring rounded-lg"
-                {...(app.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                {...(app.type === 'external' ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               >
                 <Card {...cardProps}>
                    <CardContent className="p-0">{content}</CardContent>
@@ -93,11 +79,21 @@ export default function ApplicationsPage() {
         </div>
       </div>
       
-      <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
-      <VacationRequestModal open={isVacationModalOpen} onOpenChange={setIsVacationModalOpen} />
-      <SupportModal open={isSupportModalOpen} onOpenChange={setIsSupportModalOpen} />
-      <AdminModal open={isAdminModalOpen} onOpenChange={setIsAdminModalOpen} />
-      <MarketingModal open={isMarketingModalOpen} onOpenChange={setIsMarketingModalOpen} />
+      {/* Pre-built Modals */}
+      <ProfileModal open={activeModal?.modalId === 'profile'} onOpenChange={handleCloseModal} />
+      <VacationRequestModal open={activeModal?.modalId === 'vacation'} onOpenChange={handleCloseModal} />
+      <SupportModal open={activeModal?.modalId === 'support'} onOpenChange={handleCloseModal} />
+      <AdminModal open={activeModal?.modalId === 'admin'} onOpenChange={handleCloseModal} />
+      <MarketingModal open={activeModal?.modalId === 'marketing'} onOpenChange={handleCloseModal} />
+      
+      {/* Generic Modal */}
+      {genericModalContent && (
+        <GenericInfoModal 
+            open={!!genericModalContent}
+            onOpenChange={handleCloseModal}
+            content={genericModalContent}
+        />
+      )}
     </>
   );
 }
