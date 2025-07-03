@@ -21,6 +21,7 @@ const documentSchema = z.object({
     type: z.string().min(1, "Tipo é obrigatório"),
     size: z.string().min(1, "Tamanho é obrigatório"),
     lastModified: z.string().min(1, "Data é obrigatória"),
+    downloadUrl: z.string().url("URL de download inválida"),
     dataAiHint: z.string().optional(),
 });
 
@@ -51,6 +52,7 @@ export function ManageDocuments() {
                 type: 'pdf',
                 size: '1MB',
                 lastModified: new Date().toISOString().split('T')[0],
+                downloadUrl: '',
                 dataAiHint: '',
             });
         }
@@ -66,10 +68,10 @@ export function ManageDocuments() {
     
     const onSubmit = (data: DocumentFormValues) => {
         if (editingDocument) {
-            setDocuments(documents.map(item => item.id === editingDocument.id ? { ...item, ...data } : item));
+            setDocuments(documents.map(item => item.id === editingDocument.id ? { ...item, ...data } as DocumentType : item));
             toast({ title: "Documento atualizado com sucesso." });
         } else {
-            const newDoc = { ...data, id: `doc-${Date.now()}` };
+            const newDoc = { ...data, id: `doc-${Date.now()}` } as DocumentType;
             setDocuments([newDoc, ...documents]);
             toast({ title: "Documento adicionado com sucesso." });
         }
@@ -151,6 +153,11 @@ export function ManageDocuments() {
                             <Label htmlFor="lastModified">Data de Modificação</Label>
                             <Input id="lastModified" type="date" {...register('lastModified')} />
                             {errors.lastModified && <p className="text-sm text-destructive mt-1">{errors.lastModified.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="downloadUrl">URL de Download</Label>
+                            <Input id="downloadUrl" {...register('downloadUrl')} placeholder="https://..." />
+                            {errors.downloadUrl && <p className="text-sm text-destructive mt-1">{errors.downloadUrl.message}</p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
