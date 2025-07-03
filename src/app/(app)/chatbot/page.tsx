@@ -1,17 +1,25 @@
 
 import { PageHeader } from '@/components/layout/PageHeader';
-import ChatInterface from '@/components/chatbot/ChatInterface';
-import { Bot, MessageCircle, Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 
 export default function ChatbotPage() {
   return (
-    <div className="h-full flex flex-col p-6 md:p-8"> {/* Adjust var if header height differs */}
-      <PageHeader 
-        title="Bob" 
-        icon={Bot}
-        description="Converse com Bob para obter ajuda e informações."
-      />
-      <ChatInterface />
+    <div className="flex flex-col h-full">
+        <div className="p-6 md:p-8 pb-0">
+            <PageHeader 
+                title="Bob" 
+                icon={Bot}
+                description="Converse com Bob para obter ajuda e informações."
+            />
+        </div>
+        <div className="flex-grow p-6 md:p-8 pt-2">
+            <iframe
+                src="https://URL-DO-SEU-APP-BOB.web.app"
+                className="w-full h-full border rounded-lg bg-card"
+                title="Assistente Bob 1.0"
+                allow="microphone"
+            ></iframe>
+        </div>
     </div>
   );
 }
