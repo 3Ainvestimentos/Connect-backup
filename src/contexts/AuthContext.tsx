@@ -51,7 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const useMockAuth = process.env.NEXT_PUBLIC_USE_MOCK_AUTH === 'true';
+  const useMockAuth = true; // Use mock auth by default for easier prototyping
 
   useEffect(() => {
     if (useMockAuth) {
