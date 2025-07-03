@@ -4,7 +4,7 @@ import DocumentRepositoryClient from '@/components/documents/DocumentRepositoryC
 import { FolderOpen, Search, Filter } from 'lucide-react';
 
 // Mock data for documents
-const mockDocuments = [
+export const mockDocuments = [
   { id: 'doc1', name: "Relatório Anual 2023.pdf", category: "Relatórios", type: "pdf", size: "2.5MB", lastModified: "2024-07-01", dataAiHint: "annual report" },
   { id: 'doc2', name: "Manual do Colaborador.docx", category: "Manuais", type: "docx", size: "1.2MB", lastModified: "2024-06-15", dataAiHint: "employee handbook" },
   { id: 'doc3', name: "Apresentação Institucional.pptx", category: "Apresentações", type: "pptx", size: "5.8MB", lastModified: "2024-05-20", dataAiHint: "company presentation" },

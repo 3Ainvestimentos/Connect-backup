@@ -4,7 +4,7 @@ import NewsFeedClient from '@/components/news/NewsFeedClient';
 import { Newspaper } from 'lucide-react';
 
 // Mock data for news items
-const mockNewsItems = [
+export const mockNewsItems = [
   { id: '1', title: "Lançamento da Nova Intranet Corporativa", snippet: "Descubra as funcionalidades e benefícios da nova intranet...", category: "Tecnologia", date: "2024-07-15", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "corporate communication" },
   { id: '2', title: "Resultados Financeiros do Segundo Trimestre", snippet: "Análise detalhada do desempenho financeiro da empresa no Q2.", category: "Financeiro", date: "2024-07-10", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "financial report" },
   { id: '3', title: "Programa de Bem-Estar: Novas Iniciativas", snippet: "Conheça as novas atividades e programas para promover o bem-estar...", category: "RH", date: "2024-07-05", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "employee wellness" },
