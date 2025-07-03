@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 export interface Highlight {
@@ -66,26 +66,26 @@ const initialHighlights: Highlight[] = [
 export const HighlightsProvider = ({ children }: { children: ReactNode }) => {
   const [highlights, setHighlights] = useState<Highlight[]>(initialHighlights);
 
-  const getActiveHighlights = () => highlights.filter(h => h.isActive);
+  const getActiveHighlights = useCallback(() => highlights.filter(h => h.isActive), [highlights]);
 
-  const addHighlight = (highlightData: Omit<Highlight, 'id' | 'isActive'>) => {
+  const addHighlight = useCallback((highlightData: Omit<Highlight, 'id' | 'isActive'>) => {
     const newHighlight: Highlight = {
       ...highlightData,
       id: `h-${Date.now()}`,
       isActive: false,
     };
     setHighlights(prev => [newHighlight, ...prev]);
-  };
+  }, []);
 
-  const updateHighlight = (updatedHighlight: Highlight) => {
+  const updateHighlight = useCallback((updatedHighlight: Highlight) => {
     setHighlights(prev => prev.map(h => (h.id === updatedHighlight.id ? updatedHighlight : h)));
-  };
+  }, []);
 
-  const deleteHighlight = (id: string) => {
+  const deleteHighlight = useCallback((id: string) => {
     setHighlights(prev => prev.filter(h => h.id !== id));
-  };
+  }, []);
 
-  const toggleHighlightActive = (id: string) => {
+  const toggleHighlightActive = useCallback((id: string) => {
     setHighlights(prev => {
       const targetHighlight = prev.find(h => h.id === id);
       if (!targetHighlight) return prev;
@@ -106,10 +106,19 @@ export const HighlightsProvider = ({ children }: { children: ReactNode }) => {
         h.id === id ? { ...h, isActive: !h.isActive } : h
       );
     });
-  };
+  }, []);
+
+  const value = useMemo(() => ({
+    highlights,
+    addHighlight,
+    updateHighlight,
+    deleteHighlight,
+    toggleHighlightActive,
+    getActiveHighlights
+  }), [highlights, addHighlight, updateHighlight, deleteHighlight, toggleHighlightActive, getActiveHighlights]);
 
   return (
-    <HighlightsContext.Provider value={{ highlights, addHighlight, updateHighlight, deleteHighlight, toggleHighlightActive, getActiveHighlights }}>
+    <HighlightsContext.Provider value={value}>
       {children}
     </HighlightsContext.Provider>
   );
