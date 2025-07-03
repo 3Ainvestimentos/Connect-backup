@@ -1,5 +1,5 @@
-
 import { PageHeader } from '@/components/layout/PageHeader';
+import ChatInterface from '@/components/chatbot/ChatInterface';
 import { Bot } from 'lucide-react';
 
 export default function ChatbotPage() {
@@ -12,13 +12,8 @@ export default function ChatbotPage() {
                 description="Converse com Bob para obter ajuda e informações."
             />
         </div>
-        <div className="flex-grow p-6 md:p-8 pt-2">
-            <iframe
-                src="https://URL-DO-SEU-APP-BOB.web.app"
-                className="w-full h-full border rounded-lg bg-card"
-                title="Assistente Bob 1.0"
-                allow="microphone"
-            ></iframe>
+        <div className="flex flex-grow p-6 md:p-8 pt-2">
+            <ChatInterface />
         </div>
     </div>
   );
