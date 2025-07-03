@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect } from 'react';
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -53,6 +54,8 @@ function UserNav() {
 
   if (loading) return <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
+
+  const isAdmin = user.email === 'mock@example.com';
 
   return (
     <DropdownMenu>
@@ -104,6 +107,16 @@ function UserNav() {
                 </DropdownMenuSubContent>
             </DropdownMenuPortal>
         </DropdownMenuSub>
+        
+        {isAdmin && (
+            <DropdownMenuItem asChild>
+                <Link href="/admin" className="cursor-pointer font-body">
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Painel Admin</span>
+                </Link>
+            </DropdownMenuItem>
+        )}
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut} className="cursor-pointer font-body">
           <LogOut className="mr-2 h-4 w-4" />
