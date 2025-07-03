@@ -8,13 +8,16 @@ import Image from 'next/image';
 
 interface HeaderProps {
   userNav?: React.ReactNode;
+  showSidebarTrigger?: boolean;
 }
 
-export function Header({ userNav }: HeaderProps) {
+export function Header({ userNav, showSidebarTrigger = true }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 flex h-[var(--header-height)] w-full items-center gap-x-4 bg-header text-header-foreground px-4 md:px-6">
       {/* Sidebar Trigger for mobile, hidden on md+ */}
-      <SidebarTrigger className="md:hidden text-header-foreground/80 hover:text-header-foreground" />
+      {showSidebarTrigger && (
+        <SidebarTrigger className="md:hidden text-header-foreground/80 hover:text-header-foreground" />
+      )}
 
       {/* Logo Section */}
       <div className="flex items-center">

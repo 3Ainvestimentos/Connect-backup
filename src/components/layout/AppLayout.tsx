@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect } from 'react';
@@ -134,6 +133,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
+  const isChatbotPage = pathname === '/chatbot';
 
 
   useEffect(() => {
@@ -162,88 +162,90 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header userNav={<UserNav />} />
+      <Header userNav={<UserNav />} showSidebarTrigger={!isChatbotPage} />
       <div className="flex flex-1 w-full"> 
-        <Sidebar collapsible="icon" variant="sidebar"> 
-          <SidebarContent className="flex-1 p-2">
-            <SidebarMenu>
-              {navItems.map((item) => (
-                 <SidebarMenuItem key={item.href}>
+        {!isChatbotPage && (
+          <Sidebar collapsible="icon" variant="sidebar"> 
+            <SidebarContent className="flex-1 p-2">
+              <SidebarMenu>
+                {navItems.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={!item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))}
+                      tooltip={{children: item.label, className: "font-body"}}
+                      onClick={handleLinkClick}
+                      className="font-body"
+                    >
+                      <Link 
+                        href={item.href}
+                        {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarContent>
+
+            <SidebarFooter className="p-2 mt-auto">
+              <SidebarMenu>
+                <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild
-                    isActive={!item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))}
-                    tooltip={{children: item.label, className: "font-body"}}
+                    isActive={pathname.startsWith('/guides')}
+                    tooltip={{ children: "Guias e FAQ", className: "font-body" }}
                     onClick={handleLinkClick}
                     className="font-body"
                   >
-                    <Link 
-                      href={item.href}
-                      {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
+                    <Link href="/guides">
+                      <HelpCircle />
+                      <span>Guias e FAQ</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarContent>
 
-          <SidebarFooter className="p-2 mt-auto">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname.startsWith('/guides')}
-                  tooltip={{ children: "Guias e FAQ", className: "font-body" }}
-                  onClick={handleLinkClick}
-                  className="font-body"
-                >
-                  <Link href="/guides">
-                    <HelpCircle />
-                    <span>Guias e FAQ</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuButton tooltip={{ children: "Configurações", className: "font-body" }} className="font-body w-full justify-start">
+                        <Settings />
+                        <span>Configurações</span>
+                      </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start" className="w-56 mb-2">
+                      <DropdownMenuLabel>Tema</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}>
+                        <DropdownMenuRadioItem value="light">
+                          <Sun className="mr-2 h-4 w-4" />
+                          <span>Claro</span>
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="dark">
+                          <Moon className="mr-2 h-4 w-4" />
+                          <span>Escuro</span>
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuRadioItem value="system">
+                          <Laptop className="mr-2 h-4 w-4" />
+                          <span>Sistema</span>
+                        </DropdownMenuRadioItem>
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton tooltip={{ children: "Configurações", className: "font-body" }} className="font-body w-full justify-start">
-                      <Settings />
-                      <span>Configurações</span>
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent side="right" align="start" className="w-56 mb-2">
-                    <DropdownMenuLabel>Tema</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}>
-                      <DropdownMenuRadioItem value="light">
-                        <Sun className="mr-2 h-4 w-4" />
-                        <span>Claro</span>
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="dark">
-                        <Moon className="mr-2 h-4 w-4" />
-                        <span>Escuro</span>
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem value="system">
-                        <Laptop className="mr-2 h-4 w-4" />
-                        <span>Sistema</span>
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={signOut} tooltip={{ children: "Sair", className: "font-body" }} className="font-body">
-                  <LogOut />
-                  <span>Sair</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarFooter>
-        </Sidebar>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={signOut} tooltip={{ children: "Sair", className: "font-body" }} className="font-body">
+                    <LogOut />
+                    <span>Sair</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarFooter>
+          </Sidebar>
+        )}
         
         <SidebarInset className="flex-1 bg-background overflow-y-auto">
           {children}
