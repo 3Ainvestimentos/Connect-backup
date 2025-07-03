@@ -187,13 +187,15 @@ export function ManageApplications() {
                                 <Controller
                                     name="icon"
                                     control={form.control}
-                                    render={({ field }) => (
+                                    render={({ field }) => {
+                                        const IconToShow = field.value ? getIcon(field.value) : null;
+                                        return (
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <SelectTrigger>
                                                 <SelectValue>
-                                                     {field.value && (
+                                                     {IconToShow && (
                                                         <div className="flex items-center gap-2">
-                                                            {getIcon(field.value)({ className: 'h-4 w-4' })}
+                                                            <IconToShow className='h-4 w-4' />
                                                             <span>{field.value}</span>
                                                         </div>
                                                      )}
@@ -215,7 +217,7 @@ export function ManageApplications() {
                                                 </ScrollArea>
                                             </SelectContent>
                                         </Select>
-                                    )}
+                                    )}}
                                 />
                                 {form.formState.errors.icon && <p className="text-sm text-destructive mt-1">{form.formState.errors.icon.message}</p>}
                             </div>
