@@ -80,7 +80,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (useMockAuth) {
       setUser(mockUser);
       setLoading(false);
-      toast({ title: "Login Mock", description: "Logado com usuário mockado." });
       router.push('/dashboard');
       return;
     }
@@ -128,7 +127,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     if (useMockAuth) {
       setUser(null);
-      toast({ title: "Logout Mock", description: "Deslogado do usuário mockado." });
       router.push('/login');
       return;
     }
