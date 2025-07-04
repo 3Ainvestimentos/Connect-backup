@@ -10,6 +10,7 @@ import { DocumentsProvider } from '@/contexts/DocumentsContext';
 import { NewsProvider } from '@/contexts/NewsContext';
 import { EventsProvider } from '@/contexts/EventsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
+import { CollaboratorsProvider } from '@/contexts/CollaboratorsContext';
 
 export const metadata: Metadata = {
   title: '3A RIVA Hub',
@@ -38,8 +39,10 @@ export default function RootLayout({
                   <NewsProvider>
                     <EventsProvider>
                       <MessagesProvider>
-                        {children}
-                        <Toaster />
+                        <CollaboratorsProvider>
+                          {children}
+                          <Toaster />
+                        </CollaboratorsProvider>
                       </MessagesProvider>
                     </EventsProvider>
                   </NewsProvider>
