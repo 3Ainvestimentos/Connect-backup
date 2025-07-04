@@ -21,7 +21,7 @@ const highlightSchema = z.object({
     title: z.string().min(3, "Título deve ter no mínimo 3 caracteres"),
     description: z.string().min(3, "Descrição deve ter no mínimo 3 caracteres"),
     imageUrl: z.string().url("URL da imagem inválida"),
-    link: z.string().url("URL do link inválida"),
+    link: z.string(),
     dataAiHint: z.string().optional(),
 });
 
@@ -65,7 +65,7 @@ export function ManageHighlights() {
             updateHighlight({ ...editingHighlight, ...data });
             toast({ title: "Destaque atualizado com sucesso." });
         } else {
-            addHighlight(data);
+            addHighlight(data as Omit<Highlight, 'id' | 'isActive'>);
             toast({ title: "Destaque adicionado com sucesso." });
         }
         setIsDialogOpen(false);

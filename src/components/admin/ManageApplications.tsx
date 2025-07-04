@@ -22,7 +22,7 @@ const linkItemSchema = z.object({
   id: z.string(),
   label: z.string().min(1, "Rótulo é obrigatório"),
   subtext: z.string().optional(),
-  link: z.string().url("URL inválida").optional().or(z.literal('')),
+  link: z.string().optional(),
 });
 
 const applicationSchema = z.object({
@@ -188,12 +188,12 @@ export function ManageApplications() {
                                     name="icon"
                                     control={form.control}
                                     render={({ field }) => {
-                                        const IconToShow = field.value ? getIcon(field.value) : null;
+                                        const IconToShow = getIcon(field.value);
                                         return (
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <SelectTrigger>
                                                 <SelectValue>
-                                                     {IconToShow && (
+                                                     {field.value && (
                                                         <div className="flex items-center gap-2">
                                                             <IconToShow className='h-4 w-4' />
                                                             <span>{field.value}</span>

@@ -6,7 +6,7 @@ export interface ApplicationLinkItem {
   id: string;
   label: string;
   subtext?: string;
-  link: string;
+  link?: string;
 }
 export interface Application {
   id: string;
