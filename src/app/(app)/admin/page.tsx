@@ -19,7 +19,7 @@ export default function AdminPage() {
                     icon={Shield}
                     description="Gerencie o conteúdo da intranet."
                 />
-                <Tabs defaultValue="news" className="w-full">
+                <Tabs defaultValue="highlights" className="w-full">
                     <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                         <TabsTrigger value="highlights">Destaques</TabsTrigger>
                         <TabsTrigger value="news">Notícias</TabsTrigger>
