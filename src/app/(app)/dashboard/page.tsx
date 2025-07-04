@@ -1,4 +1,3 @@
-
 "use client"; 
 
 import React, { useEffect, useMemo } from 'react';
@@ -32,8 +31,8 @@ export default function DashboardPage() {
   // Get global data from contexts
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
-  const { events } = useEvents();
-  const { messages, markMessageAsRead } = useMessages();
+  const { events, getEventRecipients } = useEvents();
+  const { messages, markMessageAsRead, getMessageRecipients } = useMessages();
   const { getActiveHighlights } = useHighlights();
   
   const currentUserCollab = useMemo(() => {
@@ -46,14 +45,19 @@ export default function DashboardPage() {
       const sortedMessages = [...messages].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
       return sortedMessages.filter(msg => {
-          if (msg.target.type === 'all') return true;
-          if (!currentUserCollab) return false;
-          if (msg.target.type === 'axis' && msg.target.value === currentUserCollab.axis) return true;
-          if (msg.target.type === 'area' && msg.target.value === currentUserCollab.area) return true;
-          if (msg.target.type === 'city' && msg.target.value === currentUserCollab.city) return true;
-          return false;
+          const recipients = getMessageRecipients(msg, collaborators);
+          return recipients.some(r => r.id === currentUserCollab.id);
       });
-  }, [messages, currentUserCollab]);
+  }, [messages, currentUserCollab, collaborators, getMessageRecipients]);
+  
+  const userEvents = useMemo(() => {
+      if (!currentUserCollab) return [];
+      
+      return events.filter(event => {
+          const recipients = getEventRecipients(event, collaborators);
+          return recipients.some(r => r.id === currentUserCollab.id);
+      });
+  }, [events, currentUserCollab, collaborators, getEventRecipients]);
   
   const unreadCount = useMemo(() => {
     if (!currentUserCollab) return 0;
@@ -199,7 +203,7 @@ export default function DashboardPage() {
                     <div className="absolute inset-0">
                       <ScrollArea className="h-full pr-4">
                           <div className="space-y-4">
-                          {events.map((event, index) => {
+                          {userEvents.map((event, index) => {
                             const Icon = getIcon(event.icon) as LucideIcon;
                             return (
                               <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
