@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 
-// Placeholder for Google icon SVG
 const GoogleIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="24px" height="24px">
     <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
@@ -15,16 +14,14 @@ const GoogleIcon = () => (
 );
 
 export default function LoginPage() {
-  const { user, signInWithGoogle, loading } = useAuth();
+  const { signInWithGoogle, loading } = useAuth();
   
-  const handleSignIn = async () => {
-    await signInWithGoogle();
+  const handleSignIn = async (role: 'user' | 'admin') => {
+    await signInWithGoogle(role);
   }
 
   return (
-    // Use a single root element for positioning context
     <div className="relative min-h-screen w-full">
-      {/* Background layers */}
       <div className="absolute inset-0 -z-20">
         <video
           src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/banner-inicial-3a-invest.mp4?alt=media&token=6934039d-1180-4b84-aa41-de70b9388be5"
@@ -37,10 +34,8 @@ export default function LoginPage() {
       </div>
       <div className="absolute inset-0 -z-10 bg-black/40" />
 
-      {/* Centered Content */}
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center p-6">
-        {/* Main login card */}
-        <main className="w-full max-w-sm space-y-8 rounded-xl bg-white p-8 shadow-lg sm:p-10">
+        <main className="w-full max-w-sm space-y-8 rounded-xl bg-white p-8 shadow-lg sm:p-10 relative">
           <div className="flex items-center justify-center">
             <Image 
               src="https://i.ibb.co/C52yDwLk/logo-oficial-preta.png" 
@@ -52,15 +47,25 @@ export default function LoginPage() {
           </div>
           <Button
             className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 font-body"
-            onClick={handleSignIn}
+            onClick={() => handleSignIn('user')}
             disabled={loading}
           >
             <GoogleIcon />
             <span className="ml-2">Entrar com Google</span>
           </Button>
+
+          <div className="absolute bottom-4 right-4">
+             <Button
+                variant="link"
+                className="text-xs text-muted-foreground hover:text-primary"
+                onClick={() => handleSignIn('admin')}
+                disabled={loading}
+             >
+                Entrar como Admin
+            </Button>
+          </div>
         </main>
         
-        {/* Absolutely positioned footer at the bottom */}
         <footer className="absolute bottom-6 px-6 text-center">
           <p className="text-xs text-white/80 font-body">
             Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.
