@@ -38,12 +38,12 @@ export default function RootLayout({
                 <DocumentsProvider>
                   <NewsProvider>
                     <EventsProvider>
-                      <MessagesProvider>
-                        <CollaboratorsProvider>
+                      <CollaboratorsProvider>
+                        <MessagesProvider>
                           {children}
                           <Toaster />
-                        </CollaboratorsProvider>
-                      </MessagesProvider>
+                        </MessagesProvider>
+                      </CollaboratorsProvider>
                     </EventsProvider>
                   </NewsProvider>
                 </DocumentsProvider>
