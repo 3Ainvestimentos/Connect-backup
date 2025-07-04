@@ -8,6 +8,8 @@ import { ManageDocuments } from '@/components/admin/ManageDocuments';
 import { ManageApplications } from '@/components/admin/ManageApplications';
 import { ManageLabs } from '@/components/admin/ManageLabs';
 import AdminGuard from '@/components/auth/AdminGuard';
+import { ManageMessages } from '@/components/admin/ManageMessages';
+import { ManageEvents } from '@/components/admin/ManageEvents';
 
 
 export default function AdminPage() {
@@ -20,12 +22,14 @@ export default function AdminPage() {
                     description="Gerencie o conteúdo da intranet."
                 />
                 <Tabs defaultValue="highlights" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
                         <TabsTrigger value="highlights">Destaques</TabsTrigger>
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="applications">Aplicações</TabsTrigger>
                         <TabsTrigger value="labs">Labs</TabsTrigger>
+                        <TabsTrigger value="messages">Mensagens</TabsTrigger>
+                        <TabsTrigger value="events">Eventos</TabsTrigger>
                     </TabsList>
                     <TabsContent value="highlights">
                         <ManageHighlights />
@@ -41,6 +45,12 @@ export default function AdminPage() {
                     </TabsContent>
                     <TabsContent value="labs">
                         <ManageLabs />
+                    </TabsContent>
+                    <TabsContent value="messages">
+                        <ManageMessages />
+                    </TabsContent>
+                    <TabsContent value="events">
+                        <ManageEvents />
                     </TabsContent>
                 </Tabs>
             </div>

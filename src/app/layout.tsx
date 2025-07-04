@@ -8,6 +8,8 @@ import { HighlightsProvider } from '@/contexts/HighlightsContext';
 import { ApplicationsProvider } from '@/contexts/ApplicationsContext';
 import { DocumentsProvider } from '@/contexts/DocumentsContext';
 import { NewsProvider } from '@/contexts/NewsContext';
+import { EventsProvider } from '@/contexts/EventsContext';
+import { MessagesProvider } from '@/contexts/MessagesContext';
 
 export const metadata: Metadata = {
   title: '3A RIVA Hub',
@@ -34,8 +36,12 @@ export default function RootLayout({
               <ApplicationsProvider>
                 <DocumentsProvider>
                   <NewsProvider>
-                    {children}
-                    <Toaster />
+                    <EventsProvider>
+                      <MessagesProvider>
+                        {children}
+                        <Toaster />
+                      </MessagesProvider>
+                    </EventsProvider>
                   </NewsProvider>
                 </DocumentsProvider>
               </ApplicationsProvider>

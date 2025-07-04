@@ -1,6 +1,7 @@
+
 "use client"; 
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
@@ -8,7 +9,7 @@ import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Users, CakeSlice, BrainCircuit, Wine, TrendingUp, Clock, 
+  TrendingUp, Clock, 
   Megaphone, MessageSquare, CalendarDays, Check, Image as ImageIcon
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -18,27 +19,19 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useHighlights } from '@/contexts/HighlightsContext';
+import { useEvents } from '@/contexts/EventsContext';
+import { useMessages } from '@/contexts/MessagesContext';
+import { getIcon } from '@/lib/icons';
 
-const events: { title: string; time: string; icon: LucideIcon }[] = [
-    { title: "Reunião de Alinhamento Semanal", time: "10:00 - 11:00", icon: Users },
-    { title: "Aniversário da Empresa", time: "Dia Todo", icon: CakeSlice },
-    { title: "Workshop de Design Thinking", time: "14:00 - 16:00", icon: BrainCircuit },
-    { title: "Happy Hour de Fim de Mês", time: "A partir das 17:30", icon: Wine },
-    { title: "Apresentação de Resultados Q2", time: "09:00 - 10:00", icon: TrendingUp },
-];
-
-const initialMessages = [
-  { id: '1', title: 'Atualização da Política de Férias', content: 'Lembrete: A nova política de férias entrará em vigor a partir de 1º de Agosto. Todos os colaboradores devem revisar o documento disponível na intranet para entender as mudanças nos processos de solicitação e aprovação. O documento detalha os novos períodos aquisitivos e as regras para venda de dias de férias. Qualquer dúvida, entre em contato com o departamento de RH.', sender: 'RH', date: '2024-07-25', isRead: false },
-  { id: '2', title: 'Confraternização de Fim de Mês', content: 'Não se esqueçam do nosso happy hour amanhã, às 17h30! Teremos petiscos, bebidas e música ao vivo no terraço. Contamos com a presença de todos!', sender: 'Comunicação', date: '2024-07-24', isRead: false },
-  { id: '3', title: 'Manutenção Programada', content: 'O sistema de TI passará por uma manutenção no sábado, das 8h às 12h. Durante este período, o acesso aos servidores de arquivos e ao sistema de CRM poderá ficar indisponível.', sender: 'Suporte TI', date: '2024-07-22', isRead: true },
-  { id: '4', title: 'Pesquisa de Clima Organizacional', content: 'Sua opinião é muito importante! Por favor, responda à pesquisa de clima até o final desta semana. O link foi enviado para o seu e-mail. A participação é anônima.', sender: 'RH', date: '2024-07-26', isRead: false },
-  { id: '5', title: 'Nova Máquina de Café na Copa', content: 'Boas notícias para os amantes de café! Instalamos uma nova máquina de café expresso na copa do 2º andar. Aproveitem!', sender: 'Administrativo', date: '2024-07-26', isRead: true },
-  { id: '6', title: 'Exercício de Evacuação de Emergência', content: 'Realizaremos um exercício de evacuação de emergência na próxima quarta-feira, às 15h. A participação de todos é obrigatória. Por favor, familiarize-se com as rotas de fuga mais próximas da sua estação de trabalho. Mais instruções serão dadas pelos líderes de cada andar no dia do exercício.', sender: 'Segurança', date: '2024-07-27', isRead: false },
-  { id: '7', title: 'Resultados do Q2', content: 'Apresentação dos resultados do segundo trimestre será na sexta-feira às 10h na sala de reuniões principal. Venha conferir o crescimento da empresa e os próximos passos.', sender: 'Diretoria', date: '2024-07-28', isRead: false },
-  { id: '8', title: 'Campanha do Agasalho', content: 'A campanha do agasalho está na reta final! As doações podem ser entregues na caixa da recepção até amanhã. Sua contribuição faz a diferença!', sender: 'Comunicação', date: '2024-07-29', isRead: true },
-];
-
-type Message = (typeof initialMessages)[0];
+// Define Message type for the component state, including the isRead property.
+interface Message {
+    id: string;
+    title: string;
+    content: string;
+    sender: string;
+    date: string;
+    isRead: boolean;
+}
 
 const HighlightCard = ({ item, className = "" }: { item: any, className?: string }) => (
     <Link href={item.link} className={cn("relative rounded-lg overflow-hidden group block", className)}>
@@ -53,19 +46,68 @@ const HighlightCard = ({ item, className = "" }: { item: any, className?: string
 
 export default function DashboardPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const [messages, setMessages] = React.useState<Message[]>(initialMessages);
-  const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null);
+  
+  // Get global data from contexts
+  const { events } = useEvents();
+  const { messages: globalMessages } = useMessages();
   const { getActiveHighlights } = useHighlights();
+  
+  // Local state for messages with read status
+  const [messages, setMessages] = React.useState<Message[]>([]);
+  const [selectedMessage, setSelectedMessage] = React.useState<Message | null>(null);
+
+  // Initialize messages with read status from localStorage
+  useEffect(() => {
+    const getReadMessageIds = (): Set<string> => {
+      if (typeof window === 'undefined') return new Set();
+      try {
+        const item = window.localStorage.getItem('readMessageIds_v1');
+        return item ? new Set(JSON.parse(item)) : new Set();
+      } catch (error) {
+        console.error("Error reading from localStorage", error);
+        return new Set();
+      }
+    };
+    const readMessageIds = getReadMessageIds();
+    const mergedMessages = globalMessages.map(msg => ({
+      ...msg,
+      isRead: readMessageIds.has(msg.id),
+    })).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    setMessages(mergedMessages);
+  }, [globalMessages]);
+
+
   const activeHighlights = getActiveHighlights();
   
   const unreadCount = React.useMemo(() => messages.filter(msg => !msg.isRead).length, [messages]);
 
   const handleViewMessage = (messageToView: Message) => {
+    const setReadMessageIds = (ids: Set<string>) => {
+      if (typeof window === 'undefined') return;
+      try {
+        window.localStorage.setItem('readMessageIds_v1', JSON.stringify(Array.from(ids)));
+      } catch (error) {
+        console.error("Error writing to localStorage", error);
+      }
+    };
+
+    // Mark as read in local state
     setMessages(currentMessages =>
       currentMessages.map(m =>
         m.id === messageToView.id ? { ...m, isRead: true } : m
       )
     );
+    
+    // Update local storage
+    try {
+        const item = window.localStorage.getItem('readMessageIds_v1');
+        const currentReadIds = item ? new Set(JSON.parse(item)) : new Set();
+        currentReadIds.add(messageToView.id);
+        setReadMessageIds(currentReadIds);
+    } catch (error) {
+         console.error("Error accessing localStorage", error);
+    }
+    
     setSelectedMessage({ ...messageToView, isRead: true });
   };
   
@@ -186,10 +228,12 @@ export default function DashboardPage() {
                     <div className="absolute inset-0">
                       <ScrollArea className="h-full pr-4">
                           <div className="space-y-4">
-                          {events.map((event, index) => (
+                          {events.map((event, index) => {
+                            const Icon = getIcon(event.icon) as LucideIcon;
+                            return (
                               <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
                               <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
-                                  <event.icon className="h-5 w-5" />
+                                  <Icon className="h-5 w-5" />
                               </div>
                               <div className="flex-grow">
                                   <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
@@ -199,7 +243,7 @@ export default function DashboardPage() {
                                   </p>
                               </div>
                               </div>
-                          ))}
+                           )})}
                           </div>
                       </ScrollArea>
                     </div>
