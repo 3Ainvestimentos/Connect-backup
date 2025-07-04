@@ -54,16 +54,6 @@ export default function LoginPage() {
             <span className="ml-2">Entrar com Google</span>
           </Button>
 
-          <div className="absolute bottom-4 right-4">
-             <Button
-                variant="link"
-                className="text-xs text-muted-foreground hover:text-primary"
-                onClick={() => handleSignIn('admin')}
-                disabled={loading}
-             >
-                Entrar como Admin
-            </Button>
-          </div>
         </main>
         
         <footer className="absolute bottom-6 px-6 text-center">
@@ -73,6 +63,18 @@ export default function LoginPage() {
             O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
           </p>
         </footer>
+
+        <div className="absolute bottom-6 right-6">
+             <Button
+                variant="link"
+                className="text-xs text-white/80 hover:text-white"
+                onClick={() => handleSignIn('admin')}
+                disabled={loading}
+             >
+                Entrar como Admin
+            </Button>
+        </div>
+
       </div>
     </div>
   );
