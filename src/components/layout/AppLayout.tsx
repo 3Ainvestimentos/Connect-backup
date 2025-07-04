@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -36,6 +36,7 @@ import {
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
+import FAQModal from '@/components/guides/FAQModal';
 
 const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home },
@@ -134,6 +135,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
   const isChatbotPage = pathname === '/chatbot';
+  const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
 
 
   useEffect(() => {
@@ -194,16 +196,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    asChild
-                    isActive={pathname.startsWith('/guides')}
                     tooltip={{ children: "Guias e FAQ", className: "font-body" }}
-                    onClick={handleLinkClick}
+                    onClick={() => {
+                        handleLinkClick();
+                        setIsFaqModalOpen(true);
+                    }}
                     className="font-body"
                   >
-                    <Link href="/guides">
-                      <HelpCircle />
-                      <span>Guias e FAQ</span>
-                    </Link>
+                    <HelpCircle />
+                    <span>Guias e FAQ</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
@@ -251,6 +252,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </SidebarInset>
       </div>
+      <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
     </>
   );
 }
