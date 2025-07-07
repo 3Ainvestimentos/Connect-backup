@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -38,7 +39,7 @@ export function Header({ userNav, showSidebarTrigger = true, showDashboardButton
       {/* User Navigation */}
       <div className="flex items-center gap-4">
         {showDashboardButton && (
-          <Button asChild variant="ghost" className="text-header-foreground/80 hover:text-header-foreground font-body">
+          <Button asChild variant="ghost" className="font-body text-header-foreground/80 hover:bg-transparent hover:font-bold hover:text-header-foreground/80">
             <Link href="/dashboard">Painel Inicial</Link>
           </Button>
         )}
