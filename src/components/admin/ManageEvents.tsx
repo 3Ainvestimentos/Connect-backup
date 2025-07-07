@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useMemo } from 'react';
 import { useEvents, type EventType } from '@/contexts/EventsContext';
@@ -87,7 +88,8 @@ export function ManageEvents() {
             updateEvent({ ...editingEvent, ...data });
             toast({ title: "Evento atualizado com sucesso." });
         } else {
-            addEvent(data as Omit<EventType, 'id'>);
+            const { id, ...dataWithoutId } = data;
+            addEvent(dataWithoutId as Omit<EventType, 'id'>);
             toast({ title: "Evento adicionado com sucesso." });
         }
         setIsDialogOpen(false);
@@ -255,3 +257,5 @@ export function ManageEvents() {
         </Card>
     );
 }
+
+    

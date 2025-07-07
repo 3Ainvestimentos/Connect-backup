@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useEffect } from 'react';
 import { useApplications, Application, ApplicationLinkItem } from '@/contexts/ApplicationsContext';
@@ -110,12 +111,13 @@ export function ManageApplications() {
     };
     
     const onSubmit = (data: ApplicationFormValues) => {
-        const appData = { ...data } as Application;
         if (editingApplication) {
+            const appData = { ...data, id: editingApplication.id } as Application;
             updateApplication(appData);
             toast({ title: "Aplicação atualizada com sucesso." });
         } else {
-            addApplication(appData);
+            const { id, ...dataWithoutId } = data;
+            addApplication(dataWithoutId);
             toast({ title: "Aplicação adicionada com sucesso." });
         }
         setIsDialogOpen(false);
@@ -312,3 +314,5 @@ export function ManageApplications() {
         </Card>
     );
 }
+
+    

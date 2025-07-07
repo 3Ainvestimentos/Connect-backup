@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
@@ -70,7 +71,8 @@ export function ManageCollaborators() {
             updateCollaborator({ ...editingCollaborator, ...data });
             toast({ title: "Colaborador atualizado com sucesso." });
         } else {
-            addCollaborator(data as Omit<Collaborator, 'id'>);
+            const { id, ...dataWithoutId } = data;
+            addCollaborator(dataWithoutId as Omit<Collaborator, 'id'>);
             toast({ title: "Colaborador adicionado com sucesso." });
         }
         setIsDialogOpen(false);
@@ -191,3 +193,5 @@ export function ManageCollaborators() {
         </Card>
     );
 }
+
+    

@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { useDocuments } from '@/contexts/DocumentsContext';
@@ -71,7 +72,8 @@ export function ManageDocuments() {
             updateDocument({ ...data, id: editingDocument.id } as DocumentType);
             toast({ title: "Documento atualizado com sucesso." });
         } else {
-            addDocument(data);
+            const { id, ...dataWithoutId } = data;
+            addDocument(dataWithoutId);
             toast({ title: "Documento adicionado com sucesso." });
         }
         setIsDialogOpen(false);
@@ -170,3 +172,5 @@ export function ManageDocuments() {
         </Card>
     );
 }
+
+    

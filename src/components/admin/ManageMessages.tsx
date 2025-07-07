@@ -129,7 +129,8 @@ export function ManageMessages() {
             updateMessage({ ...data, id: editingMessage.id, readBy: editingMessage.readBy });
             toast({ title: "Mensagem atualizada com sucesso." });
         } else {
-            addMessage(data);
+            const { id, ...dataWithoutId } = data;
+            addMessage(dataWithoutId);
             toast({ title: "Mensagem adicionada com sucesso." });
         }
         setIsDialogOpen(false);
@@ -285,3 +286,5 @@ export function ManageMessages() {
         </Card>
     );
 }
+
+    

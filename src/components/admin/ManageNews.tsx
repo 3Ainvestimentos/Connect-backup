@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -88,7 +89,8 @@ export function ManageNews() {
             updateNewsItem({ ...editingNews, ...data });
             toast({ title: "Notícia atualizada com sucesso." });
         } else {
-            addNewsItem(data);
+            const { id, ...dataWithoutId } = data;
+            addNewsItem(dataWithoutId);
             toast({ title: "Notícia adicionada com sucesso." });
         }
         setIsDialogOpen(false);
@@ -213,3 +215,5 @@ export function ManageNews() {
         </Card>
     );
 }
+
+    
