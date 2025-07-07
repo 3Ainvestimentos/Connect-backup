@@ -11,7 +11,13 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
@@ -202,8 +208,8 @@ const Sidebar = React.forwardRef<
             "hidden md:block duration-200 bg-transparent transition-[width] ease-linear",
             // This placeholder's height is full because its parent flex item is flex-1 (takes full height)
             "h-full", 
-            sidebarState === "expanded" ? "w-[--sidebar-width]" : "w-[--sidebar-width-icon]",
-            collapsible === "offcanvas" && sidebarState === "expanded" ? "w-[--sidebar-width]" : "",
+            sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "w-[var(--sidebar-width-icon)]",
+            collapsible === "offcanvas" && sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "",
             collapsible === "offcanvas" && sidebarState === "collapsed" ? "w-0" : "",
             variant === "floating" || variant === "inset" ?
               (sidebarState === "collapsed" ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]" : "w-[--sidebar-width]") :
@@ -229,6 +235,10 @@ const Sidebar = React.forwardRef<
             }
             side={side}
           >
+            <SheetHeader className="sr-only">
+              <SheetTitle>Navegação</SheetTitle>
+              <SheetDescription>Menu de navegação principal</SheetDescription>
+            </SheetHeader>
             <div className="flex h-full w-full flex-col">{children}</div>
           </SheetContent>
         </Sheet>
@@ -585,7 +595,7 @@ const SidebarMenuButton = React.forwardRef<
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
         {...props}
       />
     )
