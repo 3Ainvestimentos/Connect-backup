@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export interface Highlight {
   id: string;
@@ -64,7 +65,7 @@ const initialHighlights: Highlight[] = [
 ];
 
 export const HighlightsProvider = ({ children }: { children: ReactNode }) => {
-  const [highlights, setHighlights] = useState<Highlight[]>(initialHighlights);
+  const [highlights, setHighlights] = useLocalStorage<Highlight[]>('highlights', initialHighlights);
 
   const getActiveHighlights = useCallback(() => {
     return highlights.filter(h => h.isActive);
@@ -77,15 +78,15 @@ export const HighlightsProvider = ({ children }: { children: ReactNode }) => {
       isActive: false,
     };
     setHighlights(prev => [newHighlight, ...prev]);
-  }, []);
+  }, [setHighlights]);
 
   const updateHighlight = useCallback((updatedHighlight: Highlight) => {
     setHighlights(prev => prev.map(h => (h.id === updatedHighlight.id ? updatedHighlight : h)));
-  }, []);
+  }, [setHighlights]);
 
   const deleteHighlight = useCallback((id: string) => {
     setHighlights(prev => prev.filter(h => h.id !== id));
-  }, []);
+  }, [setHighlights]);
 
   const toggleHighlightActive = useCallback((id: string) => {
     setHighlights(prev => {
@@ -107,7 +108,7 @@ export const HighlightsProvider = ({ children }: { children: ReactNode }) => {
         h.id === id ? { ...h, isActive: !h.isActive } : h
       );
     });
-  }, []);
+  }, [setHighlights]);
 
   const value = useMemo(() => ({
     highlights,

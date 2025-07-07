@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export interface Collaborator {
   id: string;
@@ -31,20 +32,20 @@ interface CollaboratorsContextType {
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
-  const [collaborators, setCollaborators] = useState<Collaborator[]>(initialCollaborators);
+  const [collaborators, setCollaborators] = useLocalStorage<Collaborator[]>('collaborators', initialCollaborators);
 
   const addCollaborator = useCallback((collaboratorData: Omit<Collaborator, 'id'>) => {
     const newCollaborator: Collaborator = { ...collaboratorData, id: `collab-${Date.now()}` };
     setCollaborators(prev => [newCollaborator, ...prev]);
-  }, []);
+  }, [setCollaborators]);
 
   const updateCollaborator = useCallback((updatedCollaborator: Collaborator) => {
     setCollaborators(prev => prev.map(c => (c.id === updatedCollaborator.id ? updatedCollaborator : c)));
-  }, []);
+  }, [setCollaborators]);
 
   const deleteCollaborator = useCallback((id: string) => {
     setCollaborators(prev => prev.filter(c => c.id !== id));
-  }, []);
+  }, [setCollaborators]);
 
   const value = useMemo(() => ({
     collaborators,

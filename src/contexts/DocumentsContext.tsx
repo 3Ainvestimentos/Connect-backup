@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export interface DocumentType {
   id: string;
@@ -33,20 +34,20 @@ interface DocumentsContextType {
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
 
 export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
-  const [documents, setDocuments] = useState<DocumentType[]>(initialDocuments);
+  const [documents, setDocuments] = useLocalStorage<DocumentType[]>('documents', initialDocuments);
 
   const addDocument = useCallback((docData: Omit<DocumentType, 'id'>) => {
     const newDoc: DocumentType = { ...docData, id: `doc-${Date.now()}` };
     setDocuments(prev => [newDoc, ...prev].sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
-  }, []);
+  }, [setDocuments]);
 
   const updateDocument = useCallback((updatedDoc: DocumentType) => {
     setDocuments(prev => prev.map(doc => (doc.id === updatedDoc.id ? updatedDoc : doc)));
-  }, []);
+  }, [setDocuments]);
 
   const deleteDocument = useCallback((id: string) => {
     setDocuments(prev => prev.filter(doc => doc.id !== id));
-  }, []);
+  }, [setDocuments]);
 
   const value = useMemo(() => ({
     documents,

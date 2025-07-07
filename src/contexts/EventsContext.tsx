@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export interface EventType {
   id: string;
@@ -33,7 +34,7 @@ interface EventsContextType {
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
 
 export const EventsProvider = ({ children }: { children: ReactNode }) => {
-  const [events, setEvents] = useState<EventType[]>(initialEvents);
+  const [events, setEvents] = useLocalStorage<EventType[]>('events', initialEvents);
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (event.target.type === 'all') {
@@ -46,15 +47,15 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   const addEvent = useCallback((eventData: Omit<EventType, 'id'>) => {
     const newEvent: EventType = { ...eventData, id: `evt-${Date.now()}` };
     setEvents(prev => [...prev, newEvent]);
-  }, []);
+  }, [setEvents]);
 
   const updateEvent = useCallback((updatedEvent: EventType) => {
     setEvents(prev => prev.map(evt => (evt.id === updatedEvent.id ? updatedEvent : evt)));
-  }, []);
+  }, [setEvents]);
 
   const deleteEvent = useCallback((id: string) => {
     setEvents(prev => prev.filter(evt => evt.id !== id));
-  }, []);
+  }, [setEvents]);
 
   const value = useMemo(() => ({
     events,

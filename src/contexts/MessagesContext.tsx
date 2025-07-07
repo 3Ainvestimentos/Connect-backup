@@ -1,8 +1,8 @@
-
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export interface MessageType {
   id: string;
@@ -37,7 +37,7 @@ interface MessagesContextType {
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
 
 export const MessagesProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<MessageType[]>(initialMessages);
+  const [messages, setMessages] = useLocalStorage<MessageType[]>('messages', initialMessages);
   const { collaborators } = useCollaborators();
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
@@ -52,15 +52,15 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   const addMessage = useCallback((messageData: Omit<MessageType, 'id' | 'readBy'>) => {
     const newMessage: MessageType = { ...messageData, id: `msg-${Date.now()}`, readBy: [] };
     setMessages(prev => [newMessage, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
+  }, [setMessages]);
 
   const updateMessage = useCallback((updatedMessage: MessageType) => {
     setMessages(prev => prev.map(msg => (msg.id === updatedMessage.id ? updatedMessage : msg)));
-  }, []);
+  }, [setMessages]);
 
   const deleteMessage = useCallback((id: string) => {
     setMessages(prev => prev.filter(msg => msg.id !== id));
-  }, []);
+  }, [setMessages]);
 
   const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {
     setMessages(prev =>
@@ -71,7 +71,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         return msg;
       })
     );
-  }, []);
+  }, [setMessages]);
 
   const value = useMemo(() => ({
     messages,

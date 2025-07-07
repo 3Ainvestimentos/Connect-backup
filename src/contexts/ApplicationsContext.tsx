@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export interface ApplicationLinkItem {
   id: string;
@@ -57,20 +58,20 @@ const initialApplications: Application[] = [
 
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
-  const [applications, setApplications] = useState<Application[]>(initialApplications);
+  const [applications, setApplications] = useLocalStorage<Application[]>('applications', initialApplications);
 
   const addApplication = useCallback((appData: Omit<Application, 'id'>) => {
     const newApp: Application = { ...appData, id: `app-${Date.now()}` };
     setApplications(prev => [newApp, ...prev]);
-  }, []);
+  }, [setApplications]);
 
   const updateApplication = useCallback((updatedApp: Application) => {
     setApplications(prev => prev.map(app => (app.id === updatedApp.id ? updatedApp : app)));
-  }, []);
+  }, [setApplications]);
 
   const deleteApplication = useCallback((id: string) => {
     setApplications(prev => prev.filter(app => app.id !== id));
-  }, []);
+  }, [setApplications]);
   
   const value = useMemo(() => ({
       applications, 

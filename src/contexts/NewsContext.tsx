@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 export interface NewsItemType {
   id: string;
@@ -31,20 +32,20 @@ interface NewsContextType {
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
 
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
-  const [newsItems, setNewsItems] = useState<NewsItemType[]>(initialNewsItems);
+  const [newsItems, setNewsItems] = useLocalStorage<NewsItemType[]>('newsItems', initialNewsItems);
 
   const addNewsItem = useCallback((itemData: Omit<NewsItemType, 'id'>) => {
     const newItem: NewsItemType = { ...itemData, id: `news-${Date.now()}` };
     setNewsItems(prev => [newItem, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
+  }, [setNewsItems]);
 
   const updateNewsItem = useCallback((updatedItem: NewsItemType) => {
     setNewsItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
-  }, []);
+  }, [setNewsItems]);
 
   const deleteNewsItem = useCallback((id: string) => {
     setNewsItems(prev => prev.filter(item => item.id !== id));
-  }, []);
+  }, [setNewsItems]);
 
   const value = useMemo(() => ({
     newsItems,
