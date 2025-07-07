@@ -78,26 +78,26 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     fetchData();
   }, []);
 
-  const addApplication = async (appData: Omit<Application, 'id'>) => {
+  const addApplication = useCallback(async (appData: Omit<Application, 'id'>) => {
     const newApp = await addDocumentToCollection(COLLECTION_NAME, appData);
     if (newApp) {
         setApplications(prev => [newApp as Application, ...prev]);
     }
-  };
+  }, []);
 
-  const updateApplication = async (updatedApp: Application) => {
+  const updateApplication = useCallback(async (updatedApp: Application) => {
     const success = await updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp);
     if(success) {
         setApplications(prev => prev.map(app => (app.id === updatedApp.id ? updatedApp : app)));
     }
-  };
+  }, []);
 
-  const deleteApplication = async (id: string) => {
+  const deleteApplication = useCallback(async (id: string) => {
     const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
     if(success) {
         setApplications(prev => prev.filter(app => app.id !== id));
     }
-  };
+  }, []);
   
   const value = useMemo(() => ({
       applications, 
@@ -105,7 +105,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       addApplication, 
       updateApplication, 
       deleteApplication 
-  }), [applications, loading]);
+  }), [applications, loading, addApplication, updateApplication, deleteApplication]);
 
   return (
     <ApplicationsContext.Provider value={value}>
