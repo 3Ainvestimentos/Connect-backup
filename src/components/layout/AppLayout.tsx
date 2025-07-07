@@ -159,7 +159,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header userNav={<UserNav />} showSidebarTrigger={!isChatbotPage} />
+      <Header userNav={<UserNav />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
