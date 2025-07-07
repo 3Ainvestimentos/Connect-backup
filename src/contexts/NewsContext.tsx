@@ -14,13 +14,13 @@ export interface NewsItemType {
 }
 
 const initialNewsItems: Omit<NewsItemType, 'id'>[] = [
-  { title: "Lançamento da Nova Intranet Corporativa", snippet: "Descubra as funcionalidades e benefícios da nova intranet...", category: "Tecnologia", date: "2024-07-15", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "corporate communication" },
+  { title: "Dia do Pet no Escritório é um Sucesso", snippet: "A recente edição do 'Pet Day' promoveu a integração e o bem-estar entre as equipes, com a participação de dezenas de animais.", category: "Cultura", date: "2024-07-28", imageUrl: "https://i.ibb.co/SpBph6N/1-photo-1535930749574-1399327ce78f-303764.jpg", dataAiHint: "dog office" },
+  { title: "Inscrições Abertas para Conferência Anual", snippet: "Garanta sua vaga na conferência de felicidade corporativa que acontecerá no próximo mês. Palestras e workshops confirmados.", category: "Eventos", date: "2024-07-26", imageUrl: "https://i.ibb.co/nszMYNJ/carreira-felicidade-corporativa.jpg", dataAiHint: "conference team" },
+  { title: "Programa de Bem-Estar Lança Novos Benefícios", snippet: "Novos pacotes, incluindo assessoria esportiva e nutricional, já estão disponíveis para todos os colaboradores.", category: "RH", date: "2024-07-25", imageUrl: "https://i.ibb.co/mrC2Tr5b/homem-correndo-na-estrada-contra-as-montanhas-durante-o-por-do-sol-1048944-7722076.jpg", dataAiHint: "wellness running" },
   { title: "Resultados Financeiros do Segundo Trimestre", snippet: "Análise detalhada do desempenho financeiro da empresa no Q2.", category: "Financeiro", date: "2024-07-10", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "financial report" },
-  { title: "Programa de Bem-Estar: Novas Iniciativas", snippet: "Conheça as novas atividades e programas para promover o bem-estar...", category: "RH", date: "2024-07-05", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "employee wellness" },
-  { title: "Atualização da Política de Segurança de Dados", snippet: "Informações importantes sobre as novas diretrizes de segurança...", category: "Segurança", date: "2024-07-01", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "data privacy" },
-  { title: "Parceria Estratégica com Empresa X Anunciada", snippet: "Saiba mais sobre a nova parceria e suas implicações para o futuro.", category: "Estratégia", date: "2024-06-28", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "business partnership" },
   { title: "Voluntariado Corporativo: Resultados da Campanha", snippet: "Veja o impacto positivo das nossas ações de voluntariado na comunidade.", category: "ESG", date: "2024-06-20", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "corporate volunteering" },
 ];
+
 
 interface NewsContextType {
   newsItems: NewsItemType[];

@@ -29,23 +29,23 @@ const HighlightsContext = createContext<HighlightsContextType | undefined>(undef
 const initialHighlights: Omit<Highlight, 'id'>[] = [
   {
     title: 'Conferência de Felicidade do Colaborador',
-    description: 'Inscrições abertas',
+    description: 'Inscrições abertas. Participe e conecte-se!',
     imageUrl: 'https://i.ibb.co/nszMYNJ/carreira-felicidade-corporativa.jpg',
     dataAiHint: 'conference team',
     link: '#',
     isActive: true,
   },
   {
-    title: 'Novos pacotes de bem-estar',
-    description: 'Descubra nossas novas ofertas',
+    title: 'Novos pacotes de bem-estar corporativo',
+    description: 'Descubra nossas novas ofertas para seu equilíbrio.',
     imageUrl: 'https://i.ibb.co/mrC2Tr5b/homem-correndo-na-estrada-contra-as-montanhas-durante-o-por-do-sol-1048944-7722076.jpg',
     dataAiHint: 'wellness running',
     link: '#',
     isActive: true,
   },
   {
-    title: 'O dia de trazer seu cão para o escritório está de volta!',
-    description: 'Prepare-se para a fofura!',
+    title: 'O dia de trazer seu pet para o escritório!',
+    description: 'Prepare-se para um dia de muita fofura e integração.',
     imageUrl: 'https://i.ibb.co/SpBph6N/1-photo-1535930749574-1399327ce78f-303764.jpg',
     dataAiHint: 'dog office',
     link: '#',
