@@ -24,7 +24,7 @@ export default function LoginPage() {
     <div className="relative min-h-screen w-full">
       <div className="absolute inset-0 -z-20">
         <video
-          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/banner-inicial-3a-invest.mp4?alt=media&token=6934039d-1180-4b84-aa41-de70b9388be5"
+          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Tela%20de%20login%2Fbanner-inicial-3a-invest.mp4?alt=media&token=10744d7f-79e4-44f0-aba3-395bfd2cbbb6"
           autoPlay
           loop
           muted
