@@ -159,11 +159,11 @@ export default function DashboardPage() {
                                 return (
                                 <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
                                     <div className="flex justify-between items-start gap-2">
-                                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                                            <Checkbox checked={isRead} disabled className="pointer-events-none" aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} />
-                                            <div className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</div>
+                                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                                            <Checkbox checked={isRead} disabled className="pointer-events-none mt-0.5 flex-shrink-0" aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} />
+                                            <p className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</p>
                                         </div>
-                                        <span className="text-xs text-muted-foreground whitespace-nowrap pl-1">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                        <span className="text-xs text-muted-foreground whitespace-nowrap pl-1 flex-shrink-0">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                                     </div>
                                     <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
                                       {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
