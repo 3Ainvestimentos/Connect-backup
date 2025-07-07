@@ -2,7 +2,6 @@
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Shield } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ManageHighlights } from '@/components/admin/ManageHighlights';
 import { ManageNews } from '@/components/admin/ManageNews';
 import { ManageDocuments } from '@/components/admin/ManageDocuments';
 import { ManageApplications } from '@/components/admin/ManageApplications';
@@ -22,9 +21,8 @@ export default function AdminPage() {
                     icon={Shield}
                     description="Gerencie o conteúdo da intranet."
                 />
-                <Tabs defaultValue="highlights" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
-                        <TabsTrigger value="highlights">Destaques</TabsTrigger>
+                <Tabs defaultValue="news" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="applications">Aplicações</TabsTrigger>
@@ -33,9 +31,6 @@ export default function AdminPage() {
                         <TabsTrigger value="events">Eventos</TabsTrigger>
                         <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="highlights">
-                        <ManageHighlights />
-                    </TabsContent>
                     <TabsContent value="news">
                         <ManageNews />
                     </TabsContent>

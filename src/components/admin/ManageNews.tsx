@@ -14,6 +14,7 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
+import { Switch } from '../ui/switch';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -23,17 +24,22 @@ const newsSchema = z.object({
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
     imageUrl: z.string().url("URL da imagem inválida").or(z.literal("")),
     dataAiHint: z.string().optional(),
+    link: z.string().optional(),
+    isHighlight: z.boolean().optional(),
 });
 
 type NewsFormValues = z.infer<typeof newsSchema>;
 
 export function ManageNews() {
-    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItem } = useNews();
+    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItem, toggleNewsHighlight } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<NewsFormValues>({
+    const { register, handleSubmit, reset, control, formState: { errors } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
+        defaultValues: {
+            isHighlight: false,
+        }
     });
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
@@ -53,6 +59,8 @@ export function ManageNews() {
                 date: new Date().toISOString().split('T')[0],
                 imageUrl: 'https://placehold.co/300x200.png',
                 dataAiHint: '',
+                link: '',
+                isHighlight: false,
             });
         }
         setIsDialogOpen(true);
@@ -66,6 +74,16 @@ export function ManageNews() {
     };
     
     const onSubmit = (data: NewsFormValues) => {
+        const currentlyActive = newsItems.filter(n => n.isHighlight && n.id !== editingNews?.id).length;
+        if(data.isHighlight && currentlyActive >= 3) {
+             toast({
+                title: "Limite de destaques atingido",
+                description: "Por favor, desative outro destaque antes de ativar este.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         if (editingNews) {
             updateNewsItem({ ...editingNews, ...data });
             toast({ title: "Notícia atualizada com sucesso." });
@@ -82,7 +100,7 @@ export function ManageNews() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Gerenciar Notícias</CardTitle>
-                    <CardDescription>Adicione, edite ou remova notícias do feed.</CardDescription>
+                    <CardDescription>Adicione, edite ou remova notícias do feed. Marque até 3 para destaque.</CardDescription>
                 </div>
                 <Button onClick={() => handleDialogOpen(null)}>
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -97,6 +115,7 @@ export function ManageNews() {
                                 <TableHead>Título</TableHead>
                                 <TableHead>Categoria</TableHead>
                                 <TableHead>Data</TableHead>
+                                <TableHead>Destaque</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -106,6 +125,13 @@ export function ManageNews() {
                                     <TableCell className="font-medium">{item.title}</TableCell>
                                     <TableCell>{item.category}</TableCell>
                                     <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
+                                    <TableCell>
+                                        <Switch
+                                            checked={item.isHighlight}
+                                            onCheckedChange={() => toggleNewsHighlight(item.id)}
+                                            aria-label="Marcar como destaque"
+                                        />
+                                    </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)}>
                                             <Edit className="h-4 w-4" />
@@ -153,8 +179,27 @@ export function ManageNews() {
                             {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
                         </div>
                          <div>
+                            <Label htmlFor="link">URL do Link (opcional)</Label>
+                            <Input id="link" {...register('link')} placeholder="https://..."/>
+                            {errors.link && <p className="text-sm text-destructive mt-1">{errors.link.message}</p>}
+                        </div>
+                         <div>
                             <Label htmlFor="dataAiHint">Dica para IA da Imagem (opcional)</Label>
                             <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" />
+                        </div>
+                        <div className="flex items-center space-x-2">
+                           <Controller
+                                name="isHighlight"
+                                control={control}
+                                render={({ field }) => (
+                                    <Switch
+                                        id="isHighlight"
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                    />
+                                )}
+                            />
+                            <Label htmlFor="isHighlight">Marcar como Destaque</Label>
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>

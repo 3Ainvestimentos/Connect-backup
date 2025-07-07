@@ -4,7 +4,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import { HighlightsProvider } from '@/contexts/HighlightsContext';
 import { ApplicationsProvider } from '@/contexts/ApplicationsContext';
 import { DocumentsProvider } from '@/contexts/DocumentsContext';
 import { NewsProvider } from '@/contexts/NewsContext';
@@ -33,22 +32,20 @@ export default function RootLayout({
       <body className={cn("font-body antialiased")}>
         <ThemeProvider>
           <AuthProvider>
-            <HighlightsProvider>
-              <ApplicationsProvider>
-                <DocumentsProvider>
-                  <NewsProvider>
-                    <EventsProvider>
-                      <CollaboratorsProvider>
-                        <MessagesProvider>
-                          {children}
-                          <Toaster />
-                        </MessagesProvider>
-                      </CollaboratorsProvider>
-                    </EventsProvider>
-                  </NewsProvider>
-                </DocumentsProvider>
-              </ApplicationsProvider>
-            </HighlightsProvider>
+            <ApplicationsProvider>
+              <DocumentsProvider>
+                <NewsProvider>
+                  <EventsProvider>
+                    <CollaboratorsProvider>
+                      <MessagesProvider>
+                        {children}
+                        <Toaster />
+                      </MessagesProvider>
+                    </CollaboratorsProvider>
+                  </EventsProvider>
+                </NewsProvider>
+              </DocumentsProvider>
+            </ApplicationsProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

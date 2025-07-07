@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { useHighlights } from '@/contexts/HighlightsContext';
+import { useNews } from '@/contexts/NewsContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { useMessages, type MessageType } from '@/contexts/MessagesContext';
 import { getIcon } from '@/lib/icons';
@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const { collaborators } = useCollaborators();
   const { events, getEventRecipients } = useEvents();
   const { messages, markMessageAsRead, getMessageRecipients } = useMessages();
-  const { getActiveHighlights } = useHighlights();
+  const { newsItems } = useNews();
   
   const currentUserCollab = useMemo(() => {
       if (!user || !collaborators) return null;
@@ -64,7 +64,7 @@ export default function DashboardPage() {
     return userMessages.filter(msg => !msg.readBy.includes(currentUserCollab.id)).length;
   }, [userMessages, currentUserCollab]);
 
-  const activeHighlights = getActiveHighlights();
+  const activeHighlights = useMemo(() => newsItems.filter(item => item.isHighlight), [newsItems]);
 
   const handleViewMessage = (messageToView: MessageType) => {
     if (!currentUserCollab) return;
@@ -112,11 +112,11 @@ export default function DashboardPage() {
   }
 
   const HighlightCard = ({ item, className = "" }: { item: any, className?: string }) => (
-    <Link href={item.link} className={cn("relative rounded-lg overflow-hidden group block", className)}>
+    <Link href={item.link || '#'} className={cn("relative rounded-lg overflow-hidden group block", className)}>
         <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={item.dataAiHint} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
         <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
-        <p className="text-sm text-gray-200 font-body">{item.description}</p>
+        <p className="text-sm text-gray-200 font-body">{item.snippet}</p>
         </div>
     </Link>
   );

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface NewsItemType {
   id: string;
@@ -11,14 +12,16 @@ export interface NewsItemType {
   date: string;
   imageUrl: string;
   dataAiHint?: string;
+  isHighlight: boolean;
+  link?: string;
 }
 
 const initialNewsItems: Omit<NewsItemType, 'id'>[] = [
-  { title: "Dia do Pet no Escritório é um Sucesso", snippet: "A recente edição do 'Pet Day' promoveu a integração e o bem-estar entre as equipes, com a participação de dezenas de animais.", category: "Cultura", date: "2024-07-28", imageUrl: "https://i.ibb.co/SpBph6N/1-photo-1535930749574-1399327ce78f-303764.jpg", dataAiHint: "dog office" },
-  { title: "Inscrições Abertas para Conferência Anual", snippet: "Garanta sua vaga na conferência de felicidade corporativa que acontecerá no próximo mês. Palestras e workshops confirmados.", category: "Eventos", date: "2024-07-26", imageUrl: "https://i.ibb.co/nszMYNJ/carreira-felicidade-corporativa.jpg", dataAiHint: "conference team" },
-  { title: "Programa de Bem-Estar Lança Novos Benefícios", snippet: "Novos pacotes, incluindo assessoria esportiva e nutricional, já estão disponíveis para todos os colaboradores.", category: "RH", date: "2024-07-25", imageUrl: "https://i.ibb.co/mrC2Tr5b/homem-correndo-na-estrada-contra-as-montanhas-durante-o-por-do-sol-1048944-7722076.jpg", dataAiHint: "wellness running" },
-  { title: "Resultados Financeiros do Segundo Trimestre", snippet: "Análise detalhada do desempenho financeiro da empresa no Q2.", category: "Financeiro", date: "2024-07-10", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "financial report" },
-  { title: "Voluntariado Corporativo: Resultados da Campanha", snippet: "Veja o impacto positivo das nossas ações de voluntariado na comunidade.", category: "ESG", date: "2024-06-20", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "corporate volunteering" },
+  { title: "Dia do Pet no Escritório é um Sucesso", snippet: "A recente edição do 'Pet Day' promoveu a integração e o bem-estar entre as equipes, com a participação de dezenas de animais.", category: "Cultura", date: "2024-07-28", imageUrl: "https://i.ibb.co/SpBph6N/1-photo-1535930749574-1399327ce78f-303764.jpg", dataAiHint: "dog office", isHighlight: true, link: '#' },
+  { title: "Inscrições Abertas para Conferência Anual", snippet: "Garanta sua vaga na conferência de felicidade corporativa que acontecerá no próximo mês. Palestras e workshops confirmados.", category: "Eventos", date: "2024-07-26", imageUrl: "https://i.ibb.co/nszMYNJ/carreira-felicidade-corporativa.jpg", dataAiHint: "conference team", isHighlight: true, link: '#' },
+  { title: "Programa de Bem-Estar Lança Novos Benefícios", snippet: "Novos pacotes, incluindo assessoria esportiva e nutricional, já estão disponíveis para todos os colaboradores.", category: "RH", date: "2024-07-25", imageUrl: "https://i.ibb.co/mrC2Tr5b/homem-correndo-na-estrada-contra-as-montanhas-durante-o-por-do-sol-1048944-7722076.jpg", dataAiHint: "wellness running", isHighlight: true, link: '#' },
+  { title: "Resultados Financeiros do Segundo Trimestre", snippet: "Análise detalhada do desempenho financeiro da empresa no Q2.", category: "Financeiro", date: "2024-07-10", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "financial report", isHighlight: false, link: '#' },
+  { title: "Voluntariado Corporativo: Resultados da Campanha", snippet: "Veja o impacto positivo das nossas ações de voluntariado na comunidade.", category: "ESG", date: "2024-06-20", imageUrl: "https://placehold.co/300x200.png", dataAiHint: "corporate volunteering", isHighlight: false, link: '#' },
 ];
 
 
@@ -28,6 +31,7 @@ interface NewsContextType {
   addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<void>;
   updateNewsItem: (item: NewsItemType) => Promise<void>;
   deleteNewsItem: (id: string) => Promise<void>;
+  toggleNewsHighlight: (id: string) => Promise<void>;
 }
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
@@ -74,12 +78,36 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const toggleNewsHighlight = async (id: string) => {
+    const targetNews = newsItems.find(n => n.id === id);
+    if (!targetNews) return;
+
+    const currentlyActive = newsItems.filter(n => n.isHighlight).length;
+
+    if (!targetNews.isHighlight && currentlyActive >= 3) {
+      toast({
+        title: "Limite Atingido",
+        description: "Você pode ter no máximo 3 destaques ativos.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const updatedNews = { ...targetNews, isHighlight: !targetNews.isHighlight };
+    const success = await updateDocumentInCollection(COLLECTION_NAME, id, { isHighlight: updatedNews.isHighlight });
+    if(success) {
+        setNewsItems(prev => prev.map(n => (n.id === id ? updatedNews : n)));
+    }
+  };
+
+
   const value = useMemo(() => ({
     newsItems,
     loading,
     addNewsItem,
     updateNewsItem,
     deleteNewsItem,
+    toggleNewsHighlight,
   }), [newsItems, loading]);
 
   return (
