@@ -6,25 +6,15 @@ import { toast } from '@/hooks/use-toast';
 type WithId<T> = T & { id: string };
 
 /**
- * Recursively removes properties with `undefined` values from an object.
- * This is useful before sending data to Firestore, which doesn't allow `undefined`.
- * @param obj The object to clean.
- * @returns A new object with `undefined` values removed.
+ * A helper function to remove 'undefined' values from an object before
+ * sending it to Firestore, which doesn't allow them. It uses a common
+ * and safe method of JSON stringification and parsing.
+ * @param data The object to clean.
+ * @returns A new object with 'undefined' values removed.
  */
-const cleanUndefinedValues = (obj: any): any => {
-    if (obj === null || typeof obj !== 'object') {
-        return obj;
-    }
-    if (Array.isArray(obj)) {
-        return obj.map(item => cleanUndefinedValues(item));
-    }
-    const newObj: { [key: string]: any } = {};
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key) && obj[key] !== undefined) {
-            newObj[key] = cleanUndefinedValues(obj[key]);
-        }
-    }
-    return newObj;
+const cleanDataForFirestore = (data: any) => {
+    // This trick removes any keys with an 'undefined' value.
+    return JSON.parse(JSON.stringify(data));
 };
 
 
@@ -52,10 +42,10 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
  */
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T> | null> => {
     try {
-        const cleanData = cleanUndefinedValues(data);
+        const cleanData = cleanDataForFirestore(data);
         const docRef = await addDoc(collection(db, collectionName), cleanData);
-        // Return original data shape plus the new ID for local state consistency
-        return { id: docRef.id, ...data };
+        // Return the cleaned data shape plus the new ID for local state consistency
+        return { id: docRef.id, ...cleanData };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
         toast({ title: 'Erro ao salvar', description: 'Não foi possível adicionar o novo item.', variant: 'destructive' });
@@ -72,7 +62,7 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
  */
 export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<boolean> => {
     try {
-        const cleanData = cleanUndefinedValues(data);
+        const cleanData = cleanDataForFirestore(data);
         const docRef = doc(db, collectionName, id);
         await updateDoc(docRef, cleanData);
         return true;
