@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 
 export interface ApplicationLinkItem {
   id: string;
@@ -25,22 +25,22 @@ export interface Application {
 
 interface ApplicationsContextType {
   applications: Application[];
-  addApplication: (app: Omit<Application, 'id'>) => void;
-  updateApplication: (app: Application) => void;
-  deleteApplication: (id: string) => void;
+  loading: boolean;
+  addApplication: (app: Omit<Application, 'id'>) => Promise<void>;
+  updateApplication: (app: Application) => Promise<void>;
+  deleteApplication: (id: string) => Promise<void>;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
 
-const initialApplications: Application[] = [
-  { id: 'profile', name: 'Meu Perfil', icon: 'UserCircle', type: 'modal', modalId: 'profile' },
-  { id: 'slack', name: 'Slack', icon: 'MessagesSquare', type: 'external', href: 'https://slack.com/intl/pt-br/' },
-  { id: 'vacation', name: 'Férias', icon: 'Plane', type: 'modal', modalId: 'vacation' },
-  { id: 'support', name: 'Suporte TI', icon: 'Headset', type: 'modal', modalId: 'support' },
-  { id: 'admin', name: 'Administrativo', icon: 'Briefcase', type: 'modal', modalId: 'admin' },
-  { id: 'marketing', name: 'Marketing', icon: 'Megaphone', type: 'modal', modalId: 'marketing' },
+const initialApplications: Omit<Application, 'id'>[] = [
+  { name: 'Meu Perfil', icon: 'UserCircle', type: 'modal', modalId: 'profile' },
+  { name: 'Slack', icon: 'MessagesSquare', type: 'external', href: 'https://slack.com/intl/pt-br/' },
+  { name: 'Férias', icon: 'Plane', type: 'modal', modalId: 'vacation' },
+  { name: 'Suporte TI', icon: 'Headset', type: 'modal', modalId: 'support' },
+  { name: 'Administrativo', icon: 'Briefcase', type: 'modal', modalId: 'admin' },
+  { name: 'Marketing', icon: 'Megaphone', type: 'modal', modalId: 'marketing' },
   {
-    id: 'rh-links',
     name: 'Links RH',
     icon: 'Book',
     type: 'modal',
@@ -56,29 +56,56 @@ const initialApplications: Application[] = [
   },
 ];
 
+const COLLECTION_NAME = 'applications';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
-  const [applications, setApplications] = useLocalStorage<Application[]>('applications', initialApplications);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addApplication = useCallback((appData: Omit<Application, 'id'>) => {
-    const newApp: Application = { ...appData, id: `app-${Date.now()}` };
-    setApplications(prev => [newApp, ...prev]);
-  }, [setApplications]);
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      const data = await getCollection<Application>(COLLECTION_NAME);
+       if (data.length === 0) {
+        await seedCollection(COLLECTION_NAME, initialApplications);
+        const seededData = await getCollection<Application>(COLLECTION_NAME);
+        setApplications(seededData);
+      } else {
+        setApplications(data);
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
-  const updateApplication = useCallback((updatedApp: Application) => {
-    setApplications(prev => prev.map(app => (app.id === updatedApp.id ? updatedApp : app)));
-  }, [setApplications]);
+  const addApplication = async (appData: Omit<Application, 'id'>) => {
+    const newApp = await addDocumentToCollection(COLLECTION_NAME, appData);
+    if (newApp) {
+        setApplications(prev => [newApp as Application, ...prev]);
+    }
+  };
 
-  const deleteApplication = useCallback((id: string) => {
-    setApplications(prev => prev.filter(app => app.id !== id));
-  }, [setApplications]);
+  const updateApplication = async (updatedApp: Application) => {
+    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp);
+    if(success) {
+        setApplications(prev => prev.map(app => (app.id === updatedApp.id ? updatedApp : app)));
+    }
+  };
+
+  const deleteApplication = async (id: string) => {
+    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
+    if(success) {
+        setApplications(prev => prev.filter(app => app.id !== id));
+    }
+  };
   
   const value = useMemo(() => ({
       applications, 
+      loading,
       addApplication, 
       updateApplication, 
       deleteApplication 
-  }), [applications, addApplication, updateApplication, deleteApplication]);
+  }), [applications, loading]);
 
   return (
     <ApplicationsContext.Provider value={value}>

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 
 export interface Collaborator {
   id: string;
@@ -15,44 +15,72 @@ export interface Collaborator {
   city: string;      // Cidade
 }
 
-const initialCollaborators: Collaborator[] = [
-  { id: 'collab1', name: 'Ana Silva', email: 'ana.silva@example.com', axis: 'Comercial', area: 'Vendas', position: 'Gerente de Vendas', leader: 'Carlos Pereira', segment: 'Varejo', city: 'São Paulo' },
-  { id: 'collab2', name: 'Bruno Costa', email: 'bruno.costa@example.com', axis: 'Operações', area: 'Logística', position: 'Analista de Logística', leader: 'Fernanda Lima', segment: 'Indústria', city: 'Rio de Janeiro' },
-  { id: 'collab3', name: 'Carla Dias', email: 'carla.dias@example.com', axis: 'Tecnologia', area: 'Desenvolvimento', position: 'Desenvolvedora Sênior', leader: 'Ricardo Souza', segment: 'B2B', city: 'Belo Horizonte' },
-  { id: 'collab4', name: 'Usuário de Teste', email: 'test.user@example.com', axis: 'Tecnologia', area: 'Desenvolvimento', position: 'Analista de Testes', leader: 'Ricardo Souza', segment: 'B2B', city: 'Belo Horizonte' },
+const initialCollaborators: Omit<Collaborator, 'id'>[] = [
+  { name: 'Ana Silva', email: 'ana.silva@example.com', axis: 'Comercial', area: 'Vendas', position: 'Gerente de Vendas', leader: 'Carlos Pereira', segment: 'Varejo', city: 'São Paulo' },
+  { name: 'Bruno Costa', email: 'bruno.costa@example.com', axis: 'Operações', area: 'Logística', position: 'Analista de Logística', leader: 'Fernanda Lima', segment: 'Indústria', city: 'Rio de Janeiro' },
+  { name: 'Carla Dias', email: 'carla.dias@example.com', axis: 'Tecnologia', area: 'Desenvolvimento', position: 'Desenvolvedora Sênior', leader: 'Ricardo Souza', segment: 'B2B', city: 'Belo Horizonte' },
+  { name: 'Usuário de Teste', email: 'test.user@example.com', axis: 'Tecnologia', area: 'Desenvolvimento', position: 'Analista de Testes', leader: 'Ricardo Souza', segment: 'B2B', city: 'Belo Horizonte' },
 ];
 
 interface CollaboratorsContextType {
   collaborators: Collaborator[];
-  addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => void;
-  updateCollaborator: (collaborator: Collaborator) => void;
-  deleteCollaborator: (id: string) => void;
+  loading: boolean;
+  addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<void>;
+  updateCollaborator: (collaborator: Collaborator) => Promise<void>;
+  deleteCollaborator: (id: string) => Promise<void>;
 }
 
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
+const COLLECTION_NAME = 'collaborators';
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
-  const [collaborators, setCollaborators] = useLocalStorage<Collaborator[]>('collaborators', initialCollaborators);
+  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addCollaborator = useCallback((collaboratorData: Omit<Collaborator, 'id'>) => {
-    const newCollaborator: Collaborator = { ...collaboratorData, id: `collab-${Date.now()}` };
-    setCollaborators(prev => [newCollaborator, ...prev]);
-  }, [setCollaborators]);
+  useEffect(() => {
+    const fetchData = async () => {
+        setLoading(true);
+        const data = await getCollection<Collaborator>(COLLECTION_NAME);
+        if (data.length === 0) {
+            await seedCollection(COLLECTION_NAME, initialCollaborators);
+            const seededData = await getCollection<Collaborator>(COLLECTION_NAME);
+            setCollaborators(seededData);
+        } else {
+            setCollaborators(data);
+        }
+        setLoading(false);
+    };
+    fetchData();
+  }, []);
 
-  const updateCollaborator = useCallback((updatedCollaborator: Collaborator) => {
-    setCollaborators(prev => prev.map(c => (c.id === updatedCollaborator.id ? updatedCollaborator : c)));
-  }, [setCollaborators]);
+  const addCollaborator = async (collaboratorData: Omit<Collaborator, 'id'>) => {
+    const newCollaborator = await addDocumentToCollection(COLLECTION_NAME, collaboratorData);
+    if(newCollaborator) {
+        setCollaborators(prev => [newCollaborator as Collaborator, ...prev]);
+    }
+  };
 
-  const deleteCollaborator = useCallback((id: string) => {
-    setCollaborators(prev => prev.filter(c => c.id !== id));
-  }, [setCollaborators]);
+  const updateCollaborator = async (updatedCollaborator: Collaborator) => {
+    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator);
+    if(success) {
+        setCollaborators(prev => prev.map(c => (c.id === updatedCollaborator.id ? updatedCollaborator : c)));
+    }
+  };
+
+  const deleteCollaborator = async (id: string) => {
+    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
+    if(success) {
+        setCollaborators(prev => prev.filter(c => c.id !== id));
+    }
+  };
 
   const value = useMemo(() => ({
     collaborators,
+    loading,
     addCollaborator,
     updateCollaborator,
     deleteCollaborator,
-  }), [collaborators, addCollaborator, updateCollaborator, deleteCollaborator]);
+  }), [collaborators, loading]);
 
   return (
     <CollaboratorsContext.Provider value={value}>
