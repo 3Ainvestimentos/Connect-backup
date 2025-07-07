@@ -85,12 +85,11 @@ function UserNav() {
             <DropdownMenuSubTrigger>
                 {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
                 {theme === 'dark' && <Moon className="mr-2 h-4 w-4" />}
-                {theme === 'system' && <Laptop className="mr-2 h-4 w-4" />}
                 <span>Tema</span>
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
                 <DropdownMenuSubContent>
-                    <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}>
+                    <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark")}>
                         <DropdownMenuRadioItem value="light">
                             <Sun className="mr-2 h-4 w-4" />
                             <span>Claro</span>
@@ -98,10 +97,6 @@ function UserNav() {
                         <DropdownMenuRadioItem value="dark">
                             <Moon className="mr-2 h-4 w-4" />
                             <span>Escuro</span>
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="system">
-                            <Laptop className="mr-2 h-4 w-4" />
-                            <span>Sistema</span>
                         </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
@@ -219,7 +214,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <DropdownMenuContent side="right" align="start" className="w-56 mb-2">
                       <DropdownMenuLabel>Tema</DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark" | "system")}>
+                      <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark")}>
                         <DropdownMenuRadioItem value="light">
                           <Sun className="mr-2 h-4 w-4" />
                           <span>Claro</span>
@@ -227,10 +222,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         <DropdownMenuRadioItem value="dark">
                           <Moon className="mr-2 h-4 w-4" />
                           <span>Escuro</span>
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="system">
-                          <Laptop className="mr-2 h-4 w-4" />
-                          <span>Sistema</span>
                         </DropdownMenuRadioItem>
                       </DropdownMenuRadioGroup>
                     </DropdownMenuContent>
