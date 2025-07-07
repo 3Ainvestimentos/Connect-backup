@@ -14,6 +14,7 @@ type WithId<T> = T & { id: string };
  */
 const cleanDataForFirestore = (data: any) => {
     // This trick removes any keys with an 'undefined' value.
+    // It's a standard and safe way to ensure data compatibility with Firestore.
     return JSON.parse(JSON.stringify(data));
 };
 
@@ -101,7 +102,8 @@ export const seedCollection = async <T>(collectionName: string, initialData: T[]
         const batch = writeBatch(db);
         initialData.forEach(item => {
             const docRef = doc(collection(db, collectionName));
-            batch.set(docRef, item);
+            const cleanItem = cleanDataForFirestore(item);
+            batch.set(docRef, cleanItem);
         });
         await batch.commit();
         console.log(`Collection ${collectionName} seeded successfully.`);
