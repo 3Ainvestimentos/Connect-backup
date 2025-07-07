@@ -6,6 +6,29 @@ import { toast } from '@/hooks/use-toast';
 type WithId<T> = T & { id: string };
 
 /**
+ * Recursively removes properties with `undefined` values from an object.
+ * This is useful before sending data to Firestore, which doesn't allow `undefined`.
+ * @param obj The object to clean.
+ * @returns A new object with `undefined` values removed.
+ */
+const cleanUndefinedValues = (obj: any): any => {
+    if (obj === null || typeof obj !== 'object') {
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(item => cleanUndefinedValues(item));
+    }
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key) && obj[key] !== undefined) {
+            newObj[key] = cleanUndefinedValues(obj[key]);
+        }
+    }
+    return newObj;
+};
+
+
+/**
  * Fetches all documents from a specified collection.
  * @param collectionName The name of the collection to fetch.
  * @returns A promise that resolves to an array of documents with their IDs.
@@ -29,7 +52,9 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
  */
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T> | null> => {
     try {
-        const docRef = await addDoc(collection(db, collectionName), data);
+        const cleanData = cleanUndefinedValues(data);
+        const docRef = await addDoc(collection(db, collectionName), cleanData);
+        // Return original data shape plus the new ID for local state consistency
         return { id: docRef.id, ...data };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
@@ -47,8 +72,9 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
  */
 export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<boolean> => {
     try {
+        const cleanData = cleanUndefinedValues(data);
         const docRef = doc(db, collectionName, id);
-        await updateDoc(docRef, data);
+        await updateDoc(docRef, cleanData);
         return true;
     } catch (error) {
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
