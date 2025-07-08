@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -95,9 +94,6 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                     </Button>
                     <Button variant="outline" size="sm" asChild>
                         <a href="#"><LinkIcon className="mr-2 h-4 w-4" />Meus Documentos</a>
-                    </Button>
-                    <Button variant="outline" size="sm" asChild>
-                        <Link href="/contacts"><LinkIcon className="mr-2 h-4 w-4" />Ver Organograma</Link>
                     </Button>
                     {isAdmin && (
                         <Button variant="destructive" size="sm" asChild>
