@@ -5,8 +5,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// For prototyping, we check a specific email.
-// In a production app, this should be a role fetched from a secure backend.
+// !! IMPORTANTE !!
+// Substitua este email pelo endereço de email real do administrador da plataforma.
+// Apenas este usuário poderá acessar o Painel do Administrador.
 const ADMIN_EMAIL = 'mock@example.com';
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
     useEffect(() => {
         if (!loading) {
             if (!user || user.email !== ADMIN_EMAIL) {
-                // Redirect non-admin users to the dashboard or an unauthorized page
+                // Redireciona usuários não-admin para o painel principal
                 router.replace('/dashboard'); 
             } else {
                 setIsAuthorized(true);
@@ -25,7 +26,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         }
     }, [user, loading, router]);
 
-    // Show a loading spinner while checking auth status
+    // Mostra um indicador de carregamento enquanto verifica o status de autenticação
     if (loading || !isAuthorized) {
         return (
             <div className="flex h-[calc(100vh-var(--header-height))] w-full items-center justify-center bg-background">
@@ -37,6 +38,6 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
         );
     }
     
-    // If authorized, render the children components (the admin page)
+    // Se autorizado, renderiza os componentes filhos (a página de admin)
     return <>{children}</>;
 }

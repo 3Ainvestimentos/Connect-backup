@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -15,10 +16,6 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
   const { signInWithGoogle, loading } = useAuth();
-  
-  const handleSignIn = async (role: 'user' | 'admin') => {
-    await signInWithGoogle(role);
-  }
 
   return (
     <div className="relative min-h-screen w-full">
@@ -47,7 +44,7 @@ export default function LoginPage() {
           </div>
           <Button
             className="w-full flex justify-center items-center py-3 px-4 border border-gray-200 rounded-full shadow-sm text-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 font-body"
-            onClick={() => handleSignIn('user')}
+            onClick={() => signInWithGoogle()}
             disabled={loading}
           >
             <GoogleIcon />
@@ -63,18 +60,6 @@ export default function LoginPage() {
             O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.
           </p>
         </footer>
-
-        <div className="absolute bottom-6 right-6">
-             <Button
-                variant="link"
-                className="text-xs text-white/80 hover:text-white"
-                onClick={() => handleSignIn('admin')}
-                disabled={loading}
-             >
-                Entrar como Admin
-            </Button>
-        </div>
-
       </div>
     </div>
   );
