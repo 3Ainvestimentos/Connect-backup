@@ -1,6 +1,8 @@
+
 "use client";
 
 import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 
@@ -28,10 +30,10 @@ const initialMessages: Omit<MessageType, 'id'>[] = [
 interface MessagesContextType {
   messages: MessageType[];
   loading: boolean;
-  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => Promise<void>;
-  updateMessage: (message: MessageType) => Promise<void>;
-  deleteMessage: (id: string) => Promise<void>;
-  markMessageAsRead: (messageId: string, collaboratorId: string) => Promise<void>;
+  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => void;
+  updateMessage: (message: MessageType) => void;
+  deleteMessage: (id: string) => void;
+  markMessageAsRead: (messageId: string, collaboratorId: string) => void;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -39,24 +41,28 @@ const MessagesContext = createContext<MessagesContextType | undefined>(undefined
 const COLLECTION_NAME = 'messages';
 
 export const MessagesProvider = ({ children }: { children: ReactNode }) => {
-  const [messages, setMessages] = useState<MessageType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [hasSeeded, setHasSeeded] = useState(false);
+
+  const { data: messages = [], isLoading, isSuccess } = useQuery<MessageType[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
+    select: (data) => data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-        setLoading(true);
-        const data = await getCollection<MessageType>(COLLECTION_NAME);
-        if (data.length === 0) {
-            await seedCollection(COLLECTION_NAME, initialMessages);
-            const seededData = await getCollection<MessageType>(COLLECTION_NAME);
-            setMessages(seededData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        } else {
-            setMessages(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        }
-        setLoading(false);
-    };
-    fetchData();
-  }, []);
+    if (isSuccess && messages.length === 0 && !hasSeeded) {
+      setHasSeeded(true);
+      console.log(`Seeding ${COLLECTION_NAME} collection...`);
+      seedCollection(COLLECTION_NAME, initialMessages)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        })
+        .catch(err => {
+          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
+        });
+    }
+  }, [isSuccess, messages.length, hasSeeded, queryClient]);
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (message.target.type === 'all') {
@@ -66,52 +72,53 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => c[filterKey] === message.target.value);
   }, []);
 
-  const addMessage = async (messageData: Omit<MessageType, 'id' | 'readBy'>) => {
-    const newMessageData = { ...messageData, readBy: [] };
-    const newMessage = await addDocumentToCollection(COLLECTION_NAME, newMessageData);
-    if(newMessage) {
-        setMessages(prev => [newMessage as MessageType, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    }
-  };
+  const addMessageMutation = useMutation({
+    mutationFn: (messageData: Omit<MessageType, 'id' | 'readBy'>) => {
+      const newMessageData = { ...messageData, readBy: [] };
+      return addDocumentToCollection(COLLECTION_NAME, newMessageData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const updateMessage = async (updatedMessage: MessageType) => {
-    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedMessage.id, updatedMessage);
-    if (success) {
-        setMessages(prev => prev.map(msg => (msg.id === updatedMessage.id ? updatedMessage : msg)));
-    }
-  };
+  const updateMessageMutation = useMutation({
+    mutationFn: (updatedMessage: MessageType) => updateDocumentInCollection(COLLECTION_NAME, updatedMessage.id, updatedMessage),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const deleteMessage = async (id: string) => {
-    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
-    if (success) {
-        setMessages(prev => prev.filter(msg => msg.id !== id));
-    }
-  };
+  const deleteMessageMutation = useMutation({
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const markMessageAsRead = async (messageId: string, collaboratorId: string) => {
-    const message = messages.find(msg => msg.id === messageId);
-    if (message && !message.readBy.includes(collaboratorId)) {
+  const markAsReadMutation = useMutation({
+    mutationFn: ({ messageId, collaboratorId }: { messageId: string; collaboratorId: string }) => {
+      const message = messages.find(msg => msg.id === messageId);
+      if (message && !message.readBy.includes(collaboratorId)) {
         const updatedReadBy = [...message.readBy, collaboratorId];
-        const success = await updateDocumentInCollection(COLLECTION_NAME, messageId, { readBy: updatedReadBy });
-        if(success) {
-            setMessages(prev =>
-                prev.map(msg =>
-                  msg.id === messageId ? { ...msg, readBy: updatedReadBy } : msg
-                )
-            );
-        }
-    }
-  };
-
+        return updateDocumentInCollection(COLLECTION_NAME, messageId, { readBy: updatedReadBy });
+      }
+      return Promise.resolve();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+  
   const value = useMemo(() => ({
     messages,
-    loading,
-    addMessage,
-    updateMessage,
-    deleteMessage,
-    markMessageAsRead,
+    loading: isLoading,
+    addMessage: (message) => addMessageMutation.mutate(message),
+    updateMessage: (message) => updateMessageMutation.mutate(message),
+    deleteMessage: (id) => deleteMessageMutation.mutate(id),
+    markMessageAsRead: (messageId, collaboratorId) => markAsReadMutation.mutate({ messageId, collaboratorId }),
     getMessageRecipients
-  }), [messages, loading, getMessageRecipients]);
+  }), [messages, isLoading, getMessageRecipients, addMessageMutation, updateMessageMutation, deleteMessageMutation, markAsReadMutation]);
 
   return (
     <MessagesContext.Provider value={value}>

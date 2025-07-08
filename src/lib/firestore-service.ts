@@ -1,3 +1,4 @@
+
 import { db } from './firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
@@ -18,7 +19,7 @@ const cleanUndefinedValues = (data: any): any => {
     if (data !== null && typeof data === 'object') {
         const cleanedObject: { [key: string]: any } = {};
         for (const key in data) {
-            if (data[key] !== undefined) {
+            if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined) {
                 cleanedObject[key] = cleanUndefinedValues(data[key]);
             }
         }
@@ -40,7 +41,7 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
     } catch (error) {
         console.error(`Error fetching collection ${collectionName}:`, error);
         toast({ title: 'Erro ao buscar dados', description: `Não foi possível carregar os dados de ${collectionName}.`, variant: 'destructive' });
-        return [];
+        throw error;
     }
 };
 
@@ -48,18 +49,17 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
  * Adds a new document to a specified collection.
  * @param collectionName The name of the collection.
  * @param data The data for the new document.
- * @returns A promise that resolves to the new document with its ID, or null on failure.
+ * @returns A promise that resolves to the new document with its ID.
  */
-export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T> | null> => {
+export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T>> => {
     try {
         const cleanData = cleanUndefinedValues(data);
         const docRef = await addDoc(collection(db, collectionName), cleanData);
-        // Return the cleaned data shape plus the new ID for local state consistency
-        return { id: docRef.id, ...cleanData };
+        return { id: docRef.id, ...data };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
         toast({ title: 'Erro ao salvar', description: 'Não foi possível adicionar o novo item.', variant: 'destructive' });
-        return null;
+        throw error;
     }
 };
 
@@ -68,18 +68,17 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
  * @param collectionName The name of the collection.
  * @param id The ID of the document to update.
  * @param data The new data for the document.
- * @returns A promise that resolves to true on success, false on failure.
+ * @returns A promise that resolves to void on success.
  */
-export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<boolean> => {
+export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<void> => {
     try {
         const cleanData = cleanUndefinedValues(data);
         const docRef = doc(db, collectionName, id);
         await updateDoc(docRef, cleanData);
-        return true;
     } catch (error) {
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
         toast({ title: 'Erro ao atualizar', description: 'Não foi possível salvar as alterações.', variant: 'destructive' });
-        return false;
+        throw error;
     }
 };
 
@@ -87,16 +86,15 @@ export const updateDocumentInCollection = async <T>(collectionName: string, id: 
  * Deletes a document from a specified collection.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to delete.
- * @returns A promise that resolves to true on success, false on failure.
+ * @returns A promise that resolves to void on success.
  */
-export const deleteDocumentFromCollection = async (collectionName: string, id: string): Promise<boolean> => {
+export const deleteDocumentFromCollection = async (collectionName: string, id: string): Promise<void> => {
     try {
         await deleteDoc(doc(db, collectionName, id));
-        return true;
     } catch (error) {
         console.error(`Error deleting document ${id} from ${collectionName}:`, error);
         toast({ title: 'Erro ao excluir', description: 'Não foi possível remover o item.', variant: 'destructive' });
-        return false;
+        throw error;
     }
 };
 
@@ -119,5 +117,6 @@ export const seedCollection = async <T>(collectionName: string, initialData: T[]
     } catch (error) {
         console.error(`Error seeding collection ${collectionName}:`, error);
         toast({ title: 'Erro de inicialização', description: `Não foi possível popular a coleção ${collectionName}.`, variant: 'destructive' });
+        throw error;
     }
 };

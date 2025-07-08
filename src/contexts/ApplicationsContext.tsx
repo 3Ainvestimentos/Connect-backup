@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
@@ -62,57 +63,53 @@ const COLLECTION_NAME = 'applications';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: applications = [], isLoading, isError, error } = useQuery<Application[]>({
+  const { data: applications = [], isLoading, isError, error, isSuccess } = useQuery<Application[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => {
-      const data = await getCollection<Application>(COLLECTION_NAME);
-      // If the collection is empty, seed it with initial data and refetch.
-      if (data.length === 0) {
-        console.log(`Seeding ${COLLECTION_NAME} collection...`);
-        await seedCollection(COLLECTION_NAME, initialApplications);
-        return await getCollection<Application>(COLLECTION_NAME);
-      }
-      return data;
-    },
+    queryFn: () => getCollection<Application>(COLLECTION_NAME),
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (isSuccess && applications.length === 0 && !hasSeeded) {
+      setHasSeeded(true);
+      console.log(`Seeding ${COLLECTION_NAME} collection...`);
+      seedCollection(COLLECTION_NAME, initialApplications)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        })
+        .catch(err => {
+          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
+        });
+    }
+  }, [isSuccess, applications.length, hasSeeded, queryClient]);
+
+  useEffect(() => {
     if (isError) {
       console.error("Error fetching applications:", error);
-      toast({ title: 'Erro ao carregar aplicações', description: (error as Error).message, variant: 'destructive' });
+      toast({ title: 'Erro ao carregar aplicações', description: 'Não foi possível buscar os dados.', variant: 'destructive' });
     }
   }, [isError, error]);
 
-  const addApplicationMutation = useMutation({
+  const addApplicationMutation = useMutation<Application, Error, Omit<Application, 'id'>>({
     mutationFn: (appData: Omit<Application, 'id'>) => addDocumentToCollection(COLLECTION_NAME, appData),
     onSuccess: () => {
-      // When the mutation is successful, invalidate the query to refetch the data
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error) => {
-      toast({ title: 'Erro ao adicionar aplicação', description: (error as Error).message, variant: 'destructive' });
-    }
   });
 
-  const updateApplicationMutation = useMutation({
+  const updateApplicationMutation = useMutation<void, Error, Application>({
     mutationFn: (updatedApp: Application) => updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error) => {
-      toast({ title: 'Erro ao atualizar aplicação', description: (error as Error).message, variant: 'destructive' });
-    }
   });
 
-  const deleteApplicationMutation = useMutation({
+  const deleteApplicationMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error) => {
-      toast({ title: 'Erro ao excluir aplicação', description: (error as Error).message, variant: 'destructive' });
-    }
   });
 
   const value = useMemo(() => ({

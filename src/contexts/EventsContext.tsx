@@ -1,6 +1,8 @@
+
 "use client";
 
 import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 
@@ -26,9 +28,9 @@ const initialEvents: Omit<EventType, 'id'>[] = [
 interface EventsContextType {
   events: EventType[];
   loading: boolean;
-  addEvent: (event: Omit<EventType, 'id'>) => Promise<void>;
-  updateEvent: (event: EventType) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
+  addEvent: (event: Omit<EventType, 'id'>) => void;
+  updateEvent: (event: EventType) => void;
+  deleteEvent: (id: string) => void;
   getEventRecipients: (event: EventType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -36,24 +38,27 @@ const EventsContext = createContext<EventsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'events';
 
 export const EventsProvider = ({ children }: { children: ReactNode }) => {
-  const [events, setEvents] = useState<EventType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [hasSeeded, setHasSeeded] = useState(false);
+
+  const { data: events = [], isLoading, isSuccess } = useQuery<EventType[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<EventType>(COLLECTION_NAME),
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-        setLoading(true);
-        const data = await getCollection<EventType>(COLLECTION_NAME);
-         if (data.length === 0) {
-            await seedCollection(COLLECTION_NAME, initialEvents);
-            const seededData = await getCollection<EventType>(COLLECTION_NAME);
-            setEvents(seededData);
-        } else {
-            setEvents(data);
-        }
-        setLoading(false);
-    };
-    fetchData();
-  }, []);
+    if (isSuccess && events.length === 0 && !hasSeeded) {
+      setHasSeeded(true);
+      console.log(`Seeding ${COLLECTION_NAME} collection...`);
+      seedCollection(COLLECTION_NAME, initialEvents)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        })
+        .catch(err => {
+          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
+        });
+    }
+  }, [isSuccess, events.length, hasSeeded, queryClient]);
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (event.target.type === 'all') {
@@ -63,35 +68,35 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => c[filterKey] === event.target.value);
   }, []);
 
-  const addEvent = async (eventData: Omit<EventType, 'id'>) => {
-    const newEvent = await addDocumentToCollection(COLLECTION_NAME, eventData);
-    if(newEvent) {
-        setEvents(prev => [...prev, newEvent as EventType]);
-    }
-  };
+  const addEventMutation = useMutation({
+    mutationFn: (eventData: Omit<EventType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, eventData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const updateEvent = async (updatedEvent: EventType) => {
-    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedEvent.id, updatedEvent);
-    if(success) {
-        setEvents(prev => prev.map(evt => (evt.id === updatedEvent.id ? updatedEvent : evt)));
-    }
-  };
+  const updateEventMutation = useMutation({
+    mutationFn: (updatedEvent: EventType) => updateDocumentInCollection(COLLECTION_NAME, updatedEvent.id, updatedEvent),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const deleteEvent = async (id: string) => {
-    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
-    if(success) {
-        setEvents(prev => prev.filter(evt => evt.id !== id));
-    }
-  };
+  const deleteEventMutation = useMutation({
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
   const value = useMemo(() => ({
     events,
-    loading,
-    addEvent,
-    updateEvent,
-    deleteEvent,
+    loading: isLoading,
+    addEvent: (event) => addEventMutation.mutate(event),
+    updateEvent: (event) => updateEventMutation.mutate(event),
+    deleteEvent: (id) => deleteEventMutation.mutate(id),
     getEventRecipients,
-  }), [events, loading, getEventRecipients]);
+  }), [events, isLoading, getEventRecipients, addEventMutation, updateEventMutation, deleteEventMutation]);
 
   return (
     <EventsContext.Provider value={value}>

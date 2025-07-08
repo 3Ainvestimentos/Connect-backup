@@ -1,6 +1,8 @@
+
 "use client";
 
-import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
@@ -28,87 +30,92 @@ const initialNewsItems: Omit<NewsItemType, 'id'>[] = [
 interface NewsContextType {
   newsItems: NewsItemType[];
   loading: boolean;
-  addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<void>;
-  updateNewsItem: (item: NewsItemType) => Promise<void>;
-  deleteNewsItem: (id: string) => Promise<void>;
-  toggleNewsHighlight: (id: string) => Promise<void>;
+  addNewsItem: (item: Omit<NewsItemType, 'id'>) => void;
+  updateNewsItem: (item: NewsItemType) => void;
+  deleteNewsItem: (id: string) => void;
+  toggleNewsHighlight: (id: string) => void;
 }
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'newsItems';
 
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
-  const [newsItems, setNewsItems] = useState<NewsItemType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [hasSeeded, setHasSeeded] = useState(false);
 
+  const { data: newsItems = [], isLoading, isSuccess } = useQuery<NewsItemType[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME),
+    select: (data) => data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
+  });
+  
   useEffect(() => {
-    const fetchData = async () => {
-        setLoading(true);
-        const data = await getCollection<NewsItemType>(COLLECTION_NAME);
-         if (data.length === 0) {
-            await seedCollection(COLLECTION_NAME, initialNewsItems);
-            const seededData = await getCollection<NewsItemType>(COLLECTION_NAME);
-            setNewsItems(seededData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        } else {
-            setNewsItems(data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        }
-        setLoading(false);
-    };
-    fetchData();
-  }, []);
-
-  const addNewsItem = async (itemData: Omit<NewsItemType, 'id'>) => {
-    const newItem = await addDocumentToCollection(COLLECTION_NAME, itemData);
-    if(newItem) {
-        setNewsItems(prev => [newItem as NewsItemType, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    if (isSuccess && newsItems.length === 0 && !hasSeeded) {
+      setHasSeeded(true);
+      console.log(`Seeding ${COLLECTION_NAME} collection...`);
+      seedCollection(COLLECTION_NAME, initialNewsItems)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        })
+        .catch(err => {
+          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
+        });
     }
-  };
+  }, [isSuccess, newsItems.length, hasSeeded, queryClient]);
 
-  const updateNewsItem = async (updatedItem: NewsItemType) => {
-    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedItem.id, updatedItem);
-    if(success) {
-        setNewsItems(prev => prev.map(item => (item.id === updatedItem.id ? updatedItem : item)));
-    }
-  };
 
-  const deleteNewsItem = async (id: string) => {
-    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
-    if(success) {
-        setNewsItems(prev => prev.filter(item => item.id !== id));
-    }
-  };
+  const addNewsItemMutation = useMutation({
+    mutationFn: (itemData: Omit<NewsItemType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, itemData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const toggleNewsHighlight = async (id: string) => {
-    const targetNews = newsItems.find(n => n.id === id);
-    if (!targetNews) return;
+  const updateNewsItemMutation = useMutation({
+    mutationFn: (updatedItem: NewsItemType) => updateDocumentInCollection(COLLECTION_NAME, updatedItem.id, updatedItem),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-    const currentlyActive = newsItems.filter(n => n.isHighlight).length;
+  const deleteNewsItemMutation = useMutation({
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-    if (!targetNews.isHighlight && currentlyActive >= 3) {
-      toast({
-        title: "Limite Atingido",
-        description: "Você pode ter no máximo 3 destaques ativos.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const updatedNews = { ...targetNews, isHighlight: !targetNews.isHighlight };
-    const success = await updateDocumentInCollection(COLLECTION_NAME, id, { isHighlight: updatedNews.isHighlight });
-    if(success) {
-        setNewsItems(prev => prev.map(n => (n.id === id ? updatedNews : n)));
-    }
-  };
+  const toggleHighlightMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const targetNews = newsItems.find(n => n.id === id);
+      if (!targetNews) return;
 
+      const currentlyActive = newsItems.filter(n => n.isHighlight).length;
+      if (!targetNews.isHighlight && currentlyActive >= 3) {
+        toast({
+          title: "Limite Atingido",
+          description: "Você pode ter no máximo 3 destaques ativos.",
+          variant: "destructive",
+        });
+        return Promise.reject(new Error("Highlight limit reached"));
+      }
+      
+      const updatedNews = { ...targetNews, isHighlight: !targetNews.isHighlight };
+      await updateDocumentInCollection(COLLECTION_NAME, id, { isHighlight: updatedNews.isHighlight });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
   const value = useMemo(() => ({
     newsItems,
-    loading,
-    addNewsItem,
-    updateNewsItem,
-    deleteNewsItem,
-    toggleNewsHighlight,
-  }), [newsItems, loading]);
+    loading: isLoading,
+    addNewsItem: (item) => addNewsItemMutation.mutate(item),
+    updateNewsItem: (item) => updateNewsItemMutation.mutate(item),
+    deleteNewsItem: (id) => deleteNewsItemMutation.mutate(id),
+    toggleNewsHighlight: (id) => toggleHighlightMutation.mutate(id),
+  }), [newsItems, isLoading, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleHighlightMutation]);
 
   return (
     <NewsContext.Provider value={value}>

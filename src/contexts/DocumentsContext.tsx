@@ -1,6 +1,8 @@
+
 "use client";
 
-import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 
 export interface DocumentType {
@@ -23,67 +25,69 @@ const initialDocuments: Omit<DocumentType, 'id'>[] = [
   { name: "Guia de Estilo da Marca.pdf", category: "Marketing", type: "pdf", size: "3.1MB", lastModified: "2024-06-01", downloadUrl: "#", dataAiHint: "brand guidelines" },
 ];
 
-
 interface DocumentsContextType {
   documents: DocumentType[];
   loading: boolean;
-  addDocument: (doc: Omit<DocumentType, 'id'>) => Promise<void>;
-  updateDocument: (doc: DocumentType) => Promise<void>;
-  deleteDocument: (id: string) => Promise<void>;
+  addDocument: (doc: Omit<DocumentType, 'id'>) => void;
+  updateDocument: (doc: DocumentType) => void;
+  deleteDocument: (id: string) => void;
 }
 
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'documents';
 
 export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
-  const [documents, setDocuments] = useState<DocumentType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [hasSeeded, setHasSeeded] = useState(false);
+
+  const { data: documents = [], isLoading, isSuccess } = useQuery<DocumentType[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<DocumentType>(COLLECTION_NAME),
+    select: (data) => data.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()),
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-        setLoading(true);
-        const data = await getCollection<DocumentType>(COLLECTION_NAME);
-        if (data.length === 0) {
-            await seedCollection(COLLECTION_NAME, initialDocuments);
-            const seededData = await getCollection<DocumentType>(COLLECTION_NAME);
-            setDocuments(seededData.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
-        } else {
-            setDocuments(data.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
-        }
-        setLoading(false);
-    };
-    fetchData();
-  }, []);
-
-  const addDocument = async (docData: Omit<DocumentType, 'id'>) => {
-    const newDoc = await addDocumentToCollection(COLLECTION_NAME, docData);
-    if (newDoc) {
-        setDocuments(prev => [newDoc as DocumentType, ...prev].sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()));
+    if (isSuccess && documents.length === 0 && !hasSeeded) {
+      setHasSeeded(true);
+      console.log(`Seeding ${COLLECTION_NAME} collection...`);
+      seedCollection(COLLECTION_NAME, initialDocuments)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        })
+        .catch(err => {
+          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
+        });
     }
-  };
+  }, [isSuccess, documents.length, hasSeeded, queryClient]);
 
-  const updateDocument = async (updatedDoc: DocumentType) => {
-    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc);
-    if(success) {
-        setDocuments(prev => prev.map(doc => (doc.id === updatedDoc.id ? updatedDoc : doc)));
-    }
-  };
+  const addDocumentMutation = useMutation({
+    mutationFn: (docData: Omit<DocumentType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, docData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const deleteDocument = async (id: string) => {
-    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
-    if(success) {
-        setDocuments(prev => prev.filter(doc => doc.id !== id));
-    }
-  };
+  const updateDocumentMutation = useMutation({
+    mutationFn: (updatedDoc: DocumentType) => updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
   const value = useMemo(() => ({
     documents,
-    loading,
-    addDocument,
-    updateDocument,
-    deleteDocument,
-  }), [documents, loading]);
-
+    loading: isLoading,
+    addDocument: (doc) => addDocumentMutation.mutate(doc),
+    updateDocument: (doc) => updateDocumentMutation.mutate(doc),
+    deleteDocument: (id) => deleteDocumentMutation.mutate(id),
+  }), [documents, isLoading, addDocumentMutation, updateDocumentMutation, deleteDocumentMutation]);
 
   return (
     <DocumentsContext.Provider value={value}>

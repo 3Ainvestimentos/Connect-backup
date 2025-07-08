@@ -1,6 +1,8 @@
+
 "use client";
 
-import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 
 export interface Collaborator {
@@ -25,62 +27,65 @@ const initialCollaborators: Omit<Collaborator, 'id'>[] = [
 interface CollaboratorsContextType {
   collaborators: Collaborator[];
   loading: boolean;
-  addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<void>;
-  updateCollaborator: (collaborator: Collaborator) => Promise<void>;
-  deleteCollaborator: (id: string) => Promise<void>;
+  addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => void;
+  updateCollaborator: (collaborator: Collaborator) => void;
+  deleteCollaborator: (id: string) => void;
 }
 
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'collaborators';
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
-  const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [hasSeeded, setHasSeeded] = useState(false);
+
+  const { data: collaborators = [], isLoading, isSuccess } = useQuery<Collaborator[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
+  });
 
   useEffect(() => {
-    const fetchData = async () => {
-        setLoading(true);
-        const data = await getCollection<Collaborator>(COLLECTION_NAME);
-        if (data.length === 0) {
-            await seedCollection(COLLECTION_NAME, initialCollaborators);
-            const seededData = await getCollection<Collaborator>(COLLECTION_NAME);
-            setCollaborators(seededData);
-        } else {
-            setCollaborators(data);
-        }
-        setLoading(false);
-    };
-    fetchData();
-  }, []);
-
-  const addCollaborator = async (collaboratorData: Omit<Collaborator, 'id'>) => {
-    const newCollaborator = await addDocumentToCollection(COLLECTION_NAME, collaboratorData);
-    if(newCollaborator) {
-        setCollaborators(prev => [newCollaborator as Collaborator, ...prev]);
+    if (isSuccess && collaborators.length === 0 && !hasSeeded) {
+      setHasSeeded(true);
+      console.log(`Seeding ${COLLECTION_NAME} collection...`);
+      seedCollection(COLLECTION_NAME, initialCollaborators)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        })
+        .catch(err => {
+          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
+        });
     }
-  };
+  }, [isSuccess, collaborators.length, hasSeeded, queryClient]);
 
-  const updateCollaborator = async (updatedCollaborator: Collaborator) => {
-    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator);
-    if(success) {
-        setCollaborators(prev => prev.map(c => (c.id === updatedCollaborator.id ? updatedCollaborator : c)));
-    }
-  };
+  const addCollaboratorMutation = useMutation({
+    mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, collaboratorData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const deleteCollaborator = async (id: string) => {
-    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
-    if(success) {
-        setCollaborators(prev => prev.filter(c => c.id !== id));
-    }
-  };
+  const updateCollaboratorMutation = useMutation({
+    mutationFn: (updatedCollaborator: Collaborator) => updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+
+  const deleteCollaboratorMutation = useMutation({
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
   const value = useMemo(() => ({
     collaborators,
-    loading,
-    addCollaborator,
-    updateCollaborator,
-    deleteCollaborator,
-  }), [collaborators, loading]);
+    loading: isLoading,
+    addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => addCollaboratorMutation.mutate(collaborator),
+    updateCollaborator: (collaborator: Collaborator) => updateCollaboratorMutation.mutate(collaborator),
+    deleteCollaborator: (id: string) => deleteCollaboratorMutation.mutate(id),
+  }), [collaborators, isLoading, addCollaboratorMutation, updateCollaboratorMutation, deleteCollaboratorMutation]);
 
   return (
     <CollaboratorsContext.Provider value={value}>
