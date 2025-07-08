@@ -1,10 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo, useCallback, useEffect } from 'react';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
-import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface ApplicationLinkItem {
@@ -30,9 +28,9 @@ export interface Application {
 interface ApplicationsContextType {
   applications: Application[];
   loading: boolean;
-  addApplication: (app: Omit<Application, 'id'>) => Promise<void>;
-  updateApplication: (app: Application) => Promise<void>;
-  deleteApplication: (id: string) => Promise<void>;
+  addApplication: (app: Omit<Application, 'id'>) => void;
+  updateApplication: (app: Application) => void;
+  deleteApplication: (id: string) => void;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
@@ -63,53 +61,67 @@ const initialApplications: Omit<Application, 'id'>[] = [
 const COLLECTION_NAME = 'applications';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
-  const [snapshot, loading, error] = useCollection(collection(db, COLLECTION_NAME));
+  const queryClient = useQueryClient();
 
-  const applications = useMemo(() => {
-    if (!snapshot) return [];
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));
-  }, [snapshot]);
-  
-  // Seeding logic for first-time use
-  useEffect(() => {
-    const seedDataIfNeeded = async () => {
-        // Only seed if loading is finished, there's a snapshot, and it's empty.
-        if (!loading && snapshot && snapshot.empty) {
-            console.log(`Seeding ${COLLECTION_NAME} collection...`);
-            await seedCollection(COLLECTION_NAME, initialApplications);
-        }
-    };
-    seedDataIfNeeded();
-  }, [loading, snapshot]);
-  
-  useEffect(() => {
-    if (error) {
-        console.error("Error fetching applications:", error);
-        toast({ title: 'Erro ao carregar aplicações', description: error.message, variant: 'destructive' });
+  const { data: applications = [], isLoading, isError, error } = useQuery<Application[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: async () => {
+      const data = await getCollection<Application>(COLLECTION_NAME);
+      // If the collection is empty, seed it with initial data and refetch.
+      if (data.length === 0) {
+        console.log(`Seeding ${COLLECTION_NAME} collection...`);
+        await seedCollection(COLLECTION_NAME, initialApplications);
+        return await getCollection<Application>(COLLECTION_NAME);
+      }
+      return data;
+    },
+  });
+
+  React.useEffect(() => {
+    if (isError) {
+      console.error("Error fetching applications:", error);
+      toast({ title: 'Erro ao carregar aplicações', description: (error as Error).message, variant: 'destructive' });
     }
-  }, [error]);
+  }, [isError, error]);
 
-  // The functions no longer need to update local state.
-  // react-firebase-hooks will do it automatically when Firestore changes.
-  const addApplication = useCallback(async (appData: Omit<Application, 'id'>) => {
-    await addDocumentToCollection(COLLECTION_NAME, appData);
-  }, []);
+  const addApplicationMutation = useMutation({
+    mutationFn: (appData: Omit<Application, 'id'>) => addDocumentToCollection(COLLECTION_NAME, appData),
+    onSuccess: () => {
+      // When the mutation is successful, invalidate the query to refetch the data
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao adicionar aplicação', description: (error as Error).message, variant: 'destructive' });
+    }
+  });
 
-  const updateApplication = useCallback(async (updatedApp: Application) => {
-    await updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp);
-  }, []);
+  const updateApplicationMutation = useMutation({
+    mutationFn: (updatedApp: Application) => updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao atualizar aplicação', description: (error as Error).message, variant: 'destructive' });
+    }
+  });
 
-  const deleteApplication = useCallback(async (id: string) => {
-    await deleteDocumentFromCollection(COLLECTION_NAME, id);
-  }, []);
-  
+  const deleteApplicationMutation = useMutation({
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+      toast({ title: 'Erro ao excluir aplicação', description: (error as Error).message, variant: 'destructive' });
+    }
+  });
+
   const value = useMemo(() => ({
-      applications, 
-      loading,
-      addApplication, 
-      updateApplication, 
-      deleteApplication 
-  }), [applications, loading, addApplication, updateApplication, deleteApplication]);
+    applications,
+    loading: isLoading,
+    addApplication: (appData: Omit<Application, 'id'>) => addApplicationMutation.mutate(appData),
+    updateApplication: (updatedApp: Application) => updateApplicationMutation.mutate(updatedApp),
+    deleteApplication: (id: string) => deleteApplicationMutation.mutate(id),
+  }), [applications, isLoading, addApplicationMutation, updateApplicationMutation, deleteApplicationMutation]);
 
   return (
     <ApplicationsContext.Provider value={value}>

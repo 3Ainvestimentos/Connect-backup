@@ -10,6 +10,7 @@ import { NewsProvider } from '@/contexts/NewsContext';
 import { EventsProvider } from '@/contexts/EventsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
 import { CollaboratorsProvider } from '@/contexts/CollaboratorsContext';
+import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
 
 export const metadata: Metadata = {
   title: '3A RIVA Hub',
@@ -31,22 +32,24 @@ export default function RootLayout({
       </head>
       <body className={cn("font-body antialiased")}>
         <ThemeProvider>
-          <AuthProvider>
-            <ApplicationsProvider>
-              <DocumentsProvider>
-                <NewsProvider>
-                  <EventsProvider>
-                    <CollaboratorsProvider>
-                      <MessagesProvider>
-                        {children}
-                        <Toaster />
-                      </MessagesProvider>
-                    </CollaboratorsProvider>
-                  </EventsProvider>
-                </NewsProvider>
-              </DocumentsProvider>
-            </ApplicationsProvider>
-          </AuthProvider>
+          <ReactQueryProvider>
+            <AuthProvider>
+              <ApplicationsProvider>
+                <DocumentsProvider>
+                  <NewsProvider>
+                    <EventsProvider>
+                      <CollaboratorsProvider>
+                        <MessagesProvider>
+                          {children}
+                          <Toaster />
+                        </MessagesProvider>
+                      </CollaboratorsProvider>
+                    </EventsProvider>
+                  </NewsProvider>
+                </DocumentsProvider>
+              </ApplicationsProvider>
+            </AuthProvider>
+          </ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>
