@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -44,7 +45,7 @@ const navItems = [
   { href: '/documents', label: 'Documentos', icon: FolderOpen },
   { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
   { href: '/labs', label: 'Labs', icon: FlaskConical },
-  { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
+  { href: '/store', label: 'Store', icon: ShoppingCart },
   { href: '/chatbot', label: 'Bob', icon: Bot },
 ];
 
