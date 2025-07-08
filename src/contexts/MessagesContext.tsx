@@ -45,7 +45,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: messages = [], isLoading, isSuccess } = useQuery<MessageType[]>({
+  const { data: messages = [], isFetching, isSuccess } = useQuery<MessageType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
     select: (data) => data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
@@ -126,13 +126,13 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   
   const value = useMemo(() => ({
     messages,
-    loading: isLoading,
+    loading: isFetching,
     addMessage: (message) => addMessageMutation.mutate(message),
     updateMessage: (message) => updateMessageMutation.mutate(message),
     deleteMessage: (id) => deleteMessageMutation.mutate(id),
     markMessageAsRead: (messageId, collaboratorId) => markAsReadMutation.mutate({ messageId, collaboratorId }),
     getMessageRecipients
-  }), [messages, isLoading, getMessageRecipients, addMessageMutation, updateMessageMutation, deleteMessageMutation, markAsReadMutation]);
+  }), [messages, isFetching, getMessageRecipients, addMessageMutation, updateMessageMutation, deleteMessageMutation, markAsReadMutation]);
 
   return (
     <MessagesContext.Provider value={value}>

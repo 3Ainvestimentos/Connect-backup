@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface DocumentType {
@@ -41,7 +41,7 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: documents = [], isLoading, isSuccess } = useQuery<DocumentType[]>({
+  const { data: documents = [], isFetching, isSuccess } = useQuery<DocumentType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<DocumentType>(COLLECTION_NAME),
     select: (data) => data.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()),
@@ -61,7 +61,7 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isSuccess, documents.length, hasSeeded, queryClient]);
 
-  const addDocumentMutation = useMutation({
+  const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({
     mutationFn: (docData: Omit<DocumentType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, docData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -93,11 +93,11 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo(() => ({
     documents,
-    loading: isLoading,
+    loading: isFetching,
     addDocument: (doc) => addDocumentMutation.mutate(doc),
     updateDocument: (doc) => updateDocumentMutation.mutate(doc),
     deleteDocument: (id) => deleteDocumentMutation.mutate(id),
-  }), [documents, isLoading, addDocumentMutation, updateDocumentMutation, deleteDocumentMutation]);
+  }), [documents, isFetching, addDocumentMutation, updateDocumentMutation, deleteDocumentMutation]);
 
   return (
     <DocumentsContext.Provider value={value}>

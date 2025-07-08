@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface Collaborator {
@@ -40,7 +40,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   const queryClient = useQueryClient();
   const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: collaborators = [], isLoading, isSuccess } = useQuery<Collaborator[]>({
+  const { data: collaborators = [], isFetching, isSuccess } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
   });
@@ -59,7 +59,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     }
   }, [isSuccess, collaborators.length, hasSeeded, queryClient]);
 
-  const addCollaboratorMutation = useMutation({
+  const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, collaboratorData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -91,11 +91,11 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
 
   const value = useMemo(() => ({
     collaborators,
-    loading: isLoading,
+    loading: isFetching,
     addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => addCollaboratorMutation.mutate(collaborator),
     updateCollaborator: (collaborator: Collaborator) => updateCollaboratorMutation.mutate(collaborator),
     deleteCollaborator: (id: string) => deleteCollaboratorMutation.mutate(id),
-  }), [collaborators, isLoading, addCollaboratorMutation, updateCollaboratorMutation, deleteCollaboratorMutation]);
+  }), [collaborators, isFetching, addCollaboratorMutation, updateCollaboratorMutation, deleteCollaboratorMutation]);
 
   return (
     <CollaboratorsContext.Provider value={value}>

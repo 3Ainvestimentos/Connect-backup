@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface EventType {
@@ -42,7 +42,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: events = [], isLoading, isSuccess } = useQuery<EventType[]>({
+  const { data: events = [], isFetching, isSuccess } = useQuery<EventType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<EventType>(COLLECTION_NAME),
   });
@@ -69,7 +69,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => c[filterKey] === event.target.value);
   }, []);
 
-  const addEventMutation = useMutation({
+  const addEventMutation = useMutation<WithId<Omit<EventType, 'id'>>, Error, Omit<EventType, 'id'>>({
     mutationFn: (eventData: Omit<EventType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, eventData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -101,12 +101,12 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo(() => ({
     events,
-    loading: isLoading,
+    loading: isFetching,
     addEvent: (event) => addEventMutation.mutate(event),
     updateEvent: (event) => updateEventMutation.mutate(event),
     deleteEvent: (id) => deleteEventMutation.mutate(id),
     getEventRecipients,
-  }), [events, isLoading, getEventRecipients, addEventMutation, updateEventMutation, deleteEventMutation]);
+  }), [events, isFetching, getEventRecipients, addEventMutation, updateEventMutation, deleteEventMutation]);
 
   return (
     <EventsContext.Provider value={value}>

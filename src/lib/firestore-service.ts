@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Tim
 import { toast } from '@/hooks/use-toast';
 
 // Generic type T must have an `id` property
-type WithId<T> = T & { id: string };
+export type WithId<T> = T & { id: string };
 
 /**
  * Fetches all documents from a specified collection.
@@ -24,6 +24,7 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
 
 /**
  * Adds a new document to a specified collection.
+ * Firestore automatically handles stripping 'undefined' values due to the initialization setting.
  * @param collectionName The name of the collection.
  * @param data The data for the new document.
  * @returns A promise that resolves to the new document with its ID.
@@ -31,7 +32,6 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T>> => {
     try {
         const docRef = await addDoc(collection(db, collectionName), data);
-        // Important: Return the original data along with the new ID for state consistency
         return { id: docRef.id, ...data };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
@@ -42,6 +42,7 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
 
 /**
  * Updates an existing document in a specified collection.
+ * Firestore automatically handles stripping 'undefined' values due to the initialization setting.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to update.
  * @param data The new data for the document.

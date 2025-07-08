@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface NewsItemType {
@@ -43,7 +43,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: newsItems = [], isLoading, isSuccess } = useQuery<NewsItemType[]>({
+  const { data: newsItems = [], isFetching, isSuccess } = useQuery<NewsItemType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME),
     select: (data) => data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
@@ -64,7 +64,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   }, [isSuccess, newsItems.length, hasSeeded, queryClient]);
 
 
-  const addNewsItemMutation = useMutation({
+  const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
     mutationFn: (itemData: Omit<NewsItemType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, itemData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -124,12 +124,12 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo(() => ({
     newsItems,
-    loading: isLoading,
+    loading: isFetching,
     addNewsItem: (item) => addNewsItemMutation.mutate(item),
     updateNewsItem: (item) => updateNewsItemMutation.mutate(item),
     deleteNewsItem: (id) => deleteNewsItemMutation.mutate(id),
     toggleNewsHighlight: (id) => toggleHighlightMutation.mutate(id),
-  }), [newsItems, isLoading, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleHighlightMutation]);
+  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleHighlightMutation]);
 
   return (
     <NewsContext.Provider value={value}>

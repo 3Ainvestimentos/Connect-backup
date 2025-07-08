@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface ApplicationLinkItem {
@@ -65,7 +65,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: applications = [], isLoading, isError, error, isSuccess } = useQuery<Application[]>({
+  const { data: applications = [], isFetching, isError, error, isSuccess } = useQuery<Application[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Application>(COLLECTION_NAME),
   });
@@ -91,7 +91,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isError, error]);
 
-  const addApplicationMutation = useMutation<Application, Error, Omit<Application, 'id'>>({
+  const addApplicationMutation = useMutation<WithId<Omit<Application, 'id'>>, Error, Omit<Application, 'id'>>({
     mutationFn: (appData: Omit<Application, 'id'>) => addDocumentToCollection(COLLECTION_NAME, appData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -135,11 +135,11 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
 
   const value = useMemo(() => ({
     applications,
-    loading: isLoading,
+    loading: isFetching,
     addApplication: (appData: Omit<Application, 'id'>) => addApplicationMutation.mutate(appData),
     updateApplication: (updatedApp: Application) => updateApplicationMutation.mutate(updatedApp),
     deleteApplication: (id: string) => deleteApplicationMutation.mutate(id),
-  }), [applications, isLoading, addApplicationMutation, updateApplicationMutation, deleteApplicationMutation]);
+  }), [applications, isFetching, addApplicationMutation, updateApplicationMutation, deleteApplicationMutation]);
 
   return (
     <ApplicationsContext.Provider value={value}>
