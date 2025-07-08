@@ -7,27 +7,36 @@ import { toast } from '@/hooks/use-toast';
 type WithId<T> = T & { id: string };
 
 /**
- * Recursively removes keys with `undefined` values from an object.
+ * Recursively removes keys with `undefined` values from an object or array.
  * This is necessary because Firestore does not support `undefined`.
  * @param data The object or array to clean.
  * @returns A new object or array with `undefined` values removed.
  */
 const cleanUndefinedValues = (data: any): any => {
+    if (data === null || data === undefined) {
+        return data;
+    }
     if (Array.isArray(data)) {
+        // Clean each item in the array
         return data.map(item => cleanUndefinedValues(item));
     }
-    if (data !== null && typeof data === 'object') {
+    // Firestore handles Date objects correctly, so we don't need to treat them specially
+    if (typeof data === 'object' && !(data instanceof Date)) {
         const cleanedObject: { [key: string]: any } = {};
         for (const key in data) {
-            if (Object.prototype.hasOwnProperty.call(data, key) && data[key] !== undefined) {
-                cleanedObject[key] = cleanUndefinedValues(data[key]);
+            // Ensure we only process own properties
+            if (Object.prototype.hasOwnProperty.call(data, key)) {
+                const value = data[key];
+                // If the value is not undefined, process it and add to the new object
+                if (value !== undefined) {
+                    cleanedObject[key] = cleanUndefinedValues(value);
+                }
             }
         }
         return cleanedObject;
     }
     return data;
 };
-
 
 /**
  * Fetches all documents from a specified collection.
@@ -55,7 +64,8 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
     try {
         const cleanData = cleanUndefinedValues(data);
         const docRef = await addDoc(collection(db, collectionName), cleanData);
-        return { id: docRef.id, ...data };
+        // Important: Return the cleaned data along with the new ID for state consistency
+        return { id: docRef.id, ...cleanData };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
         toast({ title: 'Erro ao salvar', description: 'Não foi possível adicionar o novo item.', variant: 'destructive' });
