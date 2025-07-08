@@ -7,40 +7,6 @@ import { toast } from '@/hooks/use-toast';
 type WithId<T> = T & { id: string };
 
 /**
- * Recursively removes keys with `undefined` values from an object or array.
- * Creates a deep copy and does not mutate the original object.
- * It correctly handles nested objects, arrays, and preserves Firestore-compatible types like Date and Timestamp.
- * @param data The object or array to clean.
- * @returns A new object or array with `undefined` values removed.
- */
-const cleanUndefinedValues = (data: any): any => {
-    if (data === null || data === undefined) {
-        return data;
-    }
-    
-    if (Array.isArray(data)) {
-        return data.map(item => cleanUndefinedValues(item));
-    }
-    
-    // Check if it is a plain object before iterating.
-    // This preserves instances of Date, Timestamp, etc.
-    if (typeof data === 'object' && Object.prototype.toString.call(data) === '[object Object]') {
-        const cleanedObject: { [key: string]: any } = {};
-        for (const key in data) {
-            if (Object.prototype.hasOwnProperty.call(data, key)) {
-                const value = data[key];
-                if (value !== undefined) {
-                    cleanedObject[key] = cleanUndefinedValues(value);
-                }
-            }
-        }
-        return cleanedObject;
-    }
-    
-    return data;
-};
-
-/**
  * Fetches all documents from a specified collection.
  * @param collectionName The name of the collection to fetch.
  * @returns A promise that resolves to an array of documents with their IDs.
@@ -64,10 +30,9 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
  */
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T>> => {
     try {
-        const cleanData = cleanUndefinedValues(data);
-        const docRef = await addDoc(collection(db, collectionName), cleanData);
-        // Important: Return the cleaned data along with the new ID for state consistency
-        return { id: docRef.id, ...cleanData };
+        const docRef = await addDoc(collection(db, collectionName), data);
+        // Important: Return the original data along with the new ID for state consistency
+        return { id: docRef.id, ...data };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
         toast({ title: 'Erro ao salvar', description: 'Não foi possível adicionar o novo item.', variant: 'destructive' });
@@ -84,9 +49,8 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
  */
 export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<void> => {
     try {
-        const cleanData = cleanUndefinedValues(data);
         const docRef = doc(db, collectionName, id);
-        await updateDoc(docRef, cleanData);
+        await updateDoc(docRef, data);
     } catch (error) {
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
         toast({ title: 'Erro ao atualizar', description: 'Não foi possível salvar as alterações.', variant: 'destructive' });
@@ -121,8 +85,7 @@ export const seedCollection = async <T>(collectionName: string, initialData: T[]
         const batch = writeBatch(db);
         initialData.forEach(item => {
             const docRef = doc(collection(db, collectionName));
-            const cleanItem = cleanUndefinedValues(item);
-            batch.set(docRef, cleanItem);
+            batch.set(docRef, item);
         });
         await batch.commit();
         console.log(`Collection ${collectionName} seeded successfully.`);
