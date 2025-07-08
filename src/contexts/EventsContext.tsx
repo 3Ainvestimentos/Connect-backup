@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface EventType {
@@ -17,14 +17,6 @@ export interface EventType {
     value: string;
   };
 }
-
-const initialEvents: Omit<EventType, 'id'>[] = [
-    { title: "Reunião de Alinhamento Semanal", time: "10:00 - 11:00", icon: "Users", target: { type: 'all', value: 'all' } },
-    { title: "Aniversário da Empresa", time: "Dia Todo", icon: "CakeSlice", target: { type: 'all', value: 'all' } },
-    { title: "Workshop de Design Thinking", time: "14:00 - 16:00", icon: "BrainCircuit", target: { type: 'area', value: 'Desenvolvimento' } },
-    { title: "Happy Hour de Fim de Mês", time: "A partir das 17:30", icon: "Wine", target: { type: 'all', value: 'all' } },
-    { title: "Apresentação de Resultados Q2", time: "09:00 - 10:00", icon: "TrendingUp", target: { type: 'axis', value: 'Comercial' } },
-];
 
 interface EventsContextType {
   events: EventType[];
@@ -40,26 +32,11 @@ const COLLECTION_NAME = 'events';
 
 export const EventsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
-  const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: events = [], isFetching, isSuccess } = useQuery<EventType[]>({
+  const { data: events = [], isFetching } = useQuery<EventType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<EventType>(COLLECTION_NAME),
   });
-
-  useEffect(() => {
-    if (isSuccess && events.length === 0 && !hasSeeded) {
-      setHasSeeded(true);
-      console.log(`Seeding ${COLLECTION_NAME} collection...`);
-      seedCollection(COLLECTION_NAME, initialEvents)
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-        })
-        .catch(err => {
-          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
-        });
-    }
-  }, [isSuccess, events.length, hasSeeded, queryClient]);
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (event.target.type === 'all') {

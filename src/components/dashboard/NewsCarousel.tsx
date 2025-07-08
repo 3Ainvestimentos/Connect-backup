@@ -8,21 +8,19 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
-const newsItems = [
-  { id: 1, title: "Nova Plataforma 3A RIVA Lançada", description: "Explore os novos recursos e funcionalidades da nossa plataforma.", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "technology launch", category: "Plataforma", date: "10 de Jul, 2024" },
-  { id: 2, title: "Resultados Trimestrais Superam Expectativas", description: "Confira o desempenho da empresa no último trimestre.", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "business results", category: "Financeiro", date: "05 de Jul, 2024" },
-  { id: 3, title: "Iniciativa de Sustentabilidade Premiada", description: "Nosso compromisso com o meio ambiente é reconhecido.", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "sustainability award", category: "ESG", date: "01 de Jul, 2024" },
-  { id: 4, title: "Próximo Treinamento: Segurança de Dados", description: "Inscreva-se para o treinamento essencial sobre segurança da informação.", imageUrl: "https://placehold.co/600x400.png", dataAiHint: "data security", category: "Treinamento", date: "15 de Jul, 2024" },
-];
+// Mock data removed. This component would need to be wired up to a data source (like a context) to be useful.
+const newsItems: any[] = [];
 
 export default function NewsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const nextSlide = useCallback(() => {
+    if (newsItems.length === 0) return;
     setCurrentIndex((prevIndex) => (prevIndex + 1) % newsItems.length);
   }, []);
 
   const prevSlide = () => {
+    if (newsItems.length === 0) return;
     setCurrentIndex((prevIndex) => (prevIndex - 1 + newsItems.length) % newsItems.length);
   };
 
@@ -30,6 +28,10 @@ export default function NewsCarousel() {
     const interval = setInterval(nextSlide, 7000); // Auto-scroll every 7 seconds
     return () => clearInterval(interval);
   }, [nextSlide]);
+
+  if (newsItems.length === 0) {
+    return null; // Or a placeholder
+  }
 
   const currentItem = newsItems[currentIndex];
 

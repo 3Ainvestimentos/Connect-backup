@@ -1,9 +1,9 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface Collaborator {
@@ -18,13 +18,6 @@ export interface Collaborator {
   city: string;      // Cidade
 }
 
-const initialCollaborators: Omit<Collaborator, 'id'>[] = [
-  { name: 'Ana Silva', email: 'ana.silva@example.com', axis: 'Comercial', area: 'Vendas', position: 'Gerente de Vendas', leader: 'Carlos Pereira', segment: 'Varejo', city: 'São Paulo' },
-  { name: 'Bruno Costa', email: 'bruno.costa@example.com', axis: 'Operações', area: 'Logística', position: 'Analista de Logística', leader: 'Fernanda Lima', segment: 'Indústria', city: 'Rio de Janeiro' },
-  { name: 'Carla Dias', email: 'carla.dias@example.com', axis: 'Tecnologia', area: 'Desenvolvimento', position: 'Desenvolvedora Sênior', leader: 'Ricardo Souza', segment: 'B2B', city: 'Belo Horizonte' },
-  { name: 'Usuário de Teste', email: 'test.user@example.com', axis: 'Tecnologia', area: 'Desenvolvimento', position: 'Analista de Testes', leader: 'Ricardo Souza', segment: 'B2B', city: 'Belo Horizonte' },
-];
-
 interface CollaboratorsContextType {
   collaborators: Collaborator[];
   loading: boolean;
@@ -38,26 +31,11 @@ const COLLECTION_NAME = 'collaborators';
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
-  const [hasSeeded, setHasSeeded] = useState(false);
 
-  const { data: collaborators = [], isFetching, isSuccess } = useQuery<Collaborator[]>({
+  const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
   });
-
-  useEffect(() => {
-    if (isSuccess && collaborators.length === 0 && !hasSeeded) {
-      setHasSeeded(true);
-      console.log(`Seeding ${COLLECTION_NAME} collection...`);
-      seedCollection(COLLECTION_NAME, initialCollaborators)
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-        })
-        .catch(err => {
-          console.error(`Failed to seed ${COLLECTION_NAME}:`, err);
-        });
-    }
-  }, [isSuccess, collaborators.length, hasSeeded, queryClient]);
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, collaboratorData),
