@@ -5,7 +5,6 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo } fro
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
-import { toast } from '@/hooks/use-toast';
 
 export interface EventType {
   id: string;
@@ -21,9 +20,9 @@ export interface EventType {
 interface EventsContextType {
   events: EventType[];
   loading: boolean;
-  addEvent: (event: Omit<EventType, 'id'>) => void;
-  updateEvent: (event: EventType) => void;
-  deleteEvent: (id: string) => void;
+  addEvent: (event: Omit<EventType, 'id'>) => Promise<WithId<Omit<EventType, 'id'>>>;
+  updateEvent: (event: EventType) => Promise<void>;
+  deleteEvent: (id: string) => Promise<void>;
   getEventRecipients: (event: EventType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -51,37 +50,28 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Adicionar", description: `Não foi possível salvar o evento: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const updateEventMutation = useMutation({
+  const updateEventMutation = useMutation<void, Error, EventType>({
     mutationFn: (updatedEvent: EventType) => updateDocumentInCollection(COLLECTION_NAME, updatedEvent.id, updatedEvent),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Atualizar", description: `Não foi possível salvar as alterações: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const deleteEventMutation = useMutation({
+  const deleteEventMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Excluir", description: `Não foi possível remover o evento: ${error.message}`, variant: "destructive" });
     },
   });
 
   const value = useMemo(() => ({
     events,
     loading: isFetching,
-    addEvent: (event) => addEventMutation.mutate(event),
-    updateEvent: (event) => updateEventMutation.mutate(event),
-    deleteEvent: (id) => deleteEventMutation.mutate(id),
+    addEvent: (event) => addEventMutation.mutateAsync(event),
+    updateEvent: (event) => updateEventMutation.mutateAsync(event),
+    deleteEvent: (id) => deleteEventMutation.mutateAsync(id),
     getEventRecipients,
   }), [events, isFetching, getEventRecipients, addEventMutation, updateEventMutation, deleteEventMutation]);
 

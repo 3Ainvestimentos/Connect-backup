@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApplications, Application, ApplicationLinkItem } from '@/contexts/ApplicationsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, GripVertical } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, GripVertical, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -79,6 +79,7 @@ type ApplicationFormValues = z.infer<typeof applicationSchema>;
 export function ManageApplications() {
     const { applications, addApplication, updateApplication, deleteApplication } = useApplications();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingApplication, setEditingApplication] = useState<Application | null>(null);
 
     const form = useForm<ApplicationFormValues>({
@@ -125,25 +126,44 @@ export function ManageApplications() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta aplicação?")) {
-            deleteApplication(id);
-            toast({ title: "Aplicação excluída com sucesso." });
+            try {
+                await deleteApplication(id);
+                toast({ title: "Aplicação excluída com sucesso." });
+            } catch (error) {
+                toast({ 
+                    title: "Erro ao excluir", 
+                    description: error instanceof Error ? error.message : "Não foi possível remover a aplicação.",
+                    variant: "destructive" 
+                });
+            }
         }
     };
     
-    const onSubmit = (data: ApplicationFormValues) => {
-        if (editingApplication) {
-            const appData = { ...data, id: editingApplication.id } as Application;
-            updateApplication(appData);
-            toast({ title: "Aplicação atualizada com sucesso." });
-        } else {
-            const { id, ...dataWithoutId } = data;
-            addApplication(dataWithoutId);
-            toast({ title: "Aplicação adicionada com sucesso." });
+    const onSubmit = async (data: ApplicationFormValues) => {
+        setIsSubmitting(true);
+        try {
+            if (editingApplication) {
+                const appData = { ...data, id: editingApplication.id } as Application;
+                await updateApplication(appData);
+                toast({ title: "Aplicação atualizada com sucesso." });
+            } else {
+                const { id, ...dataWithoutId } = data;
+                await addApplication(dataWithoutId);
+                toast({ title: "Aplicação adicionada com sucesso." });
+            }
+            setIsDialogOpen(false);
+            setEditingApplication(null);
+        } catch (error) {
+            toast({ 
+                title: "Erro ao salvar", 
+                description: error instanceof Error ? error.message : "Não foi possível salvar a aplicação.",
+                variant: "destructive" 
+            });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsDialogOpen(false);
-        setEditingApplication(null);
     };
     
     return (
@@ -203,7 +223,7 @@ export function ManageApplications() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="name">Nome da Aplicação</Label>
-                                <Input id="name" {...form.register('name')} />
+                                <Input id="name" {...form.register('name')} disabled={isSubmitting} />
                                 {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                             </div>
                             <div>
@@ -214,7 +234,7 @@ export function ManageApplications() {
                                     render={({ field }) => {
                                         const IconToShow = getIcon(field.value);
                                         return (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                                             <SelectTrigger>
                                                 <SelectValue>
                                                      {field.value && (
@@ -253,7 +273,7 @@ export function ManageApplications() {
                                 name="type"
                                 control={form.control}
                                 render={({ field }) => (
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4 mt-2">
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4 mt-2" disabled={isSubmitting}>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="modal" id="modal" /><Label htmlFor="modal">Modal</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="external" id="external" /><Label htmlFor="external">Link Externo</Label></div>
                                 </RadioGroup>
@@ -264,7 +284,7 @@ export function ManageApplications() {
                         {watchType === 'external' && (
                             <div>
                                 <Label htmlFor="href">URL do Link</Label>
-                                <Input id="href" {...form.register('href')} placeholder="https://..." />
+                                <Input id="href" {...form.register('href')} placeholder="https://..." disabled={isSubmitting}/>
                                 {form.formState.errors.href && <p className="text-sm text-destructive mt-1">{form.formState.errors.href.message}</p>}
                             </div>
                         )}
@@ -276,7 +296,7 @@ export function ManageApplications() {
                                     name="modalId"
                                     control={form.control}
                                     render={({ field }) => (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                                         <SelectTrigger><SelectValue placeholder="Selecione um tipo de modal" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="profile">Perfil</SelectItem>
@@ -298,12 +318,12 @@ export function ManageApplications() {
                                 <h3 className="font-semibold text-lg">Conteúdo do Modal Genérico</h3>
                                 <div>
                                     <Label htmlFor="content.title">Título do Modal</Label>
-                                    <Input id="content.title" {...form.register('content.title')} />
+                                    <Input id="content.title" {...form.register('content.title')} disabled={isSubmitting}/>
                                     {form.formState.errors.content?.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.content.title.message}</p>}
                                 </div>
                                 <div>
                                     <Label htmlFor="content.description">Descrição</Label>
-                                    <Textarea id="content.description" {...form.register('content.description')} />
+                                    <Textarea id="content.description" {...form.register('content.description')} disabled={isSubmitting}/>
                                 </div>
                                 <div>
                                     <Label>Itens do Modal</Label>
@@ -311,14 +331,14 @@ export function ManageApplications() {
                                         {fields.map((field, index) => (
                                             <div key={field.id} className="p-3 border rounded-md space-y-2 relative bg-background">
                                                 <Label>Item {index + 1}</Label>
-                                                <Input {...form.register(`content.items.${index}.label`)} placeholder="Rótulo (ex: Reembolso de Despesas)" />
-                                                <Input {...form.register(`content.items.${index}.subtext`)} placeholder="Texto de apoio (opcional)" />
-                                                <Input {...form.register(`content.items.${index}.link`)} placeholder="URL do link (opcional)" />
-                                                <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>
+                                                <Input {...form.register(`content.items.${index}.label`)} placeholder="Rótulo (ex: Reembolso de Despesas)" disabled={isSubmitting}/>
+                                                <Input {...form.register(`content.items.${index}.subtext`)} placeholder="Texto de apoio (opcional)" disabled={isSubmitting}/>
+                                                <Input {...form.register(`content.items.${index}.link`)} placeholder="URL do link (opcional)" disabled={isSubmitting}/>
+                                                <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => remove(index)} disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button>
                                             </div>
                                         ))}
                                     </div>
-                                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({id: `item-${Date.now()}`, label: '', subtext: '', link: ''})}>
+                                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({id: `item-${Date.now()}`, label: '', subtext: '', link: ''})} disabled={isSubmitting}>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Item
                                     </Button>
                                 </div>
@@ -326,8 +346,11 @@ export function ManageApplications() {
                         )}
 
                         <DialogFooter className="mt-6">
-                            <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                            <Button type="submit">Salvar</Button>
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar
+                            </Button>
                         </DialogFooter>
                     </form>
                     </div>

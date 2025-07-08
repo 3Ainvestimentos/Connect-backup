@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface MessageType {
@@ -23,9 +23,9 @@ export interface MessageType {
 interface MessagesContextType {
   messages: MessageType[];
   loading: boolean;
-  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => void;
-  updateMessage: (message: MessageType) => void;
-  deleteMessage: (id: string) => void;
+  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy'>>>;
+  updateMessage: (message: MessageType) => Promise<void>;
+  deleteMessage: (id: string) => Promise<void>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
 }
@@ -50,7 +50,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => c[filterKey] === message.target.value);
   }, []);
 
-  const addMessageMutation = useMutation({
+  const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id' | 'readBy'>>, Error, Omit<MessageType, 'id' | 'readBy'>>({
     mutationFn: (messageData: Omit<MessageType, 'id' | 'readBy'>) => {
       const newMessageData = { ...messageData, readBy: [] };
       return addDocumentToCollection(COLLECTION_NAME, newMessageData);
@@ -58,28 +58,19 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Adicionar", description: `Não foi possível enviar a mensagem: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const updateMessageMutation = useMutation({
+  const updateMessageMutation = useMutation<void, Error, MessageType>({
     mutationFn: (updatedMessage: MessageType) => updateDocumentInCollection(COLLECTION_NAME, updatedMessage.id, updatedMessage),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Atualizar", description: `Não foi possível salvar as alterações: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const deleteMessageMutation = useMutation({
+  const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Excluir", description: `Não foi possível remover a mensagem: ${error.message}`, variant: "destructive" });
     },
   });
 
@@ -104,9 +95,9 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     messages,
     loading: isFetching,
-    addMessage: (message) => addMessageMutation.mutate(message),
-    updateMessage: (message) => updateMessageMutation.mutate(message),
-    deleteMessage: (id) => deleteMessageMutation.mutate(id),
+    addMessage: (message) => addMessageMutation.mutateAsync(message),
+    updateMessage: (message) => updateMessageMutation.mutateAsync(message),
+    deleteMessage: (id) => deleteMessageMutation.mutateAsync(id),
     markMessageAsRead: (messageId, collaboratorId) => markAsReadMutation.mutate({ messageId, collaboratorId }),
     getMessageRecipients
   }), [messages, isFetching, getMessageRecipients, addMessageMutation, updateMessageMutation, deleteMessageMutation, markAsReadMutation]);

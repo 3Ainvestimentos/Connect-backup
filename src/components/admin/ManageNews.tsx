@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -34,6 +34,7 @@ type NewsFormValues = z.infer<typeof newsSchema>;
 export function ManageNews() {
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItem, toggleNewsHighlight } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
 
     const { register, handleSubmit, reset, control, formState: { errors } } = useForm<NewsFormValues>({
@@ -67,14 +68,22 @@ export function ManageNews() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
-            deleteNewsItem(id);
-            toast({ title: "Notícia excluída com sucesso." });
+            try {
+                await deleteNewsItem(id);
+                toast({ title: "Notícia excluída com sucesso." });
+            } catch (error) {
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover a notícia.",
+                    variant: "destructive"
+                });
+            }
         }
     };
     
-    const onSubmit = (data: NewsFormValues) => {
+    const onSubmit = async (data: NewsFormValues) => {
         const currentlyActive = newsItems.filter(n => n.isHighlight && n.id !== editingNews?.id).length;
         if(data.isHighlight && currentlyActive >= 3) {
              toast({
@@ -85,16 +94,27 @@ export function ManageNews() {
             return;
         }
 
-        if (editingNews) {
-            updateNewsItem({ ...editingNews, ...data });
-            toast({ title: "Notícia atualizada com sucesso." });
-        } else {
-            const { id, ...dataWithoutId } = data;
-            addNewsItem(dataWithoutId);
-            toast({ title: "Notícia adicionada com sucesso." });
+        setIsSubmitting(true);
+        try {
+            if (editingNews) {
+                await updateNewsItem({ ...editingNews, ...data });
+                toast({ title: "Notícia atualizada com sucesso." });
+            } else {
+                const { id, ...dataWithoutId } = data;
+                await addNewsItem(dataWithoutId);
+                toast({ title: "Notícia adicionada com sucesso." });
+            }
+            setIsDialogOpen(false);
+            setEditingNews(null);
+        } catch (error) {
+             toast({
+                title: "Erro ao salvar",
+                description: error instanceof Error ? error.message : "Não foi possível salvar a notícia.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsDialogOpen(false);
-        setEditingNews(null);
     };
 
     return (
@@ -157,37 +177,37 @@ export function ManageNews() {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="title">Título</Label>
-                            <Input id="title" {...register('title')} />
+                            <Input id="title" {...register('title')} disabled={isSubmitting}/>
                             {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="snippet">Snippet</Label>
-                            <Textarea id="snippet" {...register('snippet')} />
+                            <Textarea id="snippet" {...register('snippet')} disabled={isSubmitting}/>
                             {errors.snippet && <p className="text-sm text-destructive mt-1">{errors.snippet.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="category">Categoria</Label>
-                            <Input id="category" {...register('category')} />
+                            <Input id="category" {...register('category')} disabled={isSubmitting}/>
                             {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="date">Data</Label>
-                            <Input id="date" type="date" {...register('date')} />
+                            <Input id="date" type="date" {...register('date')} disabled={isSubmitting}/>
                             {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
                         </div>
                          <div>
                             <Label htmlFor="imageUrl">URL da Imagem</Label>
-                            <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png"/>
+                            <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png" disabled={isSubmitting}/>
                             {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
                         </div>
                          <div>
                             <Label htmlFor="link">URL do Link (opcional)</Label>
-                            <Input id="link" {...register('link')} placeholder="https://..."/>
+                            <Input id="link" {...register('link')} placeholder="https://..." disabled={isSubmitting}/>
                             {errors.link && <p className="text-sm text-destructive mt-1">{errors.link.message}</p>}
                         </div>
                          <div>
                             <Label htmlFor="dataAiHint">Dica para IA da Imagem (opcional)</Label>
-                            <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" />
+                            <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" disabled={isSubmitting}/>
                         </div>
                         <div className="flex items-center space-x-2">
                            <Controller
@@ -198,6 +218,7 @@ export function ManageNews() {
                                         id="isHighlight"
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
+                                        disabled={isSubmitting}
                                     />
                                 )}
                             />
@@ -205,9 +226,12 @@ export function ManageNews() {
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button type="button" variant="outline">Cancelar</Button>
+                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                             </DialogClose>
-                            <Button type="submit">Salvar</Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -215,5 +239,3 @@ export function ManageNews() {
         </Card>
     );
 }
-
-    

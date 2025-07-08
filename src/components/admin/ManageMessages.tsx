@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -74,6 +74,7 @@ export function ManageMessages() {
     const { messages, addMessage, updateMessage, deleteMessage, getMessageRecipients } = useMessages();
     const { collaborators } = useCollaborators();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
 
     const uniqueSegments = useMemo(() => ({
@@ -116,25 +117,43 @@ export function ManageMessages() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta mensagem?")) {
-            deleteMessage(id);
-            toast({ title: "Mensagem excluída com sucesso." });
+            try {
+                await deleteMessage(id);
+                toast({ title: "Mensagem excluída com sucesso." });
+            } catch (error) {
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover a mensagem.",
+                    variant: "destructive"
+                });
+            }
         }
     };
     
-    const onSubmit = (data: MessageFormValues) => {
-        if (editingMessage) {
-            // readBy is not in form, so we preserve it from the original message
-            updateMessage({ ...data, id: editingMessage.id, readBy: editingMessage.readBy });
-            toast({ title: "Mensagem atualizada com sucesso." });
-        } else {
-            const { id, ...dataWithoutId } = data;
-            addMessage(dataWithoutId);
-            toast({ title: "Mensagem adicionada com sucesso." });
+    const onSubmit = async (data: MessageFormValues) => {
+        setIsSubmitting(true);
+        try {
+            if (editingMessage) {
+                await updateMessage({ ...data, id: editingMessage.id, readBy: editingMessage.readBy });
+                toast({ title: "Mensagem atualizada com sucesso." });
+            } else {
+                const { id, ...dataWithoutId } = data;
+                await addMessage(dataWithoutId);
+                toast({ title: "Mensagem adicionada com sucesso." });
+            }
+            setIsDialogOpen(false);
+            setEditingMessage(null);
+        } catch (error) {
+            toast({
+                title: "Erro ao salvar",
+                description: error instanceof Error ? error.message : "Não foi possível enviar a mensagem.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsDialogOpen(false);
-        setEditingMessage(null);
     };
 
     return (
@@ -210,23 +229,23 @@ export function ManageMessages() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
                         <div>
                             <Label htmlFor="title">Título</Label>
-                            <Input id="title" {...form.register('title')} />
+                            <Input id="title" {...form.register('title')} disabled={isSubmitting}/>
                             {form.formState.errors.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.title.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="content">Conteúdo</Label>
-                            <Textarea id="content" {...form.register('content')} rows={5} />
+                            <Textarea id="content" {...form.register('content')} rows={5} disabled={isSubmitting}/>
                             {form.formState.errors.content && <p className="text-sm text-destructive mt-1">{form.formState.errors.content.message}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="sender">Remetente</Label>
-                                <Input id="sender" {...form.register('sender')} />
+                                <Input id="sender" {...form.register('sender')} disabled={isSubmitting}/>
                                 {form.formState.errors.sender && <p className="text-sm text-destructive mt-1">{form.formState.errors.sender.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="date">Data</Label>
-                                <Input id="date" type="date" {...form.register('date')} />
+                                <Input id="date" type="date" {...form.register('date')} disabled={isSubmitting}/>
                                 {form.formState.errors.date && <p className="text-sm text-destructive mt-1">{form.formState.errors.date.message}</p>}
                             </div>
                         </div>
@@ -240,7 +259,7 @@ export function ManageMessages() {
                                     name="target.type"
                                     control={form.control}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                                             <SelectTrigger id="target-type"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Todos os Colaboradores</SelectItem>
@@ -259,7 +278,7 @@ export function ManageMessages() {
                                     name="target.value"
                                     control={form.control}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
                                             <SelectTrigger id="target-value"><SelectValue placeholder={`Selecione um(a) ${watchTargetType}`} /></SelectTrigger>
                                             <SelectContent>
                                                 {uniqueSegments[watchTargetType]?.map(segment => (
@@ -275,8 +294,11 @@ export function ManageMessages() {
                         </div>
 
                         <DialogFooter className="mt-6">
-                            <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                            <Button type="submit">Salvar</Button>
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar
+                            </Button>
                         </DialogFooter>
                     </form>
                   </div>
@@ -286,5 +308,3 @@ export function ManageMessages() {
         </Card>
     );
 }
-
-    

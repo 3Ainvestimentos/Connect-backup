@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -37,6 +37,7 @@ export function ManageEvents() {
     const { events, addEvent, updateEvent, deleteEvent } = useEvents();
     const { collaborators } = useCollaborators();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
 
     const uniqueSegments = useMemo(() => ({
@@ -76,24 +77,43 @@ export function ManageEvents() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este evento?")) {
-            deleteEvent(id);
-            toast({ title: "Evento excluído com sucesso." });
+            try {
+                await deleteEvent(id);
+                toast({ title: "Evento excluído com sucesso." });
+            } catch (error) {
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover o evento.",
+                    variant: "destructive"
+                });
+            }
         }
     };
     
-    const onSubmit = (data: EventFormValues) => {
-        if (editingEvent) {
-            updateEvent({ ...editingEvent, ...data });
-            toast({ title: "Evento atualizado com sucesso." });
-        } else {
-            const { id, ...dataWithoutId } = data;
-            addEvent(dataWithoutId as Omit<EventType, 'id'>);
-            toast({ title: "Evento adicionado com sucesso." });
+    const onSubmit = async (data: EventFormValues) => {
+        setIsSubmitting(true);
+        try {
+            if (editingEvent) {
+                await updateEvent({ ...editingEvent, ...data });
+                toast({ title: "Evento atualizado com sucesso." });
+            } else {
+                const { id, ...dataWithoutId } = data;
+                await addEvent(dataWithoutId as Omit<EventType, 'id'>);
+                toast({ title: "Evento adicionado com sucesso." });
+            }
+            setIsDialogOpen(false);
+            setEditingEvent(null);
+        } catch(error) {
+            toast({
+                title: "Erro ao salvar",
+                description: error instanceof Error ? error.message : "Não foi possível salvar o evento.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsDialogOpen(false);
-        setEditingEvent(null);
     };
 
     return (
@@ -156,12 +176,12 @@ export function ManageEvents() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="title">Título do Evento</Label>
-                            <Input id="title" {...form.register('title')} />
+                            <Input id="title" {...form.register('title')} disabled={isSubmitting}/>
                             {form.formState.errors.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.title.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="time">Horário (ex: 10:00 - 11:00)</Label>
-                            <Input id="time" {...form.register('time')} />
+                            <Input id="time" {...form.register('time')} disabled={isSubmitting}/>
                             {form.formState.errors.time && <p className="text-sm text-destructive mt-1">{form.formState.errors.time.message}</p>}
                         </div>
                         <div>
@@ -172,7 +192,7 @@ export function ManageEvents() {
                                 render={({ field }) => {
                                     const IconToShow = getIcon(field.value);
                                     return (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                                         <SelectTrigger>
                                             <SelectValue>
                                                     {field.value && (
@@ -213,7 +233,7 @@ export function ManageEvents() {
                                     name="target.type"
                                     control={form.control}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                                             <SelectTrigger id="target-type"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Todos os Colaboradores</SelectItem>
@@ -232,7 +252,7 @@ export function ManageEvents() {
                                     name="target.value"
                                     control={form.control}
                                     render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <Select onValueChange={field.onChange} value={field.value || ''} disabled={isSubmitting}>
                                             <SelectTrigger id="target-value"><SelectValue placeholder={`Selecione um(a) ${watchTargetType}`} /></SelectTrigger>
                                             <SelectContent>
                                                 {uniqueSegments[watchTargetType]?.map(segment => (
@@ -248,8 +268,11 @@ export function ManageEvents() {
                         </div>
 
                         <DialogFooter className="mt-6">
-                            <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                            <Button type="submit">Salvar</Button>
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar
+                            </Button>
                         </DialogFooter>
                     </form>
                 </DialogContent>
@@ -257,5 +280,3 @@ export function ManageEvents() {
         </Card>
     );
 }
-
-    

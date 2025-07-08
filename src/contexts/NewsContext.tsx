@@ -21,9 +21,9 @@ export interface NewsItemType {
 interface NewsContextType {
   newsItems: NewsItemType[];
   loading: boolean;
-  addNewsItem: (item: Omit<NewsItemType, 'id'>) => void;
-  updateNewsItem: (item: NewsItemType) => void;
-  deleteNewsItem: (id: string) => void;
+  addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<WithId<Omit<NewsItemType, 'id'>>>;
+  updateNewsItem: (item: NewsItemType) => Promise<void>;
+  deleteNewsItem: (id: string) => Promise<void>;
   toggleNewsHighlight: (id: string) => void;
 }
 
@@ -44,28 +44,19 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Adicionar", description: `Não foi possível salvar a notícia: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const updateNewsItemMutation = useMutation({
+  const updateNewsItemMutation = useMutation<void, Error, NewsItemType>({
     mutationFn: (updatedItem: NewsItemType) => updateDocumentInCollection(COLLECTION_NAME, updatedItem.id, updatedItem),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Atualizar", description: `Não foi possível salvar as alterações: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const deleteNewsItemMutation = useMutation({
+  const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Excluir", description: `Não foi possível remover a notícia: ${error.message}`, variant: "destructive" });
     },
   });
 
@@ -100,9 +91,9 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     newsItems,
     loading: isFetching,
-    addNewsItem: (item) => addNewsItemMutation.mutate(item),
-    updateNewsItem: (item) => updateNewsItemMutation.mutate(item),
-    deleteNewsItem: (id) => deleteNewsItemMutation.mutate(id),
+    addNewsItem: (item) => addNewsItemMutation.mutateAsync(item),
+    updateNewsItem: (item) => updateNewsItemMutation.mutateAsync(item),
+    deleteNewsItem: (id) => deleteNewsItemMutation.mutateAsync(id),
     toggleNewsHighlight: (id) => toggleHighlightMutation.mutate(id),
   }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleHighlightMutation]);
 

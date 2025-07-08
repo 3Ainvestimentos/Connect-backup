@@ -4,7 +4,6 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
-import { toast } from '@/hooks/use-toast';
 
 export interface DocumentType {
   id: string;
@@ -20,9 +19,9 @@ export interface DocumentType {
 interface DocumentsContextType {
   documents: DocumentType[];
   loading: boolean;
-  addDocument: (doc: Omit<DocumentType, 'id'>) => void;
-  updateDocument: (doc: DocumentType) => void;
-  deleteDocument: (id: string) => void;
+  addDocument: (doc: Omit<DocumentType, 'id'>) => Promise<WithId<Omit<DocumentType, 'id'>>>;
+  updateDocument: (doc: DocumentType) => Promise<void>;
+  deleteDocument: (id: string) => Promise<void>;
 }
 
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
@@ -42,37 +41,28 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Adicionar", description: `Não foi possível salvar o documento: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const updateDocumentMutation = useMutation({
+  const updateDocumentMutation = useMutation<void, Error, DocumentType>({
     mutationFn: (updatedDoc: DocumentType) => updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Atualizar", description: `Não foi possível salvar as alterações: ${error.message}`, variant: "destructive" });
-    },
   });
 
-  const deleteDocumentMutation = useMutation({
+  const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Erro ao Excluir", description: `Não foi possível remover o documento: ${error.message}`, variant: "destructive" });
     },
   });
 
   const value = useMemo(() => ({
     documents,
     loading: isFetching,
-    addDocument: (doc) => addDocumentMutation.mutate(doc),
-    updateDocument: (doc) => updateDocumentMutation.mutate(doc),
-    deleteDocument: (id) => deleteDocumentMutation.mutate(id),
+    addDocument: (doc) => addDocumentMutation.mutateAsync(doc),
+    updateDocument: (doc) => updateDocumentMutation.mutateAsync(doc),
+    deleteDocument: (id) => deleteDocumentMutation.mutateAsync(id),
   }), [documents, isFetching, addDocumentMutation, updateDocumentMutation, deleteDocumentMutation]);
 
   return (
