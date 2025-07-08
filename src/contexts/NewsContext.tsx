@@ -69,6 +69,9 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Adicionar", description: `Não foi possível salvar a notícia: ${error.message}`, variant: "destructive" });
+    },
   });
 
   const updateNewsItemMutation = useMutation({
@@ -76,12 +79,18 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Atualizar", description: `Não foi possível salvar as alterações: ${error.message}`, variant: "destructive" });
+    },
   });
 
   const deleteNewsItemMutation = useMutation({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Excluir", description: `Não foi possível remover a notícia: ${error.message}`, variant: "destructive" });
     },
   });
 
@@ -105,6 +114,11 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error: Error) => {
+      if (error.message !== "Highlight limit reached") {
+        toast({ title: "Erro ao Atualizar Destaque", description: error.message, variant: "destructive" });
+      }
     },
   });
 

@@ -96,6 +96,13 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error) => {
+      toast({
+        title: "Erro ao Adicionar",
+        description: `Não foi possível salvar a aplicação: ${error.message}`,
+        variant: "destructive",
+      });
+    },
   });
 
   const updateApplicationMutation = useMutation<void, Error, Application>({
@@ -103,12 +110,26 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error) => {
+      toast({
+        title: "Erro ao Atualizar",
+        description: `Não foi possível salvar as alterações: ${error.message}`,
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteApplicationMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+     onError: (error) => {
+      toast({
+        title: "Erro ao Excluir",
+        description: `Não foi possível remover a aplicação: ${error.message}`,
+        variant: "destructive",
+      });
     },
   });
 

@@ -1,6 +1,6 @@
 
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Timestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 // Generic type T must have an `id` property
@@ -8,7 +8,8 @@ type WithId<T> = T & { id: string };
 
 /**
  * Recursively removes keys with `undefined` values from an object or array.
- * This is necessary because Firestore does not support `undefined`.
+ * Creates a deep copy and does not mutate the original object.
+ * It correctly handles nested objects, arrays, and preserves Firestore-compatible types like Date and Timestamp.
  * @param data The object or array to clean.
  * @returns A new object or array with `undefined` values removed.
  */
@@ -16,18 +17,18 @@ const cleanUndefinedValues = (data: any): any => {
     if (data === null || data === undefined) {
         return data;
     }
+    
     if (Array.isArray(data)) {
-        // Clean each item in the array
         return data.map(item => cleanUndefinedValues(item));
     }
-    // Firestore handles Date objects correctly, so we don't need to treat them specially
-    if (typeof data === 'object' && !(data instanceof Date)) {
+    
+    // Check if it is a plain object before iterating.
+    // This preserves instances of Date, Timestamp, etc.
+    if (typeof data === 'object' && Object.prototype.toString.call(data) === '[object Object]') {
         const cleanedObject: { [key: string]: any } = {};
         for (const key in data) {
-            // Ensure we only process own properties
             if (Object.prototype.hasOwnProperty.call(data, key)) {
                 const value = data[key];
-                // If the value is not undefined, process it and add to the new object
                 if (value !== undefined) {
                     cleanedObject[key] = cleanUndefinedValues(value);
                 }
@@ -35,6 +36,7 @@ const cleanUndefinedValues = (data: any): any => {
         }
         return cleanedObject;
     }
+    
     return data;
 };
 

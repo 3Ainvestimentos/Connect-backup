@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo, useS
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface EventType {
   id: string;
@@ -73,6 +74,9 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Adicionar", description: `Não foi possível salvar o evento: ${error.message}`, variant: "destructive" });
+    },
   });
 
   const updateEventMutation = useMutation({
@@ -80,12 +84,18 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Atualizar", description: `Não foi possível salvar as alterações: ${error.message}`, variant: "destructive" });
+    },
   });
 
   const deleteEventMutation = useMutation({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Excluir", description: `Não foi possível remover o evento: ${error.message}`, variant: "destructive" });
     },
   });
 

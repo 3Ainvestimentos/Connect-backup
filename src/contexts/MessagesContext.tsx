@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo, useS
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface MessageType {
   id: string;
@@ -80,6 +81,9 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Adicionar", description: `Não foi possível enviar a mensagem: ${error.message}`, variant: "destructive" });
+    },
   });
 
   const updateMessageMutation = useMutation({
@@ -87,12 +91,18 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Atualizar", description: `Não foi possível salvar as alterações: ${error.message}`, variant: "destructive" });
+    },
   });
 
   const deleteMessageMutation = useMutation({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao Excluir", description: `Não foi possível remover a mensagem: ${error.message}`, variant: "destructive" });
     },
   });
 
@@ -107,6 +117,10 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error: Error) => {
+      // This is a less critical error, so we can just log it or show a subtle toast
+      console.error("Failed to mark message as read:", error.message);
     },
   });
   

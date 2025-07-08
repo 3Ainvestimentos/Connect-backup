@@ -28,37 +28,49 @@ const linkItemSchema = z.object({
 
 const applicationSchema = z.object({
     id: z.string().optional(),
-    name: z.string().min(1, "Nome é obrigatório"),
-    icon: z.string().min(1, "Ícone é obrigatório"),
-    type: z.enum(['modal', 'external']),
+    name: z.string().min(1, "Nome da aplicação é obrigatório."),
+    icon: z.string().min(1, "Ícone é obrigatório."),
+    type: z.enum(['modal', 'external'], { required_error: "Tipo de aplicação é obrigatório." }),
     modalId: z.enum(['profile', 'vacation', 'support', 'admin', 'marketing', 'generic']).optional(),
     href: z.string().optional(),
     content: z.object({
-        title: z.string(),
-        description: z.string(),
-        items: z.array(linkItemSchema),
+        title: z.string().optional(),
+        description: z.string().optional(),
+        items: z.array(linkItemSchema).optional(),
     }).optional(),
-}).refine(data => {
+}).superRefine((data, ctx) => {
     if (data.type === 'external') {
-        if (!data.href) return false;
-        const urlCheck = z.string().url("URL inválida.").safeParse(data.href);
-        return urlCheck.success;
-    }
-    if (data.type === 'modal') return !!data.modalId;
-    return false;
-}, {
-    message: "Preencha os campos obrigatórios para o tipo selecionado.",
-    path: ['type'],
-}).refine(data => {
-    if (data.modalId === 'generic') {
-         if (!data.content?.title || data.content.title.trim() === '') {
-            return false;
+        if (!data.href) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "URL do Link é obrigatória para o tipo 'Link Externo'.",
+                path: ['href'],
+            });
+        } else {
+            const urlCheck = z.string().url("URL inválida.").safeParse(data.href);
+            if (!urlCheck.success) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Por favor, insira uma URL válida (ex: https://...).",
+                    path: ['href'],
+                });
+            }
         }
     }
-    return true;
-}, {
-    message: "Conteúdo genérico requer um título.",
-    path: ['content.title'],
+    if (data.type === 'modal' && !data.modalId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Tipo de Modal é obrigatório para o tipo 'Modal'.",
+            path: ['modalId'],
+        });
+    }
+    if (data.modalId === 'generic' && (!data.content?.title || data.content.title.trim() === '')) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Título do Modal é obrigatório para um modal genérico.",
+            path: ['content.title'],
+        });
+    }
 });
 
 
@@ -72,7 +84,11 @@ export function ManageApplications() {
     const form = useForm<ApplicationFormValues>({
         resolver: zodResolver(applicationSchema),
         defaultValues: {
+            name: '',
+            icon: 'HelpCircle',
             type: 'modal',
+            modalId: 'generic',
+            href: '',
             content: { title: '', description: '', items: [] },
         },
     });
@@ -88,8 +104,14 @@ export function ManageApplications() {
     const handleDialogOpen = (app: Application | null) => {
         setEditingApplication(app);
         if (app) {
-            form.reset(app);
+            // When editing, provide complete data to the form
+            form.reset({
+                ...app,
+                href: app.href || '',
+                content: app.content || { title: '', description: '', items: [] },
+            });
         } else {
+            // When adding, reset to clean default values
             form.reset({
                 id: undefined,
                 name: '',
@@ -267,6 +289,7 @@ export function ManageApplications() {
                                     </Select>
                                     )}
                                 />
+                                {form.formState.errors.modalId && <p className="text-sm text-destructive mt-1">{form.formState.errors.modalId.message}</p>}
                             </div>
                         )}
 
@@ -314,5 +337,3 @@ export function ManageApplications() {
         </Card>
     );
 }
-
-    
