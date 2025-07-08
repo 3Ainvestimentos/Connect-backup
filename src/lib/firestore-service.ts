@@ -6,15 +6,25 @@ import { toast } from '@/hooks/use-toast';
 type WithId<T> = T & { id: string };
 
 /**
- * A helper function to remove 'undefined' values from an object before
- * sending it to Firestore by using a JSON round-trip.
- * NOTE: This is safe for this app because all data is JSON-serializable.
- * It would convert Date objects to strings, but dates are already stored as strings.
- * @param data The object to clean.
- * @returns A new object with 'undefined' values removed.
+ * Recursively removes keys with `undefined` values from an object.
+ * This is necessary because Firestore does not support `undefined`.
+ * @param data The object or array to clean.
+ * @returns A new object or array with `undefined` values removed.
  */
-const cleanDataForFirestore = (data: any) => {
-    return JSON.parse(JSON.stringify(data));
+const cleanUndefinedValues = (data: any): any => {
+    if (Array.isArray(data)) {
+        return data.map(item => cleanUndefinedValues(item));
+    }
+    if (data !== null && typeof data === 'object') {
+        const cleanedObject: { [key: string]: any } = {};
+        for (const key in data) {
+            if (data[key] !== undefined) {
+                cleanedObject[key] = cleanUndefinedValues(data[key]);
+            }
+        }
+        return cleanedObject;
+    }
+    return data;
 };
 
 
@@ -42,7 +52,7 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
  */
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T> | null> => {
     try {
-        const cleanData = cleanDataForFirestore(data);
+        const cleanData = cleanUndefinedValues(data);
         const docRef = await addDoc(collection(db, collectionName), cleanData);
         // Return the cleaned data shape plus the new ID for local state consistency
         return { id: docRef.id, ...cleanData };
@@ -62,7 +72,7 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
  */
 export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<boolean> => {
     try {
-        const cleanData = cleanDataForFirestore(data);
+        const cleanData = cleanUndefinedValues(data);
         const docRef = doc(db, collectionName, id);
         await updateDoc(docRef, cleanData);
         return true;
@@ -101,7 +111,7 @@ export const seedCollection = async <T>(collectionName: string, initialData: T[]
         const batch = writeBatch(db);
         initialData.forEach(item => {
             const docRef = doc(collection(db, collectionName));
-            const cleanItem = cleanDataForFirestore(item);
+            const cleanItem = cleanUndefinedValues(item);
             batch.set(docRef, cleanItem);
         });
         await batch.commit();

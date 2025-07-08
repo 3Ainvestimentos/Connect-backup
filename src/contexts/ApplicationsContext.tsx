@@ -1,7 +1,11 @@
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo, useState, useEffect, useCallback } from 'react';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import React, { createContext, useContext, ReactNode, useMemo, useCallback, useEffect } from 'react';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, seedCollection } from '@/lib/firestore-service';
+import { useCollection } from 'react-firebase-hooks/firestore';
+import { collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { toast } from '@/hooks/use-toast';
 
 export interface ApplicationLinkItem {
   id: string;
@@ -59,44 +63,44 @@ const initialApplications: Omit<Application, 'id'>[] = [
 const COLLECTION_NAME = 'applications';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [snapshot, loading, error] = useCollection(collection(db, COLLECTION_NAME));
 
+  const applications = useMemo(() => {
+    if (!snapshot) return [];
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Application));
+  }, [snapshot]);
+  
+  // Seeding logic for first-time use
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      const data = await getCollection<Application>(COLLECTION_NAME);
-       if (data.length === 0) {
-        await seedCollection(COLLECTION_NAME, initialApplications);
-        const seededData = await getCollection<Application>(COLLECTION_NAME);
-        setApplications(seededData);
-      } else {
-        setApplications(data);
-      }
-      setLoading(false);
+    const seedDataIfNeeded = async () => {
+        // Only seed if loading is finished, there's a snapshot, and it's empty.
+        if (!loading && snapshot && snapshot.empty) {
+            console.log(`Seeding ${COLLECTION_NAME} collection...`);
+            await seedCollection(COLLECTION_NAME, initialApplications);
+        }
     };
-    fetchData();
-  }, []);
-
-  const addApplication = useCallback(async (appData: Omit<Application, 'id'>) => {
-    const newApp = await addDocumentToCollection(COLLECTION_NAME, appData);
-    if (newApp) {
-        setApplications(prev => [newApp as Application, ...prev]);
+    seedDataIfNeeded();
+  }, [loading, snapshot]);
+  
+  useEffect(() => {
+    if (error) {
+        console.error("Error fetching applications:", error);
+        toast({ title: 'Erro ao carregar aplicações', description: error.message, variant: 'destructive' });
     }
+  }, [error]);
+
+  // The functions no longer need to update local state.
+  // react-firebase-hooks will do it automatically when Firestore changes.
+  const addApplication = useCallback(async (appData: Omit<Application, 'id'>) => {
+    await addDocumentToCollection(COLLECTION_NAME, appData);
   }, []);
 
   const updateApplication = useCallback(async (updatedApp: Application) => {
-    const success = await updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp);
-    if(success) {
-        setApplications(prev => prev.map(app => (app.id === updatedApp.id ? updatedApp : app)));
-    }
+    await updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp);
   }, []);
 
   const deleteApplication = useCallback(async (id: string) => {
-    const success = await deleteDocumentFromCollection(COLLECTION_NAME, id);
-    if(success) {
-        setApplications(prev => prev.filter(app => app.id !== id));
-    }
+    await deleteDocumentFromCollection(COLLECTION_NAME, id);
   }, []);
   
   const value = useMemo(() => ({
