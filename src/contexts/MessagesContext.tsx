@@ -5,7 +5,6 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo } fro
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
-import { toast } from '@/hooks/use-toast';
 
 export interface MessageType {
   id: string;
@@ -13,11 +12,8 @@ export interface MessageType {
   content: string;
   sender: string;
   date: string; // ISO date string e.g. "2024-07-25"
-  target: {
-    type: 'all' | 'axis' | 'area' | 'city';
-    value: string;
-  };
-  readBy: string[]; // Array of collaborator IDs
+  recipientIds: string[]; // Array of collaborator IDs
+  readBy: string[]; // Array of collaborator IDs who have read the message
 }
 
 interface MessagesContextType {
@@ -43,11 +39,10 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
-    if (message.target.type === 'all') {
+    if (message.recipientIds.includes('all')) {
       return allCollaborators;
     }
-    const filterKey = message.target.type as keyof Collaborator;
-    return allCollaborators.filter(c => c[filterKey] === message.target.value);
+    return allCollaborators.filter(c => message.recipientIds.includes(c.id));
   }, []);
 
   const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id' | 'readBy'>>, Error, Omit<MessageType, 'id' | 'readBy'>>({
@@ -62,7 +57,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const updateMessageMutation = useMutation<void, Error, MessageType>({
     mutationFn: (updatedMessage: MessageType) => updateDocumentInCollection(COLLECTION_NAME, updatedMessage.id, updatedMessage),
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -87,7 +82,6 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
     onError: (error: Error) => {
-      // This is a less critical error, so we can just log it or show a subtle toast
       console.error("Failed to mark message as read:", error.message);
     },
   });

@@ -12,13 +12,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
+import { RecipientSelectionModal } from './RecipientSelectionModal';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -26,10 +26,7 @@ const messageSchema = z.object({
     content: z.string().min(10, "Conteúdo deve ter no mínimo 10 caracteres"),
     sender: z.string().min(1, "Remetente é obrigatório"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
-    target: z.object({
-        type: z.enum(['all', 'axis', 'area', 'city']),
-        value: z.string().min(1, "O valor do alvo é obrigatório."),
-    }),
+    recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário."),
 });
 
 type MessageFormValues = z.infer<typeof messageSchema>;
@@ -73,31 +70,17 @@ const ReadStatusDialog = ({ message, recipients }: { message: MessageType; recip
 export function ManageMessages() {
     const { messages, addMessage, updateMessage, deleteMessage, getMessageRecipients } = useMessages();
     const { collaborators } = useCollaborators();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
-
-    const uniqueSegments = useMemo(() => ({
-        axis: [...new Set(collaborators.map(c => c.axis))],
-        area: [...new Set(collaborators.map(c => c.area))],
-        city: [...new Set(collaborators.map(c => c.city))],
-    }), [collaborators]);
-
+    
     const form = useForm<MessageFormValues>({
         resolver: zodResolver(messageSchema),
-        defaultValues: { target: { type: 'all', value: 'all' } }
+        defaultValues: { recipientIds: ['all'] }
     });
 
-    const watchTargetType = form.watch('target.type');
-
-    React.useEffect(() => {
-        if(watchTargetType === 'all') {
-            form.setValue('target.value', 'all');
-        } else {
-            form.setValue('target.value', '');
-        }
-    }, [watchTargetType, form]);
-
+    const watchRecipientIds = form.watch('recipientIds');
 
     const handleDialogOpen = (message: MessageType | null) => {
         setEditingMessage(message);
@@ -111,10 +94,10 @@ export function ManageMessages() {
                 content: '',
                 sender: 'Admin',
                 date: new Date().toISOString().split('T')[0],
-                target: { type: 'all', value: 'all' }
+                recipientIds: ['all'],
             });
         }
-        setIsDialogOpen(true);
+        setIsFormOpen(true);
     };
 
     const handleDelete = async (id: string) => {
@@ -143,7 +126,7 @@ export function ManageMessages() {
                 await addMessage(dataWithoutId);
                 toast({ title: "Mensagem adicionada com sucesso." });
             }
-            setIsDialogOpen(false);
+            setIsFormOpen(false);
             setEditingMessage(null);
         } catch (error) {
             toast({
@@ -155,6 +138,12 @@ export function ManageMessages() {
             setIsSubmitting(false);
         }
     };
+    
+    const getRecipientDescription = (ids: string[]) => {
+        if (!ids || ids.length === 0) return 'Nenhum destinatário';
+        if (ids.includes('all')) return 'Todos os Colaboradores';
+        return `${ids.length} colaborador(es) selecionado(s)`;
+    }
 
     return (
         <Card>
@@ -190,7 +179,7 @@ export function ManageMessages() {
                                     <TableCell className="font-medium">{item.title}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline">
-                                            {item.target.type === 'all' ? 'Todos' : `${item.target.type.charAt(0).toUpperCase() + item.target.type.slice(1)}: ${item.target.value}`}
+                                            {getRecipientDescription(item.recipientIds)}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
@@ -219,7 +208,7 @@ export function ManageMessages() {
                 </div>
             </CardContent>
 
-             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingMessage(null); setIsDialogOpen(isOpen); }}>
+             <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingMessage(null); setIsFormOpen(isOpen); }}>
                 <DialogContent className="max-w-2xl">
                 <ScrollArea className="max-h-[80vh]">
                   <div className="p-6 pt-0">
@@ -251,46 +240,13 @@ export function ManageMessages() {
                         </div>
 
                         <Separator />
-                        <Label>Segmento de Destinatários</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div>
-                                <Label htmlFor="target-type">Enviar para</Label>
-                                <Controller
-                                    name="target.type"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
-                                            <SelectTrigger id="target-type"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Todos os Colaboradores</SelectItem>
-                                                <SelectItem value="axis">Por Eixo</SelectItem>
-                                                <SelectItem value="area">Por Área</SelectItem>
-                                                <SelectItem value="city">Por Cidade</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                            </div>
-                            {watchTargetType !== 'all' && (
-                            <div>
-                                <Label htmlFor="target-value">Segmento Específico</Label>
-                                <Controller
-                                    name="target.value"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
-                                            <SelectTrigger id="target-value"><SelectValue placeholder={`Selecione um(a) ${watchTargetType}`} /></SelectTrigger>
-                                            <SelectContent>
-                                                {uniqueSegments[watchTargetType]?.map(segment => (
-                                                    <SelectItem key={segment} value={segment}>{segment}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                                {form.formState.errors.target?.value && <p className="text-sm text-destructive mt-1">{form.formState.errors.target.value.message}</p>}
-                            </div>
-                            )}
+                        <div>
+                            <Label>Destinatários</Label>
+                            <Button type="button" variant="outline" className="w-full justify-start text-left mt-2" onClick={() => setIsSelectionModalOpen(true)}>
+                               <Users className="mr-2 h-4 w-4" />
+                               <span>{getRecipientDescription(watchRecipientIds)}</span>
+                            </Button>
+                            {form.formState.errors.recipientIds && <p className="text-sm text-destructive mt-1">{form.formState.errors.recipientIds.message}</p>}
                         </div>
 
                         <DialogFooter className="mt-6">
@@ -305,6 +261,16 @@ export function ManageMessages() {
                 </ScrollArea>
                 </DialogContent>
             </Dialog>
+            <RecipientSelectionModal
+                isOpen={isSelectionModalOpen}
+                onClose={() => setIsSelectionModalOpen(false)}
+                allCollaborators={collaborators}
+                selectedIds={watchRecipientIds}
+                onConfirm={(newIds) => {
+                    form.setValue('recipientIds', newIds, { shouldValidate: true });
+                    setIsSelectionModalOpen(false);
+                }}
+            />
         </Card>
     );
 }
