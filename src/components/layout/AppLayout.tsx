@@ -40,13 +40,13 @@ import { useTheme } from '@/contexts/ThemeContext';
 import FAQModal from '@/components/guides/FAQModal';
 
 const navItems = [
-  { href: '/dashboard', label: 'Painel Inicial', icon: Home },
-  { href: '/news', label: 'Feed de Notícias', icon: Newspaper },
-  { href: '/documents', label: 'Documentos', icon: FolderOpen },
-  { href: '/applications', label: 'Aplicações', icon: LayoutGrid },
-  { href: '/labs', label: 'Labs', icon: FlaskConical },
+  { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false },
+  { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false },
+  { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false },
+  { href: '/applications', label: 'Aplicações', icon: LayoutGrid, external: false },
+  { href: '/labs', label: 'Labs', icon: FlaskConical, external: false },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
-  { href: '/chatbot', label: 'Bob', icon: Bot },
+  { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
 ];
 
 function UserNav() {
@@ -166,26 +166,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <Sidebar collapsible="icon" variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
-                {navItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={!item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))}
-                      tooltip={{children: item.label, className: "font-body"}}
-                      onClick={handleLinkClick}
-                      className="font-body"
-                    >
-                      <Link
-                          href={item.href}
-                          target={item.external ? '_blank' : undefined}
-                          rel={item.external ? 'noopener noreferrer' : undefined}
+                {navItems.map((item) => {
+                  const linkProps = item.external 
+                      ? { target: "_blank", rel: "noopener noreferrer" } 
+                      : {};
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={!item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))}
+                        tooltip={{children: item.label, className: "font-body"}}
+                        onClick={handleLinkClick}
+                        className="font-body"
                       >
-                        <item.icon />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                        <Link href={item.href} {...linkProps}>
+                          <item.icon />
+                          <span>{item.label}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarContent>
 
