@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getDocument, setDocumentInCollection } from '@/lib/firestore-service';
 
 export interface LabType {
   id: string;
@@ -43,7 +43,6 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<LabType>(COLLECTION_NAME),
     select: (fetchedData) => {
-        // Merge mock data with fetched data, ensuring no duplicates by ID
         const combined = [...mockLabs, ...fetchedData];
         const uniqueLabs = Array.from(new Map(combined.map(item => [item.id, item])).values());
         return uniqueLabs.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
@@ -58,31 +57,39 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const updateLabMutation = useMutation<void, Error, LabType>({
-    mutationFn: (updatedLab: LabType) => {
+    mutationFn: async (updatedLab: LabType) => {
         const { id, ...data } = updatedLab;
-        return updateDocumentInCollection(COLLECTION_NAME, id, data);
+        
+        // Check if the document exists in Firestore
+        const docExists = await getDocument(COLLECTION_NAME, id);
+        
+        if (docExists) {
+            // If it exists, update it
+            return updateDocumentInCollection(COLLECTION_NAME, id, data);
+        } else if (mockLabs.some(mock => mock.id === id)) {
+            // If it doesn't exist but is a mock item, create it in Firestore
+            return setDocumentInCollection(COLLECTION_NAME, id, data);
+        } else {
+            // This case should ideally not be reached with the current logic
+            throw new Error(`Document with id ${id} not found and is not a mock item.`);
+        }
     },
     onSuccess: (_, variables) => {
-      // Optimistically update the UI to reflect the change immediately
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] | undefined) => {
-        if (!oldData) return [];
-        return oldData.map(lab => lab.id === variables.id ? variables : lab);
-      });
-      // Invalidate to refetch from the server and ensure consistency
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteLabMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => {
-       return deleteDocumentFromCollection(COLLECTION_NAME, id);
+    mutationFn: async (id: string) => {
+       const docExists = await getDocument(COLLECTION_NAME, id);
+       if(docExists) {
+         return deleteDocumentFromCollection(COLLECTION_NAME, id);
+       }
+       // If it doesn't exist in Firestore (i.e., it's a mock item that was never edited),
+       // we just resolve without erroring. The optimistic update will handle the UI.
+       return Promise.resolve();
     },
     onSuccess: (_, id) => {
-       // Optimistically remove from UI
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] | undefined) => {
-         if (!oldData) return [];
-         return oldData.filter(lab => lab.id !== id);
-      });
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });

@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { cleanDataForFirestore } from './data-sanitizer';
 
 export type WithId<T> = T & { id: string };
@@ -58,6 +58,28 @@ export const addDocumentToCollection = async <T extends object>(collectionName: 
         throw new Error('Não foi possível adicionar o novo item.');
     }
 };
+
+/**
+ * Creates or overwrites a document with a specific ID.
+ * @param collectionName The name of the collection.
+ * @param id The ID of the document to create or overwrite.
+ * @param data The data for the document.
+ * @returns A promise that resolves to void on success.
+ */
+export const setDocumentInCollection = async <T extends object>(collectionName: string, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
+    try {
+        const cleanedData = cleanDataForFirestore(data);
+        const docRef = doc(db, collectionName, id);
+        await setDoc(docRef, cleanedData);
+    } catch (error) {
+        console.error(`Error setting document ${id} in ${collectionName}:`, error);
+        if (error instanceof Error) {
+            console.error('Data that caused the error:', data);
+        }
+        throw new Error('Não foi possível salvar os dados.');
+    }
+};
+
 
 /**
  * Updates an existing document in a specified collection. It automatically cleans the data
