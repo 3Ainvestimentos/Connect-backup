@@ -91,7 +91,7 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
               </DialogHeader>
               <ScrollArea className="max-h-[40vh] pr-4">
                 <div className="py-4 text-sm text-foreground space-y-4">
-                  {selectedNews.content.split('\n').map((paragraph, index) => (
+                  {selectedNews.content && selectedNews.content.split('\n').map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}
                 </div>
