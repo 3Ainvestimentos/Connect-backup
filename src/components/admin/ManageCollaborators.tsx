@@ -122,7 +122,8 @@ export function ManageCollaborators() {
                                 <TableHead>Email</TableHead>
                                 <TableHead>Área</TableHead>
                                 <TableHead>Cargo</TableHead>
-                                <TableHead>Líder</TableHead>
+                                <TableHead>Eixo</TableHead>
+                                <TableHead>Cidade</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -133,7 +134,8 @@ export function ManageCollaborators() {
                                     <TableCell>{item.email}</TableCell>
                                     <TableCell>{item.area}</TableCell>
                                     <TableCell>{item.position}</TableCell>
-                                    <TableCell>{item.leader}</TableCell>
+                                    <TableCell>{item.axis}</TableCell>
+                                    <TableCell>{item.city}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)}>
                                             <Edit className="h-4 w-4" />
