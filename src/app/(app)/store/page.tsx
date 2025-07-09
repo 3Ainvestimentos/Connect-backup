@@ -2,7 +2,7 @@ import React from 'react';
 
 const NuvemShopEmbed = () => {
   return (
-    <div style={{ width: '100%', height: '100vh' }}>
+    <div style={{ width: '100%', height: 'calc(100vh - var(--header-height))' }}>
       <iframe 
         src="https://store-3ariva.com.br" 
         width="100%" 
