@@ -38,6 +38,7 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import FAQModal from '@/components/guides/FAQModal';
+import ProfileModal from '../applications/ProfileModal';
 
 const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false },
@@ -49,7 +50,7 @@ const navItems = [
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
 ];
 
-function UserNav() {
+function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
   const { user, signOut, loading } = useAuth();
   const { theme, setTheme } = useTheme();
 
@@ -82,6 +83,10 @@ function UserNav() {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+         <DropdownMenuItem onClick={onProfileClick} className="cursor-pointer font-body">
+            <UserCircle className="mr-2 h-4 w-4" />
+            <span>Meu Perfil</span>
+        </DropdownMenuItem>
         <DropdownMenuSub>
             <DropdownMenuSubTrigger>
                 {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
@@ -132,6 +137,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { setOpen: setSidebarOpen } = useSidebar();
   const isChatbotPage = pathname === '/chatbot';
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
 
   useEffect(() => {
@@ -160,7 +166,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header userNav={<UserNav />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
+      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
@@ -179,7 +185,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         onClick={handleLinkClick}
                         className="font-body"
                       >
-                        <Link href={item.href} {...linkProps}>
+                       <Link
+                          href={item.href}
+                          {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                        >
                           <item.icon />
                           <span>{item.label}</span>
                         </Link>
@@ -247,6 +256,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarInset>
       </div>
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
+      <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
     </>
   );
 }
