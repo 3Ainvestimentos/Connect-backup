@@ -20,6 +20,7 @@ import { iconList, getIcon } from '@/lib/icons';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
+import { parseISO, format } from 'date-fns';
 
 const eventSchema = z.object({
     id: z.string().optional(),
@@ -53,7 +54,8 @@ export function ManageEvents() {
         if (event) {
             form.reset({
               ...event,
-              date: new Date(event.date).toISOString().split('T')[0],
+              // Correctly handle timezone by parsing as ISO and formatting to YYYY-MM-DD
+              date: format(parseISO(event.date), 'yyyy-MM-dd'),
             });
         } else {
             form.reset({
@@ -87,11 +89,17 @@ export function ManageEvents() {
     const onSubmit = async (data: EventFormValues) => {
         setIsSubmitting(true);
         try {
+            // Ensure the date is stored in a consistent format (ISO string at UTC)
+            const submissionData = {
+                ...data,
+                date: new Date(data.date).toISOString(),
+            };
+
             if (editingEvent) {
-                await updateEvent({ ...editingEvent, ...data });
+                await updateEvent({ ...editingEvent, ...submissionData });
                 toast({ title: "Evento atualizado com sucesso." });
             } else {
-                const { id, ...dataWithoutId } = data;
+                const { id, ...dataWithoutId } = submissionData;
                 await addEvent(dataWithoutId as Omit<EventType, 'id'>);
                 toast({ title: "Evento adicionado com sucesso." });
             }

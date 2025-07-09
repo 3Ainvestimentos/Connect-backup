@@ -24,7 +24,7 @@ import { useMessages, type MessageType } from '@/contexts/MessagesContext';
 import { getIcon } from '@/lib/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import { addDays, isSameDay } from 'date-fns';
+import { isSameDay, parseISO } from 'date-fns';
 
 export default function DashboardPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -64,10 +64,10 @@ export default function DashboardPage() {
   const eventsOnSelectedDate = useMemo(() => {
     if (!date) return [];
     // The date from the calendar doesn't have a timezone, so we match against it carefully.
-    return userEvents.filter(event => isSameDay(new Date(event.date), addDays(date, 1)));
+    return userEvents.filter(event => isSameDay(parseISO(event.date), date));
   }, [userEvents, date]);
   
-  const eventDates = useMemo(() => userEvents.map(e => new Date(e.date)), [userEvents]);
+  const eventDates = useMemo(() => userEvents.map(e => parseISO(e.date)), [userEvents]);
 
   const unreadCount = useMemo(() => {
     if (!currentUserCollab) return 0;
