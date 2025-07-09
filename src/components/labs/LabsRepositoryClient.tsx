@@ -55,7 +55,7 @@ export default function LabsRepositoryClient({ initialLabs, categories, loading 
         let comparison = 0;
         if (typeof valA === 'string' && typeof valB === 'string') {
           if (sortKey === 'lastModified') {
-            comparison = new Date(valA).getTime() - new Date(valB).getTime();
+            comparison = new Date(valA).getTime() - new Date(b.lastModified).getTime();
           } else {
             comparison = valA.localeCompare(valB);
           }
@@ -169,7 +169,7 @@ export default function LabsRepositoryClient({ initialLabs, categories, loading 
             <TableBody>
               {filteredAndSortedLabs.map((lab) => (
                 <TableRow key={lab.id} className="hover:bg-muted/30">
-                  <TableCell><Video className="h-5 w-5 text-accent" /></TableCell>
+                  <TableCell><Video className="h-5 w-5 text-muted-foreground" /></TableCell>
                   <TableCell className="font-medium font-body">
                     {lab.title}
                     {lab.subtitle && <p className="text-xs text-muted-foreground">{lab.subtitle}</p>}
@@ -181,7 +181,7 @@ export default function LabsRepositoryClient({ initialLabs, categories, loading 
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" asChild aria-label="Abrir vídeo">
                       <a href={lab.videoUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="h-5 w-5 text-accent" />
+                        <ExternalLink className="h-5 w-5 text-muted-foreground" />
                       </a>
                     </Button>
                   </TableCell>
