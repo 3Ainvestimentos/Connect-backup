@@ -16,11 +16,13 @@ import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
+import { ScrollArea } from '../ui/scroll-area';
 
 const newsSchema = z.object({
     id: z.string().optional(),
     title: z.string().min(3, "Título deve ter no mínimo 3 caracteres"),
     snippet: z.string().min(10, "Snippet deve ter no mínimo 10 caracteres"),
+    content: z.string().min(10, "Conteúdo completo deve ter no mínimo 10 caracteres"),
     category: z.string().min(1, "Categoria é obrigatória"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
     imageUrl: z.string().url("URL da imagem inválida").or(z.literal("")),
@@ -57,6 +59,7 @@ export function ManageNews() {
                 id: undefined,
                 title: '',
                 snippet: '',
+                content: '',
                 category: '',
                 date: new Date().toISOString().split('T')[0],
                 imageUrl: 'https://placehold.co/300x200.png',
@@ -170,70 +173,79 @@ export function ManageNews() {
             </CardContent>
 
              <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingNews(null); setIsDialogOpen(isOpen); }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingNews ? 'Editar Notícia' : 'Adicionar Notícia'}</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div>
-                            <Label htmlFor="title">Título</Label>
-                            <Input id="title" {...register('title')} disabled={isSubmitting}/>
-                            {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
-                        </div>
-                        <div>
-                            <Label htmlFor="snippet">Snippet</Label>
-                            <Textarea id="snippet" {...register('snippet')} disabled={isSubmitting}/>
-                            {errors.snippet && <p className="text-sm text-destructive mt-1">{errors.snippet.message}</p>}
-                        </div>
-                        <div>
-                            <Label htmlFor="category">Categoria</Label>
-                            <Input id="category" {...register('category')} disabled={isSubmitting}/>
-                            {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
-                        </div>
-                        <div>
-                            <Label htmlFor="date">Data</Label>
-                            <Input id="date" type="date" {...register('date')} disabled={isSubmitting}/>
-                            {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
-                        </div>
-                         <div>
-                            <Label htmlFor="imageUrl">URL da Imagem</Label>
-                            <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png" disabled={isSubmitting}/>
-                            {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
-                        </div>
-                         <div>
-                            <Label htmlFor="link">URL do Link (opcional)</Label>
-                            <Input id="link" {...register('link')} placeholder="https://..." disabled={isSubmitting}/>
-                            {errors.link && <p className="text-sm text-destructive mt-1">{errors.link.message}</p>}
-                        </div>
-                         <div>
-                            <Label htmlFor="dataAiHint">Dica para IA da Imagem (opcional)</Label>
-                            <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" disabled={isSubmitting}/>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                           <Controller
-                                name="isHighlight"
-                                control={control}
-                                render={({ field }) => (
-                                    <Switch
-                                        id="isHighlight"
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                        disabled={isSubmitting}
-                                    />
-                                )}
-                            />
-                            <Label htmlFor="isHighlight">Marcar como Destaque</Label>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
-                            </DialogClose>
-                            <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Salvar
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                <DialogContent className="max-w-2xl">
+                   <ScrollArea className="max-h-[80vh]">
+                     <div className="p-6 pt-0">
+                        <DialogHeader>
+                            <DialogTitle>{editingNews ? 'Editar Notícia' : 'Adicionar Notícia'}</DialogTitle>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                            <div>
+                                <Label htmlFor="title">Título</Label>
+                                <Input id="title" {...register('title')} disabled={isSubmitting}/>
+                                {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="snippet">Snippet (texto curto para o card)</Label>
+                                <Textarea id="snippet" {...register('snippet')} disabled={isSubmitting} rows={3}/>
+                                {errors.snippet && <p className="text-sm text-destructive mt-1">{errors.snippet.message}</p>}
+                            </div>
+                             <div>
+                                <Label htmlFor="content">Conteúdo Completo (para o modal)</Label>
+                                <Textarea id="content" {...register('content')} disabled={isSubmitting} rows={7}/>
+                                {errors.content && <p className="text-sm text-destructive mt-1">{errors.content.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="category">Categoria</Label>
+                                <Input id="category" {...register('category')} disabled={isSubmitting}/>
+                                {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="date">Data</Label>
+                                <Input id="date" type="date" {...register('date')} disabled={isSubmitting}/>
+                                {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="imageUrl">URL da Imagem</Label>
+                                <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png" disabled={isSubmitting}/>
+                                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="link">URL do Link (opcional)</Label>
+                                <Input id="link" {...register('link')} placeholder="https://..." disabled={isSubmitting}/>
+                                {errors.link && <p className="text-sm text-destructive mt-1">{errors.link.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="dataAiHint">Dica para IA da Imagem (opcional)</Label>
+                                <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" disabled={isSubmitting}/>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                            <Controller
+                                    name="isHighlight"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Switch
+                                            id="isHighlight"
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            disabled={isSubmitting}
+                                        />
+                                    )}
+                                />
+                                <Label htmlFor="isHighlight">Marcar como Destaque</Label>
+                            </div>
+                            <DialogFooter className="pt-4">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                                </DialogClose>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Salvar
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                      </div>
+                    </ScrollArea>
                 </DialogContent>
             </Dialog>
         </Card>

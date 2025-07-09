@@ -10,6 +10,7 @@ export interface NewsItemType {
   id: string;
   title: string;
   snippet: string;
+  content: string; // Full content for modal view
   category: string;
   date: string;
   imageUrl: string;
