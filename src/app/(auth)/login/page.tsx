@@ -9,6 +9,7 @@ import Image from 'next/image';
 
 export default function LoginPage() {
   const { signInWithGoogle, loading } = useAuth();
+  const googleLogoUrl = "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Fgoogle-logo.png?alt=media&token=e0c1f204-6113-4217-916c-e4f0141f61f7";
 
   return (
     <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
@@ -46,7 +47,7 @@ export default function LoginPage() {
           {loading ? (
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
           ) : (
-            <Image src="https://i.ibb.co/7jQqMv7/google-logo.png" alt="Google logo" width={20} height={20} className="mr-2" />
+            <Image src={googleLogoUrl} alt="Google logo" width={20} height={20} className="mr-2" />
           )}
           Entrar com Google
         </Button>
