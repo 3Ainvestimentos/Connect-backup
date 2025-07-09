@@ -24,7 +24,9 @@ import { RecipientSelectionModal } from './RecipientSelectionModal';
 const eventSchema = z.object({
     id: z.string().optional(),
     title: z.string().min(3, "Título deve ter no mínimo 3 caracteres"),
+    date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
     time: z.string().min(1, "Horário é obrigatório"),
+    location: z.string().min(1, "Local é obrigatório"),
     icon: z.string().min(1, "Ícone é obrigatório"),
     recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário."),
 });
@@ -49,12 +51,17 @@ export function ManageEvents() {
     const handleDialogOpen = (event: EventType | null) => {
         setEditingEvent(event);
         if (event) {
-            form.reset(event);
+            form.reset({
+              ...event,
+              date: new Date(event.date).toISOString().split('T')[0],
+            });
         } else {
             form.reset({
                 id: undefined,
                 title: '',
+                date: new Date().toISOString().split('T')[0],
                 time: '',
+                location: '',
                 icon: 'CalendarDays',
                 recipientIds: ['all']
             });
@@ -124,8 +131,8 @@ export function ManageEvents() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Ícone</TableHead>
                                 <TableHead>Título</TableHead>
+                                <TableHead>Data</TableHead>
                                 <TableHead>Horário</TableHead>
                                 <TableHead>Destinatários</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
@@ -136,8 +143,11 @@ export function ManageEvents() {
                                 const Icon = getIcon(item.icon);
                                 return (
                                 <TableRow key={item.id}>
-                                    <TableCell><Icon className="h-5 w-5 text-muted-foreground" /></TableCell>
-                                    <TableCell className="font-medium">{item.title}</TableCell>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      <Icon className="h-5 w-5 text-muted-foreground" />
+                                      {item.title}
+                                    </TableCell>
+                                    <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</TableCell>
                                     <TableCell>{item.time}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline">
@@ -165,15 +175,29 @@ export function ManageEvents() {
                         <DialogTitle>{editingEvent ? 'Editar Evento' : 'Adicionar Evento'}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <div>
-                            <Label htmlFor="title">Título do Evento</Label>
-                            <Input id="title" {...form.register('title')} disabled={isSubmitting}/>
-                            {form.formState.errors.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.title.message}</p>}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="title">Título do Evento</Label>
+                                <Input id="title" {...form.register('title')} disabled={isSubmitting}/>
+                                {form.formState.errors.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.title.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="date">Data</Label>
+                                <Input id="date" type="date" {...form.register('date')} disabled={isSubmitting}/>
+                                {form.formState.errors.date && <p className="text-sm text-destructive mt-1">{form.formState.errors.date.message}</p>}
+                            </div>
                         </div>
-                        <div>
-                            <Label htmlFor="time">Horário (ex: 10:00 - 11:00)</Label>
-                            <Input id="time" {...form.register('time')} disabled={isSubmitting}/>
-                            {form.formState.errors.time && <p className="text-sm text-destructive mt-1">{form.formState.errors.time.message}</p>}
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="time">Horário (ex: 10:00 - 11:00)</Label>
+                                <Input id="time" {...form.register('time')} disabled={isSubmitting}/>
+                                {form.formState.errors.time && <p className="text-sm text-destructive mt-1">{form.formState.errors.time.message}</p>}
+                            </div>
+                             <div>
+                                <Label htmlFor="location">Local</Label>
+                                <Input id="location" {...form.register('location')} disabled={isSubmitting}/>
+                                {form.formState.errors.location && <p className="text-sm text-destructive mt-1">{form.formState.errors.location.message}</p>}
+                            </div>
                         </div>
                         <div>
                             <Label htmlFor="icon">Ícone</Label>

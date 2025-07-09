@@ -9,7 +9,9 @@ import { getCollection, addDocumentToCollection, updateDocumentInCollection, del
 export interface EventType {
   id: string;
   title: string;
+  date: string; // ISO date string e.g. "2024-07-25"
   time: string;
+  location: string;
   icon: string; // Storing icon name as string
   recipientIds: string[]; // Array of collaborator IDs
 }
@@ -32,6 +34,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   const { data: events = [], isFetching } = useQuery<EventType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<EventType>(COLLECTION_NAME),
+    select: (data) => data.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
   });
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {

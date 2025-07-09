@@ -1,3 +1,4 @@
+
 "use client"; 
 
 import React, { useEffect, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Clock, 
-  Megaphone, MessageSquare, CalendarDays,
+  Megaphone, MessageSquare, CalendarDays, MapPin,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -23,6 +24,7 @@ import { useMessages, type MessageType } from '@/contexts/MessagesContext';
 import { getIcon } from '@/lib/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { addDays, isSameDay } from 'date-fns';
 
 export default function DashboardPage() {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
@@ -58,7 +60,15 @@ export default function DashboardPage() {
           return recipients.some(r => r.id === currentUserCollab.id);
       });
   }, [events, currentUserCollab, collaborators, getEventRecipients]);
+
+  const eventsOnSelectedDate = useMemo(() => {
+    if (!date) return [];
+    // The date from the calendar doesn't have a timezone, so we match against it carefully.
+    return userEvents.filter(event => isSameDay(new Date(event.date), addDays(date, 1)));
+  }, [userEvents, date]);
   
+  const eventDates = useMemo(() => userEvents.map(e => new Date(e.date)), [userEvents]);
+
   const unreadCount = useMemo(() => {
     if (!currentUserCollab) return 0;
     return userMessages.filter(msg => !msg.readBy.includes(currentUserCollab.id)).length;
@@ -197,28 +207,40 @@ export default function DashboardPage() {
                           className="rounded-md border"
                           month={date}
                           onMonthChange={setDate}
+                          modifiers={{ event: eventDates }}
+                          modifiersClassNames={{ event: 'bg-primary/20 rounded-full' }}
                       />
                   </div>
                   <div className="md:col-span-2 relative min-h-0">
                     <div className="absolute inset-0">
                       <ScrollArea className="h-full pr-4">
                           <div className="space-y-4">
-                          {userEvents.map((event, index) => {
+                          {eventsOnSelectedDate.map((event, index) => {
                             const Icon = getIcon(event.icon) as LucideIcon;
                             return (
                               <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
-                              <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
-                                  <Icon className="h-5 w-5" />
-                              </div>
-                              <div className="flex-grow">
-                                  <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
-                                  <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
-                                  <Clock className="h-3 w-3 mr-1.5" />
-                                  {event.time}
-                                  </p>
-                              </div>
+                                <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
+                                    <Icon className="h-5 w-5" />
+                                </div>
+                                <div className="flex-grow">
+                                    <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
+                                    <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
+                                      <Clock className="h-3 w-3 mr-1.5" />
+                                      {event.time}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
+                                      <MapPin className="h-3 w-3 mr-1.5" />
+                                      {event.location}
+                                    </p>
+                                </div>
                               </div>
                            )})}
+                           {eventsOnSelectedDate.length === 0 && (
+                            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                                <CalendarDays className="h-8 w-8 mb-2"/>
+                                <p className="font-body text-sm">Nenhum evento para a data selecionada.</p>
+                            </div>
+                           )}
                           </div>
                       </ScrollArea>
                     </div>
