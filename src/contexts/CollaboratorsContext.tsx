@@ -18,6 +18,20 @@ export interface Collaborator {
   city: string;      // Cidade
 }
 
+// Mock collaborator for the admin user. This ensures the admin user can receive targeted messages/events for testing.
+const mockAdminCollaborator: Collaborator = {
+    id: 'mock-admin-user',
+    name: 'Admin Mock',
+    email: 'mock@example.com',
+    photoURL: 'https://placehold.co/100x100.png',
+    axis: 'Administrativo',
+    area: 'Tecnologia',
+    position: 'Desenvolvedor',
+    leader: 'Liderança',
+    segment: 'Todos',
+    city: 'Remoto'
+};
+
 interface CollaboratorsContextType {
   collaborators: Collaborator[];
   loading: boolean;
@@ -35,6 +49,14 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
+    // We merge the mock admin user with the fetched data to ensure it's always available for testing.
+    select: (fetchedData) => {
+        const adminExists = fetchedData.some(c => c.email === mockAdminCollaborator.email);
+        if (adminExists) {
+            return fetchedData;
+        }
+        return [mockAdminCollaborator, ...fetchedData];
+    }
   });
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
@@ -45,14 +67,26 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   });
 
   const updateCollaboratorMutation = useMutation<void, Error, Collaborator>({
-    mutationFn: (updatedCollaborator: Collaborator) => updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator),
+    mutationFn: (updatedCollaborator: Collaborator) => {
+        // Prevent updating the mock user in Firestore
+        if (updatedCollaborator.id === mockAdminCollaborator.id) {
+            return Promise.resolve();
+        }
+        return updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteCollaboratorMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    mutationFn: (id: string) => {
+        // Prevent deleting the mock user from Firestore
+        if (id === mockAdminCollaborator.id) {
+            return Promise.resolve();
+        }
+        return deleteDocumentFromCollection(COLLECTION_NAME, id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
