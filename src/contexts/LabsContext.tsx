@@ -59,26 +59,30 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const updateLabMutation = useMutation<void, Error, LabType>({
     mutationFn: (updatedLab: LabType) => {
-        if(mockLabs.some(l => l.id === updatedLab.id)) {
-            // This is a mock item, we don't update it in firestore, but we can invalidate to refetch if needed
-            return Promise.resolve();
-        }
-        return updateDocumentInCollection(COLLECTION_NAME, updatedLab.id, updatedLab)
+        const { id, ...data } = updatedLab;
+        return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Optimistically update the UI to reflect the change immediately
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] | undefined) => {
+        if (!oldData) return [];
+        return oldData.map(lab => lab.id === variables.id ? variables : lab);
+      });
+      // Invalidate to refetch from the server and ensure consistency
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteLabMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => {
-        if(mockLabs.some(l => l.id === id)) {
-            // This is a mock item, we don't delete it from firestore
-             return Promise.resolve();
-        }
        return deleteDocumentFromCollection(COLLECTION_NAME, id);
     },
-    onSuccess: () => {
+    onSuccess: (_, id) => {
+       // Optimistically remove from UI
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] | undefined) => {
+         if (!oldData) return [];
+         return oldData.filter(lab => lab.id !== id);
+      });
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
