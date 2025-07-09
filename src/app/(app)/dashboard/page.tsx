@@ -225,6 +225,10 @@ export default function DashboardPage() {
                                 <div className="flex-grow">
                                     <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
                                     <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
+                                      <CalendarDays className="h-3 w-3 mr-1.5" />
+                                      {new Date(event.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
                                       <Clock className="h-3 w-3 mr-1.5" />
                                       {event.time}
                                     </p>
