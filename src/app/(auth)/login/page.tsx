@@ -11,7 +11,21 @@ export default function LoginPage() {
   const { signInWithGoogle, loading } = useAuth();
 
   return (
-    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-muted">
+    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute z-0 w-auto min-w-full min-h-full max-w-none opacity-40"
+      >
+        <source 
+          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Tela%20de%20login%2Fbanner-inicial-3a-invest.mp4?alt=media&token=10744d7f-79e4-44f0-aba3-395bfd2cbbb6" 
+          type="video/mp4" 
+        />
+        Your browser does not support the video tag.
+      </video>
       
       {/* Login Card */}
       <div className="relative z-20 flex flex-col items-center justify-center text-center p-8 bg-card shadow-lg rounded-xl border border-border">
@@ -43,7 +57,7 @@ export default function LoginPage() {
       </div>
 
        {/* Footer Text */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center text-xs text-muted-foreground/70 w-full px-4">
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center text-xs text-white/60 w-full px-4 z-10">
         <p>Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.</p>
         <p>O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.</p>
       </div>
