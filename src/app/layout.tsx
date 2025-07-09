@@ -11,6 +11,7 @@ import { EventsProvider } from '@/contexts/EventsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
 import { CollaboratorsProvider } from '@/contexts/CollaboratorsContext';
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
+import { LabsProvider } from '@/contexts/LabsContext';
 
 export const metadata: Metadata = {
   title: '3A RIVA Hub',
@@ -40,7 +41,9 @@ export default function RootLayout({
                     <EventsProvider>
                       <CollaboratorsProvider>
                         <MessagesProvider>
-                          {children}
+                          <LabsProvider>
+                            {children}
+                          </LabsProvider>
                           <Toaster />
                         </MessagesProvider>
                       </CollaboratorsProvider>

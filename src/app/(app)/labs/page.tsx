@@ -1,18 +1,15 @@
+"use client";
+
 import { PageHeader } from '@/components/layout/PageHeader';
 import { FlaskConical } from 'lucide-react';
 import Link from 'next/link';
-
-const labVideos = [
-  { title: 'HOME EQUITY', subtitle: 'com Victor Huerara | XP', href: 'https://drive.google.com/file/d/1Ic8JAuB_QNwG7wp4Yrw8PQui4086Gs9A/view' },
-  { title: 'ESTRUTURAS DE PROTEÇÃO', subtitle: 'com Lucas Prado', href: 'https://drive.google.com/file/d/1OtAD5ieAgs6ppxuWCChuLrqNpQExjln0/view' },
-  { title: 'ESTRUTURADAS', subtitle: '(cases práticos)', href: 'https://drive.google.com/file/d/1SHV3zJNdejwSO0BhLwNyKozxv8ZEUeGo/view' },
-  { title: 'PAINEL PREVIDÊNCIA', subtitle: '', href: 'https://drive.google.com/file/d/12Q1gS_faJpw7jYRBsRyHqyikEvVv6-hF/view' },
-  { title: 'PAINEL INTERNACIONAL', subtitle: '', href: 'https://drive.google.com/file/d/1gJ4qrl7Pl5hlhkWmx03ZZAgyDdcphMDE/view' },
-  { title: 'PAINEL PJ', subtitle: 'com Paulo Caus', href: 'https://drive.google.com/file/d/1uUUhjQ4FwDBMAluwFPzSSEce4xm81gQ0/view' },
-  { title: 'PAINEL CÂMBIO', subtitle: 'com Ágata Panoutsos', href: 'https://drive.google.com/file/d/1cqTusqhlRw4laV1zdeBYlM8ja93l7hfE/view' },
-];
+import { useLabs, type LabType } from '@/contexts/LabsContext';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Search } from 'lucide-react';
 
 export default function LabsPage() {
+  const { labs, loading } = useLabs();
+
   return (
     <div className="space-y-6 p-6 md:p-8">
       <PageHeader
@@ -20,25 +17,41 @@ export default function LabsPage() {
         icon={FlaskConical}
         description="Repositório de vídeos de treinamento, painéis e outros materiais de estudo."
       />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
-        {labVideos.map((video, index) => (
-          <div key={index} className="flex flex-col text-center">
-            <Link href={video.href} className="w-full group" target="_blank" rel="noopener noreferrer">
-              <div
-                className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted"
-                data-ai-hint="dark texture"
-              >
-                <div className="absolute inset-0 flex flex-col justify-center items-center p-4 text-muted-foreground dark:text-white">
-                  <div className="flex-grow flex items-center">
-                    <p className="font-bold text-xl uppercase tracking-wide leading-tight">{video.title}</p>
-                  </div>
-                  {video.subtitle && <p className="text-sm mt-2 font-light opacity-80">{video.subtitle}</p>}
-                </div>
-              </div>
-            </Link>
+       {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+            {[...Array(8)].map((_, i) => (
+                <div key={i} className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted animate-pulse" />
+            ))}
           </div>
-        ))}
-      </div>
+        ) : labs.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10">
+          {labs.map((video) => (
+            <div key={video.id} className="flex flex-col text-center">
+              <Link href={video.videoUrl} className="w-full group" target="_blank" rel="noopener noreferrer">
+                <div
+                  className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted"
+                  data-ai-hint="dark texture"
+                >
+                  <div className="absolute inset-0 flex flex-col justify-center items-center p-4 text-muted-foreground dark:text-white">
+                    <div className="flex-grow flex items-center">
+                      <p className="font-bold text-xl uppercase tracking-wide leading-tight">{video.title}</p>
+                    </div>
+                    {video.subtitle && <p className="text-sm mt-2 font-light opacity-80">{video.subtitle}</p>}
+                  </div>
+                </div>
+              </Link>
+            </div>
+          ))}
+        </div>
+      ) : (
+         <div className="text-center py-12">
+          <Search className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+          <p className="text-xl font-semibold text-muted-foreground font-headline">Nenhum Lab encontrado.</p>
+          <p className="text-muted-foreground font-body">Adicione vídeos de treinamento no painel de administração.</p>
+        </div>
+      )}
     </div>
   );
 }
+
+export type { LabType };
