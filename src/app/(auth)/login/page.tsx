@@ -26,7 +26,7 @@ export default function LoginPage() {
       <div className="absolute inset-0 bg-black/50 z-10" />
 
       {/* Login Card */}
-      <div className="relative z-20 flex w-full max-w-sm flex-col items-center justify-center rounded-lg bg-card/90 p-8 shadow-2xl backdrop-blur-sm">
+      <div className="relative z-20 flex w-full max-w-sm flex-col items-center justify-center rounded-lg bg-card p-8 shadow-2xl">
         <Image
           src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Flogo%20oficial%20preta.png?alt=media&token=ce88dc80-01cd-4295-b443-951e6c0210aa"
           alt="3A RIVA Investimentos Logo"
