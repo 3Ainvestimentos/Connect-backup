@@ -16,6 +16,16 @@ export interface DocumentType {
   dataAiHint?: string;
 }
 
+const mockDocuments: DocumentType[] = [
+    { id: "doc_mock_1", name: "Política de Home Office", category: "RH", type: "pdf", size: "1.2MB", lastModified: "2024-07-20", downloadUrl: "#" },
+    { id: "doc_mock_2", name: "Manual de Marca", category: "Marketing", type: "pdf", size: "5.4MB", lastModified: "2024-06-15", downloadUrl: "#" },
+    { id: "doc_mock_3", name: "Relatório de Vendas Q2", category: "Financeiro", type: "xlsx", size: "850KB", lastModified: "2024-07-05", downloadUrl: "#" },
+    { id: "doc_mock_4", name: "Apresentação Institucional", category: "Marketing", type: "pptx", size: "12.3MB", lastModified: "2024-05-30", downloadUrl: "#" },
+    { id: "doc_mock_5", name: "Código de Conduta", category: "Compliance", type: "pdf", size: "980KB", lastModified: "2024-01-10", downloadUrl: "#" },
+    { id: "doc_mock_6", name: "Formulário de Reembolso", category: "RH", type: "docx", size: "300KB", lastModified: "2024-07-18", downloadUrl: "#" },
+];
+
+
 interface DocumentsContextType {
   documents: DocumentType[];
   loading: boolean;
@@ -33,7 +43,11 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
   const { data: documents = [], isFetching } = useQuery<DocumentType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<DocumentType>(COLLECTION_NAME),
-    select: (data) => data.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()),
+    select: (fetchedData) => {
+        const combined = [...mockDocuments, ...fetchedData];
+        const uniqueDocs = Array.from(new Map(combined.map(item => [item.id, item])).values());
+        return uniqueDocs.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+    },
   });
 
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({
@@ -44,14 +58,24 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const updateDocumentMutation = useMutation<void, Error, DocumentType>({
-    mutationFn: (updatedDoc: DocumentType) => updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc),
+    mutationFn: (updatedDoc: DocumentType) => {
+        if(mockDocuments.some(d => d.id === updatedDoc.id)) {
+            return Promise.resolve();
+        }
+        return updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteDocumentMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    mutationFn: (id: string) => {
+        if(mockDocuments.some(d => d.id === id)) {
+            return Promise.resolve();
+        }
+        return deleteDocumentFromCollection(COLLECTION_NAME, id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
