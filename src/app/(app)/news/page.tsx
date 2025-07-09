@@ -12,7 +12,6 @@ export default function NewsPage() {
     <div className="space-y-6 p-6 md:p-8">
       <PageHeader 
         title="Feed de Notícias" 
-        icon={Newspaper}
         description="Mantenha-se atualizado com as últimas notícias e comunicados."
       />
       <NewsFeedClient initialNewsItems={newsItems} />

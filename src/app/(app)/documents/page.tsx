@@ -17,7 +17,6 @@ export default function DocumentsPage() {
     <div className="space-y-6 p-6 md:p-8">
       <PageHeader 
         title="Repositório de Documentos" 
-        icon={FolderOpen}
         description="Encontre e gerencie documentos importantes da empresa."
       />
       <DocumentRepositoryClient initialDocuments={documents} categories={categories} types={types} />

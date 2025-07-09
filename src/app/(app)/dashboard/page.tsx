@@ -138,7 +138,6 @@ export default function DashboardPage() {
           <section>
             <PageHeader
               title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
-              icon={Megaphone}
               description="Veja os últimos anúncios e destaques."
             />
             <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>

@@ -14,7 +14,6 @@ export default function LabsPage() {
     <div className="space-y-6 p-6 md:p-8">
       <PageHeader
         title="Labs"
-        icon={FlaskConical}
         description="Repositório de vídeos de treinamento, painéis e outros materiais de estudo."
       />
       <LabsRepositoryClient initialLabs={labs} categories={categories} loading={loading} />

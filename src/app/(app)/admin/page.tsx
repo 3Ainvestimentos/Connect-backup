@@ -18,7 +18,6 @@ export default function AdminPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
                     title="Painel do Administrador"
-                    icon={Shield}
                     description="Gerencie o conteúdo da intranet."
                 />
                 <Tabs defaultValue="news" className="w-full">
