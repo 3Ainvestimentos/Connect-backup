@@ -40,7 +40,7 @@ const applicationSchema = z.object({
     }).optional(),
 }).superRefine((data, ctx) => {
     if (data.type === 'external') {
-        if (!data.href) {
+        if (!data.href || data.href.trim() === '') {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 message: "URL do Link é obrigatória para o tipo 'Link Externo'.",

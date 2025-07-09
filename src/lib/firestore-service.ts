@@ -12,7 +12,7 @@ export type WithId<T> = T & { id: string };
  * @param data The data object to sanitize.
  * @returns A sanitized data object without any 'undefined' properties.
  */
-function sanitizeDataForFirestore<T>(data: T): T {
+function sanitizeDataForFirestore<T>(data: T): any {
   return JSON.parse(JSON.stringify(data));
 }
 
@@ -56,7 +56,7 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
  * @param data The new data for the document.
  * @returns A promise that resolves to void on success.
  */
-export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<T>): Promise<void> => {
+export const updateDocumentInCollection = async <T extends {id: string}>(collectionName: string, id: string, data: T): Promise<void> => {
     try {
         const sanitizedData = sanitizeDataForFirestore(data);
         const docRef = doc(db, collectionName, id);
