@@ -10,7 +10,7 @@ export default function LoginPage() {
   const { signInWithGoogle, loading } = useAuth();
 
   return (
-    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden">
+    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
       {/* Background Video */}
       <video
         autoPlay
