@@ -91,23 +91,6 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                       </div>
                   </div>
               </div>
-              <Separator />
-              <div className="space-y-2">
-                  <h4 className="font-headline text-base font-semibold">Links Rápidos</h4>
-                  <div className="flex gap-2 flex-wrap">
-                      <Button variant="outline" size="sm" asChild>
-                          <a href="#"><LinkIcon className="mr-2 h-4 w-4" />Editar Perfil</a>
-                      </Button>
-                      <Button variant="outline" size="sm" asChild>
-                          <a href="#"><LinkIcon className="mr-2 h-4 w-4" />Meus Documentos</a>
-                      </Button>
-                      {isAdmin && (
-                          <Button variant="destructive" size="sm" asChild>
-                              <Link href="/admin"><Shield className="mr-2 h-4 w-4" />Painel Admin</Link>
-                          </Button>
-                      )}
-                  </div>
-              </div>
           </div>
         ) : (
            <div className="py-4 text-center text-muted-foreground">
