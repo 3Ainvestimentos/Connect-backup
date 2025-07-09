@@ -53,7 +53,10 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const updateApplicationMutation = useMutation<void, Error, Application>({
-    mutationFn: (updatedApp) => updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp),
+    mutationFn: (updatedApp) => {
+        const { id, ...dataToUpdate } = updatedApp;
+        return updateDocumentInCollection(COLLECTION_NAME, id, dataToUpdate);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },

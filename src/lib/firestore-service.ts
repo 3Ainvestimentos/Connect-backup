@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Timestamp, collectionGroup, getDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Timestamp, collectionGroup, getDoc, setDoc } from 'firebase/firestore';
 import { genericConverter } from './firestore-converter';
 
 export type WithId<T> = T & { id: string };
@@ -49,8 +49,6 @@ export const getDocument = async <T>(collectionName: string, id: string): Promis
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T>> => {
     try {
         const collectionRef = collection(db, collectionName).withConverter(genericConverter<T>());
-        // The converter's `toFirestore` will be called on `data`, but it expects a WithId type.
-        // We cast it to satisfy the converter, but the 'id' will be undefined and thus ignored.
         const docRef = await addDoc(collectionRef, data as WithId<T>);
         return { id: docRef.id, ...data };
     } catch (error) {
@@ -64,21 +62,22 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
  * The generic converter automatically handles data sanitization.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to update.
- * @param data The data to update. It must include the 'id'.
+ * @param data The partial data to update. The 'id' field will be ignored by the converter.
  * @returns A promise that resolves to void on success.
  */
-export const updateDocumentInCollection = async <T extends { id: string }>(collectionName: string, id: string, data: Partial<T>): Promise<void> => {
+export const updateDocumentInCollection = async <T extends { id: string }>(collectionName: string, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
     try {
         const docRef = doc(db, collectionName, id).withConverter(genericConverter<T>());
-        // The converter expects the full object, so we merge.
-        // The 'id' is required by the genericConverter signature.
-        const updateData = { ...data, id } as WithId<T>;
-        await updateDoc(docRef, updateData);
+        // The converter's `toFirestore` will be called on `data`.
+        // We use `setDoc` with `merge: true` which is equivalent to `update`, but safer for partial types.
+        // The converter will strip out any undefined values.
+        await setDoc(docRef, data, { merge: true });
     } catch (error) {
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
         throw new Error('Não foi possível salvar as alterações.');
     }
 };
+
 
 /**
  * Deletes a document from a specified collection.
