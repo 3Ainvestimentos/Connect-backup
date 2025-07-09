@@ -46,14 +46,20 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const addApplicationMutation = useMutation<WithId<Omit<Application, 'id'>>, Error, Omit<Application, 'id'>>({
-    mutationFn: (appData: Omit<Application, 'id'>) => addDocumentToCollection(COLLECTION_NAME, appData),
+    mutationFn: (appData: Omit<Application, 'id'>) => {
+        // The firestore-service now handles sanitization via converters.
+        return addDocumentToCollection(COLLECTION_NAME, appData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const updateApplicationMutation = useMutation<void, Error, Application>({
-    mutationFn: (updatedApp: Application) => updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp),
+    mutationFn: (updatedApp: Application) => {
+        // The firestore-service now handles sanitization via converters.
+        return updateDocumentInCollection(COLLECTION_NAME, updatedApp.id, updatedApp);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },

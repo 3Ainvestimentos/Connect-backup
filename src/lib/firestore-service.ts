@@ -1,30 +1,20 @@
-
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Timestamp, collectionGroup, getDoc } from 'firebase/firestore';
+import { genericConverter } from './firestore-converter';
 
 export type WithId<T> = T & { id: string };
 
 /**
- * Sanitizes data for Firestore by removing 'undefined' values.
- * This function is crucial because Firestore rejects objects with 'undefined' fields.
- * It uses JSON.stringify/parse, which is a simple and effective method for the
- * data structures used in this application (no special types like Date, etc. in forms).
- * @param data The data object to sanitize.
- * @returns A sanitized data object without any 'undefined' properties.
- */
-function sanitizeDataForFirestore<T>(data: T): any {
-  return JSON.parse(JSON.stringify(data));
-}
-
-/**
  * Fetches all documents from a specified collection.
+ * Uses a generic converter to handle data sanitization and typing.
  * @param collectionName The name of the collection to fetch.
  * @returns A promise that resolves to an array of documents with their IDs.
  */
 export const getCollection = async <T>(collectionName: string): Promise<WithId<T>[]> => {
     try {
-        const querySnapshot = await getDocs(collection(db, collectionName));
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<T>));
+        const collectionRef = collection(db, collectionName).withConverter(genericConverter<T>());
+        const querySnapshot = await getDocs(collectionRef);
+        return querySnapshot.docs.map(doc => doc.data());
     } catch (error) {
         console.error(`Error fetching collection ${collectionName}:`, error);
         throw new Error(`Não foi possível carregar os dados de ${collectionName}.`);
@@ -32,16 +22,36 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
 };
 
 /**
- * Adds a new document to a specified collection after sanitizing it.
+ * Fetches a single document by its ID from a specified collection.
  * @param collectionName The name of the collection.
- * @param data The data for the new document.
- * @returns A promise that resolves to the new document with its ID.
+ * @param id The ID of the document to fetch.
+ * @returns A promise that resolves to the document data or null if not found.
+ */
+export const getDocument = async <T>(collectionName: string, id: string): Promise<WithId<T> | null> => {
+    try {
+        const docRef = doc(db, collectionName, id).withConverter(genericConverter<T>());
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? docSnap.data() : null;
+    } catch (error) {
+        console.error(`Error fetching document ${id} from ${collectionName}:`, error);
+        throw new Error(`Não foi possível carregar o documento.`);
+    }
+}
+
+
+/**
+ * Adds a new document to a specified collection.
+ * The generic converter automatically handles data sanitization.
+ * @param collectionName The name of the collection.
+ * @param data The data for the new document (without an ID).
+ * @returns A promise that resolves to the new document data, including its new ID.
  */
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T>> => {
     try {
-        const sanitizedData = sanitizeDataForFirestore(data);
-        const docRef = await addDoc(collection(db, collectionName), sanitizedData);
-        // We return the original data with the new ID, not the sanitized one, to keep the client-side state consistent if needed.
+        const collectionRef = collection(db, collectionName).withConverter(genericConverter<T>());
+        // The converter's `toFirestore` will be called on `data`, but it expects a WithId type.
+        // We cast it to satisfy the converter, but the 'id' will be undefined and thus ignored.
+        const docRef = await addDoc(collectionRef, data as WithId<T>);
         return { id: docRef.id, ...data };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
@@ -50,17 +60,20 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
 };
 
 /**
- * Updates an existing document in a specified collection after sanitizing the data.
+ * Updates an existing document in a specified collection.
+ * The generic converter automatically handles data sanitization.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to update.
- * @param data The new data for the document.
+ * @param data The data to update. It must include the 'id'.
  * @returns A promise that resolves to void on success.
  */
-export const updateDocumentInCollection = async <T extends {id: string}>(collectionName: string, id: string, data: T): Promise<void> => {
+export const updateDocumentInCollection = async <T extends { id: string }>(collectionName: string, id: string, data: Partial<T>): Promise<void> => {
     try {
-        const sanitizedData = sanitizeDataForFirestore(data);
-        const docRef = doc(db, collectionName, id);
-        await updateDoc(docRef, sanitizedData);
+        const docRef = doc(db, collectionName, id).withConverter(genericConverter<T>());
+        // The converter expects the full object, so we merge.
+        // The 'id' is required by the genericConverter signature.
+        const updateData = { ...data, id } as WithId<T>;
+        await updateDoc(docRef, updateData);
     } catch (error) {
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
         throw new Error('Não foi possível salvar as alterações.');
