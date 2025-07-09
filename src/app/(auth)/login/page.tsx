@@ -11,44 +11,25 @@ export default function LoginPage() {
   const { signInWithGoogle, loading } = useAuth();
 
   return (
-    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden">
-      {/* Background Video */}
-      <video 
-        autoPlay 
-        loop 
-        muted 
-        playsInline
-        className="absolute top-0 left-0 w-full h-full object-cover z-0"
-        poster="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Fbackground_poster.jpg?alt=media&token=86a5170d-c049-4343-a20c-c418e227a6d8"
-      >
-        <source 
-          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Videos%20Institucionais%2Fvideo_background.mp4?alt=media&token=3b313554-3e74-42b7-8461-71717357c91e" 
-          type="video/mp4" 
-        />
-        Seu navegador não suporta o vídeo de fundo.
-      </video>
-      <div className="absolute inset-0 bg-black/50 z-10"></div>
-
+    <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-muted">
+      
       {/* Login Card */}
-      <div className="relative z-20 flex flex-col items-center justify-center text-center p-8 bg-black/40 backdrop-blur-sm rounded-xl border border-white/20">
+      <div className="relative z-20 flex flex-col items-center justify-center text-center p-8 bg-card shadow-lg rounded-xl border border-border">
         <Image
-          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Flogo_oficial_branca.png?alt=media&token=329d139b-cca1-4aed-95c7-a699fa32f0bb"
-          alt="3A RIVA Hub Logo"
+          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Flogo_oficial_preta.png?alt=media&token=e95267a3-5c31-482a-9e12-32a857053e18"
+          alt="3A RIVA Investimentos Logo"
           width={250}
           height={60}
           priority
           className="mb-8"
         />
 
-        <p className="text-lg text-white font-light mb-6 font-body">
-          Sua plataforma central de comunicação e recursos.
-        </p>
-
         <Button
           onClick={signInWithGoogle}
           disabled={loading}
           size="lg"
-          className="w-full max-w-xs bg-white text-black hover:bg-gray-200 font-bold font-body"
+          variant="outline"
+          className="w-full max-w-xs font-semibold font-body text-foreground/80 hover:bg-muted"
         >
           {loading ? (
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -59,6 +40,12 @@ export default function LoginPage() {
           )}
           Entrar com Google
         </Button>
+      </div>
+
+       {/* Footer Text */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center text-xs text-muted-foreground/70 w-full px-4">
+        <p>Sujeito aos Termos de uso 3A RIVA e à Política de Privacidade da 3A RIVA.</p>
+        <p>O modelo Bob 1.0 pode cometer erros. Por isso, é bom checar as respostas. Todos os direitos reservados.</p>
       </div>
     </main>
   );
