@@ -1,11 +1,31 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
-import { useRouter, usePathname } from 'next/navigation';
-import { toast } from '@/hooks/use-toast';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import type { User } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+
+// Objeto de usuário simulado para desenvolvimento
+// Este usuário será considerado logado em toda a aplicação.
+// O email corresponde ao email de admin definido em AdminGuard.
+const MOCK_USER: User = {
+  uid: 'mock-user-uid',
+  email: 'mock@example.com',
+  displayName: 'Admin Mock',
+  photoURL: 'https://placehold.co/100x100.png',
+  emailVerified: true,
+  isAnonymous: false,
+  metadata: {},
+  providerData: [],
+  providerId: 'mock',
+  // Funções vazias para satisfazer o tipo User
+  delete: async () => {},
+  getIdToken: async () => 'mock-token',
+  getIdTokenResult: async () => ({ token: 'mock-token', expirationTime: '', authTime: '', issuedAtTime: '', signInProvider: null, signInSecondFactor: null, claims: {} }),
+  reload: async () => {},
+  toJSON: () => ({}),
+};
+
 
 interface AuthContextType {
   user: User | null;
@@ -17,74 +37,20 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user] = useState<User | null>(MOCK_USER);
+  const [loading] = useState(false); // O carregamento está sempre concluído
   const router = useRouter();
-  const pathname = usePathname();
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!loading) {
-      const isAuthPage = pathname === '/login';
-      if (!user && !isAuthPage) {
-        router.push('/login');
-      } else if (user && isAuthPage) {
-        router.push('/dashboard');
-      }
-    }
-  }, [user, loading, router, pathname]);
-
+  // Funções de login/logout não fazem nada no modo simulado
   const signInWithGoogle = async () => {
-    setLoading(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      // onAuthStateChanged will handle the user state and the redirect will be handled by the useEffect
-    } catch (error) {
-      console.error("Error during sign in:", error);
-      toast({
-        title: "Erro de autenticação",
-        description: "Não foi possível fazer login com o Google. Tente novamente.",
-        variant: "destructive",
-      });
-      setLoading(false); // Stop loading on error
-    }
+    console.log("Modo de autenticação simulado: signInWithGoogle desabilitado.");
   };
 
   const signOut = async () => {
-    setLoading(true);
-    try {
-        await firebaseSignOut(auth);
-        // onAuthStateChanged will set user to null, and the effect will redirect to /login
-        router.push('/login');
-    } catch (error) {
-        console.error("Error during sign out:", error);
-        toast({
-            title: "Erro",
-            description: "Não foi possível sair. Tente novamente.",
-            variant: "destructive",
-        });
-        setLoading(false);
-    }
+    console.log("Modo de autenticação simulado: signOut desabilitado.");
+    // Em um cenário real, você poderia redirecionar aqui, mas vamos manter o usuário "logado"
+    router.push('/'); // Redireciona para a home, que levará ao dashboard
   };
-
-  if (loading) {
-     return (
-        <div className="flex h-screen w-screen items-center justify-center bg-background">
-          <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-        </div>
-     );
-  }
-
 
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
