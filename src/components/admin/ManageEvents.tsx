@@ -20,7 +20,7 @@ import { iconList, getIcon } from '@/lib/icons';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
-import { parseISO, format } from 'date-fns';
+import { parseISO, format, isValid } from 'date-fns';
 
 const eventSchema = z.object({
     id: z.string().optional(),
@@ -52,10 +52,12 @@ export function ManageEvents() {
     const handleDialogOpen = (event: EventType | null) => {
         setEditingEvent(event);
         if (event) {
+            const parsedDate = event.date ? parseISO(event.date) : new Date();
+            const dateValue = isValid(parsedDate) ? format(parsedDate, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+
             form.reset({
               ...event,
-              // Correctly handle timezone by parsing as ISO and formatting to YYYY-MM-DD
-              date: format(parseISO(event.date), 'yyyy-MM-dd'),
+              date: dateValue,
             });
         } else {
             form.reset({
