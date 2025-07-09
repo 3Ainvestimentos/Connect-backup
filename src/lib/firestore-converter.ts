@@ -54,13 +54,14 @@ function cleanUndefinedValues(obj: any): any {
 export const genericConverter = <T>(): FirestoreDataConverter<WithId<T>> => ({
   /**
    * Cleans the object before sending it to Firestore.
-   * @param data The application data object.
+   * For add operations, the 'id' field from WithFieldValue<WithId<T>> will be undefined and removed.
+   * For update/set operations, 'id' is part of the data but should not be written to the document fields.
+   * @param data The application data object, which might include an 'id'.
    * @returns A sanitized object ready for Firestore.
    */
   toFirestore(data: WithFieldValue<WithId<T>>): DocumentData {
-    // Remove the 'id' field as it should not be stored inside the document itself.
     const { id, ...rest } = data;
-    // Recursively remove any keys with `undefined` values.
+    // Recursively remove any keys with `undefined` values from the rest of the data.
     return cleanUndefinedValues(rest);
   },
 
