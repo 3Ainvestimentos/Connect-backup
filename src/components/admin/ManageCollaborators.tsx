@@ -20,6 +20,7 @@ const collaboratorSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Nome é obrigatório"),
     email: z.string().email("Email inválido"),
+    photoURL: z.string().url("URL da imagem inválida").optional().or(z.literal('')),
     axis: z.string().min(1, "Eixo é obrigatório"),
     area: z.string().min(1, "Área é obrigatória"),
     position: z.string().min(1, "Cargo é obrigatório"),
@@ -49,6 +50,7 @@ export function ManageCollaborators() {
                 id: undefined,
                 name: '',
                 email: '',
+                photoURL: '',
                 axis: '',
                 area: '',
                 position: '',
@@ -166,6 +168,11 @@ export function ManageCollaborators() {
                                 <Input id="email" type="email" {...register('email')} disabled={isSubmitting}/>
                                 {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
                             </div>
+                        </div>
+                        <div>
+                            <Label htmlFor="photoURL">URL da Foto (opcional)</Label>
+                            <Input id="photoURL" {...register('photoURL')} placeholder="https://..." disabled={isSubmitting}/>
+                            {errors.photoURL && <p className="text-sm text-destructive mt-1">{errors.photoURL.message}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>

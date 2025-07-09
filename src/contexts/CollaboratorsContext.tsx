@@ -9,6 +9,7 @@ export interface Collaborator {
   id: string;
   name: string;
   email: string;
+  photoURL?: string; // Link da imagem do colaborador
   axis: string;      // Eixo
   area: string;      // Área
   position: string;  // Cargo
