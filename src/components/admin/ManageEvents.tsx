@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useEvents, type EventType } from '@/contexts/EventsContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,16 +19,14 @@ import { ScrollArea } from '../ui/scroll-area';
 import { iconList, getIcon } from '@/lib/icons';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
+import { RecipientSelectionModal } from './RecipientSelectionModal';
 
 const eventSchema = z.object({
     id: z.string().optional(),
     title: z.string().min(3, "Título deve ter no mínimo 3 caracteres"),
     time: z.string().min(1, "Horário é obrigatório"),
     icon: z.string().min(1, "Ícone é obrigatório"),
-    target: z.object({
-        type: z.enum(['all', 'axis', 'area', 'city']),
-        value: z.string().min(1, "O valor do alvo é obrigatório."),
-    }),
+    recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário."),
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
@@ -36,30 +34,17 @@ type EventFormValues = z.infer<typeof eventSchema>;
 export function ManageEvents() {
     const { events, addEvent, updateEvent, deleteEvent } = useEvents();
     const { collaborators } = useCollaborators();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
 
-    const uniqueSegments = useMemo(() => ({
-        axis: [...new Set(collaborators.map(c => c.axis))],
-        area: [...new Set(collaborators.map(c => c.area))],
-        city: [...new Set(collaborators.map(c => c.city))],
-    }), [collaborators]);
-
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventSchema),
-        defaultValues: { target: { type: 'all', value: 'all' } }
+        defaultValues: { recipientIds: ['all'] }
     });
     
-    const watchTargetType = form.watch('target.type');
-
-    React.useEffect(() => {
-        if (watchTargetType === 'all') {
-            form.setValue('target.value', 'all');
-        } else {
-            form.setValue('target.value', '');
-        }
-    }, [watchTargetType, form]);
+    const watchRecipientIds = form.watch('recipientIds');
 
     const handleDialogOpen = (event: EventType | null) => {
         setEditingEvent(event);
@@ -71,10 +56,10 @@ export function ManageEvents() {
                 title: '',
                 time: '',
                 icon: 'CalendarDays',
-                target: { type: 'all', value: 'all' }
+                recipientIds: ['all']
             });
         }
-        setIsDialogOpen(true);
+        setIsFormOpen(true);
     };
 
     const handleDelete = async (id: string) => {
@@ -103,7 +88,7 @@ export function ManageEvents() {
                 await addEvent(dataWithoutId as Omit<EventType, 'id'>);
                 toast({ title: "Evento adicionado com sucesso." });
             }
-            setIsDialogOpen(false);
+            setIsFormOpen(false);
             setEditingEvent(null);
         } catch(error) {
             toast({
@@ -114,6 +99,12 @@ export function ManageEvents() {
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const getRecipientDescription = (ids: string[]) => {
+        if (!ids || ids.length === 0) return 'Nenhum destinatário';
+        if (ids.includes('all')) return 'Todos os Colaboradores';
+        return `${ids.length} colaborador(es) selecionado(s)`;
     };
 
     return (
@@ -150,7 +141,7 @@ export function ManageEvents() {
                                     <TableCell>{item.time}</TableCell>
                                     <TableCell>
                                         <Badge variant="outline">
-                                            {item.target.type === 'all' ? 'Todos' : `${item.target.type.charAt(0).toUpperCase() + item.target.type.slice(1)}: ${item.target.value}`}
+                                            {getRecipientDescription(item.recipientIds)}
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -168,7 +159,7 @@ export function ManageEvents() {
                 </div>
             </CardContent>
 
-             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingEvent(null); setIsDialogOpen(isOpen); }}>
+             <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingEvent(null); setIsFormOpen(isOpen); }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{editingEvent ? 'Editar Evento' : 'Adicionar Evento'}</DialogTitle>
@@ -225,48 +216,15 @@ export function ManageEvents() {
                         </div>
 
                         <Separator />
-                        <Label>Segmento de Destinatários</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                             <div>
-                                <Label htmlFor="target-type">Enviar para</Label>
-                                <Controller
-                                    name="target.type"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
-                                            <SelectTrigger id="target-type"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Todos os Colaboradores</SelectItem>
-                                                <SelectItem value="axis">Por Eixo</SelectItem>
-                                                <SelectItem value="area">Por Área</SelectItem>
-                                                <SelectItem value="city">Por Cidade</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                            </div>
-                            {watchTargetType !== 'all' && (
-                            <div>
-                                <Label htmlFor="target-value">Segmento Específico</Label>
-                                <Controller
-                                    name="target.value"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                        <Select onValueChange={field.onChange} value={field.value || ''} disabled={isSubmitting}>
-                                            <SelectTrigger id="target-value"><SelectValue placeholder={`Selecione um(a) ${watchTargetType}`} /></SelectTrigger>
-                                            <SelectContent>
-                                                {uniqueSegments[watchTargetType]?.map(segment => (
-                                                    <SelectItem key={segment} value={segment}>{segment}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
-                                {form.formState.errors.target?.value && <p className="text-sm text-destructive mt-1">{form.formState.errors.target.value.message}</p>}
-                            </div>
-                            )}
+                        <div>
+                            <Label>Destinatários</Label>
+                             <Button type="button" variant="outline" className="w-full justify-start text-left mt-2" onClick={() => setIsSelectionModalOpen(true)}>
+                               <Users className="mr-2 h-4 w-4" />
+                               <span>{getRecipientDescription(watchRecipientIds)}</span>
+                            </Button>
+                            {form.formState.errors.recipientIds && <p className="text-sm text-destructive mt-1">{form.formState.errors.recipientIds.message}</p>}
                         </div>
-
+                        
                         <DialogFooter className="mt-6">
                             <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
                             <Button type="submit" disabled={isSubmitting}>
@@ -277,6 +235,16 @@ export function ManageEvents() {
                     </form>
                 </DialogContent>
             </Dialog>
+             <RecipientSelectionModal
+                isOpen={isSelectionModalOpen}
+                onClose={() => setIsSelectionModalOpen(false)}
+                allCollaborators={collaborators}
+                selectedIds={watchRecipientIds}
+                onConfirm={(newIds) => {
+                    form.setValue('recipientIds', newIds, { shouldValidate: true });
+                    setIsSelectionModalOpen(false);
+                }}
+            />
         </Card>
     );
 }

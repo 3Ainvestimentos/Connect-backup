@@ -11,10 +11,7 @@ export interface EventType {
   title: string;
   time: string;
   icon: string; // Storing icon name as string
-  target: {
-    type: 'all' | 'axis' | 'area' | 'city';
-    value: string;
-  };
+  recipientIds: string[]; // Array of collaborator IDs
 }
 
 interface EventsContextType {
@@ -38,11 +35,10 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {
-    if (event.target.type === 'all') {
+    if (event.recipientIds.includes('all')) {
       return allCollaborators;
     }
-    const filterKey = event.target.type as keyof Collaborator;
-    return allCollaborators.filter(c => c[filterKey] === event.target.value);
+    return allCollaborators.filter(c => event.recipientIds.includes(c.id));
   }, []);
 
   const addEventMutation = useMutation<WithId<Omit<EventType, 'id'>>, Error, Omit<EventType, 'id'>>({
