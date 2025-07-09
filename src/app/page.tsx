@@ -8,8 +8,8 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redireciona para o dashboard, já que a autenticação está simulada
-    router.replace('/dashboard');
+    // Redireciona para a tela de login como ponto de entrada padrão.
+    router.replace('/login');
   }, [router]);
 
   return (
