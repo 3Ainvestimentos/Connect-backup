@@ -37,19 +37,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user] = useState<User | null>(MOCK_USER);
-  const [loading] = useState(false); // O carregamento está sempre concluído
+  const [user, setUser] = useState<User | null>(MOCK_USER);
+  const [loading, setLoading] = useState(false); // O carregamento está sempre concluído
   const router = useRouter();
 
   // Funções de login/logout não fazem nada no modo simulado
   const signInWithGoogle = async () => {
-    console.log("Modo de autenticação simulado: signInWithGoogle desabilitado.");
+    setLoading(true);
+    // Em um app real, aqui você chamaria a função de login do Firebase
+    // await signInWithPopup(auth, googleProvider);
+    // Por enquanto, apenas definimos o usuário mock
+    setUser(MOCK_USER);
+    router.push('/dashboard');
+    setLoading(false);
   };
 
   const signOut = async () => {
-    console.log("Modo de autenticação simulado: signOut desabilitado.");
-    // Em um cenário real, você poderia redirecionar aqui, mas vamos manter o usuário "logado"
-    router.push('/'); // Redireciona para a home, que levará ao dashboard
+    setLoading(true);
+    // Em um app real, aqui você chamaria a função de logout do Firebase
+    // await firebaseSignOut(auth);
+    setUser(null);
+    router.push('/login');
+    setLoading(false);
   };
 
   return (
