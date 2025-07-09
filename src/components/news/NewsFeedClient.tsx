@@ -82,12 +82,12 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
                     />
                 </div>
                 <DialogTitle className="font-headline text-2xl text-left">{selectedNews.title}</DialogTitle>
-                <DialogDescription className="text-left !mt-2">
+                <div className="text-left !mt-2">
                     <Badge variant="outline" className="font-body text-accent border-accent">{selectedNews.category}</Badge>
                     <span className="text-xs text-muted-foreground font-body ml-2">
                         {new Date(selectedNews.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                     </span>
-                </DialogDescription>
+                </div>
               </DialogHeader>
               <ScrollArea className="max-h-[40vh] pr-4">
                 <div className="py-4 text-sm text-foreground space-y-4">
