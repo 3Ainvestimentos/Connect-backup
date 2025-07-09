@@ -175,9 +175,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                       onClick={handleLinkClick}
                       className="font-body"
                     >
-                      <Link 
-                        href={item.href}
-                        {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      <Link
+                          href={item.href}
+                          target={item.external ? '_blank' : undefined}
+                          rel={item.external ? 'noopener noreferrer' : undefined}
                       >
                         <item.icon />
                         <span>{item.label}</span>
