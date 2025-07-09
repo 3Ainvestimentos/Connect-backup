@@ -42,7 +42,7 @@ export default function LoginPage() {
           disabled={loading}
           size="lg"
           variant="outline"
-          className="w-full max-w-xs font-semibold font-body text-foreground/80 hover:bg-muted"
+          className="w-full max-w-xs font-semibold font-body text-foreground/80 hover:bg-muted rounded-full"
         >
           {loading ? (
             <Loader2 className="mr-2 h-5 w-5 animate-spin" />
