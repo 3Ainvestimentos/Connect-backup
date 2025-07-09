@@ -1,5 +1,6 @@
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Timestamp, collectionGroup, getDoc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { cleanDataForFirestore } from './data-sanitizer';
 
 export type WithId<T> = T & { id: string };
 
@@ -37,36 +38,45 @@ export const getDocument = async <T>(collectionName: string, id: string): Promis
 }
 
 /**
- * Adds a new document to a specified collection.
+ * Adds a new document to a specified collection. It automatically cleans the data
+ * to remove any `undefined` fields before sending it to Firestore.
  * @param collectionName The name of the collection.
  * @param data The data for the new document (without an ID).
  * @returns A promise that resolves to the new document data, including its new ID.
  */
-export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T>> => {
+export const addDocumentToCollection = async <T extends object>(collectionName: string, data: T): Promise<WithId<T>> => {
     try {
+        const cleanedData = cleanDataForFirestore(data);
         const collectionRef = collection(db, collectionName);
-        const docRef = await addDoc(collectionRef, data as any); // Firestore will strip undefined
+        const docRef = await addDoc(collectionRef, cleanedData);
         return { id: docRef.id, ...data };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
+        if (error instanceof Error) {
+            console.error('Data that caused the error:', data);
+        }
         throw new Error('Não foi possível adicionar o novo item.');
     }
 };
 
 /**
- * Updates an existing document in a specified collection.
+ * Updates an existing document in a specified collection. It automatically cleans the data
+ * to remove any `undefined` fields before sending it to Firestore.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to update.
  * @param data The partial data to update. The 'id' field will be ignored.
  * @returns A promise that resolves to void on success.
  */
-export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
+export const updateDocumentInCollection = async <T extends object>(collectionName: string, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
     try {
+        const cleanedData = cleanDataForFirestore(data);
         const docRef = doc(db, collectionName, id);
-        // `updateDoc` correctly handles partial data and Firestore strips undefined values
-        await updateDoc(docRef, data);
+        await updateDoc(docRef, cleanedData);
     } catch (error) {
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
+         if (error instanceof Error) {
+            console.error('Data that caused the error:', data);
+        }
         throw new Error('Não foi possível salvar as alterações.');
     }
 };
@@ -85,6 +95,3 @@ export const deleteDocumentFromCollection = async (collectionName: string, id: s
         throw new Error('Não foi possível remover o item.');
     }
 };
-
-// Remove firestore-converter.ts as it is no longer needed with the correct initialization.
-// The built-in behavior of the SDK is now sufficient.
