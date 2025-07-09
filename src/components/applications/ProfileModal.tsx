@@ -15,8 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Separator } from '@/components/ui/separator';
-import { User, Building, Briefcase, Link as LinkIcon, Shield, Users, Pyramid, MapPin } from 'lucide-react';
-import Link from 'next/link';
+import { User, Building, Briefcase, Pyramid, MapPin, Users } from 'lucide-react';
 
 interface ProfileModalProps {
   open: boolean;
@@ -31,9 +30,6 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
     if (!user || !collaborators) return null;
     return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
-  
-  // Simple check for admin role. In a real app, this should be based on roles from a backend.
-  const isAdmin = user?.email === 'mock@example.com';
 
   if (!user) return null;
 
