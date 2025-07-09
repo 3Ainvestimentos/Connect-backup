@@ -1,20 +1,18 @@
 import { db } from './firebase';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, writeBatch, Timestamp, collectionGroup, getDoc, setDoc } from 'firebase/firestore';
-import { genericConverter } from './firestore-converter';
 
 export type WithId<T> = T & { id: string };
 
 /**
  * Fetches all documents from a specified collection.
- * Uses a generic converter to handle data sanitization and typing.
  * @param collectionName The name of the collection to fetch.
  * @returns A promise that resolves to an array of documents with their IDs.
  */
 export const getCollection = async <T>(collectionName: string): Promise<WithId<T>[]> => {
     try {
-        const collectionRef = collection(db, collectionName).withConverter(genericConverter<T>());
+        const collectionRef = collection(db, collectionName);
         const querySnapshot = await getDocs(collectionRef);
-        return querySnapshot.docs.map(doc => doc.data());
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<T>));
     } catch (error) {
         console.error(`Error fetching collection ${collectionName}:`, error);
         throw new Error(`Não foi possível carregar os dados de ${collectionName}.`);
@@ -29,27 +27,25 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
  */
 export const getDocument = async <T>(collectionName: string, id: string): Promise<WithId<T> | null> => {
     try {
-        const docRef = doc(db, collectionName, id).withConverter(genericConverter<T>());
+        const docRef = doc(db, collectionName, id);
         const docSnap = await getDoc(docRef);
-        return docSnap.exists() ? docSnap.data() : null;
+        return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as WithId<T>) : null;
     } catch (error) {
         console.error(`Error fetching document ${id} from ${collectionName}:`, error);
         throw new Error(`Não foi possível carregar o documento.`);
     }
 }
 
-
 /**
  * Adds a new document to a specified collection.
- * The generic converter automatically handles data sanitization.
  * @param collectionName The name of the collection.
  * @param data The data for the new document (without an ID).
  * @returns A promise that resolves to the new document data, including its new ID.
  */
 export const addDocumentToCollection = async <T>(collectionName: string, data: T): Promise<WithId<T>> => {
     try {
-        const collectionRef = collection(db, collectionName).withConverter(genericConverter<T>());
-        const docRef = await addDoc(collectionRef, data as WithId<T>);
+        const collectionRef = collection(db, collectionName);
+        const docRef = await addDoc(collectionRef, data as any); // Firestore will strip undefined
         return { id: docRef.id, ...data };
     } catch (error) {
         console.error(`Error adding document to ${collectionName}:`, error);
@@ -59,25 +55,21 @@ export const addDocumentToCollection = async <T>(collectionName: string, data: T
 
 /**
  * Updates an existing document in a specified collection.
- * The generic converter automatically handles data sanitization.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to update.
- * @param data The partial data to update. The 'id' field will be ignored by the converter.
+ * @param data The partial data to update. The 'id' field will be ignored.
  * @returns A promise that resolves to void on success.
  */
-export const updateDocumentInCollection = async <T extends { id: string }>(collectionName: string, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
+export const updateDocumentInCollection = async <T>(collectionName: string, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
     try {
-        const docRef = doc(db, collectionName, id).withConverter(genericConverter<T>());
-        // The converter's `toFirestore` will be called on `data`.
-        // We use `setDoc` with `merge: true` which is equivalent to `update`, but safer for partial types.
-        // The converter will strip out any undefined values.
-        await setDoc(docRef, data, { merge: true });
+        const docRef = doc(db, collectionName, id);
+        // `updateDoc` correctly handles partial data and Firestore strips undefined values
+        await updateDoc(docRef, data);
     } catch (error) {
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
         throw new Error('Não foi possível salvar as alterações.');
     }
 };
-
 
 /**
  * Deletes a document from a specified collection.
@@ -93,3 +85,6 @@ export const deleteDocumentFromCollection = async (collectionName: string, id: s
         throw new Error('Não foi possível remover o item.');
     }
 };
+
+// Remove firestore-converter.ts as it is no longer needed with the correct initialization.
+// The built-in behavior of the SDK is now sufficient.

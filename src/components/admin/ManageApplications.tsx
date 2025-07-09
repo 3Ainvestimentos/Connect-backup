@@ -46,15 +46,15 @@ const applicationSchema = z.object({
                 message: "URL do Link é obrigatória para o tipo 'Link Externo'.",
                 path: ['href'],
             });
-        } else {
-            const urlCheck = z.string().url("URL inválida.").safeParse(data.href);
-            if (!urlCheck.success) {
-                ctx.addIssue({
-                    code: z.ZodIssueCode.custom,
-                    message: "Por favor, insira uma URL válida (ex: https://...).",
-                    path: ['href'],
-                });
-            }
+        }
+        // URL validation is tricky because partial URLs are valid during typing.
+        // A simple check for a valid-looking URL is often better UX than strict validation.
+        else if (!/^(https?:\/\/|www\.)/i.test(data.href) && !/^\//.test(data.href)) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Por favor, insira uma URL válida (ex: https://...).",
+                path: ['href'],
+            });
         }
     }
     if (data.type === 'modal' && !data.modalId) {

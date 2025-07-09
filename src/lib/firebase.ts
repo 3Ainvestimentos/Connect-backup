@@ -12,19 +12,21 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp;
+let db: Firestore;
+
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
   // Initialize Firestore with the setting to ignore undefined properties.
   // This is the key fix to prevent errors when writing documents with optional fields.
-  initializeFirestore(app, {
+  db = initializeFirestore(app, {
     ignoreUndefinedProperties: true,
   });
 } else {
   app = getApp();
+  db = getFirestore(app);
 }
 
 const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
 const googleProvider: GoogleAuthProvider = new GoogleAuthProvider();
 
 export { app, auth, db, googleProvider };
