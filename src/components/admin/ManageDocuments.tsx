@@ -14,6 +14,7 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const documentSchema = z.object({
     id: z.string().optional(),
@@ -29,6 +30,7 @@ const documentSchema = z.object({
 type DocumentFormValues = z.infer<typeof documentSchema>;
 
 export function ManageDocuments() {
+    const queryClient = useQueryClient();
     const { documents, addDocument, updateDocument, deleteDocument } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,6 +67,7 @@ export function ManageDocuments() {
         if (window.confirm("Tem certeza que deseja excluir este documento?")) {
             try {
                 await deleteDocument(id);
+                await queryClient.invalidateQueries({ queryKey: ['documents'] });
                 toast({ title: "Documento excluído com sucesso." });
             } catch(error) {
                 toast({

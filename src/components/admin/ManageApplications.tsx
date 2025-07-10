@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { iconList, getIcon } from '@/lib/icons';
 import { ScrollArea } from '../ui/scroll-area';
+import { useQueryClient } from '@tanstack/react-query';
 
 const linkItemSchema = z.object({
   id: z.string(),
@@ -77,6 +78,7 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 export function ManageApplications() {
+    const queryClient = useQueryClient();
     const { applications, addApplication, updateApplication, deleteApplication } = useApplications();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -130,6 +132,7 @@ export function ManageApplications() {
         if (window.confirm("Tem certeza que deseja excluir esta aplicação?")) {
             try {
                 await deleteApplication(id);
+                await queryClient.invalidateQueries({ queryKey: ['applications'] });
                 toast({ title: "Aplicação excluída com sucesso." });
             } catch (error) {
                 toast({ 

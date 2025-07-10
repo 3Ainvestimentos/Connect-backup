@@ -19,6 +19,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -73,6 +74,7 @@ const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: Mess
 
 
 export function ManageMessages() {
+    const queryClient = useQueryClient();
     const { messages, addMessage, updateMessage, deleteMessage, getMessageRecipients } = useMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -114,6 +116,7 @@ export function ManageMessages() {
         if (window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) {
             try {
                 await deleteMessage(id);
+                await queryClient.invalidateQueries({ queryKey: ['messages'] });
                 toast({ title: "Mensagem excluída com sucesso." });
             } catch (error) {
                 toast({

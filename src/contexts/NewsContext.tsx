@@ -66,9 +66,6 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    }
   });
 
   const toggleNewsHighlight = useCallback((id: string) => {

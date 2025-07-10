@@ -21,6 +21,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { parseISO, format, isValid } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 
 const eventSchema = z.object({
     id: z.string().optional(),
@@ -35,6 +36,7 @@ const eventSchema = z.object({
 type EventFormValues = z.infer<typeof eventSchema>;
 
 export function ManageEvents() {
+    const queryClient = useQueryClient();
     const { events, addEvent, updateEvent, deleteEvent } = useEvents();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -77,6 +79,7 @@ export function ManageEvents() {
         if (window.confirm("Tem certeza que deseja excluir este evento?")) {
             try {
                 await deleteEvent(id);
+                await queryClient.invalidateQueries({ queryKey: ['events'] });
                 toast({ title: "Evento excluído com sucesso." });
             } catch (error) {
                 toast({

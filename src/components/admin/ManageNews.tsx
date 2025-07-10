@@ -18,6 +18,7 @@ import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -35,6 +36,7 @@ const newsSchema = z.object({
 type NewsFormValues = z.infer<typeof newsSchema>;
 
 export function ManageNews() {
+    const queryClient = useQueryClient();
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItem, toggleNewsHighlight } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -76,6 +78,7 @@ export function ManageNews() {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
             try {
                 await deleteNewsItem(id);
+                await queryClient.invalidateQueries({ queryKey: ['newsItems'] });
                 toast({ title: "Notícia excluída com sucesso." });
             } catch (error) {
                 toast({

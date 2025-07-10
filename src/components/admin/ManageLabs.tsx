@@ -14,6 +14,7 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const labSchema = z.object({
     id: z.string().optional(),
@@ -27,6 +28,7 @@ const labSchema = z.object({
 type LabFormValues = z.infer<typeof labSchema>;
 
 export function ManageLabs() {
+    const queryClient = useQueryClient();
     const { labs, addLab, updateLab, deleteLab } = useLabs();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,6 +63,7 @@ export function ManageLabs() {
         if (window.confirm("Tem certeza que deseja excluir este vídeo do Lab?")) {
             try {
                 await deleteLab(id);
+                await queryClient.invalidateQueries({ queryKey: ['labs'] });
                 toast({ title: "Vídeo do Lab excluído com sucesso." });
             } catch(error) {
                 toast({

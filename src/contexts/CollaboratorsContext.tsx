@@ -87,9 +87,6 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
         }
         return deleteDocumentFromCollection(COLLECTION_NAME, id);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
   });
 
   const value = useMemo(() => ({

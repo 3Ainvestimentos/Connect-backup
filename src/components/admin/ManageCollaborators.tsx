@@ -15,6 +15,7 @@ import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
+import { useQueryClient } from '@tanstack/react-query';
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -32,6 +33,7 @@ const collaboratorSchema = z.object({
 type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
 
 export function ManageCollaborators() {
+    const queryClient = useQueryClient();
     const { collaborators, addCollaborator, updateCollaborator, deleteCollaborator } = useCollaborators();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,6 +68,7 @@ export function ManageCollaborators() {
         if (window.confirm("Tem certeza que deseja excluir este colaborador?")) {
             try {
                 await deleteCollaborator(id);
+                await queryClient.invalidateQueries({ queryKey: ['collaborators'] });
                 toast({ title: "Colaborador excluído com sucesso." });
             } catch (error) {
                 toast({
