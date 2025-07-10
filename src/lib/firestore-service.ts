@@ -13,7 +13,17 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
     try {
         const collectionRef = collection(db, collectionName);
         const querySnapshot = await getDocs(collectionRef);
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WithId<T>));
+        return querySnapshot.docs.map(doc => {
+            let data = doc.data();
+
+            // FIX: Special transformation for the 'applications' collection based on Firestore structure.
+            // The data is nested under `content.content` instead of just `content`.
+            if (collectionName === 'applications' && data.content && 'content' in data.content) {
+                data = { ...data, content: data.content.content };
+            }
+            
+            return { id: doc.id, ...data } as WithId<T>;
+        });
     } catch (error) {
         console.error(`Error fetching collection ${collectionName}:`, error);
         throw new Error(`Não foi possível carregar os dados de ${collectionName}.`);
