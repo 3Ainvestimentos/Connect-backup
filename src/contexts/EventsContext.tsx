@@ -5,7 +5,6 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo } fro
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
-import { toast } from '@/hooks/use-toast';
 
 export interface EventType {
   id: string;
@@ -63,17 +62,6 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteEventMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      toast({ title: "Evento excluído com sucesso." });
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
   });
 
   const value = useMemo(() => ({

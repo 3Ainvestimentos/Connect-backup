@@ -58,17 +58,6 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      toast({ title: "Notícia excluída com sucesso." });
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
   });
 
   const toggleNewsHighlight = useCallback((id: string) => {

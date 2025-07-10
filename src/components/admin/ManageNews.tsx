@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
+import { useQueryClient } from '@tanstack/react-query';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -37,6 +38,7 @@ export function ManageNews() {
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
+    const queryClient = useQueryClient();
 
     const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
@@ -70,9 +72,19 @@ export function ManageNews() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
-            deleteNewsItemMutation.mutate(id);
+            try {
+                await deleteNewsItemMutation.mutateAsync(id);
+                toast({ title: "Notícia excluída com sucesso." });
+                queryClient.invalidateQueries({ queryKey: ['newsItems'] });
+            } catch (error) {
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível excluir a notícia.",
+                    variant: "destructive"
+                });
+            }
         }
     };
     

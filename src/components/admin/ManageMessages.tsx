@@ -19,6 +19,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -79,6 +80,7 @@ export function ManageMessages() {
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
     const [viewingStatusFor, setViewingStatusFor] = useState<MessageType | null>(null);
+    const queryClient = useQueryClient();
     
     const form = useForm<MessageFormValues>({
         resolver: zodResolver(messageSchema),
@@ -109,9 +111,19 @@ export function ManageMessages() {
         setIsFormOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) {
-            deleteMessageMutation.mutate(id);
+            try {
+                await deleteMessageMutation.mutateAsync(id);
+                toast({ title: "Mensagem excluída com sucesso." });
+                queryClient.invalidateQueries({ queryKey: ['messages'] });
+            } catch (error) {
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível excluir a mensagem.",
+                    variant: "destructive"
+                });
+            }
         }
     };
     

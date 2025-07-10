@@ -15,6 +15,7 @@ import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
+import { useQueryClient } from '@tanstack/react-query';
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -35,6 +36,7 @@ export function ManageCollaborators() {
     const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation } = useCollaborators();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
+    const queryClient = useQueryClient();
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
@@ -61,9 +63,19 @@ export function ManageCollaborators() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este colaborador?")) {
-            deleteCollaboratorMutation.mutate(id);
+            try {
+                await deleteCollaboratorMutation.mutateAsync(id);
+                toast({ title: "Colaborador excluído com sucesso." });
+                queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+            } catch (error) {
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível excluir o colaborador.",
+                    variant: "destructive"
+                });
+            }
         }
     };
     

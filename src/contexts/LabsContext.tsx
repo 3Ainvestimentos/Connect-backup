@@ -4,7 +4,6 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
-import { toast } from '@/hooks/use-toast';
 
 export interface LabType {
   id: string;
@@ -50,17 +49,6 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteLabMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      toast({ title: "Vídeo do Lab excluído com sucesso." });
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Erro ao excluir",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
   });
 
   const value = useMemo(() => ({
