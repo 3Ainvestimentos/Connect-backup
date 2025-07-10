@@ -5,7 +5,7 @@ import { useMessages, type MessageType } from '@/contexts/MessagesContext';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,7 +64,7 @@ const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: Mess
                     </div>
                 </div>
                  <DialogFooter>
-                    <DialogClose asChild><Button variant="outline">Fechar</Button></DialogClose>
+                    <Button variant="secondary" onClick={() => onOpenChange(false)}>Fechar</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -127,17 +127,18 @@ export function ManageMessages() {
     
     const onSubmit = async (data: MessageFormValues) => {
         setIsSubmitting(true);
+        const submissionData = { ...data, date: new Date().toISOString() };
+
         try {
             if (editingMessage) {
                 const updatedMessage: MessageType = {
                     ...editingMessage,
-                    ...data,
+                    ...submissionData,
                 };
                 await updateMessage(updatedMessage);
                 toast({ title: "Mensagem atualizada com sucesso." });
             } else {
-                // `date`, `readBy`, `deletedBy` are handled by the context/backend
-                await addMessage(data);
+                await addMessage(submissionData);
                 toast({ title: "Mensagem adicionada com sucesso." });
             }
             setIsFormOpen(false);
