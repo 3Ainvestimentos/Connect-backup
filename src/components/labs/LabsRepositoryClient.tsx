@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
@@ -157,8 +158,8 @@ export default function LabsRepositoryClient({ initialLabs, categories, loading 
                 <TableHead onClick={() => handleSort('title')} className="cursor-pointer hover:bg-muted/50 font-body">
                   Título {sortKey === 'title' && (sortDirection === 'asc' ? <ChevronUp className="inline h-4 w-4" /> : <ChevronDown className="inline h-4 w-4" />)}
                 </TableHead>
-                <TableHead onClick={() => handleSort('category')} className="cursor-pointer hover:bg-muted/50 font-body">
-                  Categoria {sortKey === 'category' && (sortDirection === 'asc' ? <ChevronUp className="inline h-4 w-4" /> : <ChevronDown className="inline h-4 w-4" />)}
+                <TableHead className="font-body">
+                  Categoria
                 </TableHead>
                 <TableHead onClick={() => handleSort('lastModified')} className="cursor-pointer hover:bg-muted/50 font-body">
                   Modificado em {sortKey === 'lastModified' && (sortDirection === 'asc' ? <ChevronUp className="inline h-4 w-4" /> : <ChevronDown className="inline h-4 w-4" />)}
@@ -179,7 +180,7 @@ export default function LabsRepositoryClient({ initialLabs, categories, loading 
                     {new Date(lab.lastModified).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" asChild aria-label="Abrir vídeo">
+                    <Button variant="ghost" size="icon" asChild aria-label="Abrir vídeo" className="hover:bg-muted">
                       <a href={lab.videoUrl} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-5 w-5 text-muted-foreground" />
                       </a>
