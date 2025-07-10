@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface Collaborator {
@@ -37,7 +37,7 @@ interface CollaboratorsContextType {
   loading: boolean;
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
   updateCollaborator: (collaborator: Collaborator) => Promise<void>;
-  deleteCollaborator: (id: string) => Promise<void>;
+  deleteCollaboratorMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
@@ -87,6 +87,9 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
         }
         return deleteDocumentFromCollection(COLLECTION_NAME, id);
     },
+    onError: (error) => {
+        console.error("Error deleting collaborator:", error);
+    }
   });
 
   const value = useMemo(() => ({
@@ -94,7 +97,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     loading: isFetching,
     addCollaborator: (collaborator) => addCollaboratorMutation.mutateAsync(collaborator),
     updateCollaborator: (collaborator) => updateCollaboratorMutation.mutateAsync(collaborator),
-    deleteCollaborator: (id) => deleteCollaboratorMutation.mutateAsync(id),
+    deleteCollaboratorMutation,
   }), [collaborators, isFetching, addCollaboratorMutation, updateCollaboratorMutation, deleteCollaboratorMutation]);
 
   return (

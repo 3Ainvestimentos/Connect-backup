@@ -37,7 +37,7 @@ type EventFormValues = z.infer<typeof eventSchema>;
 
 export function ManageEvents() {
     const queryClient = useQueryClient();
-    const { events, addEvent, updateEvent, deleteEvent } = useEvents();
+    const { events, addEvent, updateEvent, deleteEventMutation } = useEvents();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
@@ -78,9 +78,9 @@ export function ManageEvents() {
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este evento?")) {
             try {
-                await deleteEvent(id);
-                await queryClient.invalidateQueries({ queryKey: ['events'] });
+                await deleteEventMutation.mutateAsync(id);
                 toast({ title: "Evento excluído com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['events'] });
             } catch (error) {
                 toast({
                     title: "Erro ao excluir",

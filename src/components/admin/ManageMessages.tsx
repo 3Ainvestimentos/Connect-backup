@@ -75,7 +75,7 @@ const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: Mess
 
 export function ManageMessages() {
     const queryClient = useQueryClient();
-    const { messages, addMessage, updateMessage, deleteMessage, getMessageRecipients } = useMessages();
+    const { messages, addMessage, updateMessage, deleteMessageMutation, getMessageRecipients } = useMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
@@ -115,9 +115,9 @@ export function ManageMessages() {
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) {
             try {
-                await deleteMessage(id);
-                await queryClient.invalidateQueries({ queryKey: ['messages'] });
+                await deleteMessageMutation.mutateAsync(id);
                 toast({ title: "Mensagem excluída com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['messages'] });
             } catch (error) {
                 toast({
                     title: "Erro ao excluir",

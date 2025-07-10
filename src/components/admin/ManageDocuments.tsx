@@ -31,7 +31,7 @@ type DocumentFormValues = z.infer<typeof documentSchema>;
 
 export function ManageDocuments() {
     const queryClient = useQueryClient();
-    const { documents, addDocument, updateDocument, deleteDocument } = useDocuments();
+    const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
@@ -66,9 +66,9 @@ export function ManageDocuments() {
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este documento?")) {
             try {
-                await deleteDocument(id);
-                await queryClient.invalidateQueries({ queryKey: ['documents'] });
+                await deleteDocumentMutation.mutateAsync(id);
                 toast({ title: "Documento excluído com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['documents'] });
             } catch(error) {
                 toast({
                     title: "Erro ao excluir",

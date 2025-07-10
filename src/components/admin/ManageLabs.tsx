@@ -29,7 +29,7 @@ type LabFormValues = z.infer<typeof labSchema>;
 
 export function ManageLabs() {
     const queryClient = useQueryClient();
-    const { labs, addLab, updateLab, deleteLab } = useLabs();
+    const { labs, addLab, updateLab, deleteLabMutation } = useLabs();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingLab, setEditingLab] = useState<LabType | null>(null);
@@ -62,9 +62,9 @@ export function ManageLabs() {
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este vídeo do Lab?")) {
             try {
-                await deleteLab(id);
-                await queryClient.invalidateQueries({ queryKey: ['labs'] });
+                await deleteLabMutation.mutateAsync(id);
                 toast({ title: "Vídeo do Lab excluído com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['labs'] });
             } catch(error) {
                 toast({
                     title: "Erro ao excluir",

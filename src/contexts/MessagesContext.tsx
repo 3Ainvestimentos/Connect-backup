@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface MessageType {
@@ -24,7 +24,7 @@ interface MessagesContextType {
   loading: boolean;
   addMessage: (message: Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>>;
   updateMessage: (message: MessageType) => Promise<void>;
-  deleteMessage: (id: string) => Promise<void>;
+  deleteMessageMutation: UseMutationResult<void, Error, string, unknown>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
   markMessageAsDeleted: (messageId: string, collaboratorId: string) => Promise<void>;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
@@ -76,6 +76,9 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onError: (error) => {
+        console.error("Error deleting message:", error);
+    }
   });
 
   const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {
@@ -106,7 +109,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     addMessage: (msg) => addMessageMutation.mutateAsync(msg),
     updateMessage: (msg) => updateMessageMutation.mutateAsync(msg),
-    deleteMessage: (id) => deleteMessageMutation.mutateAsync(id),
+    deleteMessageMutation,
     markMessageAsRead,
     markMessageAsDeleted,
     getMessageRecipients

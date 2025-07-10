@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface ApplicationLinkItem {
@@ -30,7 +30,7 @@ interface ApplicationsContextType {
   loading: boolean;
   addApplication: (app: Omit<Application, 'id'>) => Promise<Application>;
   updateApplication: (app: Application) => Promise<void>;
-  deleteApplication: (id: string) => Promise<void>;
+  deleteApplicationMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
@@ -74,6 +74,9 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteApplicationMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onError: (error) => {
+        console.error("Error deleting application:", error);
+    }
   });
   
   const value = useMemo(() => ({
@@ -81,7 +84,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     addApplication: (app) => addApplicationMutation.mutateAsync(app),
     updateApplication: (app) => updateApplicationMutation.mutateAsync(app),
-    deleteApplication: (id) => deleteApplicationMutation.mutateAsync(id),
+    deleteApplicationMutation,
   }), [applications, isFetching, addApplicationMutation, updateApplicationMutation, deleteApplicationMutation]);
 
   return (

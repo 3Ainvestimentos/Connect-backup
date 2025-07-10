@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
@@ -24,7 +24,7 @@ interface NewsContextType {
   loading: boolean;
   addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<WithId<Omit<NewsItemType, 'id'>>>;
   updateNewsItem: (item: NewsItemType) => Promise<void>;
-  deleteNewsItem: (id: string) => Promise<void>;
+  deleteNewsItemMutation: UseMutationResult<void, Error, string, unknown>;
   toggleNewsHighlight: (id: string) => void;
 }
 
@@ -66,6 +66,9 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onError: (error) => {
+        console.error("Error deleting news item:", error);
+    }
   });
 
   const toggleNewsHighlight = useCallback((id: string) => {
@@ -89,7 +92,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     addNewsItem: (item) => addNewsItemMutation.mutateAsync(item),
     updateNewsItem: (item) => updateNewsItemMutation.mutateAsync(item),
-    deleteNewsItem: (id) => deleteNewsItemMutation.mutateAsync(id),
+    deleteNewsItemMutation,
     toggleNewsHighlight,
   }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight]);
 

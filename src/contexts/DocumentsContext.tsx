@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface DocumentType {
@@ -21,7 +21,7 @@ interface DocumentsContextType {
   loading: boolean;
   addDocument: (doc: Omit<DocumentType, 'id'>) => Promise<WithId<Omit<DocumentType, 'id'>>>;
   updateDocument: (doc: DocumentType) => Promise<void>;
-  deleteDocument: (id: string) => Promise<void>;
+  deleteDocumentMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
@@ -59,6 +59,9 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onError: (error) => {
+        console.error("Error deleting document:", error);
+    }
   });
 
   const value = useMemo(() => ({
@@ -66,7 +69,7 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     addDocument: (doc) => addDocumentMutation.mutateAsync(doc),
     updateDocument: (doc) => updateDocumentMutation.mutateAsync(doc),
-    deleteDocument: (id) => deleteDocumentMutation.mutateAsync(id),
+    deleteDocumentMutation,
   }), [documents, isFetching, addDocumentMutation, updateDocumentMutation, deleteDocumentMutation]);
 
   return (

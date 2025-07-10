@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface EventType {
@@ -21,7 +21,7 @@ interface EventsContextType {
   loading: boolean;
   addEvent: (event: Omit<EventType, 'id'>) => Promise<WithId<Omit<EventType, 'id'>>>;
   updateEvent: (event: EventType) => Promise<void>;
-  deleteEvent: (id: string) => Promise<void>;
+  deleteEventMutation: UseMutationResult<void, Error, string, unknown>;
   getEventRecipients: (event: EventType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -70,6 +70,9 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteEventMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onError: (error) => {
+        console.error("Error deleting event:", error);
+    }
   });
 
   const value = useMemo(() => ({
@@ -77,7 +80,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     addEvent: (event) => addEventMutation.mutateAsync(event),
     updateEvent: (event) => updateEventMutation.mutateAsync(event),
-    deleteEvent: (id) => deleteEventMutation.mutateAsync(id),
+    deleteEventMutation,
     getEventRecipients,
   }), [events, isFetching, getEventRecipients, addEventMutation, updateEventMutation, deleteEventMutation]);
 

@@ -79,7 +79,7 @@ type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 export function ManageApplications() {
     const queryClient = useQueryClient();
-    const { applications, addApplication, updateApplication, deleteApplication } = useApplications();
+    const { applications, addApplication, updateApplication, deleteApplicationMutation } = useApplications();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingApplication, setEditingApplication] = useState<Application | null>(null);
@@ -131,9 +131,9 @@ export function ManageApplications() {
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta aplicação?")) {
             try {
-                await deleteApplication(id);
-                await queryClient.invalidateQueries({ queryKey: ['applications'] });
+                await deleteApplicationMutation.mutateAsync(id);
                 toast({ title: "Aplicação excluída com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['applications'] });
             } catch (error) {
                 toast({ 
                     title: "Erro ao excluir", 

@@ -34,7 +34,7 @@ type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
 
 export function ManageCollaborators() {
     const queryClient = useQueryClient();
-    const { collaborators, addCollaborator, updateCollaborator, deleteCollaborator } = useCollaborators();
+    const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation } = useCollaborators();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
@@ -67,9 +67,9 @@ export function ManageCollaborators() {
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este colaborador?")) {
             try {
-                await deleteCollaborator(id);
-                await queryClient.invalidateQueries({ queryKey: ['collaborators'] });
+                await deleteCollaboratorMutation.mutateAsync(id);
                 toast({ title: "Colaborador excluído com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['collaborators'] });
             } catch (error) {
                 toast({
                     title: "Erro ao excluir",

@@ -37,7 +37,7 @@ type NewsFormValues = z.infer<typeof newsSchema>;
 
 export function ManageNews() {
     const queryClient = useQueryClient();
-    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItem, toggleNewsHighlight } = useNews();
+    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
@@ -77,9 +77,9 @@ export function ManageNews() {
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
             try {
-                await deleteNewsItem(id);
-                await queryClient.invalidateQueries({ queryKey: ['newsItems'] });
+                await deleteNewsItemMutation.mutateAsync(id);
                 toast({ title: "Notícia excluída com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['newsItems'] });
             } catch (error) {
                 toast({
                     title: "Erro ao excluir",

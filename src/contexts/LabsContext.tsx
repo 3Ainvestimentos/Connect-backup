@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface LabType {
@@ -19,7 +19,7 @@ interface LabsContextType {
   loading: boolean;
   addLab: (lab: Omit<LabType, 'id'>) => Promise<WithId<Omit<LabType, 'id'>>>;
   updateLab: (lab: LabType) => Promise<void>;
-  deleteLab: (id: string) => Promise<void>;
+  deleteLabMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const LabsContext = createContext<LabsContextType | undefined>(undefined);
@@ -57,6 +57,9 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteLabMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onError: (error) => {
+        console.error("Error deleting lab:", error);
+    }
   });
 
   const value = useMemo(() => ({
@@ -64,7 +67,7 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     addLab: (lab) => addLabMutation.mutateAsync(lab),
     updateLab: (lab) => updateLabMutation.mutateAsync(lab),
-    deleteLab: (id) => deleteLabMutation.mutateAsync(id),
+    deleteLabMutation,
   }), [labs, isFetching, addLabMutation, updateLabMutation, deleteLabMutation]);
 
   return (
