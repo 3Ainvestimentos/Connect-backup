@@ -140,7 +140,7 @@ export function ManageLabs() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteLabMutation.isPending}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteLabMutation.isPending && deleteLabMutation.variables === item.id}>
                                              {deleteLabMutation.isPending && deleteLabMutation.variables === item.id ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (

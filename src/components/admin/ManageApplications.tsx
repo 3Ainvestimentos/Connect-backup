@@ -212,7 +212,7 @@ export function ManageApplications() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteApplicationMutation.isPending}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteApplicationMutation.isPending && deleteApplicationMutation.variables === item.id}>
                                             {deleteApplicationMutation.isPending && deleteApplicationMutation.variables === item.id ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (

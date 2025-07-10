@@ -144,7 +144,7 @@ export function ManageDocuments() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteDocumentMutation.isPending}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteDocumentMutation.isPending && deleteDocumentMutation.variables === item.id}>
                                             {deleteDocumentMutation.isPending && deleteDocumentMutation.variables === item.id ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (

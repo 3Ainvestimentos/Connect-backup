@@ -151,7 +151,7 @@ export function ManageCollaborators() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id}>
                                             {deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (
