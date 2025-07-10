@@ -32,38 +32,42 @@ const messageSchema = z.object({
 
 type MessageFormValues = z.infer<typeof messageSchema>;
 
-const ReadStatusDialog = ({ message, recipients }: { message: MessageType; recipients: Collaborator[] }) => {
+const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: MessageType | null; recipients: Collaborator[]; onOpenChange: (open: boolean) => void; }) => {
+    if (!message) return null;
+
     const readCollaborators = recipients.filter(r => message.readBy.includes(r.id));
     const unreadCollaborators = recipients.filter(r => !message.readBy.includes(r.id));
 
     return (
-        <DialogContent className="max-w-md">
-            <DialogHeader>
-                <DialogTitle>Status de Leitura</DialogTitle>
-                <DialogDescription>"{message.title}"</DialogDescription>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
-                <div>
-                    <h4 className="font-semibold mb-2 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500" /> Lido ({readCollaborators.length})</h4>
-                    <ScrollArea className="h-64">
-                        <ul className="space-y-1 text-sm pr-4">
-                            {readCollaborators.map(c => <li key={c.id} className="truncate">{c.name}</li>)}
-                        </ul>
-                    </ScrollArea>
+        <Dialog open={!!message} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Status de Leitura</DialogTitle>
+                    <DialogDescription>"{message.title}"</DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto">
+                    <div>
+                        <h4 className="font-semibold mb-2 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-500" /> Lido ({readCollaborators.length})</h4>
+                        <ScrollArea className="h-64">
+                            <ul className="space-y-1 text-sm pr-4">
+                                {readCollaborators.map(c => <li key={c.id} className="truncate">{c.name}</li>)}
+                            </ul>
+                        </ScrollArea>
+                    </div>
+                     <div>
+                        <h4 className="font-semibold mb-2 flex items-center gap-2"><XCircle className="h-5 w-5 text-red-500" /> Não Lido ({unreadCollaborators.length})</h4>
+                         <ScrollArea className="h-64">
+                            <ul className="space-y-1 text-sm pr-4">
+                                {unreadCollaborators.map(c => <li key={c.id} className="truncate">{c.name}</li>)}
+                            </ul>
+                        </ScrollArea>
+                    </div>
                 </div>
-                 <div>
-                    <h4 className="font-semibold mb-2 flex items-center gap-2"><XCircle className="h-5 w-5 text-red-500" /> Não Lido ({unreadCollaborators.length})</h4>
-                     <ScrollArea className="h-64">
-                        <ul className="space-y-1 text-sm pr-4">
-                            {unreadCollaborators.map(c => <li key={c.id} className="truncate">{c.name}</li>)}
-                        </ul>
-                    </ScrollArea>
-                </div>
-            </div>
-             <DialogFooter>
-                <DialogClose asChild><Button variant="outline">Fechar</Button></DialogClose>
-            </DialogFooter>
-        </DialogContent>
+                 <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Fechar</Button></DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -75,6 +79,7 @@ export function ManageMessages() {
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
+    const [viewingStatusFor, setViewingStatusFor] = useState<MessageType | null>(null);
     
     const form = useForm<MessageFormValues>({
         resolver: zodResolver(messageSchema),
@@ -154,6 +159,11 @@ export function ManageMessages() {
         return `${ids.length} colaborador(es) selecionado(s)`;
     }
 
+    const viewingStatusRecipients = useMemo(() => {
+        if (!viewingStatusFor) return [];
+        return getMessageRecipients(viewingStatusFor, collaborators);
+    }, [viewingStatusFor, getMessageRecipients, collaborators]);
+
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -193,14 +203,14 @@ export function ManageMessages() {
                                     </TableCell>
                                     <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
                                     <TableCell>
-                                        <Dialog>
-                                            <DialogTrigger asChild>
-                                                <Button variant="link" className="p-0 h-auto" disabled={totalRecipients === 0}>
-                                                    {readCount} / {totalRecipients}
-                                                </Button>
-                                            </DialogTrigger>
-                                            <ReadStatusDialog message={item} recipients={recipients} />
-                                        </Dialog>
+                                        <Button 
+                                            variant="link" 
+                                            className="p-0 h-auto" 
+                                            disabled={totalRecipients === 0}
+                                            onClick={() => setViewingStatusFor(item)}
+                                        >
+                                            {readCount} / {totalRecipients}
+                                        </Button>
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)}>
@@ -282,6 +292,11 @@ export function ManageMessages() {
                     form.setValue('recipientIds', newIds, { shouldValidate: true });
                     setIsSelectionModalOpen(false);
                 }}
+            />
+             <ReadStatusDialog 
+                message={viewingStatusFor}
+                recipients={viewingStatusRecipients}
+                onOpenChange={(isOpen) => !isOpen && setViewingStatusFor(null)}
             />
         </Card>
     );
