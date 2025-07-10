@@ -203,7 +203,7 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
                     {new Date(doc.lastModified).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" asChild aria-label="Baixar documento">
+                    <Button variant="ghost" size="icon" asChild aria-label="Baixar documento" className="hover:bg-muted">
                       <a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer">
                         <Download className="h-5 w-5 text-muted-foreground" />
                       </a>
