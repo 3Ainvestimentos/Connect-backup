@@ -85,6 +85,12 @@ export default function DashboardPage() {
     if (!currentUserCollab) return 0;
     return userMessages.filter(msg => !msg.readBy.includes(currentUserCollab.id)).length;
   }, [userMessages, currentUserCollab]);
+  
+  const unreadLabel = useMemo(() => {
+    if (unreadCount === 0) return null;
+    if (unreadCount === 1) return "1 mensagem não lida";
+    return `${unreadCount} mensagens não lidas`;
+  }, [unreadCount]);
 
   const activeHighlights = useMemo(() => newsItems.filter(item => item.isHighlight), [newsItems]);
 
@@ -182,7 +188,7 @@ export default function DashboardPage() {
                       <MessageSquare className="h-6 w-6 text-accent" />
                       <span>Mensagens</span>
                     </div>
-                    {unreadCount > 0 && (<Badge variant="default">{unreadCount}</Badge>)}
+                    {unreadCount > 0 && (<Badge variant="default">{unreadLabel}</Badge>)}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1 min-h-0 relative">
@@ -195,14 +201,14 @@ export default function DashboardPage() {
                                 <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                                            <Checkbox checked={isRead} disabled className="pointer-events-none mt-0.5 flex-shrink-0" aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} />
+                                            <Checkbox checked={!isRead} aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} className="pointer-events-none mt-0.5 flex-shrink-0" />
                                             <p className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</p>
                                         </div>
                                         <span className="text-xs text-muted-foreground whitespace-nowrap pl-1 flex-shrink-0">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                                     </div>
                                     <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
                                       {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                      {msg.content.length > 80 && <span className="text-accent font-semibold ml-1">Leia mais</span>}
+                                      {msg.content.length > 80 && <span className="text-foreground font-semibold ml-1">Leia mais</span>}
                                     </p>
                                     <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                                 </div>
@@ -311,7 +317,7 @@ export default function DashboardPage() {
                     <Trash2 className="mr-2 h-4 w-4" />
                     Mover para lixeira
                 </Button>
-                <Button variant="outline" onClick={() => setSelectedMessage(null)}>Fechar</Button>
+                <Button variant="secondary" onClick={() => setSelectedMessage(null)}>Fechar</Button>
               </DialogFooter>
             </>
           )}
