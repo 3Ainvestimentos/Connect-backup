@@ -24,7 +24,7 @@ interface NewsContextType {
   loading: boolean;
   addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<WithId<Omit<NewsItemType, 'id'>>>;
   updateNewsItem: (item: NewsItemType) => Promise<void>;
-  deleteNewsItemMutation: UseMutationResult<void, Error, string, { previousData: NewsItemType[] | undefined }>;
+  deleteNewsItemMutation: UseMutationResult<void, Error, string, unknown>;
   toggleNewsHighlight: (id: string) => void;
 }
 
@@ -41,10 +41,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
     mutationFn: (itemData) => addDocumentToCollection(COLLECTION_NAME, itemData),
-    onSuccess: (newItem) => {
-        queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] = []) => [...oldData, newItem]);
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -54,37 +51,13 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedItem;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] = []) =>
-        oldData.map(item => item.id === variables.id ? variables : item)
-      );
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     }
   });
 
-  const deleteNewsItemMutation = useMutation<void, Error, string, { previousData: NewsItemType[] | undefined }>({
+  const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<NewsItemType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<NewsItemType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-        toast({
-            title: "Erro ao excluir",
-            description: err instanceof Error ? err.message : "Não foi possível remover a notícia.",
-            variant: "destructive"
-        });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
   });
 
   const toggleNewsHighlight = useCallback((id: string) => {

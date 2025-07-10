@@ -22,7 +22,7 @@ interface DocumentsContextType {
   loading: boolean;
   addDocument: (doc: Omit<DocumentType, 'id'>) => Promise<WithId<Omit<DocumentType, 'id'>>>;
   updateDocument: (doc: DocumentType) => Promise<void>;
-  deleteDocumentMutation: UseMutationResult<void, Error, string, { previousData: DocumentType[] | undefined }>;
+  deleteDocumentMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
@@ -38,47 +38,20 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({
     mutationFn: (docData: Omit<DocumentType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, docData),
-    onSuccess: (newItem) => {
-        queryClient.setQueryData([COLLECTION_NAME], (oldData: DocumentType[] = []) => [...oldData, newItem]);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const updateDocumentMutation = useMutation<void, Error, DocumentType>({
     mutationFn: (updatedDoc: DocumentType) => updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc),
-     onSuccess: (_, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: DocumentType[] = []) =>
-        oldData.map((item) => (item.id === variables.id ? variables : item))
-      );
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
-  const deleteDocumentMutation = useMutation<void, Error, string, { previousData: DocumentType[] | undefined }>({
+  const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<DocumentType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<DocumentType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-        toast({
-            title: "Erro ao excluir",
-            description: err instanceof Error ? err.message : "Não foi possível remover o documento.",
-            variant: "destructive"
-        });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
   });
 
   const value = useMemo(() => ({

@@ -20,7 +20,7 @@ interface LabsContextType {
   loading: boolean;
   addLab: (lab: Omit<LabType, 'id'>) => Promise<WithId<Omit<LabType, 'id'>>>;
   updateLab: (lab: LabType) => Promise<void>;
-  deleteLabMutation: UseMutationResult<void, Error, string, { previousData: LabType[] | undefined }>;
+  deleteLabMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const LabsContext = createContext<LabsContextType | undefined>(undefined);
@@ -36,47 +36,20 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const addLabMutation = useMutation<WithId<Omit<LabType, 'id'>>, Error, Omit<LabType, 'id'>>({
     mutationFn: (labData: Omit<LabType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, labData),
-    onSuccess: (newItem) => {
-        queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] = []) => [...oldData, newItem]);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const updateLabMutation = useMutation<void, Error, LabType>({
     mutationFn: (updatedLab: LabType) => updateDocumentInCollection(COLLECTION_NAME, updatedLab.id, updatedLab),
-    onSuccess: (_, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] = []) =>
-        oldData.map((item) => (item.id === variables.id ? variables : item))
-      );
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
-  const deleteLabMutation = useMutation<void, Error, string, { previousData: LabType[] | undefined }>({
+  const deleteLabMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<LabType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<LabType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-        toast({
-            title: "Erro ao excluir",
-            description: err instanceof Error ? err.message : "Não foi possível remover o vídeo.",
-            variant: "destructive"
-        });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
   });
 
   const value = useMemo(() => ({

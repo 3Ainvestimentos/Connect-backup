@@ -31,7 +31,7 @@ interface ApplicationsContextType {
   loading: boolean;
   addApplication: (app: Omit<Application, 'id'>) => Promise<Application>;
   updateApplication: (app: Application) => Promise<void>;
-  deleteApplicationMutation: UseMutationResult<void, Error, string, { previousData: Application[] | undefined }>;
+  deleteApplicationMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
@@ -47,10 +47,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
 
   const addApplicationMutation = useMutation<WithId<Omit<Application, 'id'>>, Error, Omit<Application, 'id'>>({
     mutationFn: (appData) => addDocumentToCollection(COLLECTION_NAME, appData),
-    onSuccess: (newItem) => {
-        queryClient.setQueryData([COLLECTION_NAME], (oldData: Application[] = []) => [...oldData, newItem]);
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -60,37 +57,13 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       const { id, ...data } = updatedApp;
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-     onSuccess: (_, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: Application[] = []) =>
-        oldData.map((item) => (item.id === variables.id ? variables : item))
-      );
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
-  const deleteApplicationMutation = useMutation<void, Error, string, { previousData: Application[] | undefined }>({
+  const deleteApplicationMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<Application[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<Application[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-        toast({
-            title: "Erro ao excluir",
-            description: err instanceof Error ? err.message : "Não foi possível remover a aplicação.",
-            variant: "destructive"
-        });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
   });
   
   const value = useMemo(() => ({

@@ -15,13 +15,7 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
         const collectionRef = collection(db, collectionName);
         const querySnapshot = await getDocs(collectionRef);
         return querySnapshot.docs.map(doc => {
-            let data = doc.data();
-            
-            // This fix is no longer needed as the root cause is being addressed elsewhere.
-            // if (collectionName === 'applications' && data.content && 'content' in data.content) {
-            //     data = { ...data, content: data.content.content };
-            // }
-            
+            const data = doc.data();
             return { id: doc.id, ...data } as WithId<T>;
         });
     } catch (error) {
@@ -114,8 +108,7 @@ export const updateDocumentInCollection = async <T extends object>(collectionNam
 };
 
 /**
- * Deletes a document from a specified collection after verifying its existence.
- * Throws an error if the document does not exist, ensuring mutation callbacks are triggered correctly.
+ * Deletes a document from a specified collection.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to delete.
  * @returns A promise that resolves to void on success.
@@ -123,19 +116,9 @@ export const updateDocumentInCollection = async <T extends object>(collectionNam
 export const deleteDocumentFromCollection = async (collectionName: string, id: string): Promise<void> => {
     const docRef = doc(db, collectionName, id);
     try {
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-            // Force an error to be thrown if the document doesn't exist.
-            // This ensures React Query's onError callback is triggered.
-            throw new Error("Documento não encontrado. A exclusão não pode ser concluída.");
-        }
         await deleteDoc(docRef);
     } catch (error) {
-        // Log the detailed error and re-throw a user-friendly one.
         console.error(`Error deleting document ${id} from ${collectionName}:`, error);
-        if (error instanceof Error && error.message.includes("Documento não encontrado")) {
-            throw error; // Re-throw the specific "not found" error.
-        }
         throw new Error('Não foi possível remover o item do banco de dados.');
     }
 };

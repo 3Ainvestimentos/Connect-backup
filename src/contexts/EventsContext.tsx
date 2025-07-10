@@ -22,7 +22,7 @@ interface EventsContextType {
   loading: boolean;
   addEvent: (event: Omit<EventType, 'id'>) => Promise<WithId<Omit<EventType, 'id'>>>;
   updateEvent: (event: EventType) => Promise<void>;
-  deleteEventMutation: UseMutationResult<void, Error, string, { previousData: EventType[] | undefined }>;
+  deleteEventMutation: UseMutationResult<void, Error, string, unknown>;
   getEventRecipients: (event: EventType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -46,10 +46,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
 
   const addEventMutation = useMutation<WithId<Omit<EventType, 'id'>>, Error, Omit<EventType, 'id'>>({
     mutationFn: (eventData) => addDocumentToCollection(COLLECTION_NAME, eventData),
-    onSuccess: (newItem) => {
-        queryClient.setQueryData([COLLECTION_NAME], (oldData: EventType[] = []) => [...oldData, newItem]);
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -59,37 +56,13 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedEvent;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: EventType[] = []) =>
-        oldData.map((item) => (item.id === variables.id ? variables : item))
-      );
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
-  const deleteEventMutation = useMutation<void, Error, string, { previousData: EventType[] | undefined }>({
+  const deleteEventMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-        toast({
-            title: "Erro ao excluir",
-            description: err instanceof Error ? err.message : "Não foi possível remover o evento.",
-            variant: "destructive"
-        });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
   });
 
   const value = useMemo(() => ({

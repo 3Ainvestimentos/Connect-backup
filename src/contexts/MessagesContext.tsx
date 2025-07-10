@@ -25,7 +25,7 @@ interface MessagesContextType {
   loading: boolean;
   addMessage: (message: Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>>;
   updateMessage: (message: MessageType) => Promise<void>;
-  deleteMessageMutation: UseMutationResult<void, Error, string, { previousData: MessageType[] | undefined }>;
+  deleteMessageMutation: UseMutationResult<void, Error, string, unknown>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
   markMessageAsDeleted: (messageId: string, collaboratorId: string) => Promise<void>;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
@@ -51,10 +51,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>, Error, Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>({
     mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, {...messageData, date: new Date().toISOString(), readBy: [], deletedBy: []}),
-    onSuccess: (newItem) => {
-        queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] = []) => [...oldData, newItem]);
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -64,38 +61,14 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedMessage;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: (_, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] = []) =>
-        oldData.map((item) => (item.id === variables.id ? variables : item))
-      );
-    },
-    onSettled: (data, error, variables) => {
+    onSuccess: () => {
       // Invalidate the query to refetch from the server and ensure consistency
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
-  const deleteMessageMutation = useMutation<void, Error, string, { previousData: MessageType[] | undefined }>({
+  const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<MessageType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<MessageType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
-      return { previousData };
-    },
-    onError: (err, id, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-        toast({
-            title: "Erro ao excluir",
-            description: err instanceof Error ? err.message : "Não foi possível remover a mensagem.",
-            variant: "destructive"
-        });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
   });
 
   const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {

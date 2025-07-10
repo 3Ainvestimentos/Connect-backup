@@ -77,8 +77,14 @@ export function ManageNews() {
             try {
                 await deleteNewsItemMutation.mutateAsync(id);
                 toast({ title: "Notícia excluída com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['newsItems'] });
+
             } catch (error) {
-                // The onError in the mutation hook will handle the toast.
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover a notícia.",
+                    variant: "destructive"
+                });
             }
         }
     };

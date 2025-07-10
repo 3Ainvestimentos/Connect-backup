@@ -14,6 +14,7 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const labSchema = z.object({
     id: z.string().optional(),
@@ -28,6 +29,7 @@ type LabFormValues = z.infer<typeof labSchema>;
 
 export function ManageLabs() {
     const { labs, addLab, updateLab, deleteLabMutation } = useLabs();
+    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingLab, setEditingLab] = useState<LabType | null>(null);
 
@@ -61,8 +63,13 @@ export function ManageLabs() {
             try {
                 await deleteLabMutation.mutateAsync(id);
                 toast({ title: "Vídeo do Lab excluído com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['labs'] });
             } catch (error) {
-                // onError in hook handles toast
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover o vídeo.",
+                    variant: "destructive"
+                });
             }
         }
     };

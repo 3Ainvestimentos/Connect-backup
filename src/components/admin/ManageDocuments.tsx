@@ -14,6 +14,7 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const documentSchema = z.object({
     id: z.string().optional(),
@@ -30,6 +31,7 @@ type DocumentFormValues = z.infer<typeof documentSchema>;
 
 export function ManageDocuments() {
     const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
+    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
 
@@ -65,8 +67,13 @@ export function ManageDocuments() {
             try {
                 await deleteDocumentMutation.mutateAsync(id);
                 toast({ title: "Documento excluído com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['documents'] });
             } catch (error) {
-                // onError in hook handles toast
+                 toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover o documento.",
+                    variant: "destructive"
+                });
             }
         }
     };

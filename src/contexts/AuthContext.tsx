@@ -1,13 +1,14 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User } from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase'; // Import real auth
+import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
-// Objeto de usuário simulado para desenvolvimento
-// Este usuário será considerado logado em toda a aplicação.
-// O email corresponde ao email de admin definido em AdminGuard.
+// Objeto de usuário simulado foi desativado para usar a autenticação real.
+/*
 const MOCK_USER: User = {
   uid: 'mock-user-uid',
   email: 'mock@example.com',
@@ -25,7 +26,7 @@ const MOCK_USER: User = {
   reload: async () => {},
   toJSON: () => ({}),
 };
-
+*/
 
 interface AuthContextType {
   user: User | null;
@@ -37,28 +38,46 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(MOCK_USER);
-  const [loading, setLoading] = useState(false); // O carregamento está sempre concluído
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true); // Começa como true para verificar o estado de auth
   const router = useRouter();
 
-  // Funções de login/logout não fazem nada no modo simulado
+  useEffect(() => {
+    // Observa mudanças no estado de autenticação do Firebase
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+
+    // Limpa o observador quando o componente é desmontado
+    return () => unsubscribe();
+  }, []);
+
+
   const signInWithGoogle = async () => {
     setLoading(true);
-    // Em um app real, aqui você chamaria a função de login do Firebase
-    // await signInWithPopup(auth, googleProvider);
-    // Por enquanto, apenas definimos o usuário mock
-    setUser(MOCK_USER);
-    // router.push('/dashboard'); // Removido para teste
-    setLoading(false);
+    try {
+      await signInWithPopup(auth, googleProvider);
+      // O onAuthStateChanged vai lidar com a atualização do usuário e o loading.
+      // O redirecionamento pode ser feito aqui ou em um useEffect que observa o usuário.
+      router.push('/dashboard');
+    } catch (error) {
+      console.error("Erro ao fazer login com o Google:", error);
+      setLoading(false);
+    }
   };
 
   const signOut = async () => {
     setLoading(true);
-    // Em um app real, aqui você chamaria a função de logout do Firebase
-    // await firebaseSignOut(auth);
-    setUser(null);
-    router.push('/login');
-    setLoading(false);
+    try {
+      await firebaseSignOut(auth);
+      // O onAuthStateChanged vai atualizar o usuário para null e o loading.
+      router.push('/login');
+    } catch (error) {
+        console.error("Erro ao fazer logout:", error);
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (

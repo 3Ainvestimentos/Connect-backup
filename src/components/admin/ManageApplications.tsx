@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { iconList, getIcon } from '@/lib/icons';
 import { ScrollArea } from '../ui/scroll-area';
+import { useQueryClient } from '@tanstack/react-query';
 
 const linkItemSchema = z.object({
   id: z.string(),
@@ -78,6 +79,7 @@ type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 export function ManageApplications() {
     const { applications, addApplication, updateApplication, deleteApplicationMutation } = useApplications();
+    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingApplication, setEditingApplication] = useState<Application | null>(null);
 
@@ -130,8 +132,13 @@ export function ManageApplications() {
             try {
                 await deleteApplicationMutation.mutateAsync(id);
                 toast({ title: "Aplicação excluída com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['applications'] });
             } catch (error) {
-                // The onError in the mutation hook will handle the toast.
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover a aplicação.",
+                    variant: "destructive"
+                });
             }
         }
     };

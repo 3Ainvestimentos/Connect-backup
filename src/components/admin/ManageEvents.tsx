@@ -21,6 +21,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { parseISO, format, isValid } from 'date-fns';
+import { useQueryClient } from '@tanstack/react-query';
 
 const eventSchema = z.object({
     id: z.string().optional(),
@@ -37,6 +38,7 @@ type EventFormValues = z.infer<typeof eventSchema>;
 export function ManageEvents() {
     const { events, addEvent, updateEvent, deleteEventMutation } = useEvents();
     const { collaborators } = useCollaborators();
+    const queryClient = useQueryClient();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
@@ -77,8 +79,13 @@ export function ManageEvents() {
             try {
                 await deleteEventMutation.mutateAsync(id);
                 toast({ title: "Evento excluído com sucesso." });
+                await queryClient.invalidateQueries({ queryKey: ['events'] });
             } catch (error) {
-                // onError in hook handles toast
+                toast({
+                    title: "Erro ao excluir",
+                    description: error instanceof Error ? error.message : "Não foi possível remover o evento.",
+                    variant: "destructive"
+                });
             }
         }
     };
