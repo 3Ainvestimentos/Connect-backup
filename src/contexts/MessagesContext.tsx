@@ -12,17 +12,21 @@ export interface MessageType {
   content: string;
   sender: string;
   date: string; // ISO date string e.g. "2024-07-25"
+  link?: string;
+  mediaUrl?: string;
   recipientIds: string[]; // Array of collaborator IDs
   readBy: string[]; // Array of collaborator IDs who have read the message
+  deletedBy: string[]; // Array of collaborator IDs who have soft-deleted the message
 }
 
 interface MessagesContextType {
   messages: MessageType[];
   loading: boolean;
-  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => Promise<WithId<Omit<MessageType, 'id'>>>;
+  addMessage: (message: Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>>;
   updateMessage: (message: MessageType) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
+  markMessageAsDeleted: (messageId: string, collaboratorId: string) => Promise<void>;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -44,8 +48,8 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => message.recipientIds.includes(c.id));
   }, []);
 
-  const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id'>>, Error, Omit<MessageType, 'id' | 'readBy'>>({
-    mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, {...messageData, readBy: []}),
+  const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>, Error, Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>({
+    mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, {...messageData, date: new Date().toISOString(), readBy: [], deletedBy: []}),
     onSuccess: (newItem) => {
         queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] = []) => [...oldData, newItem]);
     },
@@ -64,8 +68,9 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         oldData.map((item) => (item.id === variables.id ? variables : item))
       );
     },
-    onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSettled: (data, error, variables) => {
+      // Invalidate the query to refetch from the server and ensure consistency
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
@@ -86,7 +91,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     },
     onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
+    }
   });
 
   const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {
@@ -99,6 +104,18 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         updateMessageMutation.mutate(updatedMessage);
     }
   }, [messages, updateMessageMutation]);
+
+  const markMessageAsDeleted = useCallback(async (messageId: string, collaboratorId: string) => {
+    const message = messages.find(m => m.id === messageId);
+    if (message && !message.deletedBy.includes(collaboratorId)) {
+        const updatedMessage = {
+            ...message,
+            deletedBy: [...message.deletedBy, collaboratorId],
+        };
+        // Use mutateAsync to await the operation if needed
+        await updateMessageMutation.mutateAsync(updatedMessage);
+    }
+  }, [messages, updateMessageMutation]);
   
   const value = useMemo(() => ({
     messages,
@@ -107,8 +124,9 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     updateMessage: (msg) => updateMessageMutation.mutateAsync(msg),
     deleteMessage: (id) => deleteMessageMutation.mutateAsync(id),
     markMessageAsRead,
+    markMessageAsDeleted,
     getMessageRecipients
-  }), [messages, isFetching, getMessageRecipients, addMessageMutation, updateMessageMutation, deleteMessageMutation, markMessageAsRead]);
+  }), [messages, isFetching, getMessageRecipients, addMessageMutation, updateMessageMutation, deleteMessageMutation, markMessageAsRead, markMessageAsDeleted]);
 
   return (
     <MessagesContext.Provider value={value}>

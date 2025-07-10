@@ -1,7 +1,7 @@
 
 "use client"; 
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar } from '@/components/ui/calendar';
 import Image from 'next/image';
@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Clock, 
-  Megaphone, MessageSquare, CalendarDays, MapPin,
+  Megaphone, MessageSquare, CalendarDays, MapPin, Link as LinkIcon, Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -26,17 +26,19 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { isSameMonth, parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
+import { toast } from '@/hooks/use-toast';
 
 
 export default function DashboardPage() {
-  const [displayedMonth, setDisplayedMonth] = React.useState<Date>(new Date());
-  const [selectedMessage, setSelectedMessage] = React.useState<MessageType | null>(null);
+  const [displayedMonth, setDisplayedMonth] = useState<Date>(new Date());
+  const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Get global data from contexts
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
   const { events, getEventRecipients } = useEvents();
-  const { messages, markMessageAsRead, getMessageRecipients } = useMessages();
+  const { messages, markMessageAsRead, getMessageRecipients, markMessageAsDeleted } = useMessages();
   const { newsItems } = useNews();
   
   const currentUserCollab = useMemo(() => {
@@ -45,13 +47,17 @@ export default function DashboardPage() {
   }, [user, collaborators]);
 
   const userMessages = useMemo(() => {
-      if (!currentUserCollab) return [];
-      const sortedMessages = [...messages].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    if (!currentUserCollab) return [];
+    const sortedMessages = [...messages].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
-      return sortedMessages.filter(msg => {
-          const recipients = getMessageRecipients(msg, collaborators);
-          return recipients.some(r => r.id === currentUserCollab.id);
-      });
+    return sortedMessages.filter(msg => {
+        // Don't show messages the user has soft-deleted
+        if (msg.deletedBy.includes(currentUserCollab.id)) {
+            return false;
+        }
+        const recipients = getMessageRecipients(msg, collaborators);
+        return recipients.some(r => r.id === currentUserCollab.id);
+    });
   }, [messages, currentUserCollab, collaborators, getMessageRecipients]);
   
   const userEvents = useMemo(() => {
@@ -90,6 +96,20 @@ export default function DashboardPage() {
     setSelectedMessage(messageToView);
   };
   
+  const handleUserDeleteMessage = async () => {
+    if (!selectedMessage || !currentUserCollab || isDeleting) return;
+    setIsDeleting(true);
+    try {
+        await markMessageAsDeleted(selectedMessage.id, currentUserCollab.id);
+        toast({ title: "Mensagem movida para a lixeira." });
+        setSelectedMessage(null);
+    } catch (error) {
+        toast({ title: "Erro", description: "Não foi possível remover a mensagem.", variant: "destructive" });
+    } finally {
+        setIsDeleting(false);
+    }
+  };
+
   const renderHighlights = () => {
       switch (activeHighlights.length) {
           case 1:
@@ -269,9 +289,28 @@ export default function DashboardPage() {
                 <DialogDescription className="text-left pt-2">De: {selectedMessage.sender}<br />Data: {new Date(selectedMessage.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}</DialogDescription>
               </DialogHeader>
               <div className="py-4 text-sm text-foreground max-h-[60vh] overflow-y-auto">
-                {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>))}
+                 {selectedMessage.mediaUrl && (
+                  <div className="mb-4">
+                    <Image src={selectedMessage.mediaUrl} alt="Mídia da mensagem" width={500} height={300} className="rounded-md object-cover w-full" />
+                  </div>
+                 )}
+                 {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>))}
+                 {selectedMessage.link && (
+                    <div className="mt-4">
+                       <Button variant="outline" asChild>
+                         <a href={selectedMessage.link} target="_blank" rel="noopener noreferrer">
+                           <LinkIcon className="mr-2 h-4 w-4" />
+                           Acessar Link
+                         </a>
+                       </Button>
+                    </div>
+                 )}
               </div>
-              <DialogFooter>
+              <DialogFooter className="justify-between">
+                <Button variant="destructive" onClick={handleUserDeleteMessage} disabled={isDeleting}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Mover para lixeira
+                </Button>
                 <Button variant="outline" onClick={() => setSelectedMessage(null)}>Fechar</Button>
               </DialogFooter>
             </>

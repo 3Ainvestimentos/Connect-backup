@@ -25,7 +25,8 @@ const messageSchema = z.object({
     title: z.string().min(3, "Título deve ter no mínimo 3 caracteres"),
     content: z.string().min(10, "Conteúdo deve ter no mínimo 10 caracteres"),
     sender: z.string().min(1, "Remetente é obrigatório"),
-    date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
+    link: z.string().url("URL inválida").optional().or(z.literal('')),
+    mediaUrl: z.string().url("URL inválida").optional().or(z.literal('')),
     recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário."),
 });
 
@@ -85,15 +86,19 @@ export function ManageMessages() {
     const handleDialogOpen = (message: MessageType | null) => {
         setEditingMessage(message);
         if (message) {
-            const formattedMessage = { ...message, date: new Date(message.date).toISOString().split('T')[0] };
-            form.reset(formattedMessage);
+            form.reset({
+                ...message,
+                link: message.link || '',
+                mediaUrl: message.mediaUrl || '',
+            });
         } else {
             form.reset({
                 id: undefined,
                 title: '',
                 content: '',
                 sender: 'Admin',
-                date: new Date().toISOString().split('T')[0],
+                link: '',
+                mediaUrl: '',
                 recipientIds: ['all'],
             });
         }
@@ -101,7 +106,7 @@ export function ManageMessages() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir esta mensagem?")) {
+        if (window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) {
             try {
                 await deleteMessage(id);
                 toast({ title: "Mensagem excluída com sucesso." });
@@ -119,11 +124,15 @@ export function ManageMessages() {
         setIsSubmitting(true);
         try {
             if (editingMessage) {
-                await updateMessage({ ...data, id: editingMessage.id, readBy: editingMessage.readBy });
+                const updatedMessage: MessageType = {
+                    ...editingMessage,
+                    ...data,
+                };
+                await updateMessage(updatedMessage);
                 toast({ title: "Mensagem atualizada com sucesso." });
             } else {
-                const { id, ...dataWithoutId } = data;
-                await addMessage(dataWithoutId);
+                // `date`, `readBy`, `deletedBy` are handled by the context/backend
+                await addMessage(data);
                 toast({ title: "Mensagem adicionada com sucesso." });
             }
             setIsFormOpen(false);
@@ -226,17 +235,20 @@ export function ManageMessages() {
                             <Textarea id="content" {...form.register('content')} rows={5} disabled={isSubmitting}/>
                             {form.formState.errors.content && <p className="text-sm text-destructive mt-1">{form.formState.errors.content.message}</p>}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="sender">Remetente</Label>
-                                <Input id="sender" {...form.register('sender')} disabled={isSubmitting}/>
-                                {form.formState.errors.sender && <p className="text-sm text-destructive mt-1">{form.formState.errors.sender.message}</p>}
-                            </div>
-                            <div>
-                                <Label htmlFor="date">Data</Label>
-                                <Input id="date" type="date" {...form.register('date')} disabled={isSubmitting}/>
-                                {form.formState.errors.date && <p className="text-sm text-destructive mt-1">{form.formState.errors.date.message}</p>}
-                            </div>
+                        <div>
+                            <Label htmlFor="sender">Remetente</Label>
+                            <Input id="sender" {...form.register('sender')} disabled={isSubmitting}/>
+                            {form.formState.errors.sender && <p className="text-sm text-destructive mt-1">{form.formState.errors.sender.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="mediaUrl">URL da Mídia (Imagem/Vídeo - opcional)</Label>
+                            <Input id="mediaUrl" {...form.register('mediaUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                            {form.formState.errors.mediaUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.mediaUrl.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="link">URL do Link (opcional)</Label>
+                            <Input id="link" {...form.register('link')} placeholder="https://..." disabled={isSubmitting}/>
+                            {form.formState.errors.link && <p className="text-sm text-destructive mt-1">{form.formState.errors.link.message}</p>}
                         </div>
 
                         <Separator />
