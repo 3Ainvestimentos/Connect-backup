@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 // !! IMPORTANTE !!
 // Substitua este email pelo endereço de email real do administrador da plataforma.
 // Apenas este usuário poderá acessar o Painel do Administrador.
-const ADMIN_EMAIL = 'user@example.com';
+const ADMIN_EMAIL = 'matheus@3ainvestimentos.com.br';
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
