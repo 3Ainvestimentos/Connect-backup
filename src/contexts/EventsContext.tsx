@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getDocument, setDocumentInCollection } from '@/lib/firestore-service';
 
 export interface EventType {
   id: string;
@@ -60,11 +60,17 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const updateEventMutation = useMutation<void, Error, EventType>({
-    mutationFn: (updatedEvent: EventType) => {
-        if(mockEvents.some(d => d.id === updatedEvent.id)) {
-            return Promise.resolve(); // Or update logic for mocks
+    mutationFn: async (updatedEvent: EventType) => {
+        const { id, ...data } = updatedEvent;
+        const docExists = await getDocument(COLLECTION_NAME, id);
+        
+        if (docExists) {
+            return updateDocumentInCollection(COLLECTION_NAME, id, data);
+        } else if (mockEvents.some(mock => mock.id === id)) {
+            return setDocumentInCollection(COLLECTION_NAME, id, data);
+        } else {
+            throw new Error(`Document with id ${id} not found and is not a mock item.`);
         }
-        return updateDocumentInCollection(COLLECTION_NAME, updatedEvent.id, updatedEvent);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -72,11 +78,14 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const deleteEventMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => {
-         if(mockEvents.some(d => d.id === id)) {
-            return Promise.resolve();
+    mutationFn: async (id: string) => {
+        const docExists = await getDocument(COLLECTION_NAME, id);
+        if(docExists) {
+          return deleteDocumentFromCollection(COLLECTION_NAME, id);
         }
-        return deleteDocumentFromCollection(COLLECTION_NAME, id);
+        // If it doesn't exist in Firestore (i.e., it's a mock item that was never edited),
+        // we just resolve without erroring. The optimistic update will handle the UI.
+        return Promise.resolve();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
