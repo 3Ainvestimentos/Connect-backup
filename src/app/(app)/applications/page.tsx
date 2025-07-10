@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -20,6 +21,14 @@ export default function ApplicationsPage() {
   const { applications } = useApplications();
   const [activeModal, setActiveModal] = React.useState<Application | null>(null);
 
+  const sortedApplications = React.useMemo(() => {
+    return [...applications].sort((a, b) => {
+      if (a.modalId === 'profile') return -1;
+      if (b.modalId === 'profile') return 1;
+      return 0;
+    });
+  }, [applications]);
+
   const handleAppClick = (app: Application) => {
     if (app.type === 'modal') {
       setActiveModal(app);
@@ -41,15 +50,15 @@ export default function ApplicationsPage() {
     <>
       <div className="space-y-6 p-6 md:p-8">
         <PageHeader 
-          title="Aplicações" 
+          title="Aplicações e Suporte" 
           description="Acesse as ferramentas e serviços da empresa."
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {applications.map((app) => {
+          {sortedApplications.map((app) => {
             const Icon = getIcon(app.icon);
             const content = (
               <div className="flex flex-col items-center justify-center h-full text-center">
-                <Icon className="mb-3 h-8 w-8 text-accent" />
+                <Icon className="mb-3 h-8 w-8 text-muted-foreground" />
                 <span className="font-semibold font-body text-card-foreground">{app.name}</span>
               </div>
             );
