@@ -14,11 +14,11 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { useNews } from '@/contexts/NewsContext';
+import { useNews, type NewsItemType } from '@/contexts/NewsContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { useMessages, type MessageType } from '@/contexts/MessagesContext';
 import { getIcon } from '@/lib/icons';
@@ -32,6 +32,7 @@ import { toast } from '@/hooks/use-toast';
 export default function DashboardPage() {
   const [displayedMonth, setDisplayedMonth] = useState<Date>(new Date());
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
+  const [selectedNews, setSelectedNews] = useState<NewsItemType | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Get global data from contexts
@@ -153,14 +154,21 @@ export default function DashboardPage() {
     }
   }
 
-  const HighlightCard = ({ item, className = "" }: { item: any, className?: string }) => (
-    <Link href={item.link || '#'} className={cn("relative rounded-lg overflow-hidden group block", className)}>
+  const HighlightCard = ({ item, className = "" }: { item: NewsItemType, className?: string }) => (
+    <div 
+        className={cn("relative rounded-lg overflow-hidden group block cursor-pointer", className)}
+        onClick={() => setSelectedNews(item)}
+        onKeyDown={(e) => e.key === 'Enter' && setSelectedNews(item)}
+        tabIndex={0}
+        role="button"
+        aria-label={`Ver notícia: ${item.title}`}
+    >
         <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={item.dataAiHint} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-        <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
-        <p className="text-sm text-gray-200 font-body">{item.snippet}</p>
+            <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
+            <p className="text-sm text-gray-200 font-body">{item.snippet}</p>
         </div>
-    </Link>
+    </div>
   );
 
   return (
@@ -205,7 +213,7 @@ export default function DashboardPage() {
                                     </div>
                                     <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
                                       {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                      {msg.content.length > 80 && <span className={cn("text-black ml-1 hover:underline", { 'font-semibold': !isRead })}>Leia mais</span>}
+                                      {msg.content.length > 80 && <span className={cn("text-black ml-1 hover:underline", { 'font-semibold': !isRead, 'font-normal': isRead })} >Leia mais</span>}
                                     </p>
                                     <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                                 </div>
@@ -314,6 +322,45 @@ export default function DashboardPage() {
                     Mover para lixeira
                 </Button>
                 <Button variant="secondary" onClick={() => setSelectedMessage(null)} className="hover:bg-muted">Fechar</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!selectedNews} onOpenChange={(isOpen) => !isOpen && setSelectedNews(null)}>
+        <DialogContent className="max-w-2xl">
+          {selectedNews && (
+            <>
+              <DialogHeader>
+                <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4">
+                    <Image
+                        src={selectedNews.imageUrl}
+                        alt={selectedNews.title}
+                        layout="fill"
+                        objectFit="cover"
+                        data-ai-hint={selectedNews.dataAiHint || "news article"}
+                    />
+                </div>
+                <DialogTitle className="font-headline text-2xl text-left">{selectedNews.title}</DialogTitle>
+                <div className="text-left !mt-2">
+                    <Badge variant="outline" className="font-body text-accent border-accent">{selectedNews.category}</Badge>
+                    <span className="text-xs text-muted-foreground font-body ml-2">
+                        {new Date(selectedNews.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </span>
+                </div>
+              </DialogHeader>
+              <ScrollArea className="max-h-[40vh] pr-4">
+                <div className="py-4 text-sm text-foreground space-y-4">
+                  {selectedNews.content && selectedNews.content.split('\n').map((paragraph, index) => (
+                    <p key={index}>{paragraph}</p>
+                  ))}
+                </div>
+              </ScrollArea>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">Fechar</Button>
+                </DialogClose>
               </DialogFooter>
             </>
           )}
