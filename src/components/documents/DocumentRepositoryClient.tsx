@@ -205,7 +205,7 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
                   <TableCell className="text-right">
                     <Button variant="ghost" size="icon" asChild aria-label="Baixar documento">
                       <a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer">
-                        <Download className="h-5 w-5 text-accent" />
+                        <Download className="h-5 w-5 text-muted-foreground" />
                       </a>
                     </Button>
                   </TableCell>
