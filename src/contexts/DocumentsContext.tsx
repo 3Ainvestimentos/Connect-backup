@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface DocumentType {
   id: string;
@@ -21,7 +22,7 @@ interface DocumentsContextType {
   loading: boolean;
   addDocument: (doc: Omit<DocumentType, 'id'>) => Promise<WithId<Omit<DocumentType, 'id'>>>;
   updateDocument: (doc: DocumentType) => Promise<void>;
-  deleteDocumentMutation: UseMutationResult<void, Error, string, unknown>;
+  deleteDocumentMutation: UseMutationResult<void, Error, string, { previousData: DocumentType[] }>;
 }
 
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
@@ -57,11 +58,27 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteDocumentMutation = useMutation<void, Error, string>({
+  const deleteDocumentMutation = useMutation<void, Error, string, { previousData: DocumentType[] }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onError: (error) => {
-        console.error("Error deleting document:", error);
-    }
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<DocumentType[]>([COLLECTION_NAME]) || [];
+      queryClient.setQueryData<DocumentType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
+      return { previousData };
+    },
+    onError: (err, id, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+        toast({
+            title: "Erro ao excluir",
+            description: "Não foi possível remover o documento. A lista foi restaurada.",
+            variant: "destructive"
+        });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const value = useMemo(() => ({

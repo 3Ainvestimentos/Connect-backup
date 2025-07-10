@@ -17,8 +17,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
-import { cn } from '@/lib/utils';
-import { useQueryClient } from '@tanstack/react-query';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -36,13 +34,12 @@ const newsSchema = z.object({
 type NewsFormValues = z.infer<typeof newsSchema>;
 
 export function ManageNews() {
-    const queryClient = useQueryClient();
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
+    const isSubmitting = deleteNewsItemMutation.isPending || false;
 
-    const { register, handleSubmit, reset, control, formState: { errors } } = useForm<NewsFormValues>({
+    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
         defaultValues: {
             isHighlight: false,
@@ -76,17 +73,12 @@ export function ManageNews() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
-            try {
-                await deleteNewsItemMutation.mutateAsync(id);
-                toast({ title: "Notícia excluída com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['newsItems'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover a notícia.",
-                    variant: "destructive"
-                });
-            }
+            await deleteNewsItemMutation.mutateAsync(id, {
+                onSuccess: () => {
+                    toast({ title: "Notícia excluída com sucesso." });
+                },
+                // onError is handled globally in the context
+            });
         }
     };
     
@@ -101,7 +93,6 @@ export function ManageNews() {
             return;
         }
 
-        setIsSubmitting(true);
         try {
             if (editingNews) {
                 await updateNewsItem({ ...editingNews, ...data });
@@ -119,8 +110,6 @@ export function ManageNews() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar a notícia.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -187,42 +176,42 @@ export function ManageNews() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
                             <div>
                                 <Label htmlFor="title">Título</Label>
-                                <Input id="title" {...register('title')} disabled={isSubmitting}/>
+                                <Input id="title" {...register('title')} disabled={isFormSubmitting}/>
                                 {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="snippet">Snippet (texto curto para o card)</Label>
-                                <Textarea id="snippet" {...register('snippet')} disabled={isSubmitting} rows={3}/>
+                                <Textarea id="snippet" {...register('snippet')} disabled={isFormSubmitting} rows={3}/>
                                 {errors.snippet && <p className="text-sm text-destructive mt-1">{errors.snippet.message}</p>}
                             </div>
                              <div>
                                 <Label htmlFor="content">Conteúdo Completo (para o modal)</Label>
-                                <Textarea id="content" {...register('content')} disabled={isSubmitting} rows={7}/>
+                                <Textarea id="content" {...register('content')} disabled={isFormSubmitting} rows={7}/>
                                 {errors.content && <p className="text-sm text-destructive mt-1">{errors.content.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="category">Categoria</Label>
-                                <Input id="category" {...register('category')} disabled={isSubmitting}/>
+                                <Input id="category" {...register('category')} disabled={isFormSubmitting}/>
                                 {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="date">Data</Label>
-                                <Input id="date" type="date" {...register('date')} disabled={isSubmitting}/>
+                                <Input id="date" type="date" {...register('date')} disabled={isFormSubmitting}/>
                                 {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="imageUrl">URL da Imagem</Label>
-                                <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png" disabled={isSubmitting}/>
+                                <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png" disabled={isFormSubmitting}/>
                                 {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="link">URL do Link (opcional)</Label>
-                                <Input id="link" {...register('link')} placeholder="https://..." disabled={isSubmitting}/>
+                                <Input id="link" {...register('link')} placeholder="https://..." disabled={isFormSubmitting}/>
                                 {errors.link && <p className="text-sm text-destructive mt-1">{errors.link.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="dataAiHint">Dica para IA da Imagem (opcional)</Label>
-                                <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" disabled={isSubmitting}/>
+                                <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" disabled={isFormSubmitting}/>
                             </div>
                             <div className="flex items-center space-x-2">
                             <Controller
@@ -233,7 +222,7 @@ export function ManageNews() {
                                             id="isHighlight"
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
-                                            disabled={isSubmitting}
+                                            disabled={isFormSubmitting}
                                             className="data-[state=checked]:bg-admin-primary"
                                         />
                                     )}
@@ -242,10 +231,10 @@ export function ManageNews() {
                             </div>
                             <DialogFooter className="pt-4">
                                 <DialogClose asChild>
-                                    <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                                    <Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button>
                                 </DialogClose>
-                                <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                <Button type="submit" disabled={isFormSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                    {isFormSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Salvar
                                 </Button>
                             </DialogFooter>

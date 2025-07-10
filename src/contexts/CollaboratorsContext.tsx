@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface Collaborator {
   id: string;
@@ -37,7 +38,7 @@ interface CollaboratorsContextType {
   loading: boolean;
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
   updateCollaborator: (collaborator: Collaborator) => Promise<void>;
-  deleteCollaboratorMutation: UseMutationResult<void, Error, string, unknown>;
+  deleteCollaboratorMutation: UseMutationResult<void, Error, string, { previousData: Collaborator[] }>;
 }
 
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
@@ -79,17 +80,36 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     },
   });
 
-  const deleteCollaboratorMutation = useMutation<void, Error, string>({
+  const deleteCollaboratorMutation = useMutation<void, Error, string, { previousData: Collaborator[] }>({
     mutationFn: (id: string) => {
         // Prevent deleting the mock user from Firestore
         if (id === mockAdminCollaborator.id) {
-            return Promise.resolve();
+            // We can throw an error here to notify the user, or just resolve.
+            // Let's throw for clarity.
+            return Promise.reject(new Error("O usuário administrador mock não pode ser excluído."));
         }
         return deleteDocumentFromCollection(COLLECTION_NAME, id);
     },
-    onError: (error) => {
-        console.error("Error deleting collaborator:", error);
-    }
+    onMutate: async (idToDelete) => {
+      if (idToDelete === mockAdminCollaborator.id) return;
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<Collaborator[]>([COLLECTION_NAME]) || [];
+      queryClient.setQueryData<Collaborator[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
+      return { previousData };
+    },
+    onError: (err, id, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+        toast({
+            title: "Erro ao excluir",
+            description: err.message || "Não foi possível remover o colaborador. A lista foi restaurada.",
+            variant: "destructive"
+        });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const value = useMemo(() => ({

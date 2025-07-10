@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo } fro
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface EventType {
   id: string;
@@ -21,7 +22,7 @@ interface EventsContextType {
   loading: boolean;
   addEvent: (event: Omit<EventType, 'id'>) => Promise<WithId<Omit<EventType, 'id'>>>;
   updateEvent: (event: EventType) => Promise<void>;
-  deleteEventMutation: UseMutationResult<void, Error, string, unknown>;
+  deleteEventMutation: UseMutationResult<void, Error, string, { previousData: EventType[] }>;
   getEventRecipients: (event: EventType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -68,11 +69,27 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteEventMutation = useMutation<void, Error, string>({
+  const deleteEventMutation = useMutation<void, Error, string, { previousData: EventType[] }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onError: (error) => {
-        console.error("Error deleting event:", error);
-    }
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]) || [];
+      queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
+      return { previousData };
+    },
+    onError: (err, id, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+        toast({
+            title: "Erro ao excluir",
+            description: "Não foi possível remover o evento. A lista foi restaurada.",
+            variant: "destructive"
+        });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const value = useMemo(() => ({

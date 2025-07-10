@@ -21,7 +21,6 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { parseISO, format, isValid } from 'date-fns';
-import { useQueryClient } from '@tanstack/react-query';
 
 const eventSchema = z.object({
     id: z.string().optional(),
@@ -36,13 +35,12 @@ const eventSchema = z.object({
 type EventFormValues = z.infer<typeof eventSchema>;
 
 export function ManageEvents() {
-    const queryClient = useQueryClient();
     const { events, addEvent, updateEvent, deleteEventMutation } = useEvents();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
+    const isSubmitting = deleteEventMutation.isPending || false;
 
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventSchema),
@@ -77,22 +75,16 @@ export function ManageEvents() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este evento?")) {
-            try {
-                await deleteEventMutation.mutateAsync(id);
-                toast({ title: "Evento excluído com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['events'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover o evento.",
-                    variant: "destructive"
-                });
-            }
+            await deleteEventMutation.mutateAsync(id, {
+                onSuccess: () => {
+                    toast({ title: "Evento excluído com sucesso." });
+                },
+                // onError is handled globally in the context
+            });
         }
     };
     
     const onSubmit = async (data: EventFormValues) => {
-        setIsSubmitting(true);
         try {
             // Ensure the date is stored in a consistent format (ISO string at UTC)
             const submissionData = {
@@ -116,8 +108,6 @@ export function ManageEvents() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar o evento.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -191,24 +181,24 @@ export function ManageEvents() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="title">Título do Evento</Label>
-                                <Input id="title" {...form.register('title')} disabled={isSubmitting}/>
+                                <Input id="title" {...form.register('title')} disabled={form.formState.isSubmitting}/>
                                 {form.formState.errors.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.title.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="date">Data</Label>
-                                <Input id="date" type="date" {...form.register('date')} disabled={isSubmitting}/>
+                                <Input id="date" type="date" {...form.register('date')} disabled={form.formState.isSubmitting}/>
                                 {form.formState.errors.date && <p className="text-sm text-destructive mt-1">{form.formState.errors.date.message}</p>}
                             </div>
                         </div>
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="time">Horário (ex: 10:00 - 11:00)</Label>
-                                <Input id="time" {...form.register('time')} disabled={isSubmitting}/>
+                                <Input id="time" {...form.register('time')} disabled={form.formState.isSubmitting}/>
                                 {form.formState.errors.time && <p className="text-sm text-destructive mt-1">{form.formState.errors.time.message}</p>}
                             </div>
                              <div>
                                 <Label htmlFor="location">Local</Label>
-                                <Input id="location" {...form.register('location')} disabled={isSubmitting}/>
+                                <Input id="location" {...form.register('location')} disabled={form.formState.isSubmitting}/>
                                 {form.formState.errors.location && <p className="text-sm text-destructive mt-1">{form.formState.errors.location.message}</p>}
                             </div>
                         </div>
@@ -220,7 +210,7 @@ export function ManageEvents() {
                                 render={({ field }) => {
                                     const IconToShow = getIcon(field.value);
                                     return (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={form.formState.isSubmitting}>
                                         <SelectTrigger>
                                             <SelectValue>
                                                     {field.value && (
@@ -263,9 +253,9 @@ export function ManageEvents() {
                         </div>
                         
                         <DialogFooter className="mt-6">
-                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
-                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={form.formState.isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={form.formState.isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>

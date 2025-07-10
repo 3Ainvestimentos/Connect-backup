@@ -14,7 +14,6 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 const labSchema = z.object({
     id: z.string().optional(),
@@ -28,13 +27,12 @@ const labSchema = z.object({
 type LabFormValues = z.infer<typeof labSchema>;
 
 export function ManageLabs() {
-    const queryClient = useQueryClient();
     const { labs, addLab, updateLab, deleteLabMutation } = useLabs();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingLab, setEditingLab] = useState<LabType | null>(null);
+    const isSubmitting = deleteLabMutation.isPending || false;
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<LabFormValues>({
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<LabFormValues>({
         resolver: zodResolver(labSchema),
     });
 
@@ -61,22 +59,16 @@ export function ManageLabs() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este vídeo do Lab?")) {
-            try {
-                await deleteLabMutation.mutateAsync(id);
-                toast({ title: "Vídeo do Lab excluído com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['labs'] });
-            } catch(error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover o vídeo.",
-                    variant: "destructive"
-                });
-            }
+            await deleteLabMutation.mutateAsync(id, {
+                onSuccess: () => {
+                    toast({ title: "Vídeo do Lab excluído com sucesso." });
+                },
+                // onError is handled globally in the context
+            });
         }
     };
     
     const onSubmit = async (data: LabFormValues) => {
-        setIsSubmitting(true);
         try {
             if (editingLab) {
                 await updateLab({ ...data, id: editingLab.id } as LabType);
@@ -94,8 +86,6 @@ export function ManageLabs() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar o vídeo.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
     
@@ -151,34 +141,34 @@ export function ManageLabs() {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="title">Título do Vídeo</Label>
-                            <Input id="title" {...register('title')} disabled={isSubmitting}/>
+                            <Input id="title" {...register('title')} disabled={isFormSubmitting}/>
                             {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
                         </div>
                          <div>
                             <Label htmlFor="subtitle">Subtítulo (opcional)</Label>
-                            <Input id="subtitle" {...register('subtitle')} disabled={isSubmitting}/>
+                            <Input id="subtitle" {...register('subtitle')} disabled={isFormSubmitting}/>
                         </div>
                         <div>
                             <Label htmlFor="category">Categoria</Label>
-                            <Input id="category" {...register('category')} disabled={isSubmitting}/>
+                            <Input id="category" {...register('category')} disabled={isFormSubmitting}/>
                             {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="lastModified">Data de Modificação</Label>
-                            <Input id="lastModified" type="date" {...register('lastModified')} disabled={isSubmitting}/>
+                            <Input id="lastModified" type="date" {...register('lastModified')} disabled={isFormSubmitting}/>
                             {errors.lastModified && <p className="text-sm text-destructive mt-1">{errors.lastModified.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="videoUrl">URL do Vídeo</Label>
-                            <Input id="videoUrl" {...register('videoUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                            <Input id="videoUrl" {...register('videoUrl')} placeholder="https://..." disabled={isFormSubmitting}/>
                             {errors.videoUrl && <p className="text-sm text-destructive mt-1">{errors.videoUrl.message}</p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                                <Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button>
                             </DialogClose>
-                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" disabled={isFormSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {isFormSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>

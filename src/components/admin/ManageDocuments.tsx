@@ -14,7 +14,6 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 const documentSchema = z.object({
     id: z.string().optional(),
@@ -30,13 +29,12 @@ const documentSchema = z.object({
 type DocumentFormValues = z.infer<typeof documentSchema>;
 
 export function ManageDocuments() {
-    const queryClient = useQueryClient();
     const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
+    const isSubmitting = deleteDocumentMutation.isPending || false;
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<DocumentFormValues>({
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<DocumentFormValues>({
         resolver: zodResolver(documentSchema),
     });
 
@@ -65,22 +63,16 @@ export function ManageDocuments() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este documento?")) {
-            try {
-                await deleteDocumentMutation.mutateAsync(id);
-                toast({ title: "Documento excluído com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['documents'] });
-            } catch(error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover o documento.",
-                    variant: "destructive"
-                });
-            }
+            await deleteDocumentMutation.mutateAsync(id, {
+                onSuccess: () => {
+                    toast({ title: "Documento excluído com sucesso." });
+                },
+                // onError is handled globally in the context
+            });
         }
     };
     
     const onSubmit = async (data: DocumentFormValues) => {
-        setIsSubmitting(true);
         try {
             if (editingDocument) {
                 await updateDocument({ ...data, id: editingDocument.id } as DocumentType);
@@ -98,8 +90,6 @@ export function ManageDocuments() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar o documento.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
     
@@ -155,40 +145,40 @@ export function ManageDocuments() {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nome do Arquivo</Label>
-                            <Input id="name" {...register('name')} disabled={isSubmitting}/>
+                            <Input id="name" {...register('name')} disabled={isFormSubmitting}/>
                             {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="category">Categoria</Label>
-                            <Input id="category" {...register('category')} disabled={isSubmitting}/>
+                            <Input id="category" {...register('category')} disabled={isFormSubmitting}/>
                             {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                         </div>
                          <div>
                             <Label htmlFor="type">Tipo (ex: pdf, docx)</Label>
-                            <Input id="type" {...register('type')} disabled={isSubmitting}/>
+                            <Input id="type" {...register('type')} disabled={isFormSubmitting}/>
                             {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
                         </div>
                          <div>
                             <Label htmlFor="size">Tamanho (ex: 2.5MB)</Label>
-                            <Input id="size" {...register('size')} disabled={isSubmitting}/>
+                            <Input id="size" {...register('size')} disabled={isFormSubmitting}/>
                             {errors.size && <p className="text-sm text-destructive mt-1">{errors.size.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="lastModified">Data de Modificação</Label>
-                            <Input id="lastModified" type="date" {...register('lastModified')} disabled={isSubmitting}/>
+                            <Input id="lastModified" type="date" {...register('lastModified')} disabled={isFormSubmitting}/>
                             {errors.lastModified && <p className="text-sm text-destructive mt-1">{errors.lastModified.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="downloadUrl">URL de Download</Label>
-                            <Input id="downloadUrl" {...register('downloadUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                            <Input id="downloadUrl" {...register('downloadUrl')} placeholder="https://..." disabled={isFormSubmitting}/>
                             {errors.downloadUrl && <p className="text-sm text-destructive mt-1">{errors.downloadUrl.message}</p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                                <Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button>
                             </DialogClose>
-                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" disabled={isFormSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {isFormSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>

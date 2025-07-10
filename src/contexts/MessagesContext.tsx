@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo } fro
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface MessageType {
   id: string;
@@ -24,7 +25,7 @@ interface MessagesContextType {
   loading: boolean;
   addMessage: (message: Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>>;
   updateMessage: (message: MessageType) => Promise<void>;
-  deleteMessageMutation: UseMutationResult<void, Error, string, unknown>;
+  deleteMessageMutation: UseMutationResult<void, Error, string, { previousData: MessageType[] }>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
   markMessageAsDeleted: (messageId: string, collaboratorId: string) => Promise<void>;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
@@ -74,11 +75,27 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteMessageMutation = useMutation<void, Error, string>({
+  const deleteMessageMutation = useMutation<void, Error, string, { previousData: MessageType[] }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onError: (error) => {
-        console.error("Error deleting message:", error);
-    }
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<MessageType[]>([COLLECTION_NAME]) || [];
+      queryClient.setQueryData<MessageType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
+      return { previousData };
+    },
+    onError: (err, id, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+        toast({
+            title: "Erro ao excluir",
+            description: "Não foi possível remover a mensagem. A lista foi restaurada.",
+            variant: "destructive"
+        });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {

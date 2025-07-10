@@ -19,7 +19,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
-import { useQueryClient } from '@tanstack/react-query';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -74,14 +73,13 @@ const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: Mess
 
 
 export function ManageMessages() {
-    const queryClient = useQueryClient();
     const { messages, addMessage, updateMessage, deleteMessageMutation, getMessageRecipients } = useMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
     const [viewingStatusFor, setViewingStatusFor] = useState<MessageType | null>(null);
+    const isSubmitting = deleteMessageMutation.isPending || false;
     
     const form = useForm<MessageFormValues>({
         resolver: zodResolver(messageSchema),
@@ -114,22 +112,16 @@ export function ManageMessages() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) {
-            try {
-                await deleteMessageMutation.mutateAsync(id);
-                toast({ title: "Mensagem excluída com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['messages'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover a mensagem.",
-                    variant: "destructive"
-                });
-            }
+            await deleteMessageMutation.mutateAsync(id, {
+                onSuccess: () => {
+                    toast({ title: "Mensagem excluída com sucesso." });
+                },
+                // onError is handled globally in the context
+            });
         }
     };
     
     const onSubmit = async (data: MessageFormValues) => {
-        setIsSubmitting(true);
         const submissionData = { ...data, date: new Date().toISOString() };
 
         try {
@@ -152,8 +144,6 @@ export function ManageMessages() {
                 description: error instanceof Error ? error.message : "Não foi possível enviar a mensagem.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
     
@@ -241,27 +231,27 @@ export function ManageMessages() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
                         <div>
                             <Label htmlFor="title">Título</Label>
-                            <Input id="title" {...form.register('title')} disabled={isSubmitting}/>
+                            <Input id="title" {...form.register('title')} disabled={form.formState.isSubmitting}/>
                             {form.formState.errors.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.title.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="content">Conteúdo</Label>
-                            <Textarea id="content" {...form.register('content')} rows={5} disabled={isSubmitting}/>
+                            <Textarea id="content" {...form.register('content')} rows={5} disabled={form.formState.isSubmitting}/>
                             {form.formState.errors.content && <p className="text-sm text-destructive mt-1">{form.formState.errors.content.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="sender">Remetente</Label>
-                            <Input id="sender" {...form.register('sender')} disabled={isSubmitting}/>
+                            <Input id="sender" {...form.register('sender')} disabled={form.formState.isSubmitting}/>
                             {form.formState.errors.sender && <p className="text-sm text-destructive mt-1">{form.formState.errors.sender.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="mediaUrl">URL da Mídia (Imagem/Vídeo - opcional)</Label>
-                            <Input id="mediaUrl" {...form.register('mediaUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                            <Input id="mediaUrl" {...form.register('mediaUrl')} placeholder="https://..." disabled={form.formState.isSubmitting}/>
                             {form.formState.errors.mediaUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.mediaUrl.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="link">URL do Link (opcional)</Label>
-                            <Input id="link" {...form.register('link')} placeholder="https://..." disabled={isSubmitting}/>
+                            <Input id="link" {...form.register('link')} placeholder="https://..." disabled={form.formState.isSubmitting}/>
                             {form.formState.errors.link && <p className="text-sm text-destructive mt-1">{form.formState.errors.link.message}</p>}
                         </div>
 
@@ -276,9 +266,9 @@ export function ManageMessages() {
                         </div>
 
                         <DialogFooter className="mt-6">
-                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
-                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={form.formState.isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={form.formState.isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>

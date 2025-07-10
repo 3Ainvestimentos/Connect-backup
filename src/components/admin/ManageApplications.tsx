@@ -18,7 +18,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { iconList, getIcon } from '@/lib/icons';
 import { ScrollArea } from '../ui/scroll-area';
-import { useQueryClient } from '@tanstack/react-query';
 
 const linkItemSchema = z.object({
   id: z.string(),
@@ -78,11 +77,11 @@ const applicationSchema = z.object({
 type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
 export function ManageApplications() {
-    const queryClient = useQueryClient();
     const { applications, addApplication, updateApplication, deleteApplicationMutation } = useApplications();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const [editingApplication, setEditingApplication] = useState<Application | null>(null);
+
+    const isSubmitting = deleteApplicationMutation.isPending || false; // You can add other mutation states here
 
     const form = useForm<ApplicationFormValues>({
         resolver: zodResolver(applicationSchema),
@@ -130,22 +129,18 @@ export function ManageApplications() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta aplicação?")) {
-            try {
-                await deleteApplicationMutation.mutateAsync(id);
-                toast({ title: "Aplicação excluída com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['applications'] });
-            } catch (error) {
-                toast({ 
-                    title: "Erro ao excluir", 
-                    description: error instanceof Error ? error.message : "Não foi possível remover a aplicação.",
-                    variant: "destructive" 
-                });
-            }
+            await deleteApplicationMutation.mutateAsync(id, {
+                onSuccess: () => {
+                    toast({ title: "Aplicação excluída com sucesso." });
+                },
+                // onError is handled globally in the context
+            });
         }
     };
     
     const onSubmit = async (data: ApplicationFormValues) => {
-        setIsSubmitting(true);
+        // This is a simplified isSubmitting state. For a real app, you'd manage add/update mutation states.
+        const formIsSubmitting = form.formState.isSubmitting;
         try {
             if (editingApplication) {
                 const appData = { ...data, id: editingApplication.id } as Application;
@@ -164,8 +159,6 @@ export function ManageApplications() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar a aplicação.",
                 variant: "destructive" 
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
     
@@ -226,7 +219,7 @@ export function ManageApplications() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="name">Nome da Aplicação</Label>
-                                <Input id="name" {...form.register('name')} disabled={isSubmitting} />
+                                <Input id="name" {...form.register('name')} disabled={form.formState.isSubmitting} />
                                 {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                             </div>
                             <div>
@@ -237,7 +230,7 @@ export function ManageApplications() {
                                     render={({ field }) => {
                                         const IconToShow = getIcon(field.value);
                                         return (
-                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={form.formState.isSubmitting}>
                                             <SelectTrigger>
                                                 <SelectValue>
                                                      {field.value && (
@@ -276,7 +269,7 @@ export function ManageApplications() {
                                 name="type"
                                 control={form.control}
                                 render={({ field }) => (
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4 mt-2" disabled={isSubmitting}>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4 mt-2" disabled={form.formState.isSubmitting}>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="modal" id="modal" /><Label htmlFor="modal">Modal</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="external" id="external" /><Label htmlFor="external">Link Externo</Label></div>
                                 </RadioGroup>
@@ -287,7 +280,7 @@ export function ManageApplications() {
                         {watchType === 'external' && (
                             <div>
                                 <Label htmlFor="href">URL do Link</Label>
-                                <Input id="href" {...form.register('href')} placeholder="https://..." disabled={isSubmitting}/>
+                                <Input id="href" {...form.register('href')} placeholder="https://..." disabled={form.formState.isSubmitting}/>
                                 {form.formState.errors.href && <p className="text-sm text-destructive mt-1">{form.formState.errors.href.message}</p>}
                             </div>
                         )}
@@ -299,7 +292,7 @@ export function ManageApplications() {
                                     name="modalId"
                                     control={form.control}
                                     render={({ field }) => (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={form.formState.isSubmitting}>
                                         <SelectTrigger><SelectValue placeholder="Selecione um tipo de modal" /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="profile">Perfil</SelectItem>
@@ -321,12 +314,12 @@ export function ManageApplications() {
                                 <h3 className="font-semibold text-lg">Conteúdo do Modal Genérico</h3>
                                 <div>
                                     <Label htmlFor="content.title">Título do Modal</Label>
-                                    <Input id="content.title" {...form.register('content.title')} disabled={isSubmitting}/>
+                                    <Input id="content.title" {...form.register('content.title')} disabled={form.formState.isSubmitting}/>
                                     {form.formState.errors.content?.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.content.title.message}</p>}
                                 </div>
                                 <div>
                                     <Label htmlFor="content.description">Descrição</Label>
-                                    <Textarea id="content.description" {...form.register('content.description')} disabled={isSubmitting}/>
+                                    <Textarea id="content.description" {...form.register('content.description')} disabled={form.formState.isSubmitting}/>
                                 </div>
                                 <div>
                                     <Label>Itens do Modal</Label>
@@ -334,14 +327,14 @@ export function ManageApplications() {
                                         {fields.map((field, index) => (
                                             <div key={field.id} className="p-3 border rounded-md space-y-2 relative bg-background">
                                                 <Label>Item {index + 1}</Label>
-                                                <Input {...form.register(`content.items.${index}.label`)} placeholder="Rótulo (ex: Reembolso de Despesas)" disabled={isSubmitting}/>
-                                                <Input {...form.register(`content.items.${index}.subtext`)} placeholder="Texto de apoio (opcional)" disabled={isSubmitting}/>
-                                                <Input {...form.register(`content.items.${index}.link`)} placeholder="URL do link (opcional)" disabled={isSubmitting}/>
-                                                <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => remove(index)} disabled={isSubmitting}><Trash2 className="h-4 w-4"/></Button>
+                                                <Input {...form.register(`content.items.${index}.label`)} placeholder="Rótulo (ex: Reembolso de Despesas)" disabled={form.formState.isSubmitting}/>
+                                                <Input {...form.register(`content.items.${index}.subtext`)} placeholder="Texto de apoio (opcional)" disabled={form.formState.isSubmitting}/>
+                                                <Input {...form.register(`content.items.${index}.link`)} placeholder="URL do link (opcional)" disabled={form.formState.isSubmitting}/>
+                                                <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => remove(index)} disabled={form.formState.isSubmitting}><Trash2 className="h-4 w-4"/></Button>
                                             </div>
                                         ))}
                                     </div>
-                                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({id: `item-${Date.now()}`, label: '', subtext: '', link: ''})} disabled={isSubmitting}>
+                                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({id: `item-${Date.now()}`, label: '', subtext: '', link: ''})} disabled={form.formState.isSubmitting}>
                                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Item
                                     </Button>
                                 </div>
@@ -349,9 +342,9 @@ export function ManageApplications() {
                         )}
 
                         <DialogFooter className="mt-6">
-                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
-                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={form.formState.isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={form.formState.isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>

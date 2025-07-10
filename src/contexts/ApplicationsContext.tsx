@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface ApplicationLinkItem {
   id: string;
@@ -30,7 +31,7 @@ interface ApplicationsContextType {
   loading: boolean;
   addApplication: (app: Omit<Application, 'id'>) => Promise<Application>;
   updateApplication: (app: Application) => Promise<void>;
-  deleteApplicationMutation: UseMutationResult<void, Error, string, unknown>;
+  deleteApplicationMutation: UseMutationResult<void, Error, string, { previousData: Application[] }>;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
@@ -47,11 +48,9 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const addApplicationMutation = useMutation<WithId<Omit<Application, 'id'>>, Error, Omit<Application, 'id'>>({
     mutationFn: (appData) => addDocumentToCollection(COLLECTION_NAME, appData),
     onSuccess: (newItem) => {
-        // Optimistically update the cache
         queryClient.setQueryData([COLLECTION_NAME], (oldData: Application[] = []) => [...oldData, newItem]);
     },
     onSettled: () => {
-        // Invalidate to refetch and ensure consistency
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -62,7 +61,6 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
      onSuccess: (_, variables) => {
-      // Optimistically update to the new value
       queryClient.setQueryData([COLLECTION_NAME], (oldData: Application[] = []) =>
         oldData.map((item) => (item.id === variables.id ? variables : item))
       );
@@ -72,11 +70,27 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteApplicationMutation = useMutation<void, Error, string>({
+  const deleteApplicationMutation = useMutation<void, Error, string, { previousData: Application[] }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onError: (error) => {
-        console.error("Error deleting application:", error);
-    }
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<Application[]>([COLLECTION_NAME]) || [];
+      queryClient.setQueryData<Application[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
+      return { previousData };
+    },
+    onError: (err, id, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+        toast({
+            title: "Erro ao excluir",
+            description: "Não foi possível remover a aplicação. A lista foi restaurada.",
+            variant: "destructive"
+        });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
   
   const value = useMemo(() => ({

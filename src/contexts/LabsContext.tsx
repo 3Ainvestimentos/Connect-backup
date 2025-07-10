@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { toast } from '@/hooks/use-toast';
 
 export interface LabType {
   id: string;
@@ -19,7 +20,7 @@ interface LabsContextType {
   loading: boolean;
   addLab: (lab: Omit<LabType, 'id'>) => Promise<WithId<Omit<LabType, 'id'>>>;
   updateLab: (lab: LabType) => Promise<void>;
-  deleteLabMutation: UseMutationResult<void, Error, string, unknown>;
+  deleteLabMutation: UseMutationResult<void, Error, string, { previousData: LabType[] }>;
 }
 
 const LabsContext = createContext<LabsContextType | undefined>(undefined);
@@ -55,11 +56,27 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteLabMutation = useMutation<void, Error, string>({
+  const deleteLabMutation = useMutation<void, Error, string, { previousData: LabType[] }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onError: (error) => {
-        console.error("Error deleting lab:", error);
-    }
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<LabType[]>([COLLECTION_NAME]) || [];
+      queryClient.setQueryData<LabType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
+      return { previousData };
+    },
+    onError: (err, id, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+        toast({
+            title: "Erro ao excluir",
+            description: "Não foi possível remover o vídeo. A lista foi restaurada.",
+            variant: "destructive"
+        });
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const value = useMemo(() => ({
