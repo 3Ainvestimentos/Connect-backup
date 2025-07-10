@@ -129,7 +129,7 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto justify-between font-body">
+              <Button variant="outline" className="w-full md:w-auto justify-between font-body hover:bg-background hover:text-foreground">
                 Categorias ({selectedCategories.length || 'Todas'}) <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -150,7 +150,7 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full md:w-auto justify-between font-body">
+              <Button variant="outline" className="w-full md:w-auto justify-between font-body hover:bg-background hover:text-foreground">
                 Tipos ({selectedTypes.length || 'Todos'}) <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
