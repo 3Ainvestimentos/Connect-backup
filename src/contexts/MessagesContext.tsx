@@ -1,10 +1,8 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface MessageType {
   id: string;
@@ -19,7 +17,7 @@ export interface MessageType {
 interface MessagesContextType {
   messages: MessageType[];
   loading: boolean;
-  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy'>>>;
+  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => Promise<MessageType>;
   updateMessage: (message: MessageType) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
@@ -27,16 +25,17 @@ interface MessagesContextType {
 }
 
 const MessagesContext = createContext<MessagesContextType | undefined>(undefined);
-const COLLECTION_NAME = 'messages';
+
+const generateMockId = () => `mock_${Date.now()}_${Math.random()}`;
 
 export const MessagesProvider = ({ children }: { children: ReactNode }) => {
-  const queryClient = useQueryClient();
+  const [messages, setMessages] = useState<MessageType[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: messages = [], isFetching } = useQuery<MessageType[]>({
-    queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
-    select: (data) => data.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-  });
+  useEffect(() => {
+    setMessages([]);
+    setLoading(false);
+  }, []);
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (message.recipientIds.includes('all')) {
@@ -45,56 +44,49 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => message.recipientIds.includes(c.id));
   }, []);
 
-  const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id' | 'readBy'>>, Error, Omit<MessageType, 'id' | 'readBy'>>({
-    mutationFn: (messageData: Omit<MessageType, 'id' | 'readBy'>) => {
-      const newMessageData = { ...messageData, readBy: [] };
-      return addDocumentToCollection(COLLECTION_NAME, newMessageData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-  });
+  const addMessage = useCallback(async (messageData: Omit<MessageType, 'id' | 'readBy'>): Promise<MessageType> => {
+    setLoading(true);
+    const newMessage = { ...messageData, id: generateMockId(), readBy: [] };
+    setMessages(prev => [newMessage, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setLoading(false);
+    return newMessage;
+  }, []);
 
-  const updateMessageMutation = useMutation<void, Error, MessageType>({
-    mutationFn: (updatedMessage: MessageType) => updateDocumentInCollection(COLLECTION_NAME, updatedMessage.id, updatedMessage),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-  });
+  const updateMessage = useCallback(async (updatedMessage: MessageType): Promise<void> => {
+    setLoading(true);
+    setMessages(prev => prev
+      .map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    );
+    setLoading(false);
+  }, []);
 
-  const deleteMessageMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-  });
+  const deleteMessage = useCallback(async (id: string): Promise<void> => {
+    setLoading(true);
+    setMessages(prev => prev.filter(msg => msg.id !== id));
+    setLoading(false);
+  }, []);
 
-  const markAsReadMutation = useMutation({
-    mutationFn: ({ messageId, collaboratorId }: { messageId: string; collaboratorId: string }) => {
-      const message = messages.find(msg => msg.id === messageId);
-      if (message && !message.readBy.includes(collaboratorId)) {
-        const updatedReadBy = [...message.readBy, collaboratorId];
-        return updateDocumentInCollection(COLLECTION_NAME, messageId, { readBy: updatedReadBy });
-      }
-      return Promise.resolve();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-    onError: (error: Error) => {
-      console.error("Failed to mark message as read:", error.message);
-    },
-  });
+  const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {
+    setMessages(prev => {
+      return prev.map(msg => {
+        if (msg.id === messageId && !msg.readBy.includes(collaboratorId)) {
+          return { ...msg, readBy: [...msg.readBy, collaboratorId] };
+        }
+        return msg;
+      });
+    });
+  }, []);
   
   const value = useMemo(() => ({
     messages,
-    loading: isFetching,
-    addMessage: (message) => addMessageMutation.mutateAsync(message),
-    updateMessage: (message) => updateMessageMutation.mutateAsync(message),
-    deleteMessage: (id) => deleteMessageMutation.mutateAsync(id),
-    markMessageAsRead: (messageId, collaboratorId) => markAsReadMutation.mutate({ messageId, collaboratorId }),
+    loading,
+    addMessage,
+    updateMessage,
+    deleteMessage,
+    markMessageAsRead,
     getMessageRecipients
-  }), [messages, isFetching, getMessageRecipients, addMessageMutation, updateMessageMutation, deleteMessageMutation, markAsReadMutation]);
+  }), [messages, loading, getMessageRecipients, addMessage, updateMessage, deleteMessage, markMessageAsRead]);
 
   return (
     <MessagesContext.Provider value={value}>

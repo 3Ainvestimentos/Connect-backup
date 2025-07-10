@@ -1,9 +1,8 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import React, { createContext, useContext, ReactNode, useState, useEffect, useMemo, useCallback } from 'react';
+import { cleanDataForFirestore } from '@/lib/data-sanitizer';
 
 export interface ApplicationLinkItem {
   id: string;
@@ -28,53 +27,57 @@ export interface Application {
 interface ApplicationsContextType {
   applications: Application[];
   loading: boolean;
-  addApplication: (app: Omit<Application, 'id'>) => Promise<WithId<Omit<Application, 'id'>>>;
+  addApplication: (app: Omit<Application, 'id'>) => Promise<Application>;
   updateApplication: (app: Application) => Promise<void>;
   deleteApplication: (id: string) => Promise<void>;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
-const COLLECTION_NAME = 'applications';
+
+// Helper to generate a unique ID for mock items
+const generateMockId = () => `mock_${Date.now()}_${Math.random()}`;
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
-  const queryClient = useQueryClient();
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: applications = [], isFetching } = useQuery<Application[]>({
-    queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<Application>(COLLECTION_NAME),
-  });
+  // Simulate initial data loading from a "database"
+  useEffect(() => {
+    // In a real app, this would be a fetch call.
+    // For now, we initialize with an empty array or could use mock data.
+    setApplications([]); 
+    setLoading(false);
+  }, []);
 
-  const addApplicationMutation = useMutation<WithId<Omit<Application, 'id'>>, Error, Omit<Application, 'id'>>({
-    mutationFn: (appData: Omit<Application, 'id'>) => addDocumentToCollection(COLLECTION_NAME, appData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-  });
+  const addApplication = useCallback(async (appData: Omit<Application, 'id'>): Promise<Application> => {
+    setLoading(true);
+    const cleanedData = cleanDataForFirestore(appData);
+    const newApplication: Application = { id: generateMockId(), ...cleanedData };
+    setApplications(prev => [...prev, newApplication]);
+    setLoading(false);
+    return newApplication;
+  }, []);
 
-  const updateApplicationMutation = useMutation<void, Error, Application>({
-    mutationFn: (updatedApp: Application) => {
-        const { id, ...data } = updatedApp;
-        return updateDocumentInCollection(COLLECTION_NAME, id, data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-  });
+  const updateApplication = useCallback(async (updatedApp: Application): Promise<void> => {
+    setLoading(true);
+    const cleanedData = cleanDataForFirestore(updatedApp);
+    setApplications(prev => prev.map(app => app.id === cleanedData.id ? cleanedData : app));
+    setLoading(false);
+  }, []);
 
-  const deleteApplicationMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-  });
+  const deleteApplication = useCallback(async (id: string): Promise<void> => {
+    setLoading(true);
+    setApplications(prev => prev.filter(app => app.id !== id));
+    setLoading(false);
+  }, []);
 
   const value = useMemo(() => ({
     applications,
-    loading: isFetching,
-    addApplication: (app) => addApplicationMutation.mutateAsync(app),
-    updateApplication: (app) => updateApplicationMutation.mutateAsync(app),
-    deleteApplication: (id) => deleteApplicationMutation.mutateAsync(id),
-  }), [applications, isFetching, addApplicationMutation, updateApplicationMutation, deleteApplicationMutation]);
+    loading,
+    addApplication,
+    updateApplication,
+    deleteApplication,
+  }), [applications, loading, addApplication, updateApplication, deleteApplication]);
 
   return (
     <ApplicationsContext.Provider value={value}>

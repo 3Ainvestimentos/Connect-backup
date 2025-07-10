@@ -31,14 +31,11 @@ const EventsContext = createContext<EventsContextType | undefined>(undefined);
 const generateMockId = () => `mock_${Date.now()}_${Math.random()}`;
 
 export const EventsProvider = ({ children }: { children: ReactNode }) => {
-  // Use local state to manage events, simulating a persistent store.
   const [events, setEvents] = useState<EventType[]>(mockEvents);
   const [loading, setLoading] = useState(true);
 
   // Simulate initial data loading
   useEffect(() => {
-    // In a real scenario, you would fetch from Firestore here.
-    // For this mock setup, we just use the initial mockEvents.
     setEvents(mockEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     setLoading(false);
   }, []);
@@ -50,28 +47,28 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => event.recipientIds.includes(c.id));
   }, []);
 
-  const addEvent = async (eventData: Omit<EventType, 'id'>): Promise<EventType> => {
+  const addEvent = useCallback(async (eventData: Omit<EventType, 'id'>): Promise<EventType> => {
     setLoading(true);
     const newEvent: EventType = { id: generateMockId(), ...eventData };
     setEvents(prevEvents => [...prevEvents, newEvent].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     setLoading(false);
     return newEvent;
-  };
+  }, []);
 
-  const updateEvent = async (updatedEvent: EventType): Promise<void> => {
+  const updateEvent = useCallback(async (updatedEvent: EventType): Promise<void> => {
     setLoading(true);
     setEvents(prevEvents => 
       prevEvents.map(event => event.id === updatedEvent.id ? updatedEvent : event)
       .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     );
     setLoading(false);
-  };
+  }, []);
 
-  const deleteEvent = async (id: string): Promise<void> => {
+  const deleteEvent = useCallback(async (id: string): Promise<void> => {
     setLoading(true);
     setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
     setLoading(false);
-  };
+  }, []);
 
   const value = useMemo(() => ({
     events,
@@ -80,7 +77,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     updateEvent,
     deleteEvent,
     getEventRecipients,
-  }), [events, loading, getEventRecipients]);
+  }), [events, loading, getEventRecipients, addEvent, updateEvent, deleteEvent]);
 
   return (
     <EventsContext.Provider value={value}>
