@@ -16,9 +16,7 @@ export interface EventType {
   recipientIds: string[]; // Array of collaborator IDs
 }
 
-const mockEvents: EventType[] = [
-    { id: "event_mock_1", title: "Festa Junina 2025", date: "2025-07-10T00:00:00.000Z", time: "18:30", location: "Prédio Algar", icon: 'Flame', recipientIds: ['all'] },
-];
+const mockEvents: EventType[] = [];
 
 interface EventsContextType {
   events: EventType[];
@@ -104,7 +102,6 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
         // However, for this fix, we simply invalidate. The user won't be able to delete mocks permanently without a backend change
         // to not re-add them, or a local state management to track "deleted mocks".
         // The simplest fix is to allow deleting from firestore and if it's a mock, it will just disappear from UI until next fetch.
-        // Let's refine the logic to handle this.
       });
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
