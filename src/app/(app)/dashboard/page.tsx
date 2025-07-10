@@ -184,11 +184,8 @@ export default function DashboardPage() {
             <Card className="shadow-sm flex flex-col h-full">
               <CardHeader>
                 <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                      <MessageSquare className="h-6 w-6 text-accent" />
-                      <span>Mensagens</span>
-                    </div>
-                    {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
+                  <span>Mensagens</span>
+                  {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1 min-h-0 relative">
@@ -225,7 +222,6 @@ export default function DashboardPage() {
             <Card className="shadow-sm flex flex-col h-full">
               <CardHeader>
                 <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                  <CalendarDays className="h-6 w-6 text-accent"/>
                   Eventos
                 </CardTitle>
               </CardHeader>
