@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,7 +21,6 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { parseISO, format, isValid } from 'date-fns';
-import { runDeleteTest } from '@/lib/test-delete';
 
 const eventSchema = z.object({
     id: z.string().optional(),
@@ -41,7 +40,6 @@ export function ManageEvents() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
-    const [isTesting, setIsTesting] = useState(false);
 
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventSchema),
@@ -78,22 +76,6 @@ export function ManageEvents() {
         if (window.confirm("Tem certeza que deseja excluir este evento?")) {
             deleteEventMutation.mutate(id);
         }
-    };
-
-    const handleRunTest = async () => {
-        setIsTesting(true);
-        toast({
-            title: "Teste de Exclusão Iniciado",
-            description: "Verifique o console do desenvolvedor (F12) para ver os resultados.",
-        });
-        const result = await runDeleteTest();
-        toast({
-            title: result.success ? "Teste Concluído com Sucesso" : "Falha no Teste",
-            description: result.message,
-            variant: result.success ? "default" : "destructive",
-            duration: 9000,
-        });
-        setIsTesting(false);
     };
     
     const onSubmit = async (data: EventFormValues) => {
@@ -134,10 +116,6 @@ export function ManageEvents() {
                     <CardDescription>Adicione, edite ou remova eventos do calendário.</CardDescription>
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={handleRunTest} variant="destructive" disabled={isTesting}>
-                        {isTesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <AlertTriangle className="mr-2 h-4 w-4" />}
-                        Executar Teste de Exclusão
-                    </Button>
                     <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                         <PlusCircle className="mr-2 h-4 w-4" />
                         Adicionar Evento
