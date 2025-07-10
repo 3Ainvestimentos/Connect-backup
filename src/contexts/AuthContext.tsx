@@ -7,27 +7,6 @@ import { auth, googleProvider } from '@/lib/firebase'; // Import real auth
 import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
-// Objeto de usuário simulado foi desativado para usar a autenticação real.
-/*
-const MOCK_USER: User = {
-  uid: 'mock-user-uid',
-  email: 'mock@example.com',
-  displayName: 'Admin Mock',
-  photoURL: 'https://placehold.co/100x100.png',
-  emailVerified: true,
-  isAnonymous: false,
-  metadata: {},
-  providerData: [],
-  providerId: 'mock',
-  // Funções vazias para satisfazer o tipo User
-  delete: async () => {},
-  getIdToken: async () => 'mock-token',
-  getIdTokenResult: async () => ({ token: 'mock-token', expirationTime: '', authTime: '', issuedAtTime: '', signInProvider: null, signInSecondFactor: null, claims: {} }),
-  reload: async () => {},
-  toJSON: () => ({}),
-};
-*/
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
