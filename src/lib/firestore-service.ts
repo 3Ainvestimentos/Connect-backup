@@ -125,14 +125,14 @@ export const deleteDocumentFromCollection = async (collectionName: string, id: s
         await runTransaction(db, async (transaction) => {
             const docSnap = await transaction.get(docRef);
             if (!docSnap.exists()) {
-                throw new Error("Document not found, it may have been already deleted.");
+                throw new Error("Documento não encontrado. Ele pode já ter sido excluído.");
             }
             transaction.delete(docRef);
         });
     } catch (error) {
         console.error(`Error deleting document ${id} from ${collectionName}:`, error);
-        if (error instanceof Error && error.message.includes("Document not found")) {
-             throw new Error('O documento não foi encontrado. Ele pode já ter sido excluído.');
+        if (error instanceof Error) {
+             throw new Error(error.message);
         }
         throw new Error('Não foi possível remover o item do banco de dados.');
     }

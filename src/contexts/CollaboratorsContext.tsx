@@ -19,20 +19,6 @@ export interface Collaborator {
   city: string;      // Cidade
 }
 
-// Mock collaborator for the admin user. This ensures the admin user can receive targeted messages/events for testing.
-const mockAdminCollaborator: Collaborator = {
-    id: 'mock-admin-user',
-    name: 'Admin Mock',
-    email: 'mock@example.com',
-    photoURL: 'https://placehold.co/100x100.png',
-    axis: 'Administrativo',
-    area: 'Tecnologia',
-    position: 'Desenvolvedor',
-    leader: 'Liderança',
-    segment: 'Todos',
-    city: 'Remoto'
-};
-
 interface CollaboratorsContextType {
   collaborators: Collaborator[];
   loading: boolean;
@@ -47,10 +33,35 @@ const COLLECTION_NAME = 'collaborators';
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
 
-  const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
+  const { data: collaboratorsFromDB = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
   });
+
+  const collaborators = useMemo(() => {
+    // This ensures the mock admin user is always available for selection in UI components
+    // without being written to the database.
+    const adminExists = collaboratorsFromDB.some(c => c.email === 'mock@example.com');
+    if (adminExists) {
+        return collaboratorsFromDB;
+    }
+    return [
+        ...collaboratorsFromDB,
+        {
+            id: 'mock-admin-user',
+            name: 'Admin Mock',
+            email: 'mock@example.com',
+            photoURL: 'https://placehold.co/100x100.png',
+            axis: 'Administrativo',
+            area: 'Tecnologia',
+            position: 'Desenvolvedor',
+            leader: 'Liderança',
+            segment: 'Todos',
+            city: 'Remoto'
+        }
+    ];
+  }, [collaboratorsFromDB]);
+
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, collaboratorData),
@@ -62,7 +73,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   const updateCollaboratorMutation = useMutation<void, Error, Collaborator>({
     mutationFn: (updatedCollaborator: Collaborator) => {
         // Prevent updating the mock user in Firestore
-        if (updatedCollaborator.id === mockAdminCollaborator.id) {
+        if (updatedCollaborator.id === 'mock-admin-user') {
             return Promise.resolve();
         }
         return updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator)
@@ -74,8 +85,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
 
   const deleteCollaboratorMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => {
-        // Prevent deleting the mock user from Firestore
-        if (id === mockAdminCollaborator.id) {
+        if (id === 'mock-admin-user') {
             return Promise.reject(new Error("O usuário administrador mock não pode ser excluído."));
         }
         return deleteDocumentFromCollection(COLLECTION_NAME, id);

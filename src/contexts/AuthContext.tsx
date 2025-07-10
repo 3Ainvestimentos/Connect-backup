@@ -1,11 +1,47 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { User } from 'firebase/auth';
-import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+
+// Define a mock user structure that mimics the Firebase User object
+// This ensures that all parts of the app that depend on the user object
+// will continue to function without a real authentication flow.
+const MOCK_USER: User = {
+    uid: 'mock-admin-uid',
+    email: 'mock@example.com',
+    displayName: 'Admin Mock',
+    photoURL: 'https://placehold.co/100x100.png',
+    emailVerified: true,
+    isAnonymous: false,
+    providerData: [{
+        providerId: 'google.com',
+        uid: 'mock-admin-uid',
+        displayName: 'Admin Mock',
+        email: 'mock@example.com',
+        photoURL: 'https://placehold.co/100x100.png',
+    }],
+    // Dummy implementations for other required User properties
+    getIdToken: async () => 'mock-token',
+    getIdTokenResult: async () => ({
+        token: 'mock-token',
+        expirationTime: new Date().toISOString(),
+        authTime: new Date().toISOString(),
+        issuedAtTime: new Date().toISOString(),
+        signInProvider: 'google.com',
+        claims: {},
+    }),
+    reload: async () => {},
+    delete: async () => {},
+    metadata: {
+        creationTime: new Date().toISOString(),
+        lastSignInTime: new Date().toISOString(),
+    },
+    providerId: 'firebase',
+    tenantId: null,
+    toJSON: () => ({}),
+};
+
 
 interface AuthContextType {
   user: User | null;
@@ -16,48 +52,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// This provider now simulates a logged-in admin user without any real authentication.
+// It helps bypass the auth errors to focus on other parts of the application.
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [user] = useState<User | null>(MOCK_USER);
+  const [loading] = useState(false); // No longer loading, as auth is instant
 
-  // Get the initialized Firebase app instance
-  const app = getFirebaseApp();
-  const auth = getAuth(app);
-
-  useEffect(() => {
-    // Observa mudanças no estado de autenticação do Firebase
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-
-    // Limpa o observador quando o componente é desmontado
-    return () => unsubscribe();
-  }, [auth]);
-
-
+  // Mock functions to prevent errors if they are called elsewhere.
   const signInWithGoogle = async () => {
-    setLoading(true);
-    try {
-      await signInWithPopup(auth, googleProvider);
-      router.push('/dashboard');
-    } catch (error) {
-      console.error("Erro ao fazer login com o Google:", error);
-      setLoading(false);
-    }
+    console.log("Mock Sign In called. No actual authentication is performed.");
   };
 
   const signOut = async () => {
-    setLoading(true);
-    try {
-      await firebaseSignOut(auth);
-      router.push('/login');
-    } catch (error) {
-        console.error("Erro ao fazer logout:", error);
-    } finally {
-        setLoading(false);
-    }
+    console.log("Mock Sign Out called. No actual state change will occur.");
   };
 
   return (
