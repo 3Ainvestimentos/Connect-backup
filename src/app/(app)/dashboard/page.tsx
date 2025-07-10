@@ -52,7 +52,7 @@ export default function DashboardPage() {
       
     return sortedMessages.filter(msg => {
         // Don't show messages the user has soft-deleted
-        if (msg.deletedBy.includes(currentUserCollab.id)) {
+        if (msg.deletedBy && msg.deletedBy.includes(currentUserCollab.id)) {
             return false;
         }
         const recipients = getMessageRecipients(msg, collaborators);
