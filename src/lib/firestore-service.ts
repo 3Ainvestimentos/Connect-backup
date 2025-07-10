@@ -1,7 +1,12 @@
 
-import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
+import { getFirebaseApp } from './firebase'; // Import the initialized app function
+import { getFirestore } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { cleanDataForFirestore } from './data-sanitizer';
+
+// Initialize Firestore with the app instance
+const app = getFirebaseApp();
+const db = getFirestore(app);
 
 export type WithId<T> = T & { id: string };
 
@@ -109,16 +114,26 @@ export const updateDocumentInCollection = async <T extends object>(collectionNam
 
 /**
  * Deletes a document from a specified collection.
+ * It first verifies if the document exists before attempting to delete it.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to delete.
  * @returns A promise that resolves to void on success.
  */
 export const deleteDocumentFromCollection = async (collectionName: string, id: string): Promise<void> => {
-    const docRef = doc(db, collectionName, id);
+     const docRef = doc(db, collectionName, id);
     try {
-        await deleteDoc(docRef);
+        await runTransaction(db, async (transaction) => {
+            const docSnap = await transaction.get(docRef);
+            if (!docSnap.exists()) {
+                throw new Error("Document not found, it may have been already deleted.");
+            }
+            transaction.delete(docRef);
+        });
     } catch (error) {
         console.error(`Error deleting document ${id} from ${collectionName}:`, error);
+        if (error instanceof Error && error.message.includes("Document not found")) {
+             throw new Error('O documento não foi encontrado. Ele pode já ter sido excluído.');
+        }
         throw new Error('Não foi possível remover o item do banco de dados.');
     }
 };

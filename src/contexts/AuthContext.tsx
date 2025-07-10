@@ -3,8 +3,8 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase'; // Import real auth
-import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
+import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -18,8 +18,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true); // Começa como true para verificar o estado de auth
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Get the initialized Firebase app instance
+  const app = getFirebaseApp();
+  const auth = getAuth(app);
 
   useEffect(() => {
     // Observa mudanças no estado de autenticação do Firebase
@@ -30,15 +34,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Limpa o observador quando o componente é desmontado
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
 
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
       await signInWithPopup(auth, googleProvider);
-      // O onAuthStateChanged vai lidar com a atualização do usuário e o loading.
-      // O redirecionamento pode ser feito aqui ou em um useEffect que observa o usuário.
       router.push('/dashboard');
     } catch (error) {
       console.error("Erro ao fazer login com o Google:", error);
@@ -50,7 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       await firebaseSignOut(auth);
-      // O onAuthStateChanged vai atualizar o usuário para null e o loading.
       router.push('/login');
     } catch (error) {
         console.error("Erro ao fazer logout:", error);
