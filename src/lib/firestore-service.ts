@@ -15,9 +15,8 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
         const querySnapshot = await getDocs(collectionRef);
         return querySnapshot.docs.map(doc => {
             let data = doc.data();
-
+            
             // FIX: Special transformation for the 'applications' collection based on Firestore structure.
-            // The data is nested under `content.content` instead of just `content`.
             if (collectionName === 'applications' && data.content && 'content' in data.content) {
                 data = { ...data, content: data.content.content };
             }
