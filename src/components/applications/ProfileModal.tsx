@@ -37,7 +37,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg font-body">
         <DialogHeader className="text-center items-center">
-            <Avatar className="h-24 w-24 mb-4 border-4 border-primary">
+            <Avatar className="h-24 w-24 mb-4">
                 <AvatarImage src={currentUserCollaborator?.photoURL || user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
                 <AvatarFallback className="text-4xl">
                 {user.displayName ? user.displayName.charAt(0).toUpperCase() : <User size={48} />}
