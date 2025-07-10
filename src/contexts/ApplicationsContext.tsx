@@ -1,8 +1,9 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useState, useEffect, useMemo, useCallback } from 'react';
-import { cleanDataForFirestore } from '@/lib/data-sanitizer';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface ApplicationLinkItem {
   id: string;
@@ -33,51 +34,74 @@ interface ApplicationsContextType {
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
-
-// Helper to generate a unique ID for mock items
-const generateMockId = () => `mock_${Date.now()}_${Math.random()}`;
+const COLLECTION_NAME = 'applications';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Simulate initial data loading from a "database"
-  useEffect(() => {
-    // In a real app, this would be a fetch call.
-    // For now, we initialize with an empty array or could use mock data.
-    setApplications([]); 
-    setLoading(false);
-  }, []);
+  const { data: applications = [], isFetching } = useQuery<Application[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<Application>(COLLECTION_NAME),
+    initialData: [],
+  });
 
-  const addApplication = useCallback(async (appData: Omit<Application, 'id'>): Promise<Application> => {
-    setLoading(true);
-    const cleanedData = cleanDataForFirestore(appData);
-    const newApplication: Application = { id: generateMockId(), ...cleanedData };
-    setApplications(prev => [...prev, newApplication]);
-    setLoading(false);
-    return newApplication;
-  }, []);
+  const addApplicationMutation = useMutation<WithId<Omit<Application, 'id'>>, Error, Omit<Application, 'id'>>({
+    mutationFn: (appData) => addDocumentToCollection(COLLECTION_NAME, appData),
+    onSuccess: (newItem) => {
+        queryClient.setQueryData<Application[]>([COLLECTION_NAME], (oldData = []) => [...oldData, newItem]);
+    },
+  });
+  
+  const updateApplicationMutation = useMutation<void, Error, Application>({
+    mutationFn: (updatedApp) => {
+      const { id, ...data } = updatedApp;
+      return updateDocumentInCollection(COLLECTION_NAME, id, data);
+    },
+    onMutate: async (updatedApp) => {
+        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+        const previousData = queryClient.getQueryData<Application[]>([COLLECTION_NAME]);
+        queryClient.setQueryData<Application[]>([COLLECTION_NAME], (oldData = []) => 
+            oldData.map(app => app.id === updatedApp.id ? updatedApp : app)
+        );
+        return { previousData };
+    },
+    onError: (err, variables, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+    },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const updateApplication = useCallback(async (updatedApp: Application): Promise<void> => {
-    setLoading(true);
-    const cleanedData = cleanDataForFirestore(updatedApp);
-    setApplications(prev => prev.map(app => app.id === cleanedData.id ? cleanedData : app));
-    setLoading(false);
-  }, []);
-
-  const deleteApplication = useCallback(async (id: string): Promise<void> => {
-    setLoading(true);
-    setApplications(prev => prev.filter(app => app.id !== id));
-    setLoading(false);
-  }, []);
-
+  const deleteApplicationMutation = useMutation<void, Error, string>({
+    mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onMutate: async (idToDelete) => {
+        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+        const previousData = queryClient.getQueryData<Application[]>([COLLECTION_NAME]);
+        queryClient.setQueryData<Application[]>([COLLECTION_NAME], (oldData = []) =>
+            oldData.filter(app => app.id !== idToDelete)
+        );
+        return { previousData };
+    },
+    onError: (err, variables, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+    },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+  
   const value = useMemo(() => ({
     applications,
-    loading,
-    addApplication,
-    updateApplication,
-    deleteApplication,
-  }), [applications, loading, addApplication, updateApplication, deleteApplication]);
+    loading: isFetching,
+    addApplication: (app) => addApplicationMutation.mutateAsync(app),
+    updateApplication: (app) => updateApplicationMutation.mutateAsync(app),
+    deleteApplication: (id) => deleteApplicationMutation.mutateAsync(id),
+  }), [applications, isFetching, addApplicationMutation, updateApplicationMutation, deleteApplicationMutation]);
 
   return (
     <ApplicationsContext.Provider value={value}>

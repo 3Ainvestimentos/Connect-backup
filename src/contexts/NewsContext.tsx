@@ -1,7 +1,9 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import { toast } from '@/hooks/use-toast';
 
 export interface NewsItemType {
@@ -27,68 +29,93 @@ interface NewsContextType {
 }
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
-
-const generateMockId = () => `mock_${Date.now()}_${Math.random()}`;
+const COLLECTION_NAME = 'news';
 
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
-  const [newsItems, setNewsItems] = useState<NewsItemType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setNewsItems([]);
-    setLoading(false);
-  }, []);
-  
-  const addNewsItem = useCallback(async (itemData: Omit<NewsItemType, 'id'>): Promise<NewsItemType> => {
-    setLoading(true);
-    const newNewsItem = { id: generateMockId(), ...itemData };
-    setNewsItems(prev => [newNewsItem, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    setLoading(false);
-    return newNewsItem;
-  }, []);
+  const { data: newsItems = [], isFetching } = useQuery<NewsItemType[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME),
+    initialData: [],
+  });
 
-  const updateNewsItem = useCallback(async (updatedItem: NewsItemType): Promise<void> => {
-    setLoading(true);
-    setNewsItems(prev => prev
-      .map(item => item.id === updatedItem.id ? updatedItem : item)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    );
-    setLoading(false);
-  }, []);
+  const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
+    mutationFn: (itemData) => addDocumentToCollection(COLLECTION_NAME, itemData),
+    onSuccess: (newItem) => {
+        queryClient.setQueryData<NewsItemType[]>([COLLECTION_NAME], (oldData = []) =>
+            [...oldData, newItem].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        );
+    },
+  });
 
-  const deleteNewsItem = useCallback(async (id: string): Promise<void> => {
-    setLoading(true);
-    setNewsItems(prev => prev.filter(item => item.id !== id));
-    setLoading(false);
-  }, []);
+  const updateNewsItemMutation = useMutation<void, Error, NewsItemType>({
+    mutationFn: (updatedItem) => {
+        const { id, ...data } = updatedItem;
+        return updateDocumentInCollection(COLLECTION_NAME, id, data);
+    },
+    onMutate: async (updatedItem) => {
+        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+        const previousData = queryClient.getQueryData<NewsItemType[]>([COLLECTION_NAME]);
+        queryClient.setQueryData<NewsItemType[]>([COLLECTION_NAME], (oldData = []) => 
+            oldData.map(item => item.id === updatedItem.id ? updatedItem : item)
+        );
+        return { previousData };
+    },
+    onError: (err, variables, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+    },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+
+  const deleteNewsItemMutation = useMutation<void, Error, string>({
+    mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onMutate: async (idToDelete) => {
+        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+        const previousData = queryClient.getQueryData<NewsItemType[]>([COLLECTION_NAME]);
+        queryClient.setQueryData<NewsItemType[]>([COLLECTION_NAME], (oldData = []) => 
+            oldData.filter(item => item.id !== idToDelete)
+        );
+        return { previousData };
+    },
+    onError: (err, variables, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+    },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
   const toggleNewsHighlight = useCallback((id: string) => {
-    setNewsItems(prevItems => {
-        const targetNews = prevItems.find(n => n.id === id);
-        if (!targetNews) return prevItems;
+    const targetNews = newsItems.find(n => n.id === id);
+    if (!targetNews) return;
 
-        const currentlyActive = prevItems.filter(n => n.isHighlight).length;
-        if (!targetNews.isHighlight && currentlyActive >= 3) {
-            toast({
-                title: "Limite Atingido",
-                description: "Você pode ter no máximo 3 destaques ativos.",
-                variant: "destructive",
-            });
-            return prevItems; // Return original state if limit is reached
-        }
-
-        return prevItems.map(item => item.id === id ? { ...item, isHighlight: !item.isHighlight } : item);
-    });
-  }, []);
+    const currentlyActive = newsItems.filter(n => n.isHighlight).length;
+    if (!targetNews.isHighlight && currentlyActive >= 3) {
+        toast({
+            title: "Limite Atingido",
+            description: "Você pode ter no máximo 3 destaques ativos.",
+            variant: "destructive",
+        });
+        return;
+    }
+    updateNewsItemMutation.mutate({ ...targetNews, isHighlight: !targetNews.isHighlight });
+  }, [newsItems, updateNewsItemMutation]);
 
   const value = useMemo(() => ({
     newsItems,
-    loading,
-    addNewsItem,
-    updateNewsItem,
-    deleteNewsItem,
+    loading: isFetching,
+    addNewsItem: (item) => addNewsItemMutation.mutateAsync(item),
+    updateNewsItem: (item) => updateNewsItemMutation.mutateAsync(item),
+    deleteNewsItem: (id) => deleteNewsItemMutation.mutateAsync(id),
     toggleNewsHighlight,
-  }), [newsItems, loading, addNewsItem, updateNewsItem, deleteNewsItem, toggleNewsHighlight]);
+  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight]);
 
   return (
     <NewsContext.Provider value={value}>

@@ -1,8 +1,10 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useCallback, useMemo, useState, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface EventType {
   id: string;
@@ -14,8 +16,6 @@ export interface EventType {
   recipientIds: string[]; // Array of collaborator IDs
 }
 
-const mockEvents: EventType[] = [];
-
 interface EventsContextType {
   events: EventType[];
   loading: boolean;
@@ -26,19 +26,16 @@ interface EventsContextType {
 }
 
 const EventsContext = createContext<EventsContextType | undefined>(undefined);
-
-// Helper to generate a unique ID for mock items
-const generateMockId = () => `mock_${Date.now()}_${Math.random()}`;
+const COLLECTION_NAME = 'events';
 
 export const EventsProvider = ({ children }: { children: ReactNode }) => {
-  const [events, setEvents] = useState<EventType[]>(mockEvents);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  // Simulate initial data loading
-  useEffect(() => {
-    setEvents(mockEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-    setLoading(false);
-  }, []);
+  const { data: events = [], isFetching } = useQuery<EventType[]>({
+    queryKey: [COLLECTION_NAME],
+    queryFn: () => getCollection<EventType>(COLLECTION_NAME),
+    initialData: [],
+  });
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (event.recipientIds.includes('all')) {
@@ -47,37 +44,67 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     return allCollaborators.filter(c => event.recipientIds.includes(c.id));
   }, []);
 
-  const addEvent = useCallback(async (eventData: Omit<EventType, 'id'>): Promise<EventType> => {
-    setLoading(true);
-    const newEvent: EventType = { id: generateMockId(), ...eventData };
-    setEvents(prevEvents => [...prevEvents, newEvent].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-    setLoading(false);
-    return newEvent;
-  }, []);
+  const addEventMutation = useMutation<WithId<Omit<EventType, 'id'>>, Error, Omit<EventType, 'id'>>({
+    mutationFn: (eventData) => addDocumentToCollection(COLLECTION_NAME, eventData),
+    onSuccess: (newEvent) => {
+        queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (oldData = []) => 
+            [...oldData, newEvent].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        );
+    },
+  });
 
-  const updateEvent = useCallback(async (updatedEvent: EventType): Promise<void> => {
-    setLoading(true);
-    setEvents(prevEvents => 
-      prevEvents.map(event => event.id === updatedEvent.id ? updatedEvent : event)
-      .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    );
-    setLoading(false);
-  }, []);
+  const updateEventMutation = useMutation<void, Error, EventType>({
+    mutationFn: (updatedEvent) => {
+        const { id, ...data } = updatedEvent;
+        return updateDocumentInCollection(COLLECTION_NAME, id, data);
+    },
+    onMutate: async (updatedEvent) => {
+        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+        const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]);
+        queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (oldData = []) => 
+            oldData.map(event => event.id === updatedEvent.id ? updatedEvent : event)
+        );
+        return { previousData };
+    },
+    onError: (err, variables, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+    },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
-  const deleteEvent = useCallback(async (id: string): Promise<void> => {
-    setLoading(true);
-    setEvents(prevEvents => prevEvents.filter(event => event.id !== id));
-    setLoading(false);
-  }, []);
+  const deleteEventMutation = useMutation<void, Error, string>({
+    mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onMutate: async (idToDelete) => {
+        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+        const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]);
+        queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (oldData = []) =>
+            oldData.filter(event => event.id !== idToDelete)
+        );
+        return { previousData };
+    },
+     onError: (err, variables, context) => {
+        if (context?.previousData) {
+            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+        }
+    },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+
 
   const value = useMemo(() => ({
     events,
-    loading,
-    addEvent,
-    updateEvent,
-    deleteEvent,
+    loading: isFetching,
+    addEvent: (event) => addEventMutation.mutateAsync(event),
+    updateEvent: (event) => updateEventMutation.mutateAsync(event),
+    deleteEvent: (id) => deleteEventMutation.mutateAsync(id),
     getEventRecipients,
-  }), [events, loading, getEventRecipients, addEvent, updateEvent, deleteEvent]);
+  }), [events, isFetching, getEventRecipients, addEventMutation, updateEventMutation, deleteEventMutation]);
 
   return (
     <EventsContext.Provider value={value}>
