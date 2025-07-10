@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // await signInWithPopup(auth, googleProvider);
     // Por enquanto, apenas definimos o usuário mock
     setUser(MOCK_USER);
-    router.push('/dashboard');
+    // router.push('/dashboard'); // Removido para teste
     setLoading(false);
   };
 
