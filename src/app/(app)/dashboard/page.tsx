@@ -25,7 +25,7 @@ import { getIcon } from '@/lib/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { isSameMonth, parseISO } from 'date-fns';
-import { utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime } from 'date-fns-tz';
 
 
 export default function DashboardPage() {
@@ -66,12 +66,12 @@ export default function DashboardPage() {
   const eventsForMonth = useMemo(() => {
     if (!displayedMonth) return [];
     return userEvents.filter(event => {
-      const eventDate = utcToZonedTime(parseISO(event.date), 'UTC');
+      const eventDate = toZonedTime(parseISO(event.date), 'UTC');
       return isSameMonth(eventDate, displayedMonth);
     });
   }, [userEvents, displayedMonth]);
   
-  const eventDates = useMemo(() => userEvents.map(e => utcToZonedTime(parseISO(e.date), 'UTC')), [userEvents]);
+  const eventDates = useMemo(() => userEvents.map(e => toZonedTime(parseISO(e.date), 'UTC')), [userEvents]);
 
   const unreadCount = useMemo(() => {
     if (!currentUserCollab) return 0;
