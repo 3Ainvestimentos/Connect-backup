@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState } from 'react';
 import { useApplications, Application, ApplicationLinkItem } from '@/contexts/ApplicationsContext';
