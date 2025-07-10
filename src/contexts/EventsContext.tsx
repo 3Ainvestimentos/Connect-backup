@@ -16,6 +16,10 @@ export interface EventType {
   recipientIds: string[]; // Array of collaborator IDs
 }
 
+const mockEvents: EventType[] = [
+    { id: "event_mock_1", title: "Festa Junina 2025", date: "2025-07-10T00:00:00.000Z", time: "18:30", location: "Prédio Algar", icon: 'Flame', recipientIds: ['all'] },
+];
+
 interface EventsContextType {
   events: EventType[];
   loading: boolean;
@@ -34,7 +38,11 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   const { data: events = [], isFetching } = useQuery<EventType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<EventType>(COLLECTION_NAME),
-    select: (data) => data.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    select: (fetchedData) => {
+        const combined = [...mockEvents, ...fetchedData];
+        const uniqueEvents = Array.from(new Map(combined.map(item => [item.id, item])).values());
+        return uniqueEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    },
   });
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {
@@ -52,14 +60,24 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const updateEventMutation = useMutation<void, Error, EventType>({
-    mutationFn: (updatedEvent: EventType) => updateDocumentInCollection(COLLECTION_NAME, updatedEvent.id, updatedEvent),
+    mutationFn: (updatedEvent: EventType) => {
+        if(mockEvents.some(d => d.id === updatedEvent.id)) {
+            return Promise.resolve(); // Or update logic for mocks
+        }
+        return updateDocumentInCollection(COLLECTION_NAME, updatedEvent.id, updatedEvent);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteEventMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    mutationFn: (id: string) => {
+         if(mockEvents.some(d => d.id === id)) {
+            return Promise.resolve();
+        }
+        return deleteDocumentFromCollection(COLLECTION_NAME, id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },

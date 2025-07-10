@@ -25,6 +25,8 @@ import { getIcon } from '@/lib/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { isSameMonth, parseISO } from 'date-fns';
+import { utcToZonedTime } from 'date-fns-tz';
+
 
 export default function DashboardPage() {
   const [displayedMonth, setDisplayedMonth] = React.useState<Date>(new Date());
@@ -63,10 +65,13 @@ export default function DashboardPage() {
 
   const eventsForMonth = useMemo(() => {
     if (!displayedMonth) return [];
-    return userEvents.filter(event => isSameMonth(parseISO(event.date), displayedMonth));
+    return userEvents.filter(event => {
+      const eventDate = utcToZonedTime(parseISO(event.date), 'UTC');
+      return isSameMonth(eventDate, displayedMonth);
+    });
   }, [userEvents, displayedMonth]);
   
-  const eventDates = useMemo(() => userEvents.map(e => parseISO(e.date)), [userEvents]);
+  const eventDates = useMemo(() => userEvents.map(e => utcToZonedTime(parseISO(e.date), 'UTC')), [userEvents]);
 
   const unreadCount = useMemo(() => {
     if (!currentUserCollab) return 0;
@@ -206,7 +211,7 @@ export default function DashboardPage() {
                           month={displayedMonth}
                           onMonthChange={setDisplayedMonth}
                           modifiers={{ event: eventDates }}
-                          modifiersClassNames={{ event: 'bg-primary/20 rounded-full' }}
+                          modifiersClassNames={{ event: 'bg-primary/20 rounded-full', day_today: '' }}
                       />
                   </div>
                   <div className="md:col-span-2 relative min-h-0">

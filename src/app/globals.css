@@ -99,4 +99,7 @@ body {
   .no-day-hover .rdp-day:not([aria-disabled="true"]) {
     cursor: default !important;
   }
+  .no-day-hover .rdp-button:not([aria-disabled="true"]):hover {
+    background-color: transparent;
+  }
 }
