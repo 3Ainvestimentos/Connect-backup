@@ -185,7 +185,7 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isSubmitting}>
+              <Button type="button" variant="outline" disabled={isSubmitting} className="hover:bg-muted">
                 Cancelar
               </Button>
             </DialogClose>
