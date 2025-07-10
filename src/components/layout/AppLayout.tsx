@@ -60,7 +60,7 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
             <AvatarFallback>
@@ -128,7 +128,7 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
 
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
