@@ -128,18 +128,31 @@ export function ManageApplications() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir esta aplicação?")) {
-            try {
-                await deleteApplicationMutation.mutateAsync(id);
-                toast({ title: "Aplicação excluída com sucesso." });
-                queryClient.invalidateQueries({ queryKey: ['applications'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível excluir a aplicação.",
-                    variant: "destructive"
-                });
-            }
+        if (!window.confirm("Tem certeza que deseja excluir esta aplicação?")) return;
+
+        const { id: toastId, update } = toast({
+            title: "Diagnóstico de Exclusão",
+            description: "1. Iniciando exclusão...",
+            variant: "default",
+        });
+
+        try {
+            update({ description: "2. Acionando a função de exclusão..." });
+            await deleteApplicationMutation.mutateAsync(id);
+
+            update({
+                title: "Sucesso!",
+                description: "3. Exclusão concluída. Atualizando a lista.",
+            });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+            update({
+                title: "Falha na Exclusão",
+                description: `3. Erro: ${errorMessage}`,
+                variant: "destructive",
+            });
+            console.error("Falha detalhada ao excluir:", error);
         }
     };
     

@@ -59,18 +59,31 @@ export function ManageLabs() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir este vídeo do Lab?")) {
-            try {
-                await deleteLabMutation.mutateAsync(id);
-                toast({ title: "Vídeo do Lab excluído com sucesso." });
-                queryClient.invalidateQueries({ queryKey: ['labs'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível excluir o vídeo.",
-                    variant: "destructive"
-                });
-            }
+        if (!window.confirm("Tem certeza que deseja excluir este vídeo do Lab?")) return;
+
+        const { id: toastId, update } = toast({
+            title: "Diagnóstico de Exclusão",
+            description: "1. Iniciando exclusão...",
+            variant: "default",
+        });
+
+        try {
+            update({ description: "2. Acionando a função de exclusão..." });
+            await deleteLabMutation.mutateAsync(id);
+
+            update({
+                title: "Sucesso!",
+                description: "3. Exclusão concluída. Atualizando a lista.",
+            });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+            update({
+                title: "Falha na Exclusão",
+                description: `3. Erro: ${errorMessage}`,
+                variant: "destructive",
+            });
+            console.error("Falha detalhada ao excluir:", error);
         }
     };
     

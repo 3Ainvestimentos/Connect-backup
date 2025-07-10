@@ -64,18 +64,31 @@ export function ManageCollaborators() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir este colaborador?")) {
-            try {
-                await deleteCollaboratorMutation.mutateAsync(id);
-                toast({ title: "Colaborador excluído com sucesso." });
-                queryClient.invalidateQueries({ queryKey: ['collaborators'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível excluir o colaborador.",
-                    variant: "destructive"
-                });
-            }
+        if (!window.confirm("Tem certeza que deseja excluir este colaborador?")) return;
+
+        const { id: toastId, update } = toast({
+            title: "Diagnóstico de Exclusão",
+            description: "1. Iniciando exclusão...",
+            variant: "default",
+        });
+
+        try {
+            update({ description: "2. Acionando a função de exclusão..." });
+            await deleteCollaboratorMutation.mutateAsync(id);
+
+            update({
+                title: "Sucesso!",
+                description: "3. Exclusão concluída. Atualizando a lista.",
+            });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+            update({
+                title: "Falha na Exclusão",
+                description: `3. Erro: ${errorMessage}`,
+                variant: "destructive",
+            });
+            console.error("Falha detalhada ao excluir:", error);
         }
     };
     

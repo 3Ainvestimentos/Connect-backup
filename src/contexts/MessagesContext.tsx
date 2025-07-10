@@ -68,6 +68,9 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {

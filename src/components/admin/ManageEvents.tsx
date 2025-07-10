@@ -75,18 +75,31 @@ export function ManageEvents() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir este evento?")) {
-            try {
-                await deleteEventMutation.mutateAsync(id);
-                toast({ title: "Evento excluído com sucesso." });
-                queryClient.invalidateQueries({ queryKey: ['events'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível excluir o evento.",
-                    variant: "destructive"
-                });
-            }
+        if (!window.confirm("Tem certeza que deseja excluir este evento?")) return;
+
+        const { id: toastId, update } = toast({
+            title: "Diagnóstico de Exclusão",
+            description: "1. Iniciando exclusão...",
+            variant: "default",
+        });
+
+        try {
+            update({ description: "2. Acionando a função de exclusão..." });
+            await deleteEventMutation.mutateAsync(id);
+
+            update({
+                title: "Sucesso!",
+                description: "3. Exclusão concluída. Atualizando a lista.",
+            });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+            update({
+                title: "Falha na Exclusão",
+                description: `3. Erro: ${errorMessage}`,
+                variant: "destructive",
+            });
+            console.error("Falha detalhada ao excluir:", error);
         }
     };
     

@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -73,18 +72,31 @@ export function ManageNews() {
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
-            try {
-                await deleteNewsItemMutation.mutateAsync(id);
-                toast({ title: "Notícia excluída com sucesso." });
-                queryClient.invalidateQueries({ queryKey: ['newsItems'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível excluir a notícia.",
-                    variant: "destructive"
-                });
-            }
+        if (!window.confirm("Tem certeza que deseja excluir esta notícia?")) return;
+
+        const { id: toastId, update } = toast({
+            title: "Diagnóstico de Exclusão",
+            description: "1. Iniciando exclusão...",
+            variant: "default",
+        });
+
+        try {
+            update({ description: "2. Acionando a função de exclusão..." });
+            await deleteNewsItemMutation.mutateAsync(id);
+
+            update({
+                title: "Sucesso!",
+                description: "3. Exclusão concluída. Atualizando a lista.",
+            });
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+            update({
+                title: "Falha na Exclusão",
+                description: `3. Erro: ${errorMessage}`,
+                variant: "destructive",
+            });
+            console.error("Falha detalhada ao excluir:", error);
         }
     };
     

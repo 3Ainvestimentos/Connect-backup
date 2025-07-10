@@ -63,6 +63,9 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteApplicationMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
   
   const value = useMemo(() => ({
