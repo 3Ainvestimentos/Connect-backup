@@ -24,10 +24,10 @@ import { useMessages, type MessageType } from '@/contexts/MessagesContext';
 import { getIcon } from '@/lib/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import { isSameDay, parseISO } from 'date-fns';
+import { isSameMonth, parseISO } from 'date-fns';
 
 export default function DashboardPage() {
-  const [date, setDate] = React.useState<Date | undefined>(new Date());
+  const [displayedMonth, setDisplayedMonth] = React.useState<Date>(new Date());
   const [selectedMessage, setSelectedMessage] = React.useState<MessageType | null>(null);
 
   // Get global data from contexts
@@ -61,11 +61,10 @@ export default function DashboardPage() {
       });
   }, [events, currentUserCollab, collaborators, getEventRecipients]);
 
-  const eventsOnSelectedDate = useMemo(() => {
-    if (!date) return [];
-    // The date from the calendar doesn't have a timezone, so we match against it carefully.
-    return userEvents.filter(event => isSameDay(parseISO(event.date), date));
-  }, [userEvents, date]);
+  const eventsForMonth = useMemo(() => {
+    if (!displayedMonth) return [];
+    return userEvents.filter(event => isSameMonth(parseISO(event.date), displayedMonth));
+  }, [userEvents, displayedMonth]);
   
   const eventDates = useMemo(() => userEvents.map(e => parseISO(e.date)), [userEvents]);
 
@@ -201,11 +200,11 @@ export default function DashboardPage() {
                   <div className="md:col-span-3 flex items-start justify-center">
                       <Calendar
                           mode="single"
-                          selected={date}
-                          onSelect={setDate}
-                          className="rounded-md border"
-                          month={date}
-                          onMonthChange={setDate}
+                          selected={undefined}
+                          onSelect={undefined}
+                          className="rounded-md border no-day-hover"
+                          month={displayedMonth}
+                          onMonthChange={setDisplayedMonth}
                           modifiers={{ event: eventDates }}
                           modifiersClassNames={{ event: 'bg-primary/20 rounded-full' }}
                       />
@@ -214,7 +213,7 @@ export default function DashboardPage() {
                     <div className="absolute inset-0">
                       <ScrollArea className="h-full pr-4">
                           <div className="space-y-4">
-                          {eventsOnSelectedDate.map((event, index) => {
+                          {eventsForMonth.map((event, index) => {
                             const Icon = getIcon(event.icon) as LucideIcon;
                             return (
                               <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
@@ -238,10 +237,10 @@ export default function DashboardPage() {
                                 </div>
                               </div>
                            )})}
-                           {eventsOnSelectedDate.length === 0 && (
+                           {eventsForMonth.length === 0 && (
                             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                                 <CalendarDays className="h-8 w-8 mb-2"/>
-                                <p className="font-body text-sm">Nenhum evento para a data selecionada.</p>
+                                <p className="font-body text-sm">Nenhum evento para o mês selecionado.</p>
                             </div>
                            )}
                           </div>

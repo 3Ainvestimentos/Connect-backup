@@ -94,3 +94,9 @@ body {
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+@layer utilities {
+  .no-day-hover .rdp-day:not([aria-disabled="true"]) {
+    cursor: default !important;
+  }
+}
