@@ -77,32 +77,8 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const deleteEventMutation = useMutation<void, Error, string>({
-    mutationFn: async (id: string) => {
-        const docExists = await getDocument(COLLECTION_NAME, id);
-        if(docExists) {
-          return deleteDocumentFromCollection(COLLECTION_NAME, id);
-        }
-        // If it doesn't exist in Firestore (i.e., it's a mock item), just resolve.
-        // The query invalidation will handle refetching, and since the mock is gone
-        // from the DB, it won't be in the new list. We need to make sure the client state
-        // also removes it optimistically or upon refetch. The logic in `select`
-        // will always re-add the mock unless it's present in the fetched data.
-        // A better approach is to remove from local state representation.
-        // The current query invalidation will cause a refetch, and the mock will reappear.
-        // To fix this, we should remove the item from the cache manually.
-        return Promise.resolve();
-    },
-     onSuccess: (_, id) => {
-      // Manually remove the event from the cache to prevent mock data from reappearing
-      queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (oldData) => {
-        const dbData = oldData || [];
-        // This won't affect the static mockEvents array, but it ensures that on next render, the `select` function
-        // receives a list that doesn't contain the deleted item from a previous fetch, if it was there.
-        // The core issue is the static mockEvents array. A better pattern would be to fetch once and then only manipulate cache.
-        // However, for this fix, we simply invalidate. The user won't be able to delete mocks permanently without a backend change
-        // to not re-add them, or a local state management to track "deleted mocks".
-        // The simplest fix is to allow deleting from firestore and if it's a mock, it will just disappear from UI until next fetch.
-      });
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
