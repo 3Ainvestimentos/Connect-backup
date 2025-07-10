@@ -52,6 +52,17 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      toast({ title: "Documento excluído com sucesso." });
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao excluir",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   });
 
   const value = useMemo(() => ({

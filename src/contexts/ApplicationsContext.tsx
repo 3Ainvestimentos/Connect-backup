@@ -64,6 +64,17 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteApplicationMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      toast({ title: "Aplicação excluída com sucesso." });
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao excluir",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   });
   
   const value = useMemo(() => ({

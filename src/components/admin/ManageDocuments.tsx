@@ -14,7 +14,6 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 const documentSchema = z.object({
     id: z.string().optional(),
@@ -31,7 +30,6 @@ type DocumentFormValues = z.infer<typeof documentSchema>;
 
 export function ManageDocuments() {
     const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
-    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
 
@@ -62,19 +60,9 @@ export function ManageDocuments() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este documento?")) {
-            try {
-                await deleteDocumentMutation.mutateAsync(id);
-                toast({ title: "Documento excluído com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['documents'] });
-            } catch (error) {
-                 toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover o documento.",
-                    variant: "destructive"
-                });
-            }
+            deleteDocumentMutation.mutate(id);
         }
     };
     
@@ -133,7 +121,11 @@ export function ManageDocuments() {
                                             <Edit className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteDocumentMutation.isPending}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            {deleteDocumentMutation.isPending && deleteDocumentMutation.variables === item.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            )}
                                         </Button>
                                     </TableCell>
                                 </TableRow>

@@ -69,6 +69,17 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+      toast({ title: "Mensagem excluída com sucesso." });
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Erro ao excluir",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   });
 
   const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {

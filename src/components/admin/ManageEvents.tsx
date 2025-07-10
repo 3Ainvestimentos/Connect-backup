@@ -21,7 +21,6 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { parseISO, format, isValid } from 'date-fns';
-import { useQueryClient } from '@tanstack/react-query';
 
 const eventSchema = z.object({
     id: z.string().optional(),
@@ -38,7 +37,6 @@ type EventFormValues = z.infer<typeof eventSchema>;
 export function ManageEvents() {
     const { events, addEvent, updateEvent, deleteEventMutation } = useEvents();
     const { collaborators } = useCollaborators();
-    const queryClient = useQueryClient();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
@@ -74,19 +72,9 @@ export function ManageEvents() {
         setIsFormOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este evento?")) {
-            try {
-                await deleteEventMutation.mutateAsync(id);
-                toast({ title: "Evento excluído com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['events'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover o evento.",
-                    variant: "destructive"
-                });
-            }
+            deleteEventMutation.mutate(id);
         }
     };
     
@@ -168,7 +156,11 @@ export function ManageEvents() {
                                             <Edit className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteEventMutation.isPending}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            {deleteEventMutation.isPending && deleteEventMutation.variables === item.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            )}
                                         </Button>
                                     </TableCell>
                                 </TableRow>

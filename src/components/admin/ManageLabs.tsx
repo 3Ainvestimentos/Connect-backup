@@ -14,7 +14,6 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useQueryClient } from '@tanstack/react-query';
 
 const labSchema = z.object({
     id: z.string().optional(),
@@ -29,7 +28,6 @@ type LabFormValues = z.infer<typeof labSchema>;
 
 export function ManageLabs() {
     const { labs, addLab, updateLab, deleteLabMutation } = useLabs();
-    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingLab, setEditingLab] = useState<LabType | null>(null);
 
@@ -58,19 +56,9 @@ export function ManageLabs() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este vídeo do Lab?")) {
-            try {
-                await deleteLabMutation.mutateAsync(id);
-                toast({ title: "Vídeo do Lab excluído com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['labs'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover o vídeo.",
-                    variant: "destructive"
-                });
-            }
+            deleteLabMutation.mutate(id);
         }
     };
     
@@ -129,7 +117,11 @@ export function ManageLabs() {
                                             <Edit className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteLabMutation.isPending}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                             {deleteLabMutation.isPending && deleteLabMutation.variables === item.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            )}
                                         </Button>
                                     </TableCell>
                                 </TableRow>

@@ -15,7 +15,6 @@ import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
-import { useQueryClient } from '@tanstack/react-query';
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -34,7 +33,6 @@ type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
 
 export function ManageCollaborators() {
     const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation } = useCollaborators();
-    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
 
@@ -63,19 +61,9 @@ export function ManageCollaborators() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este colaborador?")) {
-            try {
-                await deleteCollaboratorMutation.mutateAsync(id);
-                toast({ title: "Colaborador excluído com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['collaborators'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover o colaborador.",
-                    variant: "destructive"
-                });
-            }
+            deleteCollaboratorMutation.mutate(id);
         }
     };
     
@@ -140,7 +128,11 @@ export function ManageCollaborators() {
                                             <Edit className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                            {deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            )}
                                         </Button>
                                     </TableCell>
                                 </TableRow>

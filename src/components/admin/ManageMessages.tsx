@@ -19,7 +19,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
-import { useQueryClient } from '@tanstack/react-query';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -76,7 +75,6 @@ const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: Mess
 export function ManageMessages() {
     const { messages, addMessage, updateMessage, deleteMessageMutation, getMessageRecipients } = useMessages();
     const { collaborators } = useCollaborators();
-    const queryClient = useQueryClient();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
@@ -111,19 +109,9 @@ export function ManageMessages() {
         setIsFormOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) {
-            try {
-                await deleteMessageMutation.mutateAsync(id);
-                toast({ title: "Mensagem excluída com sucesso." });
-                await queryClient.invalidateQueries({ queryKey: ['messages'] });
-            } catch (error) {
-                toast({
-                    title: "Erro ao excluir",
-                    description: error instanceof Error ? error.message : "Não foi possível remover a mensagem.",
-                    variant: "destructive"
-                });
-            }
+            deleteMessageMutation.mutate(id);
         }
     };
     
@@ -217,7 +205,11 @@ export function ManageMessages() {
                                             <Edit className="h-4 w-4" />
                                         </Button>
                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteMessageMutation.isPending}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                             {deleteMessageMutation.isPending && deleteMessageMutation.variables === item.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            )}
                                         </Button>
                                     </TableCell>
                                 </TableRow>
