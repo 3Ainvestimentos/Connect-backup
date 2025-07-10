@@ -4,8 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-// Using the mock service instead of the real Firestore service
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/mock-firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface NewsItemType {
   id: string;
@@ -20,18 +19,10 @@ export interface NewsItemType {
   link?: string;
 }
 
-// Initial mock data to populate localStorage if it's empty
-const mockNewsItems: NewsItemType[] = [
-    { id: "news_mock_1", title: "Novo Recorde de Faturamento no Q2", snippet: "Atingimos um novo patamar de receita, superando as expectativas do mercado.", content: "Conteúdo completo sobre o novo recorde...", category: "Financeiro", date: "2024-07-28", imageUrl: "https://placehold.co/600x400.png", isHighlight: true, dataAiHint: "business growth" },
-    { id: "news_mock_2", title: "Lançamento da Plataforma 3A RIVA Hub", snippet: "Nossa nova intranet está no ar, centralizando comunicação e ferramentas.", content: "Conteúdo completo sobre o lançamento...", category: "Tecnologia", date: "2024-07-25", imageUrl: "https://placehold.co/600x400.png", isHighlight: true, dataAiHint: "technology interface" },
-    { id: "news_mock_3", title: "Confraternização de Final de Ano", snippet: "Reserve a data! Nossa festa anual será no dia 15 de Dezembro.", content: "Conteúdo completo sobre a festa...", category: "Eventos", date: "2024-07-22", imageUrl: "https://placehold.co/600x400.png", isHighlight: true, dataAiHint: "corporate party" },
-    { id: "news_mock_4", title: "Programa de Saúde Mental", snippet: "Lançamos uma nova iniciativa para apoiar o bem-estar de nossos colaboradores.", content: "Conteúdo completo sobre o programa...", category: "RH", date: "2024-07-20", imageUrl: "https://placehold.co/600x400.png", isHighlight: false, dataAiHint: "mental health" },
-];
-
 interface NewsContextType {
   newsItems: NewsItemType[];
   loading: boolean;
-  addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<NewsItemType>;
+  addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<WithId<Omit<NewsItemType, 'id'>>>;
   updateNewsItem: (item: NewsItemType) => Promise<void>;
   deleteNewsItem: (id: string) => Promise<void>;
   toggleNewsHighlight: (id: string) => void;
@@ -45,8 +36,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: newsItems = [], isFetching } = useQuery<NewsItemType[]>({
     queryKey: [COLLECTION_NAME],
-    // Pass mock data to initialize if localStorage is empty
-    queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME, mockNewsItems),
+    queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME),
   });
 
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({

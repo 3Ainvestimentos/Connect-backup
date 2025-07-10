@@ -4,8 +4,7 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// Using the mock service instead of the real Firestore service
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/mock-firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface EventType {
   id: string;
@@ -17,13 +16,10 @@ export interface EventType {
   recipientIds: string[]; // Array of collaborator IDs
 }
 
-// Initial mock data to populate localStorage if it's empty
-const mockEvents: EventType[] = [];
-
 interface EventsContextType {
   events: EventType[];
   loading: boolean;
-  addEvent: (event: Omit<EventType, 'id'>) => Promise<EventType>;
+  addEvent: (event: Omit<EventType, 'id'>) => Promise<WithId<Omit<EventType, 'id'>>>;
   updateEvent: (event: EventType) => Promise<void>;
   deleteEvent: (id: string) => Promise<void>;
   getEventRecipients: (event: EventType, allCollaborators: Collaborator[]) => Collaborator[];
@@ -37,8 +33,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: events = [], isFetching } = useQuery<EventType[]>({
     queryKey: [COLLECTION_NAME],
-    // Pass mock data to initialize if localStorage is empty
-    queryFn: () => getCollection<EventType>(COLLECTION_NAME, mockEvents),
+    queryFn: () => getCollection<EventType>(COLLECTION_NAME),
   });
 
   const getEventRecipients = useCallback((event: EventType, allCollaborators: Collaborator[]): Collaborator[] => {

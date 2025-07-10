@@ -3,8 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// Using the mock service instead of the real Firestore service
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/mock-firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface DocumentType {
   id: string;
@@ -16,16 +15,6 @@ export interface DocumentType {
   downloadUrl: string;
   dataAiHint?: string;
 }
-
-// Initial mock data to populate localStorage if it's empty
-const mockDocuments: DocumentType[] = [
-    { id: "doc_mock_1", name: "Política de Home Office", category: "RH", type: "pdf", size: "1.2MB", lastModified: "2024-07-20", downloadUrl: "#" },
-    { id: "doc_mock_2", name: "Manual de Marca", category: "Marketing", type: "pdf", size: "5.4MB", lastModified: "2024-06-15", downloadUrl: "#" },
-    { id: "doc_mock_3", name: "Relatório de Vendas Q2", category: "Financeiro", type: "xlsx", size: "850KB", lastModified: "2024-07-05", downloadUrl: "#" },
-    { id: "doc_mock_4", name: "Apresentação Institucional", category: "Marketing", type: "pptx", size: "12.3MB", lastModified: "2024-05-30", downloadUrl: "#" },
-    { id: "doc_mock_5", name: "Código de Conduta", category: "Compliance", type: "pdf", size: "980KB", lastModified: "2024-01-10", downloadUrl: "#" },
-    { id: "doc_mock_6", name: "Formulário de Reembolso", category: "RH", type: "docx", size: "300KB", lastModified: "2024-07-18", downloadUrl: "#" },
-];
 
 interface DocumentsContextType {
   documents: DocumentType[];
@@ -43,8 +32,7 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: documents = [], isFetching } = useQuery<DocumentType[]>({
     queryKey: [COLLECTION_NAME],
-    // Pass mock data to initialize if localStorage is empty
-    queryFn: () => getCollection<DocumentType>(COLLECTION_NAME, mockDocuments),
+    queryFn: () => getCollection<DocumentType>(COLLECTION_NAME),
   });
 
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({

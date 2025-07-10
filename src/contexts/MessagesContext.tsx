@@ -4,8 +4,7 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// Using the mock service instead of the real Firestore service
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/mock-firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
 export interface MessageType {
   id: string;
@@ -17,13 +16,10 @@ export interface MessageType {
   readBy: string[]; // Array of collaborator IDs who have read the message
 }
 
-// Initial mock data to populate localStorage if it's empty
-const mockMessages: MessageType[] = [];
-
 interface MessagesContextType {
   messages: MessageType[];
   loading: boolean;
-  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => Promise<MessageType>;
+  addMessage: (message: Omit<MessageType, 'id' | 'readBy'>) => Promise<WithId<Omit<MessageType, 'id'>>>;
   updateMessage: (message: MessageType) => Promise<void>;
   deleteMessage: (id: string) => Promise<void>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
@@ -38,8 +34,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: messages = [], isFetching } = useQuery<MessageType[]>({
     queryKey: [COLLECTION_NAME],
-    // Pass mock data to initialize if localStorage is empty
-    queryFn: () => getCollection<MessageType>(COLLECTION_NAME, mockMessages),
+    queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
   });
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
