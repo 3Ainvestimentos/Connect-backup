@@ -344,7 +344,7 @@ export default function DashboardPage() {
                 </div>
                 <DialogTitle className="font-headline text-2xl text-left">{selectedNews.title}</DialogTitle>
                 <div className="text-left !mt-2">
-                    <Badge variant="outline" className="font-body text-accent border-accent">{selectedNews.category}</Badge>
+                    <Badge variant="outline" className="font-body text-foreground">{selectedNews.category}</Badge>
                     <span className="text-xs text-muted-foreground font-body ml-2">
                         {new Date(selectedNews.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
                     </span>
