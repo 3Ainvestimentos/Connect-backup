@@ -29,7 +29,7 @@ interface NewsContextType {
 }
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
-const COLLECTION_NAME = 'news';
+const COLLECTION_NAME = 'newsItems';
 
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
@@ -51,16 +51,26 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedItem;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] | undefined) => {
+          return oldData ? oldData.map(item => item.id === variables.id ? variables : item) : [];
+      });
     },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    }
   });
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: (data, id) => {
+       queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] | undefined) => {
+          return oldData ? oldData.filter(item => item.id !== id) : [];
+       });
     },
+    onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    }
   });
 
   const toggleNewsHighlight = useCallback((id: string) => {
