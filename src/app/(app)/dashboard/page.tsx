@@ -65,9 +65,11 @@ export default function DashboardPage() {
 
   const eventsForMonth = useMemo(() => {
     if (!displayedMonth) return [];
+    const timeZone = 'America/Sao_Paulo';
     return userEvents.filter(event => {
-      const eventDate = toZonedTime(parseISO(event.date), 'UTC');
-      return isSameMonth(eventDate, displayedMonth);
+      const eventDateInSaoPaulo = toZonedTime(parseISO(event.date), timeZone);
+      const displayedMonthInSaoPaulo = toZonedTime(displayedMonth, timeZone);
+      return isSameMonth(eventDateInSaoPaulo, displayedMonthInSaoPaulo);
     });
   }, [userEvents, displayedMonth]);
   
