@@ -51,13 +51,11 @@ const navItems = [
 ];
 
 function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
-  const { user, signOut, loading } = useAuth();
+  const { user, signOut, loading, isAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
 
   if (loading) return <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
-
-  const isAdmin = user.email === 'mock@example.com';
 
   return (
     <DropdownMenu>

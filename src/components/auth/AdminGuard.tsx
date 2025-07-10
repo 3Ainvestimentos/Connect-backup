@@ -5,13 +5,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-// !! IMPORTANTE !!
-// Substitua este email pelo endereço de email real do administrador da plataforma.
-// Apenas este usuário poderá acessar o Painel do Administrador.
-const ADMIN_EMAIL = 'matheus@3ainvestimentos.com.br';
-
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
-    const { user, loading } = useAuth();
+    const { user, loading, isAdmin } = useAuth();
     const router = useRouter();
     const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -20,14 +15,14 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
             if (!user) {
                 // Se não houver usuário e o carregamento estiver concluído, redirecione para o login
                 router.replace('/login');
-            } else if (user.email !== ADMIN_EMAIL) {
+            } else if (!isAdmin) {
                 // Redireciona usuários não-admin para o painel principal
                 router.replace('/dashboard'); 
             } else {
                 setIsAuthorized(true);
             }
         }
-    }, [user, loading, router]);
+    }, [user, loading, isAdmin, router]);
 
     // Mostra um indicador de carregamento enquanto verifica o status de autenticação
     if (loading || !isAuthorized) {

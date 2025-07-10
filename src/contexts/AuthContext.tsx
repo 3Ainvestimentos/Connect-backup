@@ -7,9 +7,12 @@ import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFi
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
+const ADMIN_EMAIL = 'matheus@3ainvestimentos.com.br';
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAdmin: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -23,6 +26,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const app = getFirebaseApp(); // Initialize Firebase
   const auth = getAuth(app);
+  
+  const isAdmin = user?.email === ADMIN_EMAIL;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -57,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isAdmin, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );
