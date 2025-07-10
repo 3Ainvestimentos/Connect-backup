@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -59,7 +60,7 @@ export default function GenericInfoModal({ open, onOpenChange, content }: Generi
           </Accordion>
         </div>
         <DialogFooter>
-          <Button onClick={() => onOpenChange(false)} variant="outline">Fechar</Button>
+          <Button onClick={() => onOpenChange(false)} variant="outline" className="hover:bg-muted">Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

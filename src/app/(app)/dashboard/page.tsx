@@ -359,7 +359,7 @@ export default function DashboardPage() {
               </ScrollArea>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button type="button" variant="outline">Fechar</Button>
+                  <Button type="button" variant="outline" className="hover:bg-muted">Fechar</Button>
                 </DialogClose>
               </DialogFooter>
             </>

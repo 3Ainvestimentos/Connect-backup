@@ -96,7 +96,7 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
               </ScrollArea>
               <DialogFooter>
                 <DialogClose asChild>
-                  <Button type="button" variant="outline">Fechar</Button>
+                  <Button type="button" variant="outline" className="hover:bg-muted">Fechar</Button>
                 </DialogClose>
               </DialogFooter>
             </>
