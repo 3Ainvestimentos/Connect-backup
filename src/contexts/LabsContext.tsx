@@ -3,7 +3,8 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getDocument, setDocumentInCollection } from '@/lib/firestore-service';
+// Using the mock service instead of the real Firestore service
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/mock-firestore-service';
 
 export interface LabType {
   id: string;
@@ -14,14 +15,7 @@ export interface LabType {
   videoUrl: string;
 }
 
-interface LabsContextType {
-  labs: LabType[];
-  loading: boolean;
-  addLab: (lab: Omit<LabType, 'id'>) => Promise<WithId<Omit<LabType, 'id'>>>;
-  updateLab: (lab: LabType) => Promise<void>;
-  deleteLab: (id: string) => Promise<void>;
-}
-
+// Initial mock data to populate localStorage if it's empty
 const mockLabs: LabType[] = [
     { id: "lab_mock_1", title: "Treinamento Onboarding", subtitle: "Parte 1", category: "Integração", lastModified: "2024-07-26", videoUrl: "https://drive.google.com/file/d/1Ic8JAuB_QNwG7wp4Yrw8PQui4086Gs9A/view" },
     { id: "lab_mock_2", title: "Cultura Organizacional", subtitle: "Valores e Missão", category: "Institucional", lastModified: "2024-07-26", videoUrl: "https://drive.google.com/file/d/1OtAD5ieAgs6ppxuWCChuLrqNpQExjln0/view" },
@@ -32,6 +26,13 @@ const mockLabs: LabType[] = [
     { id: "lab_mock_7", title: "Feedback Construtivo", subtitle: "Como aplicar", category: "Liderança", lastModified: "2024-07-23", videoUrl: "https://drive.google.com/file/d/1cqTusqhlRw4laV1zdeBYlM8ja93l7hfE/view" },
 ];
 
+interface LabsContextType {
+  labs: LabType[];
+  loading: boolean;
+  addLab: (lab: Omit<LabType, 'id'>) => Promise<WithId<Omit<LabType, 'id'>>>;
+  updateLab: (lab: LabType) => Promise<void>;
+  deleteLab: (id: string) => Promise<void>;
+}
 
 const LabsContext = createContext<LabsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'labs';
@@ -41,12 +42,8 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: labs = [], isFetching } = useQuery<LabType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<LabType>(COLLECTION_NAME),
-    select: (fetchedData) => {
-        const combined = [...mockLabs, ...fetchedData];
-        const uniqueLabs = Array.from(new Map(combined.map(item => [item.id, item])).values());
-        return uniqueLabs.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
-    }
+    // Pass mock data to initialize if localStorage is empty
+    queryFn: () => getCollection<LabType>(COLLECTION_NAME, mockLabs),
   });
 
   const addLabMutation = useMutation<WithId<Omit<LabType, 'id'>>, Error, Omit<LabType, 'id'>>({
@@ -57,39 +54,15 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const updateLabMutation = useMutation<void, Error, LabType>({
-    mutationFn: async (updatedLab: LabType) => {
-        const { id, ...data } = updatedLab;
-        
-        // Check if the document exists in Firestore
-        const docExists = await getDocument(COLLECTION_NAME, id);
-        
-        if (docExists) {
-            // If it exists, update it
-            return updateDocumentInCollection(COLLECTION_NAME, id, data);
-        } else if (mockLabs.some(mock => mock.id === id)) {
-            // If it doesn't exist but is a mock item, create it in Firestore
-            return setDocumentInCollection(COLLECTION_NAME, id, data);
-        } else {
-            // This case should ideally not be reached with the current logic
-            throw new Error(`Document with id ${id} not found and is not a mock item.`);
-        }
-    },
-    onSuccess: (_, variables) => {
+    mutationFn: (updatedLab: LabType) => updateDocumentInCollection(COLLECTION_NAME, updatedLab.id, updatedLab),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteLabMutation = useMutation<void, Error, string>({
-    mutationFn: async (id: string) => {
-       const docExists = await getDocument(COLLECTION_NAME, id);
-       if(docExists) {
-         return deleteDocumentFromCollection(COLLECTION_NAME, id);
-       }
-       // If it doesn't exist in Firestore (i.e., it's a mock item that was never edited),
-       // we just resolve without erroring. The optimistic update will handle the UI.
-       return Promise.resolve();
-    },
-    onSuccess: (_, id) => {
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });

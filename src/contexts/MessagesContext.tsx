@@ -4,7 +4,8 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+// Using the mock service instead of the real Firestore service
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/mock-firestore-service';
 
 export interface MessageType {
   id: string;
@@ -15,6 +16,9 @@ export interface MessageType {
   recipientIds: string[]; // Array of collaborator IDs
   readBy: string[]; // Array of collaborator IDs who have read the message
 }
+
+// Initial mock data to populate localStorage if it's empty
+const mockMessages: MessageType[] = [];
 
 interface MessagesContextType {
   messages: MessageType[];
@@ -34,8 +38,8 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: messages = [], isFetching } = useQuery<MessageType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
-    initialData: [],
+    // Pass mock data to initialize if localStorage is empty
+    queryFn: () => getCollection<MessageType>(COLLECTION_NAME, mockMessages),
   });
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
@@ -47,10 +51,8 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id'>>, Error, Omit<MessageType, 'id' | 'readBy'>>({
     mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, {...messageData, readBy: []}),
-    onSuccess: (newMessage) => {
-        queryClient.setQueryData<MessageType[]>([COLLECTION_NAME], (oldData = []) =>
-            [...oldData, newMessage].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        );
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
@@ -59,40 +61,14 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedMessage;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onMutate: async (updatedMessage) => {
-        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-        const previousData = queryClient.getQueryData<MessageType[]>([COLLECTION_NAME]);
-        queryClient.setQueryData<MessageType[]>([COLLECTION_NAME], (oldData = []) => 
-            oldData.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
-        );
-        return { previousData };
-    },
-    onError: (err, variables, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-        await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-        const previousData = queryClient.getQueryData<MessageType[]>([COLLECTION_NAME]);
-        queryClient.setQueryData<MessageType[]>([COLLECTION_NAME], (oldData = []) => 
-            oldData.filter(msg => msg.id !== idToDelete)
-        );
-        return { previousData };
-    },
-    onError: (err, variables, context) => {
-        if (context?.previousData) {
-            queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-        }
-    },
-    onSettled: () => {
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
