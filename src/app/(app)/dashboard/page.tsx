@@ -201,14 +201,14 @@ export default function DashboardPage() {
                                 <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                                            <Checkbox checked={!isRead} aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} className="pointer-events-none mt-0.5 flex-shrink-0" />
+                                            <Checkbox checked={!isRead} aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} className={cn("pointer-events-none mt-0.5 flex-shrink-0", !isRead ? "border-muted-foreground" : "border-muted")} />
                                             <p className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</p>
                                         </div>
                                         <span className="text-xs text-muted-foreground whitespace-nowrap pl-1 flex-shrink-0">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
                                     </div>
                                     <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
                                       {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                      {msg.content.length > 80 && <span className="text-foreground font-semibold ml-1">Leia mais</span>}
+                                      {msg.content.length > 80 && <span className="text-foreground font-semibold ml-1 hover:text-black">Leia mais</span>}
                                     </p>
                                     <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
                                 </div>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
                             const Icon = getIcon(event.icon) as LucideIcon;
                             return (
                               <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
-                                <div className="flex-shrink-0 bg-primary/10 text-primary rounded-lg flex items-center justify-center h-10 w-10">
+                                <div className="flex-shrink-0 bg-secondary text-secondary-foreground rounded-lg flex items-center justify-center h-10 w-10">
                                     <Icon className="h-5 w-5" />
                                 </div>
                                 <div className="flex-grow">
@@ -317,7 +317,7 @@ export default function DashboardPage() {
                     <Trash2 className="mr-2 h-4 w-4" />
                     Mover para lixeira
                 </Button>
-                <Button variant="secondary" onClick={() => setSelectedMessage(null)}>Fechar</Button>
+                <Button variant="secondary" onClick={() => setSelectedMessage(null)} className="hover:bg-muted">Fechar</Button>
               </DialogFooter>
             </>
           )}
