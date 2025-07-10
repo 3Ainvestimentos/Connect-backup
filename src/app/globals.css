@@ -27,6 +27,10 @@ body {
     --border: 0 0% 89%; /* Slightly darker gray border */
     --input: 0 0% 93%; /* Lighter gray for input */
     --ring: 30 39% 46%; /* Primary gold for rings */
+
+    /* Admin specific colors */
+    --admin-primary: 170 60% 50%;
+    --admin-ring: 170 60% 50%;
     
     --chart-1: 30 39% 46%;
     --chart-2: 30 35% 55%;
@@ -68,6 +72,10 @@ body {
     --border: 210 15% 25%; /* Visible cool gray border */
     --input: 210 15% 25%;
     --ring: 30 39% 46%; /* Unchanged */
+
+    /* Admin specific colors */
+    --admin-primary: 170 60% 50%;
+    --admin-ring: 170 60% 50%;
 
     --chart-1: 30 39% 46%;
     --chart-2: 30 35% 55%;

@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { useLabs } from '@/contexts/LabsContext';
@@ -102,7 +103,7 @@ export function ManageLabs() {
                     <CardTitle>Gerenciar Labs</CardTitle>
                     <CardDescription>Adicione, edite ou remova vídeos e materiais do Labs.</CardDescription>
                 </div>
-                <Button onClick={() => handleDialogOpen(null)}>
+                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Vídeo
                 </Button>
@@ -173,7 +174,7 @@ export function ManageLabs() {
                             <DialogClose asChild>
                                 <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                             </DialogClose>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>

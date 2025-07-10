@@ -108,7 +108,7 @@ export function ManageCollaborators() {
                     <CardTitle>Gerenciar Colaboradores</CardTitle>
                     <CardDescription>Adicione, edite ou remova colaboradores da lista.</CardDescription>
                 </div>
-                <Button onClick={() => handleDialogOpen(null)}>
+                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Colaborador
                 </Button>
@@ -214,7 +214,7 @@ export function ManageCollaborators() {
                         </div>
                         <DialogFooter className="mt-6">
                             <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>

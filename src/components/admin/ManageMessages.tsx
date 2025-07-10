@@ -172,7 +172,7 @@ export function ManageMessages() {
                     <CardTitle>Gerenciar Mensagens</CardTitle>
                     <CardDescription>Adicione, edite ou remova mensagens do mural.</CardDescription>
                 </div>
-                <Button onClick={() => handleDialogOpen(null)}>
+                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Mensagem
                 </Button>
@@ -274,7 +274,7 @@ export function ManageMessages() {
 
                         <DialogFooter className="mt-6">
                             <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>

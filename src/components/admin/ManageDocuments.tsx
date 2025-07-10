@@ -107,7 +107,7 @@ export function ManageDocuments() {
                     <CardTitle>Gerenciar Documentos</CardTitle>
                     <CardDescription>Adicione, edite ou remova documentos do repositório.</CardDescription>
                 </div>
-                <Button onClick={() => handleDialogOpen(null)}>
+                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Documento
                 </Button>
@@ -184,7 +184,7 @@ export function ManageDocuments() {
                             <DialogClose asChild>
                                 <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                             </DialogClose>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>

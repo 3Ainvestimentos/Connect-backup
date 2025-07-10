@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -127,7 +128,7 @@ export function ManageNews() {
                     <CardTitle>Gerenciar Notícias</CardTitle>
                     <CardDescription>Adicione, edite ou remova notícias do feed. Marque até 3 para destaque.</CardDescription>
                 </div>
-                <Button onClick={() => handleDialogOpen(null)}>
+                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Adicionar Notícia
                 </Button>
@@ -155,6 +156,7 @@ export function ManageNews() {
                                             checked={item.isHighlight}
                                             onCheckedChange={() => toggleNewsHighlight(item.id)}
                                             aria-label="Marcar como destaque"
+                                            className="data-[state=checked]:bg-admin-primary"
                                         />
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -229,6 +231,7 @@ export function ManageNews() {
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
                                             disabled={isSubmitting}
+                                            className="data-[state=checked]:bg-admin-primary"
                                         />
                                     )}
                                 />
@@ -238,7 +241,7 @@ export function ManageNews() {
                                 <DialogClose asChild>
                                     <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                                 </DialogClose>
-                                <Button type="submit" disabled={isSubmitting}>
+                                <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Salvar
                                 </Button>

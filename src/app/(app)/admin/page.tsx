@@ -15,7 +15,7 @@ import { ManageCollaborators } from '@/components/admin/ManageCollaborators';
 export default function AdminPage() {
     return (
         <AdminGuard>
-            <div className="space-y-6 p-6 md:p-8">
+            <div className="space-y-6 p-6 md:p-8 admin-panel">
                 <PageHeader 
                     title="Painel do Administrador"
                     description="Gerencie o conteúdo da intranet."
