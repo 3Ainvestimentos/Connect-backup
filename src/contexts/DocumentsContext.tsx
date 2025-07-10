@@ -59,21 +59,8 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<DocumentType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<DocumentType[]>([COLLECTION_NAME], (old = []) =>
-        old.filter((item) => item.id !== idToDelete)
-      );
-      return { previousData };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 

@@ -65,21 +65,8 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
-    mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<NewsItemType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<NewsItemType[]>([COLLECTION_NAME], (old = []) =>
-        old.filter((item) => item.id !== idToDelete)
-      );
-      return { previousData };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-      }
-    },
-    onSettled: () => {
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     }
   });

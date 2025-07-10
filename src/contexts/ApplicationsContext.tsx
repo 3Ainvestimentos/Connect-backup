@@ -73,31 +73,9 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const deleteApplicationMutation = useMutation<void, Error, string>({
-    mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-  
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData<Application[]>([COLLECTION_NAME]);
-  
-      // Optimistically update to the new value
-      queryClient.setQueryData<Application[]>([COLLECTION_NAME], (old = []) =>
-        old.filter((item) => item.id !== idToDelete)
-      );
-  
-      // Return a context object with the snapshotted value
-      return { previousData };
-    },
-    // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-      }
-    },
-    // Always refetch after error or success:
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
   

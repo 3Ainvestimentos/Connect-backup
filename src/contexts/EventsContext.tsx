@@ -69,21 +69,8 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const deleteEventMutation = useMutation<void, Error, string>({
-    mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onMutate: async (idToDelete) => {
-      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]);
-      queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (old = []) =>
-        old.filter((item) => item.id !== idToDelete)
-      );
-      return { previousData };
-    },
-    onError: (err, variables, context) => {
-      if (context?.previousData) {
-        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
-      }
-    },
-    onSettled: () => {
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
