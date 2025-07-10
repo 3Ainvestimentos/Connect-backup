@@ -45,7 +45,10 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
 
   const addEventMutation = useMutation<WithId<Omit<EventType, 'id'>>, Error, Omit<EventType, 'id'>>({
     mutationFn: (eventData) => addDocumentToCollection(COLLECTION_NAME, eventData),
-    onSuccess: () => {
+    onSuccess: (newItem) => {
+        queryClient.setQueryData([COLLECTION_NAME], (oldData: EventType[] = []) => [...oldData, newItem]);
+    },
+    onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -55,14 +58,32 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedEvent;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: EventType[] = []) =>
+        oldData.map((item) => (item.id === variables.id ? variables : item))
+      );
+    },
+    onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteEventMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]);
+      queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (old = []) =>
+        old.filter((item) => item.id !== idToDelete)
+      );
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+      }
+    },
+    onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });

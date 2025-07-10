@@ -41,7 +41,10 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
     mutationFn: (itemData) => addDocumentToCollection(COLLECTION_NAME, itemData),
-    onSuccess: () => {
+    onSuccess: (newItem) => {
+        queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] = []) => [...oldData, newItem]);
+    },
+    onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -52,9 +55,9 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: (_, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] | undefined) => {
-          return oldData ? oldData.map(item => item.id === variables.id ? variables : item) : [];
-      });
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] = []) =>
+        oldData.map(item => item.id === variables.id ? variables : item)
+      );
     },
     onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -63,10 +66,18 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: (data, id) => {
-       queryClient.setQueryData([COLLECTION_NAME], (oldData: NewsItemType[] | undefined) => {
-          return oldData ? oldData.filter(item => item.id !== id) : [];
-       });
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<NewsItemType[]>([COLLECTION_NAME]);
+      queryClient.setQueryData<NewsItemType[]>([COLLECTION_NAME], (old = []) =>
+        old.filter((item) => item.id !== idToDelete)
+      );
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+      }
     },
     onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });

@@ -46,7 +46,10 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id'>>, Error, Omit<MessageType, 'id' | 'readBy'>>({
     mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, {...messageData, readBy: []}),
-    onSuccess: () => {
+    onSuccess: (newItem) => {
+        queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] = []) => [...oldData, newItem]);
+    },
+    onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -56,14 +59,32 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedMessage;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] = []) =>
+        oldData.map((item) => (item.id === variables.id ? variables : item))
+      );
+    },
+    onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<MessageType[]>([COLLECTION_NAME]);
+      queryClient.setQueryData<MessageType[]>([COLLECTION_NAME], (old = []) =>
+        old.filter((item) => item.id !== idToDelete)
+      );
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+      }
+    },
+    onSettled: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });

@@ -37,21 +37,42 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({
     mutationFn: (docData: Omit<DocumentType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, docData),
-    onSuccess: () => {
+    onSuccess: (newItem) => {
+        queryClient.setQueryData([COLLECTION_NAME], (oldData: DocumentType[] = []) => [...oldData, newItem]);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const updateDocumentMutation = useMutation<void, Error, DocumentType>({
     mutationFn: (updatedDoc: DocumentType) => updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc),
-    onSuccess: () => {
+     onSuccess: (_, variables) => {
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: DocumentType[] = []) =>
+        oldData.map((item) => (item.id === variables.id ? variables : item))
+      );
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<DocumentType[]>([COLLECTION_NAME]);
+      queryClient.setQueryData<DocumentType[]>([COLLECTION_NAME], (old = []) =>
+        old.filter((item) => item.id !== idToDelete)
+      );
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });

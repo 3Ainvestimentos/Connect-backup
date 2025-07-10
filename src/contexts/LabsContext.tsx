@@ -35,21 +35,42 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const addLabMutation = useMutation<WithId<Omit<LabType, 'id'>>, Error, Omit<LabType, 'id'>>({
     mutationFn: (labData: Omit<LabType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, labData),
-    onSuccess: () => {
+    onSuccess: (newItem) => {
+        queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] = []) => [...oldData, newItem]);
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const updateLabMutation = useMutation<void, Error, LabType>({
     mutationFn: (updatedLab: LabType) => updateDocumentInCollection(COLLECTION_NAME, updatedLab.id, updatedLab),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: LabType[] = []) =>
+        oldData.map((item) => (item.id === variables.id ? variables : item))
+      );
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteLabMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
+    onMutate: async (idToDelete) => {
+      await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
+      const previousData = queryClient.getQueryData<LabType[]>([COLLECTION_NAME]);
+      queryClient.setQueryData<LabType[]>([COLLECTION_NAME], (old = []) =>
+        old.filter((item) => item.id !== idToDelete)
+      );
+      return { previousData };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData([COLLECTION_NAME], context.previousData);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
