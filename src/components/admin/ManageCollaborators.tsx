@@ -35,7 +35,6 @@ export function ManageCollaborators() {
     const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation } = useCollaborators();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
-    const isSubmitting = deleteCollaboratorMutation.isPending || false;
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
@@ -64,12 +63,12 @@ export function ManageCollaborators() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este colaborador?")) {
-            await deleteCollaboratorMutation.mutateAsync(id, {
-                onSuccess: () => {
-                    toast({ title: "Colaborador excluído com sucesso." });
-                },
-                // onError is handled globally in the context
-            });
+            try {
+                await deleteCollaboratorMutation.mutateAsync(id);
+                toast({ title: "Colaborador excluído com sucesso." });
+            } catch (error) {
+                // onError in hook handles toast
+            }
         }
     };
     
@@ -133,7 +132,7 @@ export function ManageCollaborators() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>

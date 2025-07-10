@@ -81,8 +81,6 @@ export function ManageApplications() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingApplication, setEditingApplication] = useState<Application | null>(null);
 
-    const isSubmitting = deleteApplicationMutation.isPending || false; // You can add other mutation states here
-
     const form = useForm<ApplicationFormValues>({
         resolver: zodResolver(applicationSchema),
         defaultValues: {
@@ -129,18 +127,16 @@ export function ManageApplications() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta aplicação?")) {
-            await deleteApplicationMutation.mutateAsync(id, {
-                onSuccess: () => {
-                    toast({ title: "Aplicação excluída com sucesso." });
-                },
-                // onError is handled globally in the context
-            });
+            try {
+                await deleteApplicationMutation.mutateAsync(id);
+                toast({ title: "Aplicação excluída com sucesso." });
+            } catch (error) {
+                // The onError in the mutation hook will handle the toast.
+            }
         }
     };
     
     const onSubmit = async (data: ApplicationFormValues) => {
-        // This is a simplified isSubmitting state. For a real app, you'd manage add/update mutation states.
-        const formIsSubmitting = form.formState.isSubmitting;
         try {
             if (editingApplication) {
                 const appData = { ...data, id: editingApplication.id } as Application;
@@ -197,7 +193,7 @@ export function ManageApplications() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteApplicationMutation.isPending}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>

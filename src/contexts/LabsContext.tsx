@@ -20,7 +20,7 @@ interface LabsContextType {
   loading: boolean;
   addLab: (lab: Omit<LabType, 'id'>) => Promise<WithId<Omit<LabType, 'id'>>>;
   updateLab: (lab: LabType) => Promise<void>;
-  deleteLabMutation: UseMutationResult<void, Error, string, { previousData: LabType[] }>;
+  deleteLabMutation: UseMutationResult<void, Error, string, { previousData: LabType[] | undefined }>;
 }
 
 const LabsContext = createContext<LabsContextType | undefined>(undefined);
@@ -56,11 +56,11 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteLabMutation = useMutation<void, Error, string, { previousData: LabType[] }>({
+  const deleteLabMutation = useMutation<void, Error, string, { previousData: LabType[] | undefined }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onMutate: async (idToDelete) => {
       await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<LabType[]>([COLLECTION_NAME]) || [];
+      const previousData = queryClient.getQueryData<LabType[]>([COLLECTION_NAME]);
       queryClient.setQueryData<LabType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
       return { previousData };
     },
@@ -70,7 +70,7 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
         }
         toast({
             title: "Erro ao excluir",
-            description: "Não foi possível remover o vídeo. A lista foi restaurada.",
+            description: err instanceof Error ? err.message : "Não foi possível remover o vídeo.",
             variant: "destructive"
         });
     },

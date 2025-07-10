@@ -25,7 +25,7 @@ interface MessagesContextType {
   loading: boolean;
   addMessage: (message: Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>>;
   updateMessage: (message: MessageType) => Promise<void>;
-  deleteMessageMutation: UseMutationResult<void, Error, string, { previousData: MessageType[] }>;
+  deleteMessageMutation: UseMutationResult<void, Error, string, { previousData: MessageType[] | undefined }>;
   markMessageAsRead: (messageId: string, collaboratorId: string) => void;
   markMessageAsDeleted: (messageId: string, collaboratorId: string) => Promise<void>;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
@@ -75,11 +75,11 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteMessageMutation = useMutation<void, Error, string, { previousData: MessageType[] }>({
+  const deleteMessageMutation = useMutation<void, Error, string, { previousData: MessageType[] | undefined }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onMutate: async (idToDelete) => {
       await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<MessageType[]>([COLLECTION_NAME]) || [];
+      const previousData = queryClient.getQueryData<MessageType[]>([COLLECTION_NAME]);
       queryClient.setQueryData<MessageType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
       return { previousData };
     },
@@ -89,7 +89,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         }
         toast({
             title: "Erro ao excluir",
-            description: "Não foi possível remover a mensagem. A lista foi restaurada.",
+            description: err instanceof Error ? err.message : "Não foi possível remover a mensagem.",
             variant: "destructive"
         });
     },

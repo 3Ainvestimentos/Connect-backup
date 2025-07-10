@@ -30,7 +30,6 @@ export function ManageLabs() {
     const { labs, addLab, updateLab, deleteLabMutation } = useLabs();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingLab, setEditingLab] = useState<LabType | null>(null);
-    const isSubmitting = deleteLabMutation.isPending || false;
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<LabFormValues>({
         resolver: zodResolver(labSchema),
@@ -59,12 +58,12 @@ export function ManageLabs() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este vídeo do Lab?")) {
-            await deleteLabMutation.mutateAsync(id, {
-                onSuccess: () => {
-                    toast({ title: "Vídeo do Lab excluído com sucesso." });
-                },
-                // onError is handled globally in the context
-            });
+            try {
+                await deleteLabMutation.mutateAsync(id);
+                toast({ title: "Vídeo do Lab excluído com sucesso." });
+            } catch (error) {
+                // onError in hook handles toast
+            }
         }
     };
     
@@ -122,7 +121,7 @@ export function ManageLabs() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteLabMutation.isPending}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>

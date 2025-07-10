@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
+import { useQueryClient } from '@tanstack/react-query';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -35,9 +36,9 @@ type NewsFormValues = z.infer<typeof newsSchema>;
 
 export function ManageNews() {
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight } = useNews();
+    const queryClient = useQueryClient();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
-    const isSubmitting = deleteNewsItemMutation.isPending || false;
 
     const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
@@ -73,12 +74,12 @@ export function ManageNews() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta notícia?")) {
-            await deleteNewsItemMutation.mutateAsync(id, {
-                onSuccess: () => {
-                    toast({ title: "Notícia excluída com sucesso." });
-                },
-                // onError is handled globally in the context
-            });
+            try {
+                await deleteNewsItemMutation.mutateAsync(id);
+                toast({ title: "Notícia excluída com sucesso." });
+            } catch (error) {
+                // The onError in the mutation hook will handle the toast.
+            }
         }
     };
     
@@ -155,7 +156,7 @@ export function ManageNews() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteNewsItemMutation.isPending}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>

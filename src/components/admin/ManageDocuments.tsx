@@ -32,7 +32,6 @@ export function ManageDocuments() {
     const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
-    const isSubmitting = deleteDocumentMutation.isPending || false;
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<DocumentFormValues>({
         resolver: zodResolver(documentSchema),
@@ -63,12 +62,12 @@ export function ManageDocuments() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este documento?")) {
-            await deleteDocumentMutation.mutateAsync(id, {
-                onSuccess: () => {
-                    toast({ title: "Documento excluído com sucesso." });
-                },
-                // onError is handled globally in the context
-            });
+            try {
+                await deleteDocumentMutation.mutateAsync(id);
+                toast({ title: "Documento excluído com sucesso." });
+            } catch (error) {
+                // onError in hook handles toast
+            }
         }
     };
     
@@ -126,7 +125,7 @@ export function ManageDocuments() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteDocumentMutation.isPending}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>

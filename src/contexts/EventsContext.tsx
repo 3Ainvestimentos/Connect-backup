@@ -22,7 +22,7 @@ interface EventsContextType {
   loading: boolean;
   addEvent: (event: Omit<EventType, 'id'>) => Promise<WithId<Omit<EventType, 'id'>>>;
   updateEvent: (event: EventType) => Promise<void>;
-  deleteEventMutation: UseMutationResult<void, Error, string, { previousData: EventType[] }>;
+  deleteEventMutation: UseMutationResult<void, Error, string, { previousData: EventType[] | undefined }>;
   getEventRecipients: (event: EventType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -69,11 +69,11 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteEventMutation = useMutation<void, Error, string, { previousData: EventType[] }>({
+  const deleteEventMutation = useMutation<void, Error, string, { previousData: EventType[] | undefined }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onMutate: async (idToDelete) => {
       await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]) || [];
+      const previousData = queryClient.getQueryData<EventType[]>([COLLECTION_NAME]);
       queryClient.setQueryData<EventType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
       return { previousData };
     },
@@ -83,7 +83,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
         }
         toast({
             title: "Erro ao excluir",
-            description: "Não foi possível remover o evento. A lista foi restaurada.",
+            description: err instanceof Error ? err.message : "Não foi possível remover o evento.",
             variant: "destructive"
         });
     },

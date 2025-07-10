@@ -31,7 +31,7 @@ interface ApplicationsContextType {
   loading: boolean;
   addApplication: (app: Omit<Application, 'id'>) => Promise<Application>;
   updateApplication: (app: Application) => Promise<void>;
-  deleteApplicationMutation: UseMutationResult<void, Error, string, { previousData: Application[] }>;
+  deleteApplicationMutation: UseMutationResult<void, Error, string, { previousData: Application[] | undefined }>;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
@@ -70,11 +70,11 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteApplicationMutation = useMutation<void, Error, string, { previousData: Application[] }>({
+  const deleteApplicationMutation = useMutation<void, Error, string, { previousData: Application[] | undefined }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onMutate: async (idToDelete) => {
       await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<Application[]>([COLLECTION_NAME]) || [];
+      const previousData = queryClient.getQueryData<Application[]>([COLLECTION_NAME]);
       queryClient.setQueryData<Application[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
       return { previousData };
     },
@@ -84,7 +84,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
         }
         toast({
             title: "Erro ao excluir",
-            description: "Não foi possível remover a aplicação. A lista foi restaurada.",
+            description: err instanceof Error ? err.message : "Não foi possível remover a aplicação.",
             variant: "destructive"
         });
     },

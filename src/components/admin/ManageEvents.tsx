@@ -40,7 +40,6 @@ export function ManageEvents() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingEvent, setEditingEvent] = useState<EventType | null>(null);
-    const isSubmitting = deleteEventMutation.isPending || false;
 
     const form = useForm<EventFormValues>({
         resolver: zodResolver(eventSchema),
@@ -75,12 +74,12 @@ export function ManageEvents() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir este evento?")) {
-            await deleteEventMutation.mutateAsync(id, {
-                onSuccess: () => {
-                    toast({ title: "Evento excluído com sucesso." });
-                },
-                // onError is handled globally in the context
-            });
+            try {
+                await deleteEventMutation.mutateAsync(id);
+                toast({ title: "Evento excluído com sucesso." });
+            } catch (error) {
+                // onError in hook handles toast
+            }
         }
     };
     
@@ -161,7 +160,7 @@ export function ManageEvents() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteEventMutation.isPending}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>

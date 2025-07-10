@@ -38,7 +38,7 @@ interface CollaboratorsContextType {
   loading: boolean;
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
   updateCollaborator: (collaborator: Collaborator) => Promise<void>;
-  deleteCollaboratorMutation: UseMutationResult<void, Error, string, { previousData: Collaborator[] }>;
+  deleteCollaboratorMutation: UseMutationResult<void, Error, string, { previousData: Collaborator[] | undefined }>;
 }
 
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
@@ -80,12 +80,10 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     },
   });
 
-  const deleteCollaboratorMutation = useMutation<void, Error, string, { previousData: Collaborator[] }>({
+  const deleteCollaboratorMutation = useMutation<void, Error, string, { previousData: Collaborator[] | undefined }>({
     mutationFn: (id: string) => {
         // Prevent deleting the mock user from Firestore
         if (id === mockAdminCollaborator.id) {
-            // We can throw an error here to notify the user, or just resolve.
-            // Let's throw for clarity.
             return Promise.reject(new Error("O usuário administrador mock não pode ser excluído."));
         }
         return deleteDocumentFromCollection(COLLECTION_NAME, id);
@@ -93,7 +91,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     onMutate: async (idToDelete) => {
       if (idToDelete === mockAdminCollaborator.id) return;
       await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<Collaborator[]>([COLLECTION_NAME]) || [];
+      const previousData = queryClient.getQueryData<Collaborator[]>([COLLECTION_NAME]);
       queryClient.setQueryData<Collaborator[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
       return { previousData };
     },
@@ -103,7 +101,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
         }
         toast({
             title: "Erro ao excluir",
-            description: err.message || "Não foi possível remover o colaborador. A lista foi restaurada.",
+            description: err instanceof Error ? err.message : "Não foi possível remover o colaborador.",
             variant: "destructive"
         });
     },

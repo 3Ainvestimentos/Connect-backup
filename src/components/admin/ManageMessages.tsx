@@ -79,7 +79,6 @@ export function ManageMessages() {
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
     const [viewingStatusFor, setViewingStatusFor] = useState<MessageType | null>(null);
-    const isSubmitting = deleteMessageMutation.isPending || false;
     
     const form = useForm<MessageFormValues>({
         resolver: zodResolver(messageSchema),
@@ -112,12 +111,12 @@ export function ManageMessages() {
 
     const handleDelete = async (id: string) => {
         if (window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) {
-            await deleteMessageMutation.mutateAsync(id, {
-                onSuccess: () => {
-                    toast({ title: "Mensagem excluída com sucesso." });
-                },
-                // onError is handled globally in the context
-            });
+            try {
+                await deleteMessageMutation.mutateAsync(id);
+                toast({ title: "Mensagem excluída com sucesso." });
+            } catch (error) {
+                // onError in hook handles toast
+            }
         }
     };
     
@@ -210,7 +209,7 @@ export function ManageMessages() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted">
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteMessageMutation.isPending}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
                                     </TableCell>

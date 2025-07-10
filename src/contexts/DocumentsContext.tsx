@@ -22,7 +22,7 @@ interface DocumentsContextType {
   loading: boolean;
   addDocument: (doc: Omit<DocumentType, 'id'>) => Promise<WithId<Omit<DocumentType, 'id'>>>;
   updateDocument: (doc: DocumentType) => Promise<void>;
-  deleteDocumentMutation: UseMutationResult<void, Error, string, { previousData: DocumentType[] }>;
+  deleteDocumentMutation: UseMutationResult<void, Error, string, { previousData: DocumentType[] | undefined }>;
 }
 
 const DocumentsContext = createContext<DocumentsContextType | undefined>(undefined);
@@ -58,11 +58,11 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const deleteDocumentMutation = useMutation<void, Error, string, { previousData: DocumentType[] }>({
+  const deleteDocumentMutation = useMutation<void, Error, string, { previousData: DocumentType[] | undefined }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onMutate: async (idToDelete) => {
       await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<DocumentType[]>([COLLECTION_NAME]) || [];
+      const previousData = queryClient.getQueryData<DocumentType[]>([COLLECTION_NAME]);
       queryClient.setQueryData<DocumentType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
       return { previousData };
     },
@@ -72,7 +72,7 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
         }
         toast({
             title: "Erro ao excluir",
-            description: "Não foi possível remover o documento. A lista foi restaurada.",
+            description: err instanceof Error ? err.message : "Não foi possível remover o documento.",
             variant: "destructive"
         });
     },

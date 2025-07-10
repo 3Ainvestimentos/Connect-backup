@@ -24,7 +24,7 @@ interface NewsContextType {
   loading: boolean;
   addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<WithId<Omit<NewsItemType, 'id'>>>;
   updateNewsItem: (item: NewsItemType) => Promise<void>;
-  deleteNewsItemMutation: UseMutationResult<void, Error, string, { previousData: NewsItemType[] }>;
+  deleteNewsItemMutation: UseMutationResult<void, Error, string, { previousData: NewsItemType[] | undefined }>;
   toggleNewsHighlight: (id: string) => void;
 }
 
@@ -64,11 +64,11 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     }
   });
 
-  const deleteNewsItemMutation = useMutation<void, Error, string, { previousData: NewsItemType[] }>({
+  const deleteNewsItemMutation = useMutation<void, Error, string, { previousData: NewsItemType[] | undefined }>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onMutate: async (idToDelete) => {
       await queryClient.cancelQueries({ queryKey: [COLLECTION_NAME] });
-      const previousData = queryClient.getQueryData<NewsItemType[]>([COLLECTION_NAME]) || [];
+      const previousData = queryClient.getQueryData<NewsItemType[]>([COLLECTION_NAME]);
       queryClient.setQueryData<NewsItemType[]>([COLLECTION_NAME], (old) => old?.filter(item => item.id !== idToDelete) ?? []);
       return { previousData };
     },
@@ -78,7 +78,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
         }
         toast({
             title: "Erro ao excluir",
-            description: "Não foi possível remover a notícia. A lista foi restaurada.",
+            description: err instanceof Error ? err.message : "Não foi possível remover a notícia.",
             variant: "destructive"
         });
     },
