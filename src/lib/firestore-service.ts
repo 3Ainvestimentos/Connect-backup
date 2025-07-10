@@ -122,13 +122,11 @@ export const updateDocumentInCollection = async <T extends object>(collectionNam
 export const deleteDocumentFromCollection = async (collectionName: string, id: string): Promise<void> => {
      const docRef = doc(db, collectionName, id);
     try {
-        await runTransaction(db, async (transaction) => {
-            const docSnap = await transaction.get(docRef);
-            if (!docSnap.exists()) {
-                throw new Error("Documento não encontrado. Ele pode já ter sido excluído.");
-            }
-            transaction.delete(docRef);
-        });
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+             throw new Error("Documento não encontrado. Ele pode já ter sido excluído.");
+        }
+        await deleteDoc(docRef);
     } catch (error) {
         console.error(`Error deleting document ${id} from ${collectionName}:`, error);
         if (error instanceof Error) {

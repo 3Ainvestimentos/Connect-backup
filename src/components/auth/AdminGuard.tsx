@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 // !! IMPORTANTE !!
 // Substitua este email pelo endereço de email real do administrador da plataforma.
 // Apenas este usuário poderá acessar o Painel do Administrador.
-const ADMIN_EMAIL = 'mock@example.com';
+const ADMIN_EMAIL = 'user@example.com';
 
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
@@ -17,7 +17,10 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
 
     useEffect(() => {
         if (!loading) {
-            if (!user || user.email !== ADMIN_EMAIL) {
+            if (!user) {
+                // Se não houver usuário e o carregamento estiver concluído, redirecione para o login
+                router.replace('/login');
+            } else if (user.email !== ADMIN_EMAIL) {
                 // Redireciona usuários não-admin para o painel principal
                 router.replace('/dashboard'); 
             } else {
