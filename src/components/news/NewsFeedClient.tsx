@@ -43,18 +43,16 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
               </div>
               <CardHeader className="pb-2">
                 <CardTitle className="font-headline text-lg leading-tight">{item.title}</CardTitle>
-                 <div className="flex items-center text-xs text-muted-foreground pt-1 space-x-2">
-                    <Badge variant="outline" className="font-body text-accent border-accent">{item.category}</Badge>
-                </div>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground font-body leading-relaxed">{item.snippet}</p>
               </CardContent>
-              <CardFooter className="flex justify-between items-center text-xs text-muted-foreground border-t pt-4">
-                <div className="flex items-center gap-1 font-body">
+              <CardFooter className="flex flex-col items-start text-xs text-muted-foreground border-t pt-4 gap-2">
+                 <div className="flex items-center gap-1 font-body">
                     <CalendarDays className="h-4 w-4" />
                     {new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
                 </div>
+                <Badge variant="outline" className="font-body text-foreground">{item.category}</Badge>
               </CardFooter>
             </Card>
           ))}
