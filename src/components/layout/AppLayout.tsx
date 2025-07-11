@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -108,12 +108,20 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
         </DropdownMenuSub>
         
         {isAdmin && (
+          <>
             <DropdownMenuItem asChild>
                 <Link href="/admin" className="cursor-pointer font-body">
                     <Shield className="mr-2 h-4 w-4" />
                     <span>Painel Admin</span>
                 </Link>
             </DropdownMenuItem>
+             <DropdownMenuItem asChild>
+                <Link href="/analytics" className="cursor-pointer font-body">
+                    <BarChart className="mr-2 h-4 w-4" />
+                    <span>Analytics</span>
+                </Link>
+            </DropdownMenuItem>
+          </>
         )}
 
         <DropdownMenuSeparator />
