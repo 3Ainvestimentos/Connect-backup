@@ -93,7 +93,9 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
           <Accordion type="single" collapsible className="w-full">
             {faqItems.map((item, index) => (
               <AccordionItem value={`item-${index + 1}`} key={index}>
-                <AccordionTrigger className="text-left font-body font-semibold">{item.question}</AccordionTrigger>
+                <AccordionTrigger className="text-left font-body font-semibold text-sm">
+                  {item.question}
+                </AccordionTrigger>
                 <AccordionContent className="font-body text-muted-foreground">
                   {item.answer}
                 </AccordionContent>
@@ -107,7 +109,7 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
               className="block mt-4 text-center p-4 bg-background rounded-lg transition-colors hover:bg-muted/50"
             >
               <BobIcon className="mx-auto h-10 w-10 mb-2" />
-              <p className="font-semibold text-muted-foreground">
+              <p className="font-semibold text-foreground">
                 Outras dúvidas? Pergunte ao Bob
               </p>
             </Link>
