@@ -121,7 +121,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useMessages = (): MessagesContextType => {
-  const context = useContext(MessagesGesContext);
+  const context = useContext(MessagesContext);
   if (context === undefined) {
     throw new Error('useMessages must be used within a MessagesProvider');
   }
