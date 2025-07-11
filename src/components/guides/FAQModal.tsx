@@ -17,7 +17,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from '@/components/ui/button';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+import { Separator } from '../ui/separator';
 
 interface FAQModalProps {
   open: boolean;
@@ -75,6 +77,20 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
               </AccordionItem>
             ))}
           </Accordion>
+           <Separator className="my-4" />
+           <div className="mt-4 text-center p-4 bg-accent/20 rounded-lg">
+                <Sparkles className="mx-auto h-6 w-6 text-accent mb-2" />
+                <p className="font-semibold text-foreground">
+                    Outras dúvidas? {' '}
+                    <Link 
+                        href="/chatbot"
+                        onClick={() => onOpenChange(false)}
+                        className="text-accent font-bold hover:underline"
+                    >
+                        Pergunte ao Bob
+                    </Link>!
+                </p>
+            </div>
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} variant="outline">Fechar</Button>
