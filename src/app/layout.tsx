@@ -14,7 +14,7 @@ import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
 import { LabsProvider } from '@/contexts/LabsContext';
 
 export const metadata: Metadata = {
-  title: '3A RIVA Hub',
+  title: '3A RIVA Connect',
   description: 'Plataforma 3A RIVA',
 };
 

@@ -24,7 +24,7 @@ export function Header({ userNav, showSidebarTrigger = true, showDashboardButton
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image 
             src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Flogo_oficial_branca.png?alt=media&token=329d139b-cca1-4aed-95c7-a699fa32f0bb"
-            alt="Logo 3A RIVA Hub" 
+            alt="Logo 3A RIVA Connect" 
             width={135} 
             height={30} 
             priority 

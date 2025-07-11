@@ -55,7 +55,7 @@ const chatWithBobFlow = ai.defineFlow(
       }
     }
 
-    const systemPrompt = `Você é Bob, um assistente de IA prestativo para o 3A RIVA Hub. Seja amigável, profissional e conciso.
+    const systemPrompt = `Você é Bob, um assistente de IA prestativo para o 3A RIVA Connect. Seja amigável, profissional e conciso.
     Se informações da base de conhecimento forem fornecidas, use-as para formular sua resposta. Caso contrário, responda com seu conhecimento geral.`;
     
     const messagesForLLM: ChatMessage[] = [
@@ -85,4 +85,3 @@ const chatWithBobFlow = ai.defineFlow(
     return { reply };
   }
 );
-

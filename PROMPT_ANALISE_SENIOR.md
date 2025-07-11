@@ -1,8 +1,8 @@
-# Prompt para Análise Conceitual Sênior: 3A RIVA Hub
+# Prompt para Análise Conceitual Sênior: 3A RIVA Connect
 
 ## Contexto
 
-Você é um Analista de Sistemas/Software Sênior com vasta experiência em arquitetura de aplicações web corporativas. Sua tarefa é realizar uma revisão conceitual da aplicação "3A RIVA Hub", uma intranet projetada para aproximadamente 250 usuários ativos.
+Você é um Analista de Sistemas/Software Sênior com vasta experiência em arquitetura de aplicações web corporativas. Sua tarefa é realizar uma revisão conceitual da aplicação "3A RIVA Connect", uma intranet projetada para aproximadamente 250 usuários ativos.
 
 ## Objetivo
 

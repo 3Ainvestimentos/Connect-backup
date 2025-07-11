@@ -1,9 +1,9 @@
 
-# Análise Conceitual da Aplicação: 3A RIVA Hub
+# Análise Conceitual da Aplicação: 3A RIVA Connect
 
 ## 1. Resumo da Aplicação
 
-O **3A RIVA Hub** é uma aplicação de intranet corporativa moderna, projetada para ser o ponto central de comunicação, acesso a recursos e ferramentas para todos os colaboradores da empresa. O sistema foi desenvolvido para um público de aproximadamente 250 usuários ativos, com foco em usabilidade, performance e segurança.
+O **3A RIVA Connect** é uma aplicação de intranet corporativa moderna, projetada para ser o ponto central de comunicação, acesso a recursos e ferramentas para todos os colaboradores da empresa. O sistema foi desenvolvido para um público de aproximadamente 250 usuários ativos, com foco em usabilidade, performance e segurança.
 
 O objetivo principal é substituir canais de comunicação dispersos (e-mails, grupos de mensagens) por uma plataforma unificada, melhorando o engajamento, a produtividade e o acesso à informação.
 
