@@ -82,7 +82,7 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
       <DialogContent className="sm:max-w-lg font-body">
         <DialogHeader>
           <div className="flex items-center gap-3 mb-2">
-            <HelpCircle className="h-7 w-7 text-accent" />
+            <HelpCircle className="h-7 w-7 text-muted-foreground" />
             <DialogTitle className="font-headline text-2xl">Guias e FAQ</DialogTitle>
           </div>
           <DialogDescription>
