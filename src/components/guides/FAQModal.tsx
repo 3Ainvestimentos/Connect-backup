@@ -78,19 +78,16 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
             ))}
           </Accordion>
            <Separator className="my-4" />
-           <div className="mt-4 text-center p-4 bg-accent/20 rounded-lg">
-                <Sparkles className="mx-auto h-6 w-6 text-accent mb-2" />
-                <p className="font-semibold text-foreground">
-                    Outras dúvidas? {' '}
-                    <Link 
-                        href="/chatbot"
-                        onClick={() => onOpenChange(false)}
-                        className="text-accent font-bold hover:underline"
-                    >
-                        Pergunte ao Bob
-                    </Link>!
-                </p>
-            </div>
+           <Link
+              href="/chatbot"
+              onClick={() => onOpenChange(false)}
+              className="block mt-4 text-center p-4 bg-muted rounded-lg transition-colors hover:bg-secondary"
+            >
+              <Sparkles className="mx-auto h-6 w-6 text-accent mb-2" />
+              <p className="font-semibold text-foreground">
+                Outras dúvidas? <span className="text-accent font-bold">Pergunte ao Bob</span>!
+              </p>
+            </Link>
         </div>
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} variant="outline">Fechar</Button>
