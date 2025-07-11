@@ -86,7 +86,7 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
             <DialogTitle className="font-headline text-2xl">Guias e FAQ</DialogTitle>
           </div>
           <DialogDescription>
-            Encontre respostas para perguntas frequentes e guias de utilização do portal.
+            Encontre respostas para perguntas frequentes e guias de utilização do Connect
           </DialogDescription>
         </DialogHeader>
         <div className="py-2 max-h-[60vh] overflow-y-auto pr-4">
@@ -109,7 +109,7 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
               className="block mt-4 text-center p-4 bg-background rounded-lg transition-colors hover:bg-muted/50"
             >
               <BobIcon className="mx-auto h-10 w-10 mb-2" />
-              <p className="font-semibold text-foreground">
+              <p className="text-foreground text-sm">
                 Outras dúvidas? Pergunte ao Bob
               </p>
             </Link>
