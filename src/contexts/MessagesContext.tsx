@@ -39,6 +39,8 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   const { data: messages = [], isFetching } = useQuery<MessageType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
+    // Ensure that initial data has the arrays to prevent errors
+    select: (data) => data.map(m => ({ ...m, readBy: m.readBy || [], deletedBy: m.deletedBy || [] })),
   });
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
@@ -60,7 +62,11 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedMessage;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Optimistic update for faster UI response
+      queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] | undefined) => {
+        return oldData ? oldData.map(msg => msg.id === variables.id ? variables : msg) : [];
+      });
       // Invalidate the query to refetch from the server and ensure consistency
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
@@ -86,10 +92,10 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const markMessageAsDeleted = useCallback(async (messageId: string, collaboratorId: string) => {
     const message = messages.find(m => m.id === messageId);
-    if (message && !message.deletedBy.includes(collaboratorId)) {
+    if (message && !(message.deletedBy || []).includes(collaboratorId)) {
         const updatedMessage = {
             ...message,
-            deletedBy: [...message.deletedBy, collaboratorId],
+            deletedBy: [...(message.deletedBy || []), collaboratorId],
         };
         // Use mutateAsync to await the operation if needed
         await updateMessageMutation.mutateAsync(updatedMessage);
@@ -115,7 +121,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useMessages = (): MessagesContextType => {
-  const context = useContext(MessagesContext);
+  const context = useContext(MessagesGesContext);
   if (context === undefined) {
     throw new Error('useMessages must be used within a MessagesProvider');
   }
