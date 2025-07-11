@@ -6,8 +6,10 @@ import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
 
 const ADMIN_EMAIL = 'matheus@3ainvestimentos.com.br';
+const ALLOWED_DOMAINS = ['3ainvestimentos.com.br']; // Adicione outros domínios autorizados aqui
 
 interface AuthContextType {
   user: User | null;
@@ -34,20 +36,53 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       setLoading(false);
       if (user) {
-        router.push('/dashboard');
+        // Redirecionamento movido para a função de login para garantir a verificação de domínio primeiro
       }
     });
 
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [auth]);
 
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
-      // onAuthStateChanged will handle the user state update and redirect
+      const result = await signInWithPopup(auth, googleProvider);
+      const userEmail = result.user.email;
+
+      if (!userEmail) {
+        await firebaseSignOut(auth);
+        toast({
+            title: "Erro de Login",
+            description: "Não foi possível verificar seu e-mail. Tente novamente.",
+            variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+      
+      const domain = userEmail.split('@')[1];
+      if (!ALLOWED_DOMAINS.includes(domain)) {
+        await firebaseSignOut(auth);
+        toast({
+            title: "Acesso Negado",
+            description: "Este e-mail não pertence a um domínio autorizado para acessar esta aplicação.",
+            variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // Se o domínio for válido, onAuthStateChanged já terá definido o usuário
+      // e podemos redirecionar com segurança.
+      router.push('/dashboard');
+
     } catch (error) {
       console.error("Error signing in with Google: ", error);
+      toast({
+            title: "Erro de Login",
+            description: "Ocorreu um problema durante o login. Por favor, tente novamente.",
+            variant: "destructive"
+      });
       setLoading(false);
     }
   };
