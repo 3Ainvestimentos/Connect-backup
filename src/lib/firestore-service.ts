@@ -1,6 +1,6 @@
 
 import { getFirebaseApp } from './firebase'; // Import the initialized app function
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, writeBatch } from "firebase/firestore";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { cleanDataForFirestore } from './data-sanitizer';
 
@@ -65,6 +65,33 @@ export const addDocumentToCollection = async <T extends object>(collectionName: 
             console.error('Data that caused the error:', data);
         }
         throw new Error('Não foi possível adicionar o novo item.');
+    }
+};
+
+/**
+ * Adds multiple documents to a specified collection in a single batch operation.
+ * @param collectionName The name of the collection.
+ * @param dataArray An array of documents to add.
+ * @returns A promise that resolves when the batch write is complete.
+ */
+export const addMultipleDocumentsToCollection = async <T extends object>(collectionName: string, dataArray: T[]): Promise<void> => {
+    try {
+        const batch = writeBatch(db);
+        const collectionRef = collection(db, collectionName);
+
+        dataArray.forEach(data => {
+            const cleanedData = cleanDataForFirestore(data);
+            const docRef = doc(collectionRef); // Automatically generate a new ID
+            batch.set(docRef, cleanedData);
+        });
+
+        await batch.commit();
+    } catch (error) {
+        console.error(`Error adding multiple documents to ${collectionName}:`, error);
+        if (error instanceof Error) {
+            console.error('Data that caused the error:', dataArray);
+        }
+        throw new Error(`Não foi possível adicionar os itens em lote.`);
     }
 };
 

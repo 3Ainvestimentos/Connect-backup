@@ -1,20 +1,22 @@
+
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
 import { useQueryClient } from '@tanstack/react-query';
+import Papa from 'papaparse';
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -31,17 +33,22 @@ const collaboratorSchema = z.object({
 
 type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
 
+type CsvRow = { [key: string]: string };
+
 export function ManageCollaborators() {
-    const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation } = useCollaborators();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators } = useCollaborators();
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isImportOpen, setIsImportOpen] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
     const queryClient = useQueryClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
     });
 
-    const handleDialogOpen = (collaborator: Collaborator | null) => {
+    const handleFormDialogOpen = (collaborator: Collaborator | null) => {
         setEditingCollaborator(collaborator);
         if (collaborator) {
             reset(collaborator);
@@ -59,35 +66,18 @@ export function ManageCollaborators() {
                 city: '',
             });
         }
-        setIsDialogOpen(true);
+        setIsFormOpen(true);
     };
 
     const handleDelete = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja excluir este colaborador?")) return;
 
-        const { id: toastId, update } = toast({
-            title: "Diagnóstico de Exclusão",
-            description: "1. Iniciando exclusão...",
-            variant: "default",
-        });
-
         try {
-            update({ description: "2. Acionando a função de exclusão..." });
             await deleteCollaboratorMutation.mutateAsync(id);
-
-            update({
-                title: "Sucesso!",
-                description: "3. Exclusão concluída. Atualizando a lista.",
-            });
-
+            toast({ title: "Sucesso!", description: "Colaborador excluído." });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-            update({
-                title: "Falha na Exclusão",
-                description: `3. Erro: ${errorMessage}`,
-                variant: "destructive",
-            });
-            console.error("Falha detalhada ao excluir:", error);
+            toast({ title: "Falha na Exclusão", description: errorMessage, variant: "destructive" });
         }
     };
     
@@ -101,7 +91,7 @@ export function ManageCollaborators() {
                 await addCollaborator(dataWithoutId as Omit<Collaborator, 'id'>);
                 toast({ title: "Colaborador adicionado com sucesso." });
             }
-            setIsDialogOpen(false);
+            setIsFormOpen(false);
             setEditingCollaborator(null);
         } catch (error) {
             toast({
@@ -112,61 +102,149 @@ export function ManageCollaborators() {
         }
     };
 
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Gerenciar Colaboradores</CardTitle>
-                    <CardDescription>Adicione, edite ou remova colaboradores da lista.</CardDescription>
-                </div>
-                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar Colaborador
-                </Button>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Nome</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Área</TableHead>
-                                <TableHead>Cargo</TableHead>
-                                <TableHead>Eixo</TableHead>
-                                <TableHead>Cidade</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {collaborators.map(item => (
-                                <TableRow key={item.id}>
-                                    <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell>{item.email}</TableCell>
-                                    <TableCell>{item.area}</TableCell>
-                                    <TableCell>{item.position}</TableCell>
-                                    <TableCell>{item.axis}</TableCell>
-                                    <TableCell>{item.city}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id}>
-                                            {deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id ? (
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            )}
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
 
-             <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingCollaborator(null); setIsDialogOpen(isOpen); }}>
+        setIsImporting(true);
+
+        Papa.parse<CsvRow>(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                const requiredHeaders = ['name', 'email', 'axis', 'area', 'position', 'leader', 'segment', 'city'];
+                const fileHeaders = results.meta.fields;
+                
+                if (!fileHeaders || !requiredHeaders.every(h => fileHeaders.includes(h))) {
+                    toast({
+                        title: "Erro no Arquivo CSV",
+                        description: `O arquivo deve conter as seguintes colunas: ${requiredHeaders.join(', ')}.`,
+                        variant: "destructive",
+                    });
+                    setIsImporting(false);
+                    return;
+                }
+
+                const newCollaborators = results.data
+                    .map(row => ({
+                        name: row.name?.trim(),
+                        email: row.email?.trim().toLowerCase(),
+                        photoURL: row.photoURL?.trim() || '',
+                        axis: row.axis?.trim(),
+                        area: row.area?.trim(),
+                        position: row.position?.trim(),
+                        leader: row.leader?.trim(),
+                        segment: row.segment?.trim(),
+                        city: row.city?.trim(),
+                    }))
+                    .filter(c => c.name && c.email); // Basic validation
+
+                if (newCollaborators.length === 0) {
+                     toast({
+                        title: "Nenhum dado válido encontrado",
+                        description: "Verifique o conteúdo do seu arquivo CSV.",
+                        variant: "destructive",
+                    });
+                    setIsImporting(false);
+                    return;
+                }
+                
+                try {
+                    await addMultipleCollaborators(newCollaborators);
+                    toast({
+                        title: "Importação Concluída!",
+                        description: `${newCollaborators.length} colaboradores foram adicionados com sucesso.`,
+                    });
+                    setIsImportOpen(false);
+                } catch(e) {
+                     toast({
+                        title: "Erro na importação",
+                        description: e instanceof Error ? e.message : "Ocorreu um erro desconhecido.",
+                        variant: "destructive",
+                    });
+                } finally {
+                    setIsImporting(false);
+                }
+            },
+            error: (error) => {
+                toast({
+                    title: "Erro ao processar o arquivo",
+                    description: error.message,
+                    variant: "destructive",
+                });
+                setIsImporting(false);
+            }
+        });
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    return (
+        <>
+            <Card>
+                <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <CardTitle>Gerenciar Colaboradores</CardTitle>
+                        <CardDescription>Adicione, edite ou remova colaboradores da lista.</CardDescription>
+                    </div>
+                    <div className="flex gap-2">
+                         <Button onClick={() => setIsImportOpen(true)} variant="outline">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Importar via CSV
+                        </Button>
+                        <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Colaborador
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <div className="border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nome</TableHead>
+                                    <TableHead>Email</TableHead>
+                                    <TableHead>Área</TableHead>
+                                    <TableHead>Cargo</TableHead>
+                                    <TableHead>Eixo</TableHead>
+                                    <TableHead>Cidade</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {collaborators.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell>{item.email}</TableCell>
+                                        <TableCell>{item.area}</TableCell>
+                                        <TableCell>{item.position}</TableCell>
+                                        <TableCell>{item.axis}</TableCell>
+                                        <TableCell>{item.city}</TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleFormDialogOpen(item)} className="hover:bg-muted">
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id}>
+                                                {deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                )}
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingCollaborator(null); setIsFormOpen(isOpen); }}>
                 <DialogContent className="max-w-2xl">
                 <ScrollArea className="max-h-[80vh]">
                   <div className="p-6 pt-0">
@@ -239,6 +317,61 @@ export function ManageCollaborators() {
                   </ScrollArea>
                 </DialogContent>
             </Dialog>
-        </Card>
+
+            <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Importar Colaboradores via CSV</DialogTitle>
+                        <DialogDescription>
+                            Faça o upload de um arquivo CSV para adicionar múltiplos colaboradores de uma só vez.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
+                           <div className="flex items-start gap-3">
+                                <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 flex-shrink-0"/>
+                                <div>
+                                    <p className="font-semibold">Atenção: A importação irá adicionar novos colaboradores, mas não irá atualizar ou remover os existentes.</p>
+                                </div>
+                           </div>
+                        </div>
+
+                        <h3 className="font-semibold">Instruções:</h3>
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                            <li>Crie uma planilha (no Excel, Google Sheets, etc.).</li>
+                            <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">name,email,axis,area,position,leader,segment,city,photoURL</code>
+                            </li>
+                             <li>A coluna `photoURL` é opcional, as outras são obrigatórias.</li>
+                            <li>Preencha as linhas com os dados de cada colaborador.</li>
+                            <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
+                            <li>Clique no botão abaixo para selecionar e enviar o arquivo.</li>
+                        </ol>
+                         <a href="/templates/modelo_colaboradores.csv" download className="inline-block" >
+                            <Button variant="secondary">
+                                <FileDown className="mr-2 h-4 w-4"/>
+                                Baixar Modelo CSV
+                            </Button>
+                        </a>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsImportOpen(false)} disabled={isImporting}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                            {isImporting ? 'Importando...' : 'Selecionar Arquivo'}
+                        </Button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
+                            onChange={handleFileImport}
+                        />
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

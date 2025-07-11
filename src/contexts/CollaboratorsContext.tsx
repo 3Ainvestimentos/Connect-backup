@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection } from '@/lib/firestore-service';
 
 export interface Collaborator {
   id: string;
@@ -22,6 +22,7 @@ interface CollaboratorsContextType {
   collaborators: Collaborator[];
   loading: boolean;
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
+  addMultipleCollaborators: (collaborators: Omit<Collaborator, 'id'>[]) => Promise<void>;
   updateCollaborator: (collaborator: Collaborator) => Promise<void>;
   deleteCollaboratorMutation: UseMutationResult<void, Error, string, unknown>;
 }
@@ -39,6 +40,13 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, collaboratorData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+
+  const addMultipleCollaboratorsMutation = useMutation<void, Error, Omit<Collaborator, 'id'>[]>({
+    mutationFn: (collaboratorsData: Omit<Collaborator, 'id'>[]) => addMultipleDocumentsToCollection(COLLECTION_NAME, collaboratorsData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
@@ -62,9 +70,10 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     collaborators,
     loading: isFetching,
     addCollaborator: (collaborator) => addCollaboratorMutation.mutateAsync(collaborator),
+    addMultipleCollaborators: (collaborators) => addMultipleCollaboratorsMutation.mutateAsync(collaborators),
     updateCollaborator: (collaborator) => updateCollaboratorMutation.mutateAsync(collaborator),
     deleteCollaboratorMutation,
-  }), [collaborators, isFetching, addCollaboratorMutation, updateCollaboratorMutation, deleteCollaboratorMutation]);
+  }), [collaborators, isFetching, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, deleteCollaboratorMutation]);
 
   return (
     <CollaboratorsContext.Provider value={value}>
