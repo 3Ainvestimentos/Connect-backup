@@ -72,7 +72,7 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
             </AvatarFallback>
           </Avatar>
            {pendingRequestsCount > 0 && isAdmin && (
-            <span className="absolute -top-1 left-0 transform -translate-y-1/2 -translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white ring-2 ring-background">
+            <span className="absolute bottom-0 left-0 transform translate-y-1/4 -translate-x-1/4 flex h-5 w-5 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white ring-2 ring-background">
                 {pendingRequestsCount}
             </span>
           )}
