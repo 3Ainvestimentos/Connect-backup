@@ -1,10 +1,15 @@
 
 import AppLayoutWrapper from '@/components/layout/AppLayout';
+import { RequestsProvider } from '@/contexts/RequestsContext';
 
 export default function AuthenticatedAppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AppLayoutWrapper>{children}</AppLayoutWrapper>;
+  return (
+    <RequestsProvider>
+      <AppLayoutWrapper>{children}</AppLayoutWrapper>
+    </RequestsProvider>
+  );
 }

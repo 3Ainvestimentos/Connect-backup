@@ -68,9 +68,23 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const updateRequestMutation = useMutation<void, Error, Partial<WorkflowRequest> & { id: string }>({
     mutationFn: (updatedRequest) => {
       const { id, ...data } = updatedRequest;
-      return updateDocumentInCollection(COLLECTION_NAME, id, data);
+      // Ensure we only pass valid fields to Firestore by cleaning the object.
+      // This is especially important for the 'history' array.
+      const updatePayload = {
+        ...data,
+        history: data.history?.map(log => ({...log})) // ensure history is a plain object
+      }
+      return updateDocumentInCollection(COLLECTION_NAME, id, updatePayload);
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+        // Optimistically update the local cache to reflect the change immediately
+        queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
+            if (!oldData) return [];
+            return oldData.map(req => 
+                req.id === variables.id ? { ...req, ...variables } : req
+            );
+        });
+        // Invalidate to refetch and ensure consistency
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
