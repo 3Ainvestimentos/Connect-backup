@@ -209,7 +209,7 @@ export function ManageCollaborators() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID 3A</TableHead>
+                                    <TableHead>ID 3A RIVA</TableHead>
                                     <TableHead>Nome</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Área</TableHead>
