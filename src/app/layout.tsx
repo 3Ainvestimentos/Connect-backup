@@ -12,6 +12,7 @@ import { MessagesProvider } from '@/contexts/MessagesContext';
 import { CollaboratorsProvider } from '@/contexts/CollaboratorsContext';
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
 import { LabsProvider } from '@/contexts/LabsContext';
+import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
 
 export const metadata: Metadata = {
   title: '3A RIVA Connect',
@@ -42,7 +43,9 @@ export default function RootLayout({
                       <CollaboratorsProvider>
                         <MessagesProvider>
                           <LabsProvider>
-                            {children}
+                            <WorkflowsProvider>
+                              {children}
+                            </WorkflowsProvider>
                           </LabsProvider>
                           <Toaster />
                         </MessagesProvider>
