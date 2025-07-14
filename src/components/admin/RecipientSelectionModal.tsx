@@ -39,7 +39,7 @@ export function RecipientSelectionModal({
         if (isOpen) {
             if(selectedIds.includes('all')){
                 setIsAllSelected(true);
-                setLocalSelectedIds(new Set(allCollaborators.map(c => c.id)))
+                setLocalSelectedIds(new Set(allCollaborators.map(c => c.id3a)))
             } else {
                 setIsAllSelected(false);
                 setLocalSelectedIds(new Set(selectedIds));
@@ -83,7 +83,7 @@ export function RecipientSelectionModal({
     const handleSelectAll = (checked: boolean) => {
         setIsAllSelected(checked);
         if (checked) {
-            setLocalSelectedIds(new Set(allCollaborators.map(c => c.id)));
+            setLocalSelectedIds(new Set(allCollaborators.map(c => c.id3a)));
         } else {
             setLocalSelectedIds(new Set());
         }
@@ -158,8 +158,8 @@ export function RecipientSelectionModal({
                                     <TableRow key={c.id}>
                                         <TableCell>
                                             <Checkbox
-                                                checked={isAllSelected || localSelectedIds.has(c.id)}
-                                                onCheckedChange={(checked) => handleSelectOne(c.id, !!checked)}
+                                                checked={isAllSelected || localSelectedIds.has(c.id3a)}
+                                                onCheckedChange={(checked) => handleSelectOne(c.id3a, !!checked)}
                                                 aria-label={`Selecionar ${c.name}`}
                                             />
                                         </TableCell>

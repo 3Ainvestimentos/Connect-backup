@@ -4,6 +4,7 @@
 import React from 'react';
 import { useWorkflows, WorkflowRequest, WorkflowStatus } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -29,11 +30,14 @@ const typeMap: { [key: string]: string } = {
 export default function MyRequests() {
     const { user } = useAuth();
     const { requests, loading } = useWorkflows();
+    const { collaborators } = useCollaborators();
 
     const myRequests = React.useMemo(() => {
-        if (!user) return [];
-        return requests.filter(req => req.submittedBy.userId === user.uid);
-    }, [requests, user]);
+        if (!user || !collaborators.length) return [];
+        const currentUserCollab = collaborators.find(c => c.email === user.email);
+        if (!currentUserCollab) return [];
+        return requests.filter(req => req.submittedBy.userId === currentUserCollab.id3a);
+    }, [requests, user, collaborators]);
 
     const getRequestTypeLabel = (type: string) => {
         return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());

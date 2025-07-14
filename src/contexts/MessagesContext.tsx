@@ -14,9 +14,9 @@ export interface MessageType {
   date: string; // ISO date string e.g. "2024-07-25"
   link?: string;
   mediaUrl?: string;
-  recipientIds: string[]; // Array of collaborator IDs
-  readBy: string[]; // Array of collaborator IDs who have read the message
-  deletedBy: string[]; // Array of collaborator IDs who have soft-deleted the message
+  recipientIds: string[]; // Array of collaborator 'id3a' values
+  readBy: string[]; // Array of collaborator 'id3a' values who have read the message
+  deletedBy: string[]; // Array of collaborator 'id3a' values who have soft-deleted the message
 }
 
 interface MessagesContextType {
@@ -25,8 +25,8 @@ interface MessagesContextType {
   addMessage: (message: Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>) => Promise<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>>;
   updateMessage: (message: MessageType) => Promise<void>;
   deleteMessageMutation: UseMutationResult<void, Error, string, unknown>;
-  markMessageAsRead: (messageId: string, collaboratorId: string) => void;
-  markMessageAsDeleted: (messageId: string, collaboratorId: string) => Promise<void>;
+  markMessageAsRead: (messageId: string, collaboratorId3a: string) => void;
+  markMessageAsDeleted: (messageId: string, collaboratorId3a: string) => Promise<void>;
   getMessageRecipients: (message: MessageType, allCollaborators: Collaborator[]) => Collaborator[];
 }
 
@@ -47,7 +47,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     if (message.recipientIds.includes('all')) {
       return allCollaborators;
     }
-    return allCollaborators.filter(c => message.recipientIds.includes(c.id));
+    return allCollaborators.filter(c => message.recipientIds.includes(c.id3a));
   }, []);
 
   const addMessageMutation = useMutation<WithId<Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>, Error, Omit<MessageType, 'id' | 'readBy' | 'deletedBy' | 'date'>>({
@@ -79,23 +79,23 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const markMessageAsRead = useCallback((messageId: string, collaboratorId: string) => {
+  const markMessageAsRead = useCallback((messageId: string, collaboratorId3a: string) => {
     const message = messages.find(m => m.id === messageId);
-    if(message && !message.readBy.includes(collaboratorId)) {
+    if(message && !message.readBy.includes(collaboratorId3a)) {
         const updatedMessage = {
             ...message,
-            readBy: [...message.readBy, collaboratorId]
+            readBy: [...message.readBy, collaboratorId3a]
         };
         updateMessageMutation.mutate(updatedMessage);
     }
   }, [messages, updateMessageMutation]);
 
-  const markMessageAsDeleted = useCallback(async (messageId: string, collaboratorId: string) => {
+  const markMessageAsDeleted = useCallback(async (messageId: string, collaboratorId3a: string) => {
     const message = messages.find(m => m.id === messageId);
-    if (message && !(message.deletedBy || []).includes(collaboratorId)) {
+    if (message && !(message.deletedBy || []).includes(collaboratorId3a)) {
         const updatedMessage = {
             ...message,
-            deletedBy: [...(message.deletedBy || []), collaboratorId],
+            deletedBy: [...(message.deletedBy || []), collaboratorId3a],
         };
         // Use mutateAsync to await the operation if needed
         await updateMessageMutation.mutateAsync(updatedMessage);

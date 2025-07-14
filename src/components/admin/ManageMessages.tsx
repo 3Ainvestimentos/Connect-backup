@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useMemo } from 'react';
 import { useMessages, type MessageType } from '@/contexts/MessagesContext';
@@ -35,8 +36,8 @@ type MessageFormValues = z.infer<typeof messageSchema>;
 const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: MessageType | null; recipients: Collaborator[]; onOpenChange: (open: boolean) => void; }) => {
     if (!message) return null;
 
-    const readCollaborators = recipients.filter(r => message.readBy.includes(r.id));
-    const unreadCollaborators = recipients.filter(r => !message.readBy.includes(r.id));
+    const readCollaborators = recipients.filter(r => message.readBy.includes(r.id3a));
+    const unreadCollaborators = recipients.filter(r => !message.readBy.includes(r.id3a));
 
     return (
         <Dialog open={!!message} onOpenChange={onOpenChange}>

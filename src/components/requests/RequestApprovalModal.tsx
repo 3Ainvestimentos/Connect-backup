@@ -6,6 +6,7 @@ import { format, formatISO, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useWorkflows, WorkflowRequest, WorkflowStatus, WorkflowHistoryLog } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import {
   Dialog,
   DialogContent,
@@ -32,6 +33,7 @@ interface RequestApprovalModalProps {
 
 export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprovalModalProps) {
   const { user } = useAuth();
+  const { collaborators } = useCollaborators();
   const { updateRequestAndNotify } = useWorkflows();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,8 +41,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   if (!request) return null;
   
   const handleAction = async (newStatus: 'approved' | 'rejected') => {
-    if (!user) {
-        toast({ title: "Erro de Autenticação", description: "Você não está logado.", variant: "destructive"});
+    const adminUser = collaborators.find(c => c.email === user?.email);
+
+    if (!user || !adminUser) {
+        toast({ title: "Erro de Autenticação", description: "Você não está logado ou não foi encontrado na lista de colaboradores.", variant: "destructive"});
         return;
     }
     
@@ -51,8 +55,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
       status: newStatus,
-      userId: user.uid,
-      userName: user.displayName || 'Admin',
+      userId: adminUser.id3a,
+      userName: adminUser.name,
       notes: comment || `Solicitação ${actionText}.`,
     };
     
@@ -88,6 +92,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (!request.formData) return <p>Sem dados de formulário.</p>;
 
     switch (request.type) {
+      case 'Solicitação de Férias':
       case 'vacation_request':
         return (
           <div className="space-y-2">
@@ -96,7 +101,15 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           </div>
         );
       default:
-        return <pre>{JSON.stringify(request.formData, null, 2)}</pre>;
+        // Generic fallback for any other workflow type
+        return (
+             <div className="space-y-2">
+                {request.formData.startDate && request.formData.endDate && (
+                     <p><strong>Período:</strong> {format(parseISO(request.formData.startDate), 'dd/MM/yyyy')} a {format(parseISO(request.formData.endDate), 'dd/MM/yyyy')}</p>
+                )}
+                {request.formData.note && <p><strong>Observação:</strong> {request.formData.note}</p>}
+             </div>
+        );
     }
   };
 

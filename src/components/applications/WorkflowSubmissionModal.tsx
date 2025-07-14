@@ -29,6 +29,7 @@ import { toast } from '@/hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import type { Application } from '@/contexts/ApplicationsContext';
 
 
@@ -48,6 +49,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addRequest } = useWorkflows();
   const { user } = useAuth();
+  const { collaborators } = useCollaborators();
 
   const {
     control,
@@ -66,10 +68,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
   const dateRange = watch("dateRange");
 
   const onSubmit = async (data: WorkflowRequestForm) => {
-    if (!user) {
+    const currentUserCollab = collaborators.find(c => c.email === user?.email);
+
+    if (!user || !currentUserCollab) {
         toast({
             title: "Erro de Autenticação",
-            description: "Você precisa estar logado para fazer uma solicitação.",
+            description: "Não foi possível identificar o colaborador. Verifique se seu e-mail está cadastrado.",
             variant: "destructive"
         });
         return;
@@ -93,9 +97,9 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
             type: workflowType.name,
             status: 'pending',
             submittedBy: {
-                userId: user.uid,
-                userName: user.displayName || 'Nome não encontrado',
-                userEmail: user.email || 'Email não encontrado',
+                userId: currentUserCollab.id3a,
+                userName: currentUserCollab.name,
+                userEmail: currentUserCollab.email,
             },
             submittedAt: formatISO(now),
             lastUpdatedAt: formatISO(now),
@@ -107,8 +111,8 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
             history: [{
                 timestamp: formatISO(now),
                 status: 'pending',
-                userId: user.uid,
-                userName: user.displayName || 'Nome não encontrado',
+                userId: currentUserCollab.id3a,
+                userName: currentUserCollab.name,
                 notes: 'Solicitação criada.'
             }],
         });

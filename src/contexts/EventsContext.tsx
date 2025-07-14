@@ -13,7 +13,7 @@ export interface EventType {
   time: string;
   location: string;
   icon: string; // Storing icon name as string
-  recipientIds: string[]; // Array of collaborator IDs
+  recipientIds: string[]; // Array of collaborator 'id3a' values
 }
 
 interface EventsContextType {
@@ -40,7 +40,7 @@ export const EventsProvider = ({ children }: { children: ReactNode }) => {
     if (event.recipientIds.includes('all')) {
       return allCollaborators;
     }
-    return allCollaborators.filter(c => event.recipientIds.includes(c.id));
+    return allCollaborators.filter(c => event.recipientIds.includes(c.id3a));
   }, []);
 
   const addEventMutation = useMutation<WithId<Omit<EventType, 'id'>>, Error, Omit<EventType, 'id'>>({

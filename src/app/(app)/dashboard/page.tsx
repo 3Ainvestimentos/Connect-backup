@@ -53,11 +53,11 @@ export default function DashboardPage() {
       
     return sortedMessages.filter(msg => {
         // Don't show messages the user has soft-deleted
-        if (msg.deletedBy && msg.deletedBy.includes(currentUserCollab.id)) {
+        if (msg.deletedBy && msg.deletedBy.includes(currentUserCollab.id3a)) {
             return false;
         }
         const recipients = getMessageRecipients(msg, collaborators);
-        return recipients.some(r => r.id === currentUserCollab.id);
+        return recipients.some(r => r.id3a === currentUserCollab.id3a);
     });
   }, [messages, currentUserCollab, collaborators, getMessageRecipients]);
   
@@ -66,7 +66,7 @@ export default function DashboardPage() {
       
       return events.filter(event => {
           const recipients = getEventRecipients(event, collaborators);
-          return recipients.some(r => r.id === currentUserCollab.id);
+          return recipients.some(r => r.id3a === currentUserCollab.id3a);
       });
   }, [events, currentUserCollab, collaborators, getEventRecipients]);
 
@@ -84,7 +84,7 @@ export default function DashboardPage() {
 
   const unreadCount = useMemo(() => {
     if (!currentUserCollab) return 0;
-    return userMessages.filter(msg => !msg.readBy.includes(currentUserCollab.id)).length;
+    return userMessages.filter(msg => !msg.readBy.includes(currentUserCollab.id3a)).length;
   }, [userMessages, currentUserCollab]);
   
   const unreadLabel = useMemo(() => {
@@ -98,7 +98,7 @@ export default function DashboardPage() {
   const handleViewMessage = (messageToView: MessageType) => {
     if (!currentUserCollab) return;
     // Mark as read in global state via context
-    markMessageAsRead(messageToView.id, currentUserCollab.id);
+    markMessageAsRead(messageToView.id, currentUserCollab.id3a);
     // Open the dialog to show the full message
     setSelectedMessage(messageToView);
   };
@@ -107,7 +107,7 @@ export default function DashboardPage() {
     if (!selectedMessage || !currentUserCollab || isDeleting) return;
     setIsDeleting(true);
     try {
-        await markMessageAsDeleted(selectedMessage.id, currentUserCollab.id);
+        await markMessageAsDeleted(selectedMessage.id, currentUserCollab.id3a);
         toast({ title: "Mensagem movida para a lixeira." });
         setSelectedMessage(null);
     } catch (error) {
@@ -201,7 +201,7 @@ export default function DashboardPage() {
                     <ScrollArea className="h-full">
                         <div className="space-y-4 p-6 pt-0">
                             {userMessages.map((msg) => {
-                                const isRead = currentUserCollab ? msg.readBy.includes(currentUserCollab.id) : false;
+                                const isRead = currentUserCollab ? msg.readBy.includes(currentUserCollab.id3a) : false;
                                 return (
                                 <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
                                     <div className="flex justify-between items-start gap-2">

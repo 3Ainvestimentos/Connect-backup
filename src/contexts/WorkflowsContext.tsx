@@ -13,7 +13,7 @@ export type WorkflowStatus = 'pending' | 'approved' | 'rejected' | 'in_progress'
 export interface WorkflowHistoryLog {
   timestamp: string; // ISO String
   status: WorkflowStatus;
-  userId: string; // ID do usuário que realizou a ação
+  userId: string; // ID 3A RIVA do usuário que realizou a ação
   userName: string;
   notes?: string;
 }
@@ -24,7 +24,7 @@ export interface WorkflowRequest {
   type: string; // Ex: 'vacation_request', 'reimbursement'
   status: WorkflowStatus;
   submittedBy: {
-    userId: string;
+    userId: string; // ID 3A RIVA do colaborador
     userName: string;
     userEmail: string;
   };
@@ -33,7 +33,7 @@ export interface WorkflowRequest {
   formData: Record<string, any>; // Objeto flexível para os dados do formulário
   history: WorkflowHistoryLog[];
   currentApprover?: {
-      userId: string;
+      userId: string; // ID 3A RIVA do aprovador
       userName: string;
   };
 }
@@ -120,7 +120,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     addRequest: (request) => addRequestMutation.mutateAsync(request),
     updateRequestAndNotify,
     deleteRequestMutation,
-  }), [requests, isFetching, addRequestMutation, updateRequestMutation, deleteRequestMutation]);
+  }), [requests, isFetching, addRequestMutation, deleteRequestMutation, updateRequestAndNotify]);
 
   return (
     <WorkflowsContext.Provider value={value}>
