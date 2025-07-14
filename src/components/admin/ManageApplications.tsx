@@ -119,6 +119,8 @@ export function ManageApplications() {
             });
         }
     };
+
+    const filteredApplications = applications.filter(app => app.name.toLowerCase() !== 'meu perfil');
     
     return (
         <Card>
@@ -144,7 +146,7 @@ export function ManageApplications() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {applications.map(item => {
+                            {filteredApplications.map(item => {
                                 const Icon = getIcon(item.icon);
                                 return (
                                 <TableRow key={item.id}>

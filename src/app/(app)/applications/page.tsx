@@ -16,7 +16,10 @@ export default function ApplicationsPage() {
   const [activeWorkflow, setActiveWorkflow] = React.useState<Application | null>(null);
 
   const sortedApplications = React.useMemo(() => {
-    return [...applications].sort((a, b) => a.name.localeCompare(b.name));
+    // Filtra o "Meu perfil" e ordena o restante
+    return applications
+      .filter(app => app.name.toLowerCase() !== 'meu perfil')
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [applications]);
   
   const handleAppClick = (app: Application) => {
