@@ -5,24 +5,13 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
-export interface ApplicationLinkItem {
-  id: string;
-  label: string;
-  subtext?: string;
-  link?: string;
-}
 export interface Application {
   id: string;
   name: string;
-  icon: string; // Lucide icon name as string
-  type: 'modal' | 'external';
-  modalId?: 'profile' | 'vacation' | 'support' | 'admin' | 'marketing' | 'generic';
+  icon: string;
+  type: 'workflow' | 'external';
   href?: string;
-  content?: {
-    title: string;
-    description: string;
-    items: ApplicationLinkItem[];
-  };
+  description?: string;
 }
 
 interface ApplicationsContextType {

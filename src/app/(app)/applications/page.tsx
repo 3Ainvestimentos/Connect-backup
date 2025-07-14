@@ -4,51 +4,39 @@
 import React from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import Link from 'next/link';
-import { LayoutGrid } from 'lucide-react';
 import { getIcon } from '@/lib/icons';
 import { Card, CardContent } from '@/components/ui/card';
 import { useApplications, Application } from '@/contexts/ApplicationsContext';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import MyRequests from '@/components/applications/MyRequests';
-
-
-// Import all modals
-import VacationRequestModal from '@/components/applications/VacationRequestModal';
-import SupportModal from '@/components/applications/SupportModal';
-import AdminModal from '@/components/applications/AdminModal';
-import MarketingModal from '@/components/applications/MarketingModal';
 import ProfileModal from '@/components/applications/ProfileModal';
-import GenericInfoModal from '@/components/applications/GenericInfoModal';
+import WorkflowSubmissionModal from '@/components/applications/WorkflowSubmissionModal';
 
 export default function ApplicationsPage() {
   const { applications } = useApplications();
-  const [activeModal, setActiveModal] = React.useState<Application | null>(null);
+  const [activeWorkflow, setActiveWorkflow] = React.useState<Application | null>(null);
+  const [isProfileModalOpen, setProfileModalOpen] = React.useState(false);
 
   const sortedApplications = React.useMemo(() => {
-    return [...applications].sort((a, b) => {
-      if (a.modalId === 'profile') return -1;
-      if (b.modalId === 'profile') return 1;
-      return 0;
-    });
+    return [...applications].sort((a, b) => a.name.localeCompare(b.name));
   }, [applications]);
-
+  
   const handleAppClick = (app: Application) => {
-    if (app.type === 'modal') {
-      setActiveModal(app);
+    // Special handling for the profile modal
+    if (app.name.toLowerCase().includes('perfil')) {
+        setProfileModalOpen(true);
+        return;
+    }
+
+    if (app.type === 'workflow') {
+      setActiveWorkflow(app);
     }
   };
-  
-  const handleCloseModal = () => {
-    setActiveModal(null);
-  }
 
-  const genericModalContent = React.useMemo(() => {
-    if (activeModal?.modalId === 'generic' && activeModal.content) {
-      return activeModal.content;
-    }
-    return null;
-  }, [activeModal]);
+  const handleCloseModal = () => {
+    setActiveWorkflow(null);
+    setProfileModalOpen(false);
+  }
 
   return (
     <>
@@ -58,8 +46,28 @@ export default function ApplicationsPage() {
             title="Aplicações e Suporte" 
             description="Acesse as ferramentas e serviços da empresa."
           />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            
+             {/* Hardcoded Profile Card */}
+             <Card 
+                className="h-32 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => handleAppClick({ id: 'profile', name: 'Meu Perfil', icon: 'UserCircle', type: 'workflow' })}
+                onKeyDown={(e) => e.key === 'Enter' && handleAppClick({ id: 'profile', name: 'Meu Perfil', icon: 'UserCircle', type: 'workflow' })}
+                tabIndex={0}
+            >
+                <CardContent className="p-0 h-full w-full">
+                    <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                        {getIcon('UserCircle')({ className: "mb-2 h-7 w-7 text-muted-foreground" })}
+                        <span className="font-semibold font-body text-sm text-card-foreground">Meu Perfil</span>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Dynamic applications */}
             {sortedApplications.map((app) => {
+              // We already have a hardcoded "Meu Perfil" card, so we skip the dynamic one if it exists
+              if (app.name.toLowerCase().includes('perfil')) return null;
+
               const Icon = getIcon(app.icon);
               const content = (
                 <div className="flex flex-col items-center justify-center h-full text-center p-4">
@@ -72,7 +80,7 @@ export default function ApplicationsPage() {
                 className: "h-32 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer"
               };
 
-              return app.type === 'modal' ? (
+              return app.type === 'workflow' ? (
                 <Card key={app.id} {...cardProps} onClick={() => handleAppClick(app)} onKeyDown={(e) => e.key === 'Enter' && handleAppClick(app)} tabIndex={0}>
                   <CardContent className="p-0 h-full w-full">{content}</CardContent>
                 </Card>
@@ -98,19 +106,14 @@ export default function ApplicationsPage() {
 
       </div>
       
-      {/* Pre-built Modals */}
-      <ProfileModal open={activeModal?.modalId === 'profile'} onOpenChange={handleCloseModal} />
-      <VacationRequestModal open={activeModal?.modalId === 'vacation'} onOpenChange={handleCloseModal} />
-      <SupportModal open={activeModal?.modalId === 'support'} onOpenChange={handleCloseModal} />
-      <AdminModal open={activeModal?.modalId === 'admin'} onOpenChange={handleCloseModal} />
-      <MarketingModal open={activeModal?.modalId === 'marketing'} onOpenChange={handleCloseModal} />
-      
-      {/* Generic Modal */}
-      {genericModalContent && (
-        <GenericInfoModal 
-            open={!!genericModalContent}
+      {/* Modals */}
+      <ProfileModal open={isProfileModalOpen} onOpenChange={handleCloseModal} />
+
+      {activeWorkflow && (
+        <WorkflowSubmissionModal
+            open={!!activeWorkflow}
             onOpenChange={handleCloseModal}
-            content={genericModalContent}
+            workflowType={activeWorkflow}
         />
       )}
     </>

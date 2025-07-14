@@ -1,43 +1,31 @@
+
 "use client";
 import React, { useState } from 'react';
-import { useApplications, Application, ApplicationLinkItem } from '@/contexts/ApplicationsContext';
+import { useApplications, Application } from '@/contexts/ApplicationsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { iconList, getIcon } from '@/lib/icons';
 import { ScrollArea } from '../ui/scroll-area';
-import { useQueryClient } from '@tanstack/react-query';
-
-const linkItemSchema = z.object({
-  id: z.string(),
-  label: z.string().min(1, "Rótulo é obrigatório"),
-  subtext: z.string().optional(),
-  link: z.string().optional(),
-});
 
 const applicationSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Nome da aplicação é obrigatório."),
     icon: z.string().min(1, "Ícone é obrigatório."),
-    type: z.enum(['modal', 'external'], { required_error: "Tipo de aplicação é obrigatório." }),
-    modalId: z.enum(['profile', 'vacation', 'support', 'admin', 'marketing', 'generic']).optional(),
+    type: z.enum(['workflow', 'external'], { required_error: "Tipo de aplicação é obrigatório." }),
     href: z.string().optional(),
-    content: z.object({
-        title: z.string().optional(),
-        description: z.string().optional(),
-        items: z.array(linkItemSchema).optional(),
-    }).optional(),
+    description: z.string().optional(), // Description for the workflow modal
 }).superRefine((data, ctx) => {
     if (data.type === 'external') {
         if (!data.href || data.href.trim() === '') {
@@ -47,8 +35,6 @@ const applicationSchema = z.object({
                 path: ['href'],
             });
         }
-        // URL validation is tricky because partial URLs are valid during typing.
-        // A simple check for a valid-looking URL is often better UX than strict validation.
         else if (!/^(https?:\/\/|www\.)/i.test(data.href) && !/^\//.test(data.href)) {
              ctx.addIssue({
                 code: z.ZodIssueCode.custom,
@@ -56,20 +42,6 @@ const applicationSchema = z.object({
                 path: ['href'],
             });
         }
-    }
-    if (data.type === 'modal' && !data.modalId) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Tipo de Modal é obrigatório para o tipo 'Modal'.",
-            path: ['modalId'],
-        });
-    }
-    if (data.modalId === 'generic' && (!data.content?.title || data.content.title.trim() === '')) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Título do Modal é obrigatório para um modal genérico.",
-            path: ['content.title'],
-        });
     }
 });
 
@@ -80,47 +52,36 @@ export function ManageApplications() {
     const { applications, addApplication, updateApplication, deleteApplicationMutation } = useApplications();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingApplication, setEditingApplication] = useState<Application | null>(null);
-    const queryClient = useQueryClient();
 
     const form = useForm<ApplicationFormValues>({
         resolver: zodResolver(applicationSchema),
         defaultValues: {
             name: '',
-            icon: 'HelpCircle',
-            type: 'modal',
-            modalId: 'generic',
+            icon: 'FileText',
+            type: 'workflow',
             href: '',
-            content: { title: '', description: '', items: [] },
+            description: '',
         },
     });
 
-    const { fields, append, remove } = useFieldArray({
-        control: form.control,
-        name: "content.items",
-    });
-
     const watchType = form.watch('type');
-    const watchModalId = form.watch('modalId');
 
     const handleDialogOpen = (app: Application | null) => {
         setEditingApplication(app);
         if (app) {
-            // When editing, provide complete data to the form
             form.reset({
                 ...app,
                 href: app.href || '',
-                content: app.content || { title: '', description: '', items: [] },
+                description: app.description || '',
             });
         } else {
-            // When adding, reset to clean default values
             form.reset({
                 id: undefined,
                 name: '',
-                icon: 'HelpCircle',
-                type: 'modal',
-                modalId: 'generic',
+                icon: 'FileText',
+                type: 'workflow',
                 href: '',
-                content: { title: '', description: '', items: [] },
+                description: '',
             });
         }
         setIsDialogOpen(true);
@@ -128,30 +89,12 @@ export function ManageApplications() {
 
     const handleDelete = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja excluir esta aplicação?")) return;
-
-        const { id: toastId, update } = toast({
-            title: "Diagnóstico de Exclusão",
-            description: "1. Iniciando exclusão...",
-            variant: "default",
-        });
-
         try {
-            update({ description: "2. Acionando a função de exclusão..." });
             await deleteApplicationMutation.mutateAsync(id);
-
-            update({
-                title: "Sucesso!",
-                description: "3. Exclusão concluída. Atualizando a lista.",
-            });
-
+            toast({ title: "Sucesso!", description: "Aplicação excluída." });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-            update({
-                title: "Falha na Exclusão",
-                description: `3. Erro: ${errorMessage}`,
-                variant: "destructive",
-            });
-            console.error("Falha detalhada ao excluir:", error);
+            toast({ title: "Falha na Exclusão", description: errorMessage, variant: "destructive" });
         }
     };
     
@@ -181,12 +124,12 @@ export function ManageApplications() {
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle>Gerenciar Aplicações</CardTitle>
-                    <CardDescription>Adicione, edite ou remova aplicações.</CardDescription>
+                    <CardTitle>Gerenciar Aplicações/Workflows</CardTitle>
+                    <CardDescription>Adicione, edite ou remova aplicações e workflows.</CardDescription>
                 </div>
                 <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar Aplicação
+                    Adicionar
                 </Button>
             </CardHeader>
             <CardContent>
@@ -207,7 +150,7 @@ export function ManageApplications() {
                                 <TableRow key={item.id}>
                                     <TableCell><Icon className="h-5 w-5 text-muted-foreground" /></TableCell>
                                     <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell>{item.type === 'modal' ? `Modal (${item.modalId})` : 'Link Externo'}</TableCell>
+                                    <TableCell>{item.type === 'workflow' ? `Workflow` : 'Link Externo'}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
@@ -289,7 +232,7 @@ export function ManageApplications() {
                                 control={form.control}
                                 render={({ field }) => (
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4 mt-2" disabled={form.formState.isSubmitting}>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="modal" id="modal" /><Label htmlFor="modal">Modal</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="workflow" id="workflow" /><Label htmlFor="workflow">Workflow</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="external" id="external" /><Label htmlFor="external">Link Externo</Label></div>
                                 </RadioGroup>
                                 )}
@@ -304,60 +247,17 @@ export function ManageApplications() {
                             </div>
                         )}
 
-                        {watchType === 'modal' && (
-                            <div>
-                                <Label htmlFor="modalId">Tipo de Modal</Label>
-                                <Controller
-                                    name="modalId"
-                                    control={form.control}
-                                    render={({ field }) => (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={form.formState.isSubmitting}>
-                                        <SelectTrigger><SelectValue placeholder="Selecione um tipo de modal" /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="profile">Perfil</SelectItem>
-                                            <SelectItem value="vacation">Férias</SelectItem>
-                                            <SelectItem value="support">Suporte TI</SelectItem>
-                                            <SelectItem value="admin">Administrativo</SelectItem>
-                                            <SelectItem value="marketing">Marketing</SelectItem>
-                                            <SelectItem value="generic">Genérico (Customizável)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    )}
-                                />
-                                {form.formState.errors.modalId && <p className="text-sm text-destructive mt-1">{form.formState.errors.modalId.message}</p>}
-                            </div>
-                        )}
-
-                        {watchType === 'modal' && watchModalId === 'generic' && (
-                            <div className="p-4 border rounded-md space-y-4 bg-muted/50">
-                                <h3 className="font-semibold text-lg">Conteúdo do Modal Genérico</h3>
-                                <div>
-                                    <Label htmlFor="content.title">Título do Modal</Label>
-                                    <Input id="content.title" {...form.register('content.title')} disabled={form.formState.isSubmitting}/>
-                                    {form.formState.errors.content?.title && <p className="text-sm text-destructive mt-1">{form.formState.errors.content.title.message}</p>}
+                        {watchType === 'workflow' && (
+                           <div className="p-4 border rounded-md space-y-4 bg-muted/50">
+                               <h3 className="font-semibold text-lg">Configuração do Workflow</h3>
+                               <div>
+                                    <Label htmlFor="description">Descrição</Label>
+                                    <Textarea id="description" {...form.register('description')} placeholder="Instruções que aparecerão no formulário para o usuário." disabled={form.formState.isSubmitting}/>
                                 </div>
-                                <div>
-                                    <Label htmlFor="content.description">Descrição</Label>
-                                    <Textarea id="content.description" {...form.register('content.description')} disabled={form.formState.isSubmitting}/>
-                                </div>
-                                <div>
-                                    <Label>Itens do Modal</Label>
-                                    <div className="space-y-3 mt-2">
-                                        {fields.map((field, index) => (
-                                            <div key={field.id} className="p-3 border rounded-md space-y-2 relative bg-background">
-                                                <Label>Item {index + 1}</Label>
-                                                <Input {...form.register(`content.items.${index}.label`)} placeholder="Rótulo (ex: Reembolso de Despesas)" disabled={form.formState.isSubmitting}/>
-                                                <Input {...form.register(`content.items.${index}.subtext`)} placeholder="Texto de apoio (opcional)" disabled={form.formState.isSubmitting}/>
-                                                <Input {...form.register(`content.items.${index}.link`)} placeholder="URL do link (opcional)" disabled={form.formState.isSubmitting}/>
-                                                <Button type="button" variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7" onClick={() => remove(index)} disabled={form.formState.isSubmitting}><Trash2 className="h-4 w-4"/></Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => append({id: `item-${Date.now()}`, label: '', subtext: '', link: ''})} disabled={form.formState.isSubmitting}>
-                                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Item
-                                    </Button>
-                                </div>
-                            </div>
+                                <p className="text-sm text-muted-foreground">
+                                    Atualmente, todos os workflows usam um formulário padrão (início, fim, observação). Futuras customizações poderão ser adicionadas aqui.
+                                </p>
+                           </div>
                         )}
 
                         <DialogFooter className="mt-6">

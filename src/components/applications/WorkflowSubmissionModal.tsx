@@ -25,22 +25,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Application } from '@/contexts/ApplicationsContext';
 
-const vacationRequestSchema = z.object({
-  requestType: z.string().min(1, "O tipo de solicitação é obrigatório."),
+const workflowRequestSchema = z.object({
   dateRange: z.object({
     from: z.date({ required_error: "A data de início é obrigatória." }),
     to: z.date({ required_error: "A data de término é obrigatória." }),
@@ -48,15 +41,15 @@ const vacationRequestSchema = z.object({
   note: z.string().optional(),
 });
 
-type VacationRequestForm = z.infer<typeof vacationRequestSchema>;
+type WorkflowRequestForm = z.infer<typeof workflowRequestSchema>;
 
-interface VacationRequestModalProps {
+interface WorkflowSubmissionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  remainingDays?: number;
+  workflowType: Application;
 }
 
-export default function VacationRequestModal({ open, onOpenChange, remainingDays = 20 }: VacationRequestModalProps) {
+export default function WorkflowSubmissionModal({ open, onOpenChange, workflowType }: WorkflowSubmissionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addRequest } = useWorkflows();
   const { user } = useAuth();
@@ -68,10 +61,9 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
     watch,
     formState: { errors },
     reset,
-  } = useForm<VacationRequestForm>({
-    resolver: zodResolver(vacationRequestSchema),
+  } = useForm<WorkflowRequestForm>({
+    resolver: zodResolver(workflowRequestSchema),
     defaultValues: {
-      requestType: 'Férias',
       dateRange: { from: undefined, to: undefined },
       note: '',
     },
@@ -79,7 +71,7 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
   
   const dateRange = watch("dateRange");
 
-  const onSubmit = async (data: VacationRequestForm) => {
+  const onSubmit = async (data: WorkflowRequestForm) => {
     if (!user) {
         toast({
             title: "Erro de Autenticação",
@@ -88,13 +80,17 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
         });
         return;
     }
+    if (!workflowType) {
+        toast({ title: "Erro", description: "Tipo de workflow não definido.", variant: "destructive" });
+        return;
+    }
 
     setIsSubmitting(true);
     
     try {
         const now = new Date();
         await addRequest({
-            type: 'vacation_request',
+            type: workflowType.name, // Use the application name as the workflow type
             status: 'pending',
             submittedBy: {
                 userId: user.uid,
@@ -104,11 +100,10 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
             submittedAt: formatISO(now),
             lastUpdatedAt: formatISO(now),
             formData: {
-                requestType: data.requestType,
+                // Standardized form data
                 startDate: formatISO(data.dateRange.from, { representation: 'date' }),
                 endDate: formatISO(data.dateRange.to, { representation: 'date' }),
                 note: data.note || '',
-                remainingDaysOnSubmit: remainingDays,
             },
             history: [{
                 timestamp: formatISO(now),
@@ -121,7 +116,7 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
         
         toast({
             title: "Solicitação Enviada!",
-            description: `Seu pedido de ${data.requestType.toLowerCase()} foi enviado para aprovação.`,
+            description: `Seu pedido de '${workflowType.name}' foi enviado para aprovação.`,
         });
 
         reset();
@@ -138,40 +133,29 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
         setIsSubmitting(false);
     }
   };
+  
+  // Close and reset form when dialog is closed
+  React.useEffect(() => {
+    if (!open) {
+      reset({
+        dateRange: { from: undefined, to: undefined },
+        note: '',
+      });
+    }
+  }, [open, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[525px] font-body">
         <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">Solicitar Férias</DialogTitle>
+          <DialogTitle className="font-headline text-2xl">{workflowType.name}</DialogTitle>
           <DialogDescription>
-            Você tem <span className="font-bold text-primary">{remainingDays} dias</span> de férias restantes.
+            {workflowType.description || "Preencha as informações abaixo para iniciar sua solicitação."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="requestType">Tipo de solicitação</Label>
-            <Controller
-              name="requestType"
-              control={control}
-              render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
-                  <SelectTrigger id="requestType">
-                    <SelectValue placeholder="Selecione um tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Férias">Férias</SelectItem>
-                    <SelectItem value="Licença Médica">Licença Médica</SelectItem>
-                    <SelectItem value="Outro">Outro</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-            {errors.requestType && <p className="text-sm text-destructive">{errors.requestType.message}</p>}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="date">Data</Label>
+            <Label htmlFor="date">Período</Label>
             <Controller
               name="dateRange"
               control={control}
@@ -220,7 +204,7 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="note">Nota (Opcional)</Label>
+            <Label htmlFor="note">Observação (Opcional)</Label>
             <Controller
               name="note"
               control={control}
