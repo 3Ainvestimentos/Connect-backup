@@ -37,7 +37,7 @@ export default function ApplicationsPage() {
             title="Aplicações e Suporte" 
             description="Acesse as ferramentas e serviços da empresa."
           />
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
             
             {/* Dynamic applications */}
             {sortedApplications.map((app) => {
@@ -53,11 +53,15 @@ export default function ApplicationsPage() {
                 className: "h-32 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer"
               };
 
-              return app.type === 'workflow' ? (
-                <Card key={app.id} {...cardProps} onClick={() => handleAppClick(app)} onKeyDown={(e) => e.key === 'Enter' && handleAppClick(app)} tabIndex={0}>
-                  <CardContent className="p-0 h-full w-full">{content}</CardContent>
-                </Card>
-              ) : (
+              if (app.type === 'workflow') {
+                return (
+                  <Card key={app.id} {...cardProps} onClick={() => handleAppClick(app)} onKeyDown={(e) => e.key === 'Enter' && handleAppClick(app)} tabIndex={0}>
+                    <CardContent className="p-0 h-full w-full">{content}</CardContent>
+                  </Card>
+                );
+              }
+
+              return (
                 <Link 
                   href={app.href || '#'} 
                   key={app.id} 
