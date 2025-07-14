@@ -59,7 +59,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         defaultValues: definition ? {
             ...definition,
             fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') })),
-            routingRules: definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') }))
+            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') })) : [],
         } : {
             name: '',
             description: '',
@@ -115,7 +115,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                 <DialogHeader>
                     <DialogTitle>{definition ? 'Editar Definição de Workflow' : 'Nova Definição de Workflow'}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={handleSubmit(onSubmit)}>
                     <ScrollArea className="max-h-[70vh] p-1">
                         <div className="p-6 pt-0 space-y-4">
                             {/* Basic Info */}
