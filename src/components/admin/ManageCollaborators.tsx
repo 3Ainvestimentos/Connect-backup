@@ -215,6 +215,7 @@ export function ManageCollaborators() {
                                     <TableHead>Área</TableHead>
                                     <TableHead>Cargo</TableHead>
                                     <TableHead>Eixo</TableHead>
+                                    <TableHead>Segmento</TableHead>
                                     <TableHead>Cidade</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
@@ -228,6 +229,7 @@ export function ManageCollaborators() {
                                         <TableCell>{item.area}</TableCell>
                                         <TableCell>{item.position}</TableCell>
                                         <TableCell>{item.axis}</TableCell>
+                                        <TableCell>{item.segment}</TableCell>
                                         <TableCell>{item.city}</TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => handleFormDialogOpen(item)} className="hover:bg-muted">
