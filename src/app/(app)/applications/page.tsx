@@ -38,6 +38,8 @@ export default function ApplicationsPage() {
     setProfileModalOpen(false);
   }
 
+  const ProfileIcon = getIcon('UserCircle');
+
   return (
     <>
       <div className="space-y-8 p-6 md:p-8">
@@ -57,7 +59,7 @@ export default function ApplicationsPage() {
             >
                 <CardContent className="p-0 h-full w-full">
                     <div className="flex flex-col items-center justify-center h-full text-center p-4">
-                        {getIcon('UserCircle')({ className: "mb-2 h-7 w-7 text-muted-foreground" })}
+                        <ProfileIcon className="mb-2 h-7 w-7 text-muted-foreground" />
                         <span className="font-semibold font-body text-sm text-card-foreground">Meu Perfil</span>
                     </div>
                 </CardContent>
