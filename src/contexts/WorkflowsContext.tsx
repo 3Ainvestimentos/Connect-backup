@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import { useMessages } from './MessagesContext';
+import { useApplications } from './ApplicationsContext';
 
 // Define os possíveis status de um workflow
 export type WorkflowStatus = 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
@@ -52,6 +53,7 @@ const COLLECTION_NAME = 'workflows';
 export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { addMessage } = useMessages();
+  const { workflowDefinitions } = useApplications();
 
   const { data: requests = [], isFetching } = useQuery<WorkflowRequest[]>({
     queryKey: [COLLECTION_NAME],
@@ -61,7 +63,28 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id'>>, Error, Omit<WorkflowRequest, 'id'>>({
-    mutationFn: (requestData) => addDocumentToCollection(COLLECTION_NAME, requestData),
+    mutationFn: async (requestData) => {
+      const definition = workflowDefinitions.find(def => def.name === requestData.type);
+      const notificationsToSend: { recipient: string; value: string; field: string}[] = [];
+
+      if (definition && definition.routingRules) {
+        for (const rule of definition.routingRules) {
+          const formValue = requestData.formData[rule.field];
+          if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
+            rule.notify.forEach(recipient => {
+                notificationsToSend.push({ recipient, value: formValue, field: rule.field });
+            });
+          }
+        }
+      }
+      
+      // For now, we just log this. In a real scenario, we'd trigger an email/notification service here.
+      if (notificationsToSend.length > 0) {
+          console.log("Routing Rules Matched. Would send notifications:", notificationsToSend);
+      }
+
+      return addDocumentToCollection(COLLECTION_NAME, requestData);
+    },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },

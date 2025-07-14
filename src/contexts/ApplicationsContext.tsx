@@ -15,12 +15,19 @@ export interface FormFieldDefinition {
   options?: string[]; // For 'select' type
 }
 
+export interface RoutingRule {
+  field: string; // id of the field to check
+  value: string; // value to match
+  notify: string[]; // array of emails to notify
+}
+
 export interface WorkflowDefinition {
   id: string;
   name: string;
   description: string;
   icon: string;
   fields: FormFieldDefinition[];
+  routingRules: RoutingRule[];
   // Future additions: routingRules, approvers, etc.
 }
 
@@ -42,7 +49,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<WorkflowDefinition>(COLLECTION_NAME),
     // Ensure fields is always an array
-    select: (data) => data.map(d => ({ ...d, fields: d.fields || [] })),
+    select: (data) => data.map(d => ({ ...d, fields: d.fields || [], routingRules: d.routingRules || [] })),
   });
 
   const addWorkflowDefinitionMutation = useMutation<WithId<Omit<WorkflowDefinition, 'id'>>, Error, Omit<WorkflowDefinition, 'id'>>({

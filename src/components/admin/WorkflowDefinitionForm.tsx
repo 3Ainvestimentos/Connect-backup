@@ -12,15 +12,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, GripVertical, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, GripVertical, Loader2, Route } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useApplications, WorkflowDefinition } from '@/contexts/ApplicationsContext';
 import { iconList, getIcon } from '@/lib/icons';
 import { Switch } from '../ui/switch';
 import { cn } from '@/lib/utils';
+import { Separator } from '../ui/separator';
 
 const fieldSchema = z.object({
-    id: z.string().min(1, "ID do campo é obrigatório."),
+    id: z.string().min(1, "ID do campo é obrigatório.").regex(/^[a-zA-Z0-9_]+$/, "ID deve conter apenas letras, números e underscores."),
     label: z.string().min(1, "Label é obrigatório."),
     type: z.enum(['text', 'textarea', 'select', 'date', 'date-range']),
     required: z.boolean(),
@@ -28,11 +29,19 @@ const fieldSchema = z.object({
     options: z.string().optional(), // Comma-separated for select
 });
 
+const routingRuleSchema = z.object({
+  field: z.string().min(1, "Campo é obrigatório."),
+  value: z.string().min(1, "Valor é obrigatório."),
+  notify: z.string().min(1, "Emails são obrigatórios.").transform(val => val.split(',').map(s => s.trim())),
+});
+
+
 const definitionSchema = z.object({
     name: z.string().min(1, "Nome da definição é obrigatório."),
     description: z.string().min(1, "Descrição é obrigatória."),
     icon: z.string().min(1, "Ícone é obrigatório."),
     fields: z.array(fieldSchema),
+    routingRules: z.array(routingRuleSchema)
 });
 
 type FormValues = z.infer<typeof definitionSchema>;
@@ -45,16 +54,18 @@ interface WorkflowDefinitionFormProps {
 
 export function WorkflowDefinitionForm({ isOpen, onClose, definition }: WorkflowDefinitionFormProps) {
     const { addWorkflowDefinition, updateWorkflowDefinition } = useApplications();
-    const { control, register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormValues>({
+    const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm<FormValues>({
         resolver: zodResolver(definitionSchema),
         defaultValues: definition ? {
             ...definition,
-            fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') }))
+            fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') })),
+            routingRules: definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') }))
         } : {
             name: '',
             description: '',
             icon: 'FileText',
             fields: [],
+            routingRules: [],
         },
     });
 
@@ -63,12 +74,24 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         name: "fields",
     });
 
+     const { fields: rules, append: appendRule, remove: removeRule } = useFieldArray({
+        control,
+        name: "routingRules",
+    });
+
+    const watchedFields = watch('fields');
+
     const onSubmit = async (data: FormValues) => {
         const payload = {
             ...data,
             fields: data.fields.map(f => ({
                 ...f,
                 options: f.type === 'select' ? f.options?.split(',').map(opt => opt.trim()).filter(Boolean) : [],
+            })),
+            routingRules: data.routingRules.map(r => ({
+                ...r,
+                // The transform in zod schema already handles this, but let's be safe
+                notify: Array.isArray(r.notify) ? r.notify : r.notify.split(',').map(s => s.trim())
             }))
         };
 
@@ -77,7 +100,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                 await updateWorkflowDefinition({ ...payload, id: definition.id });
                 toast({ title: "Sucesso!", description: "Definição de workflow atualizada." });
             } else {
-                await addWorkflowDefinition(payload);
+                await addWorkflowDefinition(payload as Omit<WorkflowDefinition, 'id'>);
                 toast({ title: "Sucesso!", description: "Nova definição de workflow criada." });
             }
             onClose();
@@ -162,8 +185,8 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                         </div>
                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                              <div>
-                                                <Label htmlFor={`fields.${index}.id`}>ID do Campo (único)</Label>
-                                                <Input id={`fields.${index}.id`} {...register(`fields.${index}.id`)} placeholder="Ex: nomeCompleto" />
+                                                <Label htmlFor={`fields.${index}.id`}>ID do Campo (único, sem espaços)</Label>
+                                                <Input id={`fields.${index}.id`} {...register(`fields.${index}.id`)} placeholder="Ex: nome_completo" />
                                                 {errors.fields?.[index]?.id && <p className="text-sm text-destructive mt-1">{errors.fields?.[index]?.id?.message}</p>}
                                             </div>
                                              <div>
@@ -192,6 +215,45 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                 ))}
                                 <Button type="button" variant="outline" onClick={() => append({ id: `campo_${fields.length + 1}`, label: '', type: 'text', required: false, placeholder: '', options: '' })}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campo
+                                </Button>
+                            </div>
+
+                             {/* Routing Rules */}
+                            <div className="space-y-4">
+                                <h3 className="font-semibold text-lg border-t pt-4 flex items-center gap-2"><Route className="h-5 w-5"/> Regras de Roteamento</h3>
+                                {rules.map((rule, index) => (
+                                    <div key={rule.id} className="p-4 border rounded-lg space-y-3 relative bg-card">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div>
+                                                <Label htmlFor={`routingRules.${index}.field`}>Se o campo...</Label>
+                                                <Controller name={`routingRules.${index}.field`} control={control} render={({ field }) => (
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <SelectTrigger><SelectValue placeholder="Selecione um campo..." /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {watchedFields.map(f => <SelectItem key={f.id} value={f.id}>{f.label} ({f.id})</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )} />
+                                                {errors.routingRules?.[index]?.field && <p className="text-sm text-destructive mt-1">{errors.routingRules?.[index]?.field?.message}</p>}
+                                            </div>
+                                            <div>
+                                                <Label htmlFor={`routingRules.${index}.value`}>...tiver o valor</Label>
+                                                <Input id={`routingRules.${index}.value`} {...register(`routingRules.${index}.value`)} placeholder="Ex: Alta" />
+                                                {errors.routingRules?.[index]?.value && <p className="text-sm text-destructive mt-1">{errors.routingRules?.[index]?.value?.message}</p>}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor={`routingRules.${index}.notify`}>...notificar os e-mails (separados por vírgula)</Label>
+                                            <Input id={`routingRules.${index}.notify`} {...register(`routingRules.${index}.notify`)} placeholder="email1@3a.com, email2@3a.com" />
+                                             {errors.routingRules?.[index]?.notify && <p className="text-sm text-destructive mt-1">{errors.routingRules?.[index]?.notify?.message as string}</p>}
+                                        </div>
+                                         <div className="flex justify-end pt-2">
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => removeRule(index)}><Trash2 className="h-4 w-4" /></Button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" onClick={() => appendRule({ field: '', value: '', notify: '' as any })}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Regra
                                 </Button>
                             </div>
                         </div>
