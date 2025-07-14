@@ -94,7 +94,7 @@ export default function ApplicationsPage() {
       
       {/* Pre-built Modals */}
       <ProfileModal open={activeModal?.modalId === 'profile'} onOpenChange={handleCloseModal} />
-      <VacationRequestModal open={active_modalId === 'vacation'} onOpenChange={handleCloseModal} />
+      <VacationRequestModal open={activeModal?.modalId === 'vacation'} onOpenChange={handleCloseModal} />
       <SupportModal open={activeModal?.modalId === 'support'} onOpenChange={handleCloseModal} />
       <AdminModal open={activeModal?.modalId === 'admin'} onOpenChange={handleCloseModal} />
       <MarketingModal open={activeModal?.modalId === 'marketing'} onOpenChange={handleCloseModal} />
