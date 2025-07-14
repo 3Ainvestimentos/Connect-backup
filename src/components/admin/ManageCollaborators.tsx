@@ -20,14 +20,15 @@ import Papa from 'papaparse';
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
+    id3a: z.string().min(1, "ID 3A RIVA é obrigatório"),
     name: z.string().min(1, "Nome é obrigatório"),
     email: z.string().email("Email inválido"),
     photoURL: z.string().url("URL da imagem inválida").optional().or(z.literal('')),
     axis: z.string().min(1, "Eixo é obrigatório"),
     area: z.string().min(1, "Área é obrigatória"),
     position: z.string().min(1, "Cargo é obrigatório"),
-    leader: z.string().min(1, "Líder é obrigatório"),
     segment: z.string().min(1, "Segmento é obrigatório"),
+    leader: z.string().min(1, "Líder é obrigatório"),
     city: z.string().min(1, "Cidade é obrigatória"),
 });
 
@@ -55,14 +56,15 @@ export function ManageCollaborators() {
         } else {
             reset({
                 id: undefined,
+                id3a: '',
                 name: '',
                 email: '',
                 photoURL: '',
                 axis: '',
                 area: '',
                 position: '',
-                leader: '',
                 segment: '',
+                leader: '',
                 city: '',
             });
         }
@@ -112,7 +114,7 @@ export function ManageCollaborators() {
             header: true,
             skipEmptyLines: true,
             complete: async (results) => {
-                const requiredHeaders = ['name', 'email', 'axis', 'area', 'position', 'leader', 'segment', 'city'];
+                const requiredHeaders = ['id3a', 'name', 'email', 'axis', 'area', 'position', 'segment', 'leader', 'city'];
                 const fileHeaders = results.meta.fields;
                 
                 if (!fileHeaders || !requiredHeaders.every(h => fileHeaders.includes(h))) {
@@ -127,17 +129,18 @@ export function ManageCollaborators() {
 
                 const newCollaborators = results.data
                     .map(row => ({
+                        id3a: row.id3a?.trim(),
                         name: row.name?.trim(),
                         email: row.email?.trim().toLowerCase(),
                         photoURL: row.photoURL?.trim() || '',
                         axis: row.axis?.trim(),
                         area: row.area?.trim(),
                         position: row.position?.trim(),
-                        leader: row.leader?.trim(),
                         segment: row.segment?.trim(),
+                        leader: row.leader?.trim(),
                         city: row.city?.trim(),
                     }))
-                    .filter(c => c.name && c.email); // Basic validation
+                    .filter(c => c.id3a && c.name && c.email); // Basic validation
 
                 if (newCollaborators.length === 0) {
                      toast({
@@ -150,7 +153,7 @@ export function ManageCollaborators() {
                 }
                 
                 try {
-                    await addMultipleCollaborators(newCollaborators);
+                    await addMultipleCollaborators(newCollaborators as Omit<Collaborator, 'id'>[]);
                     toast({
                         title: "Importação Concluída!",
                         description: `${newCollaborators.length} colaboradores foram adicionados com sucesso.`,
@@ -206,6 +209,7 @@ export function ManageCollaborators() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>ID 3A</TableHead>
                                     <TableHead>Nome</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Área</TableHead>
@@ -218,6 +222,7 @@ export function ManageCollaborators() {
                             <TableBody>
                                 {collaborators.map(item => (
                                     <TableRow key={item.id}>
+                                        <TableCell>{item.id3a}</TableCell>
                                         <TableCell className="font-medium">{item.name}</TableCell>
                                         <TableCell>{item.email}</TableCell>
                                         <TableCell>{item.area}</TableCell>
@@ -252,17 +257,22 @@ export function ManageCollaborators() {
                         <DialogTitle>{editingCollaborator ? 'Editar Colaborador' : 'Adicionar Colaborador'}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
+                                <Label htmlFor="id3a">ID 3A RIVA</Label>
+                                <Input id="id3a" {...register('id3a')} disabled={isFormSubmitting}/>
+                                {errors.id3a && <p className="text-sm text-destructive mt-1">{errors.id3a.message}</p>}
+                            </div>
+                            <div className="md:col-span-2">
                                 <Label htmlFor="name">Nome</Label>
                                 <Input id="name" {...register('name')} disabled={isFormSubmitting}/>
                                 {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
                             </div>
-                            <div>
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" {...register('email')} disabled={isFormSubmitting}/>
-                                {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
-                            </div>
+                        </div>
+                        <div>
+                            <Label htmlFor="email">Email</Label>
+                            <Input id="email" type="email" {...register('email')} disabled={isFormSubmitting}/>
+                            {errors.email && <p className="text-sm text-destructive mt-1">{errors.email.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="photoURL">URL da Foto (opcional)</Label>
@@ -287,17 +297,17 @@ export function ManageCollaborators() {
                                 <Input id="position" {...register('position')} disabled={isFormSubmitting}/>
                                 {errors.position && <p className="text-sm text-destructive mt-1">{errors.position.message}</p>}
                             </div>
-                             <div>
-                                <Label htmlFor="leader">Líder</Label>
-                                <Input id="leader" {...register('leader')} disabled={isFormSubmitting}/>
-                                {errors.leader && <p className="text-sm text-destructive mt-1">{errors.leader.message}</p>}
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="segment">Segmento</Label>
                                 <Input id="segment" {...register('segment')} disabled={isFormSubmitting}/>
                                 {errors.segment && <p className="text-sm text-destructive mt-1">{errors.segment.message}</p>}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <Label htmlFor="leader">Líder</Label>
+                                <Input id="leader" {...register('leader')} disabled={isFormSubmitting}/>
+                                {errors.leader && <p className="text-sm text-destructive mt-1">{errors.leader.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="city">Cidade</Label>
@@ -340,7 +350,7 @@ export function ManageCollaborators() {
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                             <li>Crie uma planilha (no Excel, Google Sheets, etc.).</li>
                             <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">name,email,axis,area,position,leader,segment,city,photoURL</code>
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">id3a,name,email,axis,area,position,segment,leader,city,photoURL</code>
                             </li>
                              <li>A coluna `photoURL` é opcional, as outras são obrigatórias.</li>
                             <li>Preencha as linhas com os dados de cada colaborador.</li>

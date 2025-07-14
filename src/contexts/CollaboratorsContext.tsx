@@ -7,14 +7,15 @@ import { getCollection, addDocumentToCollection, updateDocumentInCollection, del
 
 export interface Collaborator {
   id: string;
+  id3a: string;      // ID interno da 3A RIVA
   name: string;
   email: string;
   photoURL?: string; // Link da imagem do colaborador
   axis: string;      // Eixo
   area: string;      // Área
   position: string;  // Cargo
-  leader: string;    // Líder
   segment: string;   // Segmento
+  leader: string;    // Líder
   city: string;      // Cidade
 }
 

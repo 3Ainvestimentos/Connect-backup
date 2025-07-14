@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Separator } from '@/components/ui/separator';
-import { User, Building, Briefcase, Pyramid, MapPin, Users } from 'lucide-react';
+import { User, Building, Briefcase, Pyramid, MapPin, Users, Fingerprint } from 'lucide-react';
 
 interface ProfileModalProps {
   open: boolean;
@@ -51,6 +51,13 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
           <div className="py-4 space-y-4">
               <Separator />
               <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
+                   <div className="flex items-center gap-3">
+                      <Fingerprint className="h-5 w-5 text-accent" />
+                      <div>
+                          <p className="font-semibold text-foreground">ID 3A RIVA</p>
+                          <p className="text-muted-foreground">{currentUserCollaborator.id3a}</p>
+                      </div>
+                  </div>
                   <div className="flex items-center gap-3">
                       <Briefcase className="h-5 w-5 text-accent" />
                       <div>

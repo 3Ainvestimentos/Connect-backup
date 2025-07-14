@@ -1,3 +1,4 @@
+
 import {
   LucideIcon,
   UserCircle,
@@ -31,6 +32,7 @@ import {
   FileText,
   Film,
   Filter,
+  Fingerprint,
   Flag,
   Folder,
   Gift,
@@ -136,6 +138,7 @@ export const iconMap: Record<string, LucideIcon> = {
   FileText,
   Film,
   Filter,
+  Fingerprint,
   Flag,
   Folder,
   Gift,
