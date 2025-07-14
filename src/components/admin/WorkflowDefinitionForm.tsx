@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -112,13 +111,14 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
     
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-3xl flex flex-col h-[90vh]">
                 <DialogHeader>
                     <DialogTitle>{definition ? 'Editar Definição de Workflow' : 'Nova Definição de Workflow'}</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <ScrollArea className="max-h-[70vh] p-1">
-                        <div className="p-6 pt-0 space-y-6">
+                
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
+                    <ScrollArea className="flex-grow pr-6 -mr-6">
+                        <div className="space-y-6 pb-6">
                             {/* Basic Info */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
@@ -287,7 +287,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                             </div>
                         </div>
                     </ScrollArea>
-                    <DialogFooter>
+                    <DialogFooter className="pt-4">
                         <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
                         <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
