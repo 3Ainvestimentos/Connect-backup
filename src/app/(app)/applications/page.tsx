@@ -9,6 +9,8 @@ import { getIcon } from '@/lib/icons';
 import { Card, CardContent } from '@/components/ui/card';
 import { useApplications, Application } from '@/contexts/ApplicationsContext';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import MyRequests from '@/components/applications/MyRequests';
 
 
 // Import all modals
@@ -50,43 +52,50 @@ export default function ApplicationsPage() {
 
   return (
     <>
-      <div className="space-y-6 p-6 md:p-8">
-        <PageHeader 
-          title="Aplicações e Suporte" 
-          description="Acesse as ferramentas e serviços da empresa."
-        />
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {sortedApplications.map((app) => {
-            const Icon = getIcon(app.icon);
-            const content = (
-              <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <Icon className="mb-3 h-8 w-8 text-muted-foreground" />
-                <span className="font-semibold font-body text-card-foreground">{app.name}</span>
-              </div>
-            );
+      <div className="space-y-8 p-6 md:p-8">
+        <div>
+          <PageHeader 
+            title="Aplicações e Suporte" 
+            description="Acesse as ferramentas e serviços da empresa."
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {sortedApplications.map((app) => {
+              const Icon = getIcon(app.icon);
+              const content = (
+                <div className="flex flex-col items-center justify-center h-full text-center p-4">
+                  <Icon className="mb-2 h-7 w-7 text-muted-foreground" />
+                  <span className="font-semibold font-body text-sm text-card-foreground">{app.name}</span>
+                </div>
+              );
 
-            const cardProps = {
-              className: "h-36 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer"
-            };
+              const cardProps = {
+                className: "h-32 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer"
+              };
 
-            return app.type === 'modal' ? (
-              <Card key={app.id} {...cardProps} onClick={() => handleAppClick(app)} onKeyDown={(e) => e.key === 'Enter' && handleAppClick(app)} tabIndex={0}>
-                <CardContent className="p-0 h-full w-full">{content}</CardContent>
-              </Card>
-            ) : (
-              <Link 
-                href={app.href || '#'} 
-                key={app.id} 
-                className="focus:outline-none focus:ring-2 focus:ring-ring rounded-lg"
-                {...(app.type === 'external' ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              >
-                <Card {...cardProps}>
-                    <CardContent className="p-0 h-full w-full">{content}</CardContent>
+              return app.type === 'modal' ? (
+                <Card key={app.id} {...cardProps} onClick={() => handleAppClick(app)} onKeyDown={(e) => e.key === 'Enter' && handleAppClick(app)} tabIndex={0}>
+                  <CardContent className="p-0 h-full w-full">{content}</CardContent>
                 </Card>
-              </Link>
-            );
-          })}
+              ) : (
+                <Link 
+                  href={app.href || '#'} 
+                  key={app.id} 
+                  className="focus:outline-none focus:ring-2 focus:ring-ring rounded-lg"
+                  {...(app.type === 'external' ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                >
+                  <Card {...cardProps}>
+                      <CardContent className="p-0 h-full w-full">{content}</CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
         </div>
+        
+        <Separator />
+        
+        <MyRequests />
+
       </div>
       
       {/* Pre-built Modals */}
