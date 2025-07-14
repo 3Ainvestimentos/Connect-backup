@@ -40,7 +40,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import FAQModal from '@/components/guides/FAQModal';
 import ProfileModal from '../applications/ProfileModal';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
-import { Badge } from '../ui/badge';
 
 const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false },
@@ -59,7 +58,7 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
 
   const pendingRequestsCount = requests.filter(req => req.status === 'pending').length;
 
-  if (loading) return <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />;
+  if (loading) return <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
 
   return (
@@ -72,6 +71,9 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
               {user.displayName ? user.displayName.charAt(0).toUpperCase() : <UserCircle size={24} />}
             </AvatarFallback>
           </Avatar>
+           {pendingRequestsCount > 0 && (
+            <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-background" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -122,7 +124,9 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
                     <span>Painel de solicitações</span>
                   </div>
                   {pendingRequestsCount > 0 && (
-                     <Badge className="bg-admin-primary hover:bg-admin-primary text-white ml-2">{pendingRequestsCount}</Badge>
+                     <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                        {pendingRequestsCount}
+                     </span>
                   )}
                 </Link>
             </DropdownMenuItem>
