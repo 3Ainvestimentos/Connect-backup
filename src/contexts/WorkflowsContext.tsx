@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { useMessages } from './MessagesContext';
 
 // Define os possíveis status de um workflow
 export type WorkflowStatus = 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
@@ -41,7 +42,7 @@ interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
   addRequest: (request: Omit<WorkflowRequest, 'id'>) => Promise<WithId<Omit<WorkflowRequest, 'id'>>>;
-  updateRequest: (request: Partial<WorkflowRequest> & { id: string }) => Promise<void>;
+  updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string) => Promise<void>;
   deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
@@ -50,6 +51,7 @@ const COLLECTION_NAME = 'workflows';
 
 export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { addMessage } = useMessages();
 
   const { data: requests = [], isFetching } = useQuery<WorkflowRequest[]>({
     queryKey: [COLLECTION_NAME],
@@ -89,6 +91,22 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
+  const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage: string) => {
+    // First, update the request in Firestore
+    await updateRequestMutation.mutateAsync(requestUpdate);
+    
+    // Then, find the original request to get the submitter's ID
+    const originalRequest = requests.find(r => r.id === requestUpdate.id);
+    if (originalRequest && originalRequest.submittedBy.userId) {
+        await addMessage({
+            title: 'Atualização da sua Solicitação',
+            content: notificationMessage,
+            sender: 'Sistema de Workflows',
+            recipientIds: [originalRequest.submittedBy.userId], // Send only to the user who made the request
+        });
+    }
+  };
+
   const deleteRequestMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
@@ -100,7 +118,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     requests,
     loading: isFetching,
     addRequest: (request) => addRequestMutation.mutateAsync(request),
-    updateRequest: (request) => updateRequestMutation.mutateAsync(request),
+    updateRequestAndNotify,
     deleteRequestMutation,
   }), [requests, isFetching, addRequestMutation, updateRequestMutation, deleteRequestMutation]);
 

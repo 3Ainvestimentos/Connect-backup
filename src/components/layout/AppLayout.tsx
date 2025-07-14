@@ -39,6 +39,8 @@ import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import FAQModal from '@/components/guides/FAQModal';
 import ProfileModal from '../applications/ProfileModal';
+import { useWorkflows } from '@/contexts/WorkflowsContext';
+import { Badge } from '../ui/badge';
 
 const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false },
@@ -53,6 +55,9 @@ const navItems = [
 function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
   const { user, signOut, loading, isAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { requests } = useWorkflows();
+
+  const pendingRequestsCount = requests.filter(req => req.status === 'pending').length;
 
   if (loading) return <div className="w-8 h-8 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
@@ -111,9 +116,14 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                <Link href="/requests" className="cursor-pointer font-body">
+                <Link href="/requests" className="cursor-pointer font-body flex justify-between items-center">
+                  <div className="flex items-center">
                     <Mailbox className="mr-2 h-4 w-4" />
                     <span>Painel de solicitações</span>
+                  </div>
+                  {pendingRequestsCount > 0 && (
+                     <Badge className="bg-admin-primary hover:bg-admin-primary text-white ml-2">{pendingRequestsCount}</Badge>
+                  )}
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

@@ -32,7 +32,7 @@ interface RequestApprovalModalProps {
 
 export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprovalModalProps) {
   const { user } = useAuth();
-  const { updateRequest } = useWorkflows();
+  const { updateRequestAndNotify } = useWorkflows();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,25 +46,30 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     
     setIsSubmitting(true);
     const now = new Date();
+    const actionText = newStatus === 'approved' ? 'aprovada' : 'rejeitada';
     
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
       status: newStatus,
       userId: user.uid,
       userName: user.displayName || 'Admin',
-      notes: comment || (newStatus === 'approved' ? 'Solicitação aprovada.' : 'Solicitação rejeitada.'),
+      notes: comment || `Solicitação ${actionText}.`,
     };
     
+    const requestUpdate = {
+        id: request.id,
+        status: newStatus,
+        lastUpdatedAt: formatISO(now),
+        history: [...request.history, historyEntry],
+    };
+    
+    const notificationMessage = `Sua ${getRequestTypeLabel(request.type).toLowerCase()} foi ${actionText}. Detalhes: ${comment || 'Nenhuma observação adicional.'}`;
+
     try {
-        await updateRequest({
-            id: request.id,
-            status: newStatus,
-            lastUpdatedAt: formatISO(now),
-            history: [...request.history, historyEntry],
-        });
+        await updateRequestAndNotify(requestUpdate, notificationMessage);
         toast({
             title: "Sucesso!",
-            description: `A solicitação foi ${newStatus === 'approved' ? 'aprovada' : 'rejeitada'}.`
+            description: `A solicitação foi ${actionText}. O usuário será notificado.`
         });
         setComment('');
         onClose();
