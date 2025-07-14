@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mailbox, Eye, Filter } from 'lucide-react';
+import { Mailbox, Eye, Filter, FileDown } from 'lucide-react';
 import { RequestApprovalModal } from './RequestApprovalModal';
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Papa from 'papaparse';
 
 export function ManageRequests() {
     const { requests, loading } = useWorkflows();
@@ -61,6 +62,37 @@ export function ManageRequests() {
         return status?.label || request.status;
     };
 
+    const handleExportCSV = () => {
+        const dataToExport = filteredRequests.map(req => {
+            const flatFormData = Object.entries(req.formData).map(([key, value]) => {
+                if (typeof value === 'object' && value !== null && 'from' in value && 'to' in value) {
+                    return { [key]: `${value.from} a ${value.to}` };
+                }
+                return { [key]: value };
+            }).reduce((acc, current) => ({ ...acc, ...current }), {});
+
+            return {
+                ID: req.id,
+                Tipo: req.type,
+                Status: getStatusLabel(req),
+                Solicitante: req.submittedBy.userName,
+                Email_Solicitante: req.submittedBy.userEmail,
+                Data_Submissao: format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm:ss"),
+                ...flatFormData
+            };
+        });
+
+        const csv = Papa.unparse(dataToExport);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `relatorio_solicitacoes_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const renderSkeleton = () => (
         <div className="space-y-2">
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
@@ -78,27 +110,33 @@ export function ManageRequests() {
                                 {filteredRequests.length} solicitação(ões) encontrada(s).
                             </CardDescription>
                         </div>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    <Filter className="mr-2 h-4 w-4" />
-                                    Filtrar por Status
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Status</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {allStatuses.map(status => (
-                                    <DropdownMenuCheckboxItem
-                                        key={status.id}
-                                        checked={statusFilter.includes(status.id)}
-                                        onCheckedChange={() => handleStatusFilterChange(status.id)}
-                                    >
-                                        {status.label}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        <Filter className="mr-2 h-4 w-4" />
+                                        Filtrar por Status
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Status</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {allStatuses.map(status => (
+                                        <DropdownMenuCheckboxItem
+                                            key={status.id}
+                                            checked={statusFilter.includes(status.id)}
+                                            onCheckedChange={() => handleStatusFilterChange(status.id)}
+                                        >
+                                            {status.label}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                             <Button variant="secondary" onClick={handleExportCSV} disabled={filteredRequests.length === 0}>
+                                <FileDown className="mr-2 h-4 w-4" />
+                                Exportar CSV
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
