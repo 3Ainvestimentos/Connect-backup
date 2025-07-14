@@ -31,13 +31,10 @@ const statusMap: { [key in WorkflowStatus]: { label: string; className: string }
   completed: { label: 'Concluído', className: 'bg-gray-400/20 text-gray-700 border-gray-400/30' },
 };
 
-const typeMap: { [key: string]: string } = {
-    vacation_request: 'Solicitação de Férias',
-};
 
 export function ManageRequests() {
     const { user } = useAuth();
-    const { requests, loading, updateRequest } = useWorkflows();
+    const { requests, loading } = useWorkflows();
     const [selectedRequest, setSelectedRequest] = useState<WorkflowRequest | null>(null);
     const [statusFilter, setStatusFilter] = useState<WorkflowStatus[]>(['pending']);
 
@@ -45,10 +42,6 @@ export function ManageRequests() {
         if (statusFilter.length === 0) return requests;
         return requests.filter(req => statusFilter.includes(req.status));
     }, [requests, statusFilter]);
-
-    const getRequestTypeLabel = (type: string) => {
-        return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    };
 
     const handleStatusFilterChange = (status: WorkflowStatus) => {
         setStatusFilter(prev => 
@@ -114,7 +107,7 @@ export function ManageRequests() {
                                 <TableBody>
                                     {filteredRequests.map((req) => (
                                         <TableRow key={req.id}>
-                                            <TableCell className="font-medium">{getRequestTypeLabel(req.type)}</TableCell>
+                                            <TableCell className="font-medium">{req.type}</TableCell>
                                             <TableCell>{req.submittedBy.userName}</TableCell>
                                             <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
                                             <TableCell>

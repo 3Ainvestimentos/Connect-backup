@@ -5,52 +5,65 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
-export interface Application {
+// Represents a workflow definition, which dictates the structure of a form.
+export interface FormFieldDefinition {
+  id: string; // Unique ID for the field within the form
+  label: string;
+  type: 'text' | 'textarea' | 'select' | 'date' | 'date-range';
+  required: boolean;
+  placeholder?: string;
+  options?: string[]; // For 'select' type
+}
+
+export interface WorkflowDefinition {
   id: string;
   name: string;
+  description: string;
   icon: string;
-  type: 'workflow' | 'external';
-  href?: string;
-  description?: string;
+  fields: FormFieldDefinition[];
+  // Future additions: routingRules, approvers, etc.
 }
 
 interface ApplicationsContextType {
-  applications: Application[];
+  workflowDefinitions: WorkflowDefinition[];
   loading: boolean;
-  addApplication: (app: Omit<Application, 'id'>) => Promise<Application>;
-  updateApplication: (app: Application) => Promise<void>;
-  deleteApplicationMutation: UseMutationResult<void, Error, string, unknown>;
+  addWorkflowDefinition: (definition: Omit<WorkflowDefinition, 'id'>) => Promise<WorkflowDefinition>;
+  updateWorkflowDefinition: (definition: WorkflowDefinition) => Promise<void>;
+  deleteWorkflowDefinitionMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const ApplicationsContext = createContext<ApplicationsContextType | undefined>(undefined);
-const COLLECTION_NAME = 'applications';
+const COLLECTION_NAME = 'workflowDefinitions';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
 
-  const { data: applications = [], isFetching } = useQuery<Application[]>({
+  const { data: workflowDefinitions = [], isFetching } = useQuery<WorkflowDefinition[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<Application>(COLLECTION_NAME),
+    queryFn: () => getCollection<WorkflowDefinition>(COLLECTION_NAME),
+    // Ensure fields is always an array
+    select: (data) => data.map(d => ({ ...d, fields: d.fields || [] })),
   });
 
-  const addApplicationMutation = useMutation<WithId<Omit<Application, 'id'>>, Error, Omit<Application, 'id'>>({
-    mutationFn: (appData) => addDocumentToCollection(COLLECTION_NAME, appData),
+  const addWorkflowDefinitionMutation = useMutation<WithId<Omit<WorkflowDefinition, 'id'>>, Error, Omit<WorkflowDefinition, 'id'>>({
+    mutationFn: (definitionData) => addDocumentToCollection(COLLECTION_NAME, definitionData),
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
   
-  const updateApplicationMutation = useMutation<void, Error, Application>({
-    mutationFn: (updatedApp) => {
-      const { id, ...data } = updatedApp;
+  const updateWorkflowDefinitionMutation = useMutation<void, Error, WorkflowDefinition>({
+    mutationFn: (updatedDefinition) => {
+      const { id, ...data } = updatedDefinition;
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, variables.id] });
     },
   });
 
-  const deleteApplicationMutation = useMutation<void, Error, string>({
+  const deleteWorkflowDefinitionMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -58,12 +71,12 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const value = useMemo(() => ({
-    applications,
+    workflowDefinitions,
     loading: isFetching,
-    addApplication: (app) => addApplicationMutation.mutateAsync(app),
-    updateApplication: (app) => updateApplicationMutation.mutateAsync(app),
-    deleteApplicationMutation,
-  }), [applications, isFetching, addApplicationMutation, updateApplicationMutation, deleteApplicationMutation]);
+    addWorkflowDefinition: (definition) => addWorkflowDefinitionMutation.mutateAsync(definition) as Promise<WorkflowDefinition>,
+    updateWorkflowDefinition: (definition) => updateWorkflowDefinitionMutation.mutateAsync(definition),
+    deleteWorkflowDefinitionMutation,
+  }), [workflowDefinitions, isFetching, addWorkflowDefinitionMutation, updateWorkflowDefinitionMutation, deleteWorkflowDefinitionMutation]);
 
   return (
     <ApplicationsContext.Provider value={value}>

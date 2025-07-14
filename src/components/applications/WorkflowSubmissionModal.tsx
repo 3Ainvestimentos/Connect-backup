@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { format, formatISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -9,183 +9,175 @@ import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import type { Application } from '@/contexts/ApplicationsContext';
+import { FormFieldDefinition, WorkflowDefinition } from '@/contexts/ApplicationsContext';
 
-
-// Define a more flexible structure for the form data
-interface WorkflowRequestForm {
-  dateRange?: DateRange;
-  note?: string;
-}
+type DynamicFormData = { [key: string]: any };
 
 interface WorkflowSubmissionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  workflowType: Application;
+  workflowDefinition: WorkflowDefinition;
 }
 
-export default function WorkflowSubmissionModal({ open, onOpenChange, workflowType }: WorkflowSubmissionModalProps) {
+export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDefinition }: WorkflowSubmissionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addRequest } = useWorkflows();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
 
-  const {
-    control,
-    handleSubmit,
-    setValue,
-    watch,
-    formState: { errors },
-    reset,
-  } = useForm<WorkflowRequestForm>({
-    defaultValues: {
-      dateRange: { from: undefined, to: undefined },
-      note: '',
-    },
-  });
-  
-  const dateRange = watch("dateRange");
+  const { control, handleSubmit, reset, formState: { errors } } = useForm<DynamicFormData>();
 
-  const onSubmit = async (data: WorkflowRequestForm) => {
+  useEffect(() => {
+    // Reset form when definition changes or modal opens/closes
+    if (open) {
+      const defaultValues: DynamicFormData = {};
+      workflowDefinition.fields.forEach(field => {
+        defaultValues[field.id] = field.type === 'date-range' ? { from: undefined, to: undefined } : '';
+      });
+      reset(defaultValues);
+    }
+  }, [open, workflowDefinition, reset]);
+
+  const onSubmit = async (data: DynamicFormData) => {
     const currentUserCollab = collaborators.find(c => c.email === user?.email);
 
     if (!user || !currentUserCollab) {
-        toast({
-            title: "Erro de Autenticação",
-            description: "Não foi possível identificar o colaborador. Verifique se seu e-mail está cadastrado.",
-            variant: "destructive"
-        });
-        return;
+      toast({ title: "Erro de Autenticação", description: "Não foi possível identificar o colaborador.", variant: "destructive" });
+      return;
     }
-    if (!workflowType) {
-        toast({ title: "Erro", description: "Tipo de workflow não definido.", variant: "destructive" });
+
+    // Basic validation
+    for (const field of workflowDefinition.fields) {
+      if (field.required && !data[field.id]) {
+        toast({ title: "Erro de Validação", description: `O campo '${field.label}' é obrigatório.`, variant: "destructive" });
         return;
-    }
-    
-    // Basic validation for date range if it's part of the form
-    if (!data.dateRange?.from || !data.dateRange?.to) {
-        toast({ title: "Erro de Validação", description: "Por favor, selecione um período de início e fim.", variant: "destructive"});
+      }
+      if (field.type === 'date-range' && field.required && (!data[field.id].from || !data[field.id].to)) {
+        toast({ title: "Erro de Validação", description: `O campo '${field.label}' precisa de uma data de início e fim.`, variant: "destructive" });
         return;
+      }
     }
 
     setIsSubmitting(true);
-    
+
     try {
-        const now = new Date();
-        await addRequest({
-            type: workflowType.name,
-            status: 'pending',
-            submittedBy: {
-                userId: currentUserCollab.id3a,
-                userName: currentUserCollab.name,
-                userEmail: currentUserCollab.email,
-            },
-            submittedAt: formatISO(now),
-            lastUpdatedAt: formatISO(now),
-            formData: {
-                startDate: data.dateRange.from ? formatISO(data.dateRange.from, { representation: 'date' }) : undefined,
-                endDate: data.dateRange.to ? formatISO(data.dateRange.to, { representation: 'date' }) : undefined,
-                note: data.note || '',
-            },
-            history: [{
-                timestamp: formatISO(now),
-                status: 'pending',
-                userId: currentUserCollab.id3a,
-                userName: currentUserCollab.name,
-                notes: 'Solicitação criada.'
-            }],
-        });
-        
-        toast({
-            title: "Solicitação Enviada!",
-            description: `Seu pedido de '${workflowType.name}' foi enviado para aprovação.`,
-        });
+      const now = new Date();
+      // Sanitize data for Firestore
+      const formDataForFirestore = { ...data };
+      workflowDefinition.fields.forEach(field => {
+        if (field.type === 'date-range' && formDataForFirestore[field.id]) {
+          formDataForFirestore[field.id] = {
+            from: formDataForFirestore[field.id].from ? formatISO(formDataForFirestore[field.id].from, { representation: 'date' }) : null,
+            to: formDataForFirestore[field.id].to ? formatISO(formDataForFirestore[field.id].to, { representation: 'date' }) : null,
+          };
+        }
+      });
 
-        reset();
-        onOpenChange(false);
+      await addRequest({
+        type: workflowDefinition.name,
+        status: 'pending',
+        submittedBy: {
+          userId: currentUserCollab.id3a,
+          userName: currentUserCollab.name,
+          userEmail: currentUserCollab.email,
+        },
+        submittedAt: formatISO(now),
+        lastUpdatedAt: formatISO(now),
+        formData: formDataForFirestore,
+        history: [{
+          timestamp: formatISO(now),
+          status: 'pending',
+          userId: currentUserCollab.id3a,
+          userName: currentUserCollab.name,
+          notes: 'Solicitação criada.'
+        }],
+      });
 
+      toast({ title: "Solicitação Enviada!", description: `Seu pedido de '${workflowDefinition.name}' foi enviado para aprovação.` });
+      onOpenChange(false);
     } catch (error) {
-        console.error("Failed to submit workflow request:", error);
-        toast({
-            title: "Erro ao Enviar",
-            description: "Não foi possível enviar sua solicitação. Tente novamente.",
-            variant: "destructive",
-        });
+      console.error("Failed to submit workflow request:", error);
+      toast({ title: "Erro ao Enviar", description: "Não foi possível enviar sua solicitação. Tente novamente.", variant: "destructive" });
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
-  
-  // Close and reset form when dialog is closed
-  React.useEffect(() => {
-    if (!open) {
-      reset({
-        dateRange: { from: undefined, to: undefined },
-        note: '',
-      });
-    }
-  }, [open, reset]);
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px] font-body">
-        <DialogHeader>
-          <DialogTitle className="font-headline text-2xl">{workflowType.name}</DialogTitle>
-          <DialogDescription>
-            {workflowType.description || "Preencha as informações abaixo para iniciar sua solicitação."}
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4">
-          <div className="space-y-2">
-            <Label htmlFor="date">Período</Label>
+  const renderField = (field: FormFieldDefinition) => {
+    const error = errors[field.id];
+    
+    switch (field.type) {
+      case 'text':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Controller name={field.id} control={control} render={({ field: controllerField }) => <Input id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
+            {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
+          </div>
+        );
+      case 'textarea':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Controller name={field.id} control={control} render={({ field: controllerField }) => <Textarea id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
+            {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
+          </div>
+        );
+      case 'select':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
             <Controller
-              name="dateRange"
+              name={field.id}
               control={control}
-              render={({ field }) => (
+              render={({ field: controllerField }) => (
+                <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value} disabled={isSubmitting}>
+                  <SelectTrigger id={field.id}><SelectValue placeholder={field.placeholder || 'Selecione...'} /></SelectTrigger>
+                  <SelectContent>
+                    {field.options?.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
+          </div>
+        );
+      case 'date-range':
+        return (
+           <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Controller
+              name={field.id}
+              control={control}
+              render={({ field: controllerField }) => (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      id="date"
+                      id={field.id}
                       variant={'outline'}
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !field.value?.from && 'text-muted-foreground'
-                      )}
+                      className={cn('w-full justify-start text-left font-normal', !controllerField.value?.from && 'text-muted-foreground')}
                       disabled={isSubmitting}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value?.from ? (
-                        field.value.to ? (
-                          <>
-                            {format(field.value.from, 'LLL dd, y', { locale: ptBR })} -{' '}
-                            {format(field.value.to, 'LLL dd, y', { locale: ptBR })}
-                          </>
+                      {controllerField.value?.from ? (
+                        controllerField.value.to ? (
+                          <>{format(controllerField.value.from, 'LLL dd, y', { locale: ptBR })} - {format(controllerField.value.to, 'LLL dd, y', { locale: ptBR })}</>
                         ) : (
-                          format(field.value.from, 'LLL dd, y', { locale: ptBR })
+                          format(controllerField.value.from, 'LLL dd, y', { locale: ptBR })
                         )
                       ) : (
-                        <span>Escolha um período</span>
+                        <span>{field.placeholder || 'Escolha um período'}</span>
                       )}
                     </Button>
                   </PopoverTrigger>
@@ -193,9 +185,9 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
                     <Calendar
                       initialFocus
                       mode="range"
-                      defaultMonth={field.value?.from}
-                      selected={field.value as DateRange}
-                      onSelect={(range) => setValue("dateRange", range || { from: undefined, to: undefined })}
+                      defaultMonth={controllerField.value?.from}
+                      selected={controllerField.value as DateRange}
+                      onSelect={controllerField.onChange}
                       numberOfMonths={2}
                       locale={ptBR}
                     />
@@ -203,38 +195,35 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
                 </Popover>
               )}
             />
-             {(errors.dateRange?.from || errors.dateRange?.to) && <p className="text-sm text-destructive">Por favor, selecione um período de início e fim.</p>}
+            {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
+        );
+      default:
+        return null;
+    }
+  };
 
-          <div className="space-y-2">
-            <Label htmlFor="note">Observação (Opcional)</Label>
-            <Controller
-              name="note"
-              control={control}
-              render={({ field }) => (
-                 <Textarea
-                    id="note"
-                    placeholder="Adicione um comentário para o seu gestor..."
-                    className="resize-none"
-                    {...field}
-                    disabled={isSubmitting}
-                  />
-              )}
-            />
-          </div>
-
-          <DialogFooter>
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[525px] font-body">
+        <DialogHeader>
+          <DialogTitle className="font-headline text-2xl">{workflowDefinition.name}</DialogTitle>
+          <DialogDescription>{workflowDefinition.description}</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto pr-2">
+          {workflowDefinition.fields.map(field => renderField(field))}
+        </form>
+         <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isSubmitting} className="hover:bg-muted">
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="submit" variant="secondary" disabled={isSubmitting}>
+            <Button type="button" variant="secondary" disabled={isSubmitting} onClick={handleSubmit(onSubmit)}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Enviar Solicitação
             </Button>
-          </DialogFooter>
-        </form>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

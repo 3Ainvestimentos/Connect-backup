@@ -2,28 +2,21 @@
 "use client";
 
 import React, { useState } from 'react';
-import { format, formatISO, parseISO } from 'date-fns';
+import { format, formatISO, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useWorkflows, WorkflowRequest, WorkflowStatus, WorkflowHistoryLog } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  DialogClose,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, MessageSquare, History } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
+import { useApplications } from '@/contexts/ApplicationsContext';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -35,10 +28,13 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
   const { updateRequestAndNotify } = useWorkflows();
+  const { workflowDefinitions } = useApplications();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!request) return null;
+
+  const definition = workflowDefinitions.find(def => def.name === request.type);
   
   const handleAction = async (newStatus: 'approved' | 'rejected') => {
     const adminUser = collaborators.find(c => c.email === user?.email);
@@ -67,7 +63,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         history: [...request.history, historyEntry],
     };
     
-    const notificationMessage = `Sua ${getRequestTypeLabel(request.type).toLowerCase()} foi ${actionText}. Detalhes: ${comment || 'Nenhuma observação adicional.'}`;
+    const notificationMessage = `Sua solicitação de '${request.type}' foi ${actionText}. Detalhes: ${comment || 'Nenhuma observação adicional.'}`;
 
     try {
         await updateRequestAndNotify(requestUpdate, notificationMessage);
@@ -88,37 +84,37 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   };
 
-  const renderFormData = () => {
-    if (!request.formData) return <p>Sem dados de formulário.</p>;
+  const renderFieldValue = (fieldId: string, value: any) => {
+    const fieldDef = definition?.fields.find(f => f.id === fieldId);
+    if (!fieldDef) return <p><strong>{fieldId}:</strong> {JSON.stringify(value)}</p>;
+    
+    let displayValue: React.ReactNode = value;
 
-    switch (request.type) {
-      case 'Solicitação de Férias':
-      case 'vacation_request':
-        return (
-          <div className="space-y-2">
-            <p><strong>Período:</strong> {format(parseISO(request.formData.startDate), 'dd/MM/yyyy')} a {format(parseISO(request.formData.endDate), 'dd/MM/yyyy')}</p>
-            {request.formData.note && <p><strong>Observação:</strong> {request.formData.note}</p>}
-          </div>
-        );
-      default:
-        // Generic fallback for any other workflow type
-        return (
-             <div className="space-y-2">
-                {request.formData.startDate && request.formData.endDate && (
-                     <p><strong>Período:</strong> {format(parseISO(request.formData.startDate), 'dd/MM/yyyy')} a {format(parseISO(request.formData.endDate), 'dd/MM/yyyy')}</p>
-                )}
-                {request.formData.note && <p><strong>Observação:</strong> {request.formData.note}</p>}
-             </div>
-        );
+    if (fieldDef.type === 'date' && value) {
+      const date = parseISO(value);
+      displayValue = isValid(date) ? format(date, 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida';
+    } else if (fieldDef.type === 'date-range' && value) {
+      const from = value.from ? parseISO(value.from) : null;
+      const to = value.to ? parseISO(value.to) : null;
+      displayValue = (from && isValid(from) && to && isValid(to)) 
+        ? `${format(from, 'dd/MM/yyyy')} a ${format(to, 'dd/MM/yyyy')}`
+        : 'Período inválido';
     }
-  };
 
-  const typeMap: { [key: string]: string } = {
-    vacation_request: 'Solicitação de Férias',
-  };
+    return <p><strong>{fieldDef.label}:</strong> {displayValue?.toString()}</p>;
+  }
 
-  const getRequestTypeLabel = (type: string) => {
-    return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const renderFormData = () => {
+    if (!request.formData || Object.keys(request.formData).length === 0) return <p>Sem dados de formulário.</p>;
+    return (
+        <div className="space-y-2">
+            {Object.entries(request.formData).map(([key, value]) => (
+                <div key={key}>
+                  {renderFieldValue(key, value)}
+                </div>
+            ))}
+        </div>
+    );
   };
 
   return (
@@ -142,7 +138,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                 </div>
                  <div className="flex items-start gap-3">
                     <Type className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                    <div><span className="font-semibold">Tipo:</span> {getRequestTypeLabel(request.type)}</div>
+                    <div><span className="font-semibold">Tipo:</span> {request.type}</div>
                 </div>
                 <div className="flex items-start gap-3">
                     <Calendar className="h-5 w-5 mt-0.5 text-muted-foreground" />

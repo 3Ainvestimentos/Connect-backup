@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -119,6 +119,12 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
+             <DropdownMenuItem asChild>
+                <Link href="/admin/workflows" className="cursor-pointer font-body">
+                    <Workflow className="mr-2 h-4 w-4" />
+                    <span>Gerenciar Workflows</span>
+                </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem asChild>
                 <Link href="/requests" className="cursor-pointer font-body flex justify-between items-center">
                   <div className="flex items-center">

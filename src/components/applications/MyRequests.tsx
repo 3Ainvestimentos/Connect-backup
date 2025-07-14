@@ -22,11 +22,6 @@ const statusMap: { [key in WorkflowStatus]: { label: string; className: string }
   completed: { label: 'Concluído', className: 'bg-gray-400/20 text-gray-700 border-gray-400/30' },
 };
 
-const typeMap: { [key: string]: string } = {
-    vacation_request: 'Solicitação de Férias',
-    // Adicione outros tipos aqui quando forem criados
-};
-
 export default function MyRequests() {
     const { user } = useAuth();
     const { requests, loading } = useWorkflows();
@@ -38,10 +33,6 @@ export default function MyRequests() {
         if (!currentUserCollab) return [];
         return requests.filter(req => req.submittedBy.userId === currentUserCollab.id3a);
     }, [requests, user, collaborators]);
-
-    const getRequestTypeLabel = (type: string) => {
-        return typeMap[type] || type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    };
 
     const renderSkeleton = () => (
         <Card>
@@ -88,7 +79,7 @@ export default function MyRequests() {
                             <TableBody>
                                 {myRequests.map((req) => (
                                     <TableRow key={req.id}>
-                                        <TableCell className="font-medium">{getRequestTypeLabel(req.type)}</TableCell>
+                                        <TableCell className="font-medium">{req.type}</TableCell>
                                         <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className={cn("font-semibold", statusMap[req.status]?.className)}>
