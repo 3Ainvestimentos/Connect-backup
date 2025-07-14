@@ -3,8 +3,6 @@
 
 import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { format, formatISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
@@ -33,15 +31,12 @@ import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Application } from '@/contexts/ApplicationsContext';
 
-const workflowRequestSchema = z.object({
-  dateRange: z.object({
-    from: z.date({ required_error: "A data de início é obrigatória." }),
-    to: z.date({ required_error: "A data de término é obrigatória." }),
-  }),
-  note: z.string().optional(),
-});
 
-type WorkflowRequestForm = z.infer<typeof workflowRequestSchema>;
+// Define a more flexible structure for the form data
+interface WorkflowRequestForm {
+  dateRange?: DateRange;
+  note?: string;
+}
 
 interface WorkflowSubmissionModalProps {
   open: boolean;
@@ -62,7 +57,6 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
     formState: { errors },
     reset,
   } = useForm<WorkflowRequestForm>({
-    resolver: zodResolver(workflowRequestSchema),
     defaultValues: {
       dateRange: { from: undefined, to: undefined },
       note: '',
@@ -84,13 +78,19 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
         toast({ title: "Erro", description: "Tipo de workflow não definido.", variant: "destructive" });
         return;
     }
+    
+    // Basic validation for date range if it's part of the form
+    if (!data.dateRange?.from || !data.dateRange?.to) {
+        toast({ title: "Erro de Validação", description: "Por favor, selecione um período de início e fim.", variant: "destructive"});
+        return;
+    }
 
     setIsSubmitting(true);
     
     try {
         const now = new Date();
         await addRequest({
-            type: workflowType.name, // Use the application name as the workflow type
+            type: workflowType.name,
             status: 'pending',
             submittedBy: {
                 userId: user.uid,
@@ -100,9 +100,8 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowTy
             submittedAt: formatISO(now),
             lastUpdatedAt: formatISO(now),
             formData: {
-                // Standardized form data
-                startDate: formatISO(data.dateRange.from, { representation: 'date' }),
-                endDate: formatISO(data.dateRange.to, { representation: 'date' }),
+                startDate: data.dateRange.from ? formatISO(data.dateRange.from, { representation: 'date' }) : undefined,
+                endDate: data.dateRange.to ? formatISO(data.dateRange.to, { representation: 'date' }) : undefined,
                 note: data.note || '',
             },
             history: [{
