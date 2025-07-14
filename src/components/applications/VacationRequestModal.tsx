@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { format } from 'date-fns';
+import { format, formatISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,6 +36,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import type { DateRange } from 'react-day-picker';
+import { useWorkflows } from '@/contexts/WorkflowsContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const vacationRequestSchema = z.object({
   requestType: z.string().min(1, "O tipo de solicitação é obrigatório."),
@@ -56,6 +58,9 @@ interface VacationRequestModalProps {
 
 export default function VacationRequestModal({ open, onOpenChange, remainingDays = 20 }: VacationRequestModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { addRequest } = useWorkflows();
+  const { user } = useAuth();
+
   const {
     control,
     handleSubmit,
@@ -75,18 +80,63 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
   const dateRange = watch("dateRange");
 
   const onSubmit = async (data: VacationRequestForm) => {
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    if (!user) {
+        toast({
+            title: "Erro de Autenticação",
+            description: "Você precisa estar logado para fazer uma solicitação.",
+            variant: "destructive"
+        });
+        return;
+    }
 
-    toast({
-      title: "Solicitação Enviada!",
-      description: `Seu pedido de ${data.requestType.toLowerCase()} de ${format(data.dateRange.from, 'dd/MM/yyyy')} a ${format(data.dateRange.to, 'dd/MM/yyyy')} foi enviado para aprovação.`,
-    });
+    setIsSubmitting(true);
     
-    setIsSubmitting(false);
-    reset();
-    onOpenChange(false);
+    try {
+        const now = new Date();
+        await addRequest({
+            type: 'vacation_request',
+            status: 'pending',
+            submittedBy: {
+                userId: user.uid,
+                userName: user.displayName || 'Nome não encontrado',
+                userEmail: user.email || 'Email não encontrado',
+            },
+            submittedAt: formatISO(now),
+            lastUpdatedAt: formatISO(now),
+            formData: {
+                requestType: data.requestType,
+                startDate: formatISO(data.dateRange.from, { representation: 'date' }),
+                endDate: formatISO(data.dateRange.to, { representation: 'date' }),
+                note: data.note || '',
+                remainingDaysOnSubmit: remainingDays,
+            },
+            history: [{
+                timestamp: formatISO(now),
+                status: 'pending',
+                userId: user.uid,
+                userName: user.displayName || 'Nome não encontrado',
+                notes: 'Solicitação criada.'
+            }],
+        });
+        
+        toast({
+            title: "Solicitação Enviada!",
+            description: `Seu pedido de ${data.requestType.toLowerCase()} foi enviado para aprovação.`,
+        });
+
+        reset();
+        onOpenChange(false);
+
+    } catch (error) {
+        console.error("Failed to submit workflow request:", error);
+        toast({
+            title: "Erro ao Enviar",
+            description: "Não foi possível enviar sua solicitação. Tente novamente.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -105,7 +155,7 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
               name="requestType"
               control={control}
               render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                   <SelectTrigger id="requestType">
                     <SelectValue placeholder="Selecione um tipo" />
                   </SelectTrigger>
@@ -135,6 +185,7 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
                         'w-full justify-start text-left font-normal',
                         !field.value?.from && 'text-muted-foreground'
                       )}
+                      disabled={isSubmitting}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {field.value?.from ? (
@@ -179,6 +230,7 @@ export default function VacationRequestModal({ open, onOpenChange, remainingDays
                     placeholder="Adicione um comentário para o seu gestor..."
                     className="resize-none"
                     {...field}
+                    disabled={isSubmitting}
                   />
               )}
             />
