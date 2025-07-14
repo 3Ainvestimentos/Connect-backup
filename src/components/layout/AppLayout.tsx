@@ -71,8 +71,10 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
               {user.displayName ? user.displayName.charAt(0).toUpperCase() : <UserCircle size={24} />}
             </AvatarFallback>
           </Avatar>
-           {pendingRequestsCount > 0 && (
-            <span className="absolute top-0 right-0 block h-3 w-3 rounded-full bg-red-500 ring-2 ring-background" />
+           {pendingRequestsCount > 0 && isAdmin && (
+            <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white ring-2 ring-background">
+                {pendingRequestsCount}
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -123,8 +125,8 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
                     <Mailbox className="mr-2 h-4 w-4" />
                     <span>Painel de solicitações</span>
                   </div>
-                  {pendingRequestsCount > 0 && (
-                     <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                   {pendingRequestsCount > 0 && (
+                     <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white">
                         {pendingRequestsCount}
                      </span>
                   )}
