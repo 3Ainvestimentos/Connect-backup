@@ -45,7 +45,7 @@ import { Badge } from '../ui/badge';
 const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false },
-  { href: '/applications', label: 'Aplicações e Suporte', icon: LayoutGrid, external: false },
+  { href: '/applications', label: 'Aplicações', icon: LayoutGrid, external: false },
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
