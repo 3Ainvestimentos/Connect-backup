@@ -13,6 +13,7 @@ import { useApplications } from '@/contexts/ApplicationsContext';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
 
@@ -229,4 +230,3 @@ export default function AnalyticsPage() {
       </div>
     </AdminGuard>
   );
-}
