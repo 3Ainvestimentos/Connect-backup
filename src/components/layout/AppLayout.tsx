@@ -72,7 +72,7 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
             </AvatarFallback>
           </Avatar>
            {pendingRequestsCount > 0 && isAdmin && (
-            <span className="absolute top-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white ring-2 ring-background">
+            <span className="absolute -top-1 right-0 transform -translate-y-1/2 translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white ring-2 ring-background">
                 {pendingRequestsCount}
             </span>
           )}
@@ -125,11 +125,6 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
                     <Mailbox className="mr-2 h-4 w-4" />
                     <span>Painel de solicitações</span>
                   </div>
-                   {pendingRequestsCount > 0 && (
-                     <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white">
-                        {pendingRequestsCount}
-                     </span>
-                  )}
                 </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
