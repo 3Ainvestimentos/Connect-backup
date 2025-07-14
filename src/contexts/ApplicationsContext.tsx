@@ -5,6 +5,12 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 
+// Represents a single status in a workflow lifecycle
+export interface WorkflowStatusDefinition {
+  id: string; // e.g., 'pending_approval'
+  label: string; // e.g., 'Pendente de Aprovação'
+}
+
 // Represents a workflow definition, which dictates the structure of a form.
 export interface FormFieldDefinition {
   id: string; // Unique ID for the field within the form
@@ -28,7 +34,7 @@ export interface WorkflowDefinition {
   icon: string;
   fields: FormFieldDefinition[];
   routingRules: RoutingRule[];
-  // Future additions: routingRules, approvers, etc.
+  statuses: WorkflowStatusDefinition[]; // Custom statuses for this workflow
 }
 
 interface ApplicationsContextType {
@@ -48,8 +54,13 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const { data: workflowDefinitions = [], isFetching } = useQuery<WorkflowDefinition[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<WorkflowDefinition>(COLLECTION_NAME),
-    // Ensure fields is always an array
-    select: (data) => data.map(d => ({ ...d, fields: d.fields || [], routingRules: d.routingRules || [] })),
+    // Ensure fields, routingRules, and statuses are always arrays
+    select: (data) => data.map(d => ({ 
+      ...d, 
+      fields: d.fields || [], 
+      routingRules: d.routingRules || [],
+      statuses: d.statuses || [],
+    })),
   });
 
   const addWorkflowDefinitionMutation = useMutation<WithId<Omit<WorkflowDefinition, 'id'>>, Error, Omit<WorkflowDefinition, 'id'>>({

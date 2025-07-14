@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, formatISO, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useWorkflows, WorkflowRequest, WorkflowStatus, WorkflowHistoryLog } from '@/contexts/WorkflowsContext';
@@ -12,11 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
-import { useApplications } from '@/contexts/ApplicationsContext';
+import { useApplications, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -31,13 +31,28 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const { workflowDefinitions } = useApplications();
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [targetStatus, setTargetStatus] = useState<WorkflowStatus | null>(null);
+
+  const definition = useMemo(() => {
+    if (!request) return null;
+    return workflowDefinitions.find(def => def.name === request.type);
+  }, [request, workflowDefinitions]);
+
+  const availableTransitions = useMemo(() => {
+    if (!definition || !request) return [];
+    const currentStatusIndex = definition.statuses.findIndex(s => s.id === request.status);
+    if (currentStatusIndex === -1) return [];
+    // For simplicity, allow transition to any other status.
+    // A more complex system could define explicit transitions.
+    return definition.statuses.filter(s => s.id !== request.status);
+  }, [definition, request]);
+
 
   if (!request) return null;
 
-  const definition = workflowDefinitions.find(def => def.name === request.type);
-  
-  const handleAction = async (newStatus: 'approved' | 'rejected') => {
+  const handleAction = async (newStatus: WorkflowStatus) => {
     const adminUser = collaborators.find(c => c.email === user?.email);
+    const newStatusLabel = definition?.statuses.find(s => s.id === newStatus)?.label || newStatus;
 
     if (!user || !adminUser) {
         toast({ title: "Erro de Autenticação", description: "Você não está logado ou não foi encontrado na lista de colaboradores.", variant: "destructive"});
@@ -45,15 +60,15 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
     
     setIsSubmitting(true);
+    setTargetStatus(newStatus);
     const now = new Date();
-    const actionText = newStatus === 'approved' ? 'aprovada' : 'rejeitada';
     
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
       status: newStatus,
       userId: adminUser.id3a,
       userName: adminUser.name,
-      notes: comment || `Solicitação ${actionText}.`,
+      notes: comment || `Status alterado para "${newStatusLabel}".`,
     };
     
     const requestUpdate = {
@@ -63,13 +78,13 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         history: [...request.history, historyEntry],
     };
     
-    const notificationMessage = `Sua solicitação de '${request.type}' foi ${actionText}. Detalhes: ${comment || 'Nenhuma observação adicional.'}`;
+    const notificationMessage = `O status da sua solicitação de '${request.type}' foi atualizado para "${newStatusLabel}".\nObservações: ${comment || 'Nenhuma.'}`;
 
     try {
         await updateRequestAndNotify(requestUpdate, notificationMessage);
         toast({
             title: "Sucesso!",
-            description: `A solicitação foi ${actionText}. O usuário será notificado.`
+            description: `A solicitação foi atualizada para "${newStatusLabel}". O usuário será notificado.`
         });
         setComment('');
         onClose();
@@ -81,6 +96,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         });
     } finally {
         setIsSubmitting(false);
+        setTargetStatus(null);
     }
   };
 
@@ -167,13 +183,11 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                 <div className="space-y-3">
                     {request.history.slice().reverse().map((log, index) => (
                         <div key={index} className="flex items-start gap-3 text-xs">
-                            <div className="flex flex-col items-center">
-                                <div className="bg-primary text-primary-foreground rounded-full h-6 w-6 flex items-center justify-center">
-                                    {log.status === 'approved' ? <Check size={14}/> : log.status === 'rejected' ? <X size={14}/> : <User size={12}/>}
-                                </div>
+                             <div className="flex flex-col items-center">
+                                <Badge variant="secondary" className="font-semibold">{definition?.statuses.find(s => s.id === log.status)?.label || log.status}</Badge>
                                 {index !== request.history.length - 1 && <div className="w-px h-6 bg-border" />}
                             </div>
-                            <div>
+                            <div className="pt-0.5">
                                 <p className="font-semibold">{log.userName} <span className="text-muted-foreground font-normal">({format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')})</span></p>
                                 <p className="text-muted-foreground">{log.notes}</p>
                             </div>
@@ -181,45 +195,39 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                     ))}
                 </div>
             </div>
-
-            {request.status === 'pending' && (
-                <div>
-                    <Label htmlFor="comment">Adicionar Comentário (Opcional)</Label>
-                    <Textarea
-                        id="comment"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        placeholder="Deixe um comentário para o solicitante..."
-                        disabled={isSubmitting}
-                    />
-                </div>
-            )}
+            
+            <div>
+                <Label htmlFor="comment">Adicionar Comentário (Opcional)</Label>
+                <Textarea
+                    id="comment"
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    placeholder="Deixe uma observação para o solicitante e para o histórico..."
+                    disabled={isSubmitting}
+                />
+            </div>
         </div>
         </ScrollArea>
 
-        <DialogFooter className="pt-4">
+        <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
+            {availableTransitions.map(status => (
+                <Button 
+                    key={status.id}
+                    variant="secondary"
+                    onClick={() => handleAction(status.id)} 
+                    disabled={isSubmitting}
+                >
+                    {(isSubmitting && targetStatus === status.id) ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                        <MoveRight className="mr-2 h-4 w-4" />
+                    )}
+                    Mover para "{status.label}"
+                </Button>
+            ))}
+          </div>
           <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
-          {request.status === 'pending' && (
-            <div className="flex gap-2">
-              <Button 
-                variant="destructive" 
-                onClick={() => handleAction('rejected')} 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
-                Rejeitar
-              </Button>
-              <Button 
-                variant="secondary"
-                className="bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => handleAction('approved')} 
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                Aprovar
-              </Button>
-            </div>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

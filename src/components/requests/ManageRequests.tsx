@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useWorkflows, WorkflowRequest, WorkflowStatus } from '@/contexts/WorkflowsContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useApplications } from '@/contexts/ApplicationsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mailbox, Search, Eye, Filter } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Mailbox, Eye, Filter } from 'lucide-react';
 import { RequestApprovalModal } from './RequestApprovalModal';
 import {
   DropdownMenu,
@@ -23,19 +22,24 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const statusMap: { [key in WorkflowStatus]: { label: string; className: string } } = {
-  pending: { label: 'Pendente', className: 'bg-yellow-400/20 text-yellow-600 border-yellow-400/30' },
-  approved: { label: 'Aprovado', className: 'bg-green-400/20 text-green-700 border-green-400/30' },
-  rejected: { label: 'Rejeitado', className: 'bg-red-400/20 text-red-700 border-red-400/30' },
-  in_progress: { label: 'Em Andamento', className: 'bg-blue-400/20 text-blue-700 border-blue-400/30' },
-  completed: { label: 'Concluído', className: 'bg-gray-400/20 text-gray-700 border-gray-400/30' },
-};
-
-
 export function ManageRequests() {
-    const { user } = useAuth();
     const { requests, loading } = useWorkflows();
+    const { workflowDefinitions } = useApplications();
     const [selectedRequest, setSelectedRequest] = useState<WorkflowRequest | null>(null);
+    
+    // Create a flat list of all possible statuses from all definitions
+    const allStatuses = useMemo(() => {
+        const statusMap = new Map<string, string>();
+        workflowDefinitions.forEach(def => {
+            def.statuses.forEach(status => {
+                if (!statusMap.has(status.id)) {
+                    statusMap.set(status.id, status.label);
+                }
+            });
+        });
+        return Array.from(statusMap.entries()).map(([id, label]) => ({ id, label }));
+    }, [workflowDefinitions]);
+    
     const [statusFilter, setStatusFilter] = useState<WorkflowStatus[]>(['pending']);
 
     const filteredRequests = useMemo(() => {
@@ -43,12 +47,18 @@ export function ManageRequests() {
         return requests.filter(req => statusFilter.includes(req.status));
     }, [requests, statusFilter]);
 
-    const handleStatusFilterChange = (status: WorkflowStatus) => {
+    const handleStatusFilterChange = (statusId: WorkflowStatus) => {
         setStatusFilter(prev => 
-            prev.includes(status) 
-                ? prev.filter(s => s !== status) 
-                : [...prev, status]
+            prev.includes(statusId) 
+                ? prev.filter(s => s !== statusId) 
+                : [...prev, statusId]
         );
+    };
+
+    const getStatusLabel = (request: WorkflowRequest) => {
+        const definition = workflowDefinitions.find(d => d.name === request.type);
+        const status = definition?.statuses.find(s => s.id === request.status);
+        return status?.label || request.status;
     };
 
     const renderSkeleton = () => (
@@ -78,13 +88,13 @@ export function ManageRequests() {
                             <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Status</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                {Object.keys(statusMap).map(status => (
+                                {allStatuses.map(status => (
                                     <DropdownMenuCheckboxItem
-                                        key={status}
-                                        checked={statusFilter.includes(status as WorkflowStatus)}
-                                        onCheckedChange={() => handleStatusFilterChange(status as WorkflowStatus)}
+                                        key={status.id}
+                                        checked={statusFilter.includes(status.id)}
+                                        onCheckedChange={() => handleStatusFilterChange(status.id)}
                                     >
-                                        {statusMap[status as WorkflowStatus].label}
+                                        {status.label}
                                     </DropdownMenuCheckboxItem>
                                 ))}
                             </DropdownMenuContent>
@@ -111,8 +121,8 @@ export function ManageRequests() {
                                             <TableCell>{req.submittedBy.userName}</TableCell>
                                             <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
                                             <TableCell>
-                                                <Badge variant="outline" className={cn("font-semibold", statusMap[req.status]?.className)}>
-                                                    {statusMap[req.status]?.label || 'Desconhecido'}
+                                                <Badge variant="secondary" className="font-semibold">
+                                                    {getStatusLabel(req)}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">

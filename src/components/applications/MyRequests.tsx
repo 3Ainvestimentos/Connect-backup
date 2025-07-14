@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { useWorkflows, WorkflowRequest, WorkflowStatus } from '@/contexts/WorkflowsContext';
+import { useApplications } from '@/contexts/ApplicationsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,20 +13,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FileClock, Inbox } from 'lucide-react';
-import { cn } from '@/lib/utils';
-
-const statusMap: { [key in WorkflowStatus]: { label: string; className: string } } = {
-  pending: { label: 'Pendente', className: 'bg-yellow-400/20 text-yellow-600 border-yellow-400/30' },
-  approved: { label: 'Aprovado', className: 'bg-green-400/20 text-green-700 border-green-400/30' },
-  rejected: { label: 'Rejeitado', className: 'bg-red-400/20 text-red-700 border-red-400/30' },
-  in_progress: { label: 'Em Andamento', className: 'bg-blue-400/20 text-blue-700 border-blue-400/30' },
-  completed: { label: 'Concluído', className: 'bg-gray-400/20 text-gray-700 border-gray-400/30' },
-};
 
 export default function MyRequests() {
     const { user } = useAuth();
     const { requests, loading } = useWorkflows();
     const { collaborators } = useCollaborators();
+    const { workflowDefinitions } = useApplications();
 
     const myRequests = React.useMemo(() => {
         if (!user || !collaborators.length) return [];
@@ -33,6 +26,13 @@ export default function MyRequests() {
         if (!currentUserCollab) return [];
         return requests.filter(req => req.submittedBy.userId === currentUserCollab.id3a);
     }, [requests, user, collaborators]);
+
+    const getStatusLabel = (request: WorkflowRequest) => {
+        const definition = workflowDefinitions.find(d => d.name === request.type);
+        const status = definition?.statuses.find(s => s.id === request.status);
+        return status?.label || request.status;
+    };
+
 
     const renderSkeleton = () => (
         <Card>
@@ -82,8 +82,8 @@ export default function MyRequests() {
                                         <TableCell className="font-medium">{req.type}</TableCell>
                                         <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className={cn("font-semibold", statusMap[req.status]?.className)}>
-                                                {statusMap[req.status]?.label || 'Desconhecido'}
+                                            <Badge variant="secondary" className="font-semibold">
+                                                {getStatusLabel(req)}
                                             </Badge>
                                         </TableCell>
                                     </TableRow>

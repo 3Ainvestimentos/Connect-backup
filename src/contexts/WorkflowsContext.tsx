@@ -8,7 +8,7 @@ import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
 
 // Define os possíveis status de um workflow
-export type WorkflowStatus = 'pending' | 'approved' | 'rejected' | 'in_progress' | 'completed';
+export type WorkflowStatus = string; // Now a generic string, e.g., 'pending_approval', 'in_progress'
 
 // Define o registro do histórico para auditoria
 export interface WorkflowHistoryLog {
@@ -83,7 +83,14 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
           console.log("Routing Rules Matched. Would send notifications:", notificationsToSend);
       }
 
-      return addDocumentToCollection(COLLECTION_NAME, requestData);
+      // Set initial status from definition
+      const initialStatus = definition?.statuses?.[0]?.id || 'pending';
+      const requestWithInitialStatus = { ...requestData, status: initialStatus };
+      if (requestWithInitialStatus.history[0]) {
+        requestWithInitialStatus.history[0].status = initialStatus;
+      }
+
+      return addDocumentToCollection(COLLECTION_NAME, requestWithInitialStatus);
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -122,7 +129,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     const originalRequest = requests.find(r => r.id === requestUpdate.id);
     if (originalRequest && originalRequest.submittedBy.userId) {
         await addMessage({
-            title: 'Atualização da sua Solicitação',
+            title: `Atualização: ${originalRequest.type}`,
             content: notificationMessage,
             sender: 'Sistema de Workflows',
             recipientIds: [originalRequest.submittedBy.userId], // Send only to the user who made the request

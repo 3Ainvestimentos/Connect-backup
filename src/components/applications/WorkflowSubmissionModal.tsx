@@ -84,9 +84,11 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         }
       });
 
+      const initialStatus = workflowDefinition.statuses?.[0]?.id || 'pending';
+
       await addRequest({
         type: workflowDefinition.name,
-        status: 'pending',
+        status: initialStatus, // Use the first defined status as initial
         submittedBy: {
           userId: currentUserCollab.id3a,
           userName: currentUserCollab.name,
@@ -97,7 +99,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         formData: formDataForFirestore,
         history: [{
           timestamp: formatISO(now),
-          status: 'pending',
+          status: initialStatus,
           userId: currentUserCollab.id3a,
           userName: currentUserCollab.name,
           notes: 'Solicitação criada.'
