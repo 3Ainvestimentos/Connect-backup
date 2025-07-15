@@ -54,21 +54,18 @@ export function ManageCollaborators() {
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
-        resolver: zodResolver(collaboratorSchema),
-    });
-    
     const filteredAndSortedCollaborators = useMemo(() => {
         let items = [...collaborators];
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
-            items = items.filter(c => 
-                c.name.toLowerCase().includes(lowercasedTerm) ||
-                c.email.toLowerCase().includes(lowercasedTerm) ||
-                c.id3a.toLowerCase().includes(lowercasedTerm) ||
-                c.area.toLowerCase().includes(lowercasedTerm) ||
-                c.position.toLowerCase().includes(lowercasedTerm)
-            );
+            items = items.filter(c => {
+                const nameMatch = c.name?.toLowerCase().includes(lowercasedTerm) ?? false;
+                const emailMatch = c.email?.toLowerCase().includes(lowercasedTerm) ?? false;
+                const id3aMatch = c.id3a?.toLowerCase().includes(lowercasedTerm) ?? false;
+                const areaMatch = c.area?.toLowerCase().includes(lowercasedTerm) ?? false;
+                const positionMatch = c.position?.toLowerCase().includes(lowercasedTerm) ?? false;
+                return nameMatch || emailMatch || id3aMatch || areaMatch || positionMatch;
+            });
         }
         if (sortKey) {
             items.sort((a, b) => {
