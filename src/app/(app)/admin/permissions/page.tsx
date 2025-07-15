@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { useCollaborators, Collaborator, CollaboratorPermissions } from '@/contexts/CollaboratorsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Shield, Loader2 } from 'lucide-react';
+import { Shield, Loader2, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 
 const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] = [
     { key: 'canManageContent', label: 'Conteúdo' },
@@ -22,6 +23,15 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
 function PermissionsTable() {
     const { collaborators, loading, updateCollaboratorPermissions } = useCollaborators();
     const [updatingId, setUpdatingId] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredCollaborators = useMemo(() => {
+        if (!searchTerm) return collaborators;
+        return collaborators.filter(c => 
+            c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            c.email.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }, [collaborators, searchTerm]);
 
     const handlePermissionToggle = async (collaborator: Collaborator, permissionKey: keyof CollaboratorPermissions) => {
         const newPermissions = {
@@ -70,10 +80,23 @@ function PermissionsTable() {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Permissões de Administrador</CardTitle>
-                <CardDescription>
-                    Ative ou desative o acesso aos painéis de controle para cada colaborador.
-                </CardDescription>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <CardTitle>Permissões de Administrador</CardTitle>
+                        <CardDescription>
+                            Ative ou desative o acesso aos painéis de controle para cada colaborador.
+                        </CardDescription>
+                    </div>
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Buscar por nome ou email..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="border rounded-lg overflow-x-auto">
@@ -85,7 +108,7 @@ function PermissionsTable() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {collaborators.map(collaborator => (
+                            {filteredCollaborators.map(collaborator => (
                                 <TableRow key={collaborator.id}>
                                     <TableCell className="font-medium">{collaborator.name}<br/><span className="text-xs text-muted-foreground">{collaborator.email}</span></TableCell>
                                     {permissionLabels.map(p => (
@@ -107,6 +130,11 @@ function PermissionsTable() {
                         </TableBody>
                     </Table>
                 </div>
+                 {filteredCollaborators.length === 0 && (
+                    <div className="text-center py-10">
+                        <p className="text-muted-foreground">Nenhum colaborador encontrado para a busca "{searchTerm}".</p>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
