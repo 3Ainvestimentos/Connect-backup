@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -36,6 +36,10 @@ type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
 
 type CsvRow = { [key: string]: string };
 
+type SortKey = keyof Collaborator | '';
+type SortDirection = 'asc' | 'desc';
+
+
 export function ManageCollaborators() {
     const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -44,10 +48,50 @@ export function ManageCollaborators() {
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortKey, setSortKey] = useState<SortKey>('name');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
     });
+    
+    const filteredAndSortedCollaborators = useMemo(() => {
+        let items = [...collaborators];
+        if (searchTerm) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            items = items.filter(c => 
+                c.name.toLowerCase().includes(lowercasedTerm) ||
+                c.email.toLowerCase().includes(lowercasedTerm) ||
+                c.id3a.toLowerCase().includes(lowercasedTerm) ||
+                c.area.toLowerCase().includes(lowercasedTerm) ||
+                c.position.toLowerCase().includes(lowercasedTerm)
+            );
+        }
+        if (sortKey) {
+            items.sort((a, b) => {
+                const valA = a[sortKey];
+                const valB = b[sortKey];
+                let comparison = 0;
+                if (valA && valB) {
+                    comparison = String(valA).localeCompare(String(valB));
+                }
+                return sortDirection === 'asc' ? comparison : -comparison;
+            });
+        }
+        return items;
+    }, [collaborators, searchTerm, sortKey, sortDirection]);
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
 
     const handleFormDialogOpen = (collaborator: Collaborator | null) => {
         setEditingCollaborator(collaborator);
@@ -184,44 +228,62 @@ export function ManageCollaborators() {
             fileInputRef.current.value = '';
         }
     };
+    
+    const SortableHeader = ({ tkey, label }: { tkey: SortKey, label: string }) => (
+        <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
+            {label}
+            {sortKey === tkey && (sortDirection === 'asc' ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
+        </TableHead>
+    );
 
     return (
         <>
             <Card>
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div>
+                     <div className="flex-grow">
                         <CardTitle>Gerenciar Colaboradores</CardTitle>
                         <CardDescription>Adicione, edite ou remova colaboradores da lista.</CardDescription>
                     </div>
-                    <div className="flex gap-2">
-                         <Button onClick={() => setIsImportOpen(true)} variant="outline">
-                            <Upload className="mr-2 h-4 w-4" />
-                            Importar via CSV
-                        </Button>
-                        <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Adicionar Colaborador
-                        </Button>
+                     <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                        <div className="relative flex-grow sm:flex-grow-0">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Buscar colaborador..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10 w-full"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Importar
+                            </Button>
+                            <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90 flex-grow">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adicionar
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="border rounded-lg">
+                    <div className="border rounded-lg overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ID 3A RIVA</TableHead>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Área</TableHead>
-                                    <TableHead>Cargo</TableHead>
-                                    <TableHead>Eixo</TableHead>
-                                    <TableHead>Segmento</TableHead>
-                                    <TableHead>Cidade</TableHead>
+                                    <SortableHeader tkey="id3a" label="ID 3A RIVA" />
+                                    <SortableHeader tkey="name" label="Nome" />
+                                    <SortableHeader tkey="email" label="Email" />
+                                    <SortableHeader tkey="area" label="Área" />
+                                    <SortableHeader tkey="position" label="Cargo" />
+                                    <SortableHeader tkey="axis" label="Eixo" />
+                                    <SortableHeader tkey="segment" label="Segmento" />
+                                    <SortableHeader tkey="city" label="Cidade" />
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {collaborators.map(item => (
+                                {filteredAndSortedCollaborators.map(item => (
                                     <TableRow key={item.id}>
                                         <TableCell>{item.id3a}</TableCell>
                                         <TableCell className="font-medium">{item.name}</TableCell>
@@ -248,6 +310,11 @@ export function ManageCollaborators() {
                             </TableBody>
                         </Table>
                     </div>
+                     {filteredAndSortedCollaborators.length === 0 && (
+                        <div className="text-center py-10">
+                            <p className="text-muted-foreground">Nenhum colaborador encontrado.</p>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
