@@ -58,20 +58,6 @@ const navItems = [
 function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
   const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { requests } = useWorkflows();
-  const { collaborators } = useCollaborators();
-
-  const pendingRequestsCount = useMemo(() => {
-    if (!user || !permissions.canManageRequests || !collaborators.length) return 0;
-    const currentUserCollab = collaborators.find(c => c.email === user.email);
-    if (!currentUserCollab) return 0;
-
-    return requests.filter(req => 
-        req.status === 'pending' && 
-        !req.viewedBy.includes(currentUserCollab.id3a)
-    ).length;
-  }, [requests, user, permissions, collaborators]);
-
 
   if (loading) return <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
@@ -86,11 +72,6 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
               {user.displayName ? user.displayName.charAt(0).toUpperCase() : <UserCircle size={24} />}
             </AvatarFallback>
           </Avatar>
-           {pendingRequestsCount > 0 && permissions.canManageRequests && (
-            <span className="absolute bottom-[-2px] left-0 transform translate-y-0 -translate-x-1/4 flex h-5 w-5 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white ring-2 ring-background">
-                {pendingRequestsCount}
-            </span>
-          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
