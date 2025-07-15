@@ -2,20 +2,13 @@
 "use client";
 
 import AdminGuard from '@/components/auth/AdminGuard';
-import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Users, Newspaper, FolderOpen, LayoutGrid, Activity, Eye, FileClock, Workflow } from 'lucide-react';
-import { Bar, BarChart as BarChartComponent, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
+import { Users, Newspaper, FolderOpen, Activity, Eye, Workflow } from 'lucide-react';
+import { BarChart as BarChartComponent, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Bar } from 'recharts';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { useNews } from '@/contexts/NewsContext';
 import { useDocuments } from '@/contexts/DocumentsContext';
 import { useApplications } from '@/contexts/ApplicationsContext';
-import { useWorkflows } from '@/contexts/WorkflowsContext';
-import { useMemo } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
 
 // Dados de exemplo para os gráficos
 const contentPopularityData = [
@@ -35,38 +28,11 @@ const engagementData = [
     { month: 'Jun', logins: 250 },
 ];
 
-export default function AnalyticsPage() {
+export default function UsageAnalyticsPage() {
   const { collaborators } = useCollaborators();
   const { newsItems } = useNews();
   const { documents } = useDocuments();
   const { workflowDefinitions } = useApplications();
-  const { requests, loading: loadingRequests } = useWorkflows();
-
-  const requestsByStatus = useMemo(() => {
-    if (loadingRequests || !workflowDefinitions.length) return [];
-    const statusCounts: { [key: string]: number } = {};
-
-    requests.forEach(req => {
-        statusCounts[req.status] = (statusCounts[req.status] || 0) + 1;
-    });
-
-    const allStatuses = new Map<string, string>();
-    workflowDefinitions.forEach(def => def.statuses.forEach(s => allStatuses.set(s.id, s.label)));
-
-    return Object.entries(statusCounts).map(([statusId, count]) => ({
-      name: allStatuses.get(statusId) || statusId,
-      value: count,
-    }));
-  }, [requests, loadingRequests, workflowDefinitions]);
-
-  const requestsByType = useMemo(() => {
-     if (loadingRequests) return [];
-      const typeCounts: { [key: string]: number } = {};
-      requests.forEach(req => {
-          typeCounts[req.type] = (typeCounts[req.type] || 0) + 1;
-      });
-      return Object.entries(typeCounts).map(([name, value]) => ({ name, value }));
-  }, [requests, loadingRequests]);
   
   const kpiData = [
     { title: "Colaboradores", value: collaborators.length, icon: Users },
@@ -77,12 +43,7 @@ export default function AnalyticsPage() {
 
   return (
     <AdminGuard>
-      <div className="space-y-6 p-6 md:p-8">
-        <PageHeader 
-          title="Painel de Analytics" 
-          description="Métricas de uso e engajamento da plataforma 3A RIVA Connect."
-        />
-        
+      <div className="space-y-6">
         {/* KPI Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpiData.map((kpi, index) => (
@@ -97,80 +58,10 @@ export default function AnalyticsPage() {
             </Card>
           ))}
         </section>
-        
-        <Separator />
-        
-        {/* Workflow Analytics Section */}
-        <section className="space-y-4">
-             <h2 className="text-xl font-headline font-bold flex items-center gap-2">
-                <FileClock className="h-6 w-6" />
-                Analytics de Workflows
-            </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-1">
-                    <CardHeader>
-                        <CardTitle>Solicitações por Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie data={requestsByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
-                                    {requestsByStatus.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ 
-                                        backgroundColor: "hsl(var(--background))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "var(--radius)",
-                                    }}
-                                />
-                                <Legend wrapperStyle={{fontSize: "14px"}}/>
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-                 <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle>Solicitações por Tipo</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChartComponent data={requestsByType}>
-                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false}/>
-                                <Tooltip
-                                    contentStyle={{ 
-                                        backgroundColor: "hsl(var(--background))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "var(--radius)",
-                                    }}
-                                    cursor={{fill: 'hsl(var(--muted))'}}
-                                />
-                                <Bar dataKey="value" name="Total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                            </BarChartComponent>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
-             <Card>
-                <CardHeader><CardTitle>Tempo Médio de Atendimento (SLA)</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                        Esta funcionalidade ainda não está implementada.
-                        <br />
-                        No futuro, esta área exibirá o tempo médio para conclusão de cada tipo de workflow.
-                    </p>
-                </CardContent>
-            </Card>
-        </section>
-
-        <Separator />
 
         {/* General Analytics Section */}
-        <section className="space-y-4">
-             <h2 className="text-xl font-headline font-bold">Analytics Gerais</h2>
+        <section className="space-y-4 pt-6">
+             <h2 className="text-xl font-headline font-bold">Analytics Gerais de Uso</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -230,3 +121,4 @@ export default function AnalyticsPage() {
       </div>
     </AdminGuard>
   );
+}
