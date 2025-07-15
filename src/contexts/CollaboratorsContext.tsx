@@ -17,6 +17,7 @@ export interface Collaborator {
   segment: string;   // Segmento
   leader: string;    // Líder
   city: string;      // Cidade
+  isAdmin?: boolean; // Flag to indicate admin privileges
 }
 
 interface CollaboratorsContextType {
@@ -25,6 +26,7 @@ interface CollaboratorsContextType {
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
   addMultipleCollaborators: (collaborators: Omit<Collaborator, 'id'>[]) => Promise<void>;
   updateCollaborator: (collaborator: Collaborator) => Promise<void>;
+  updateCollaboratorAdminStatus: (id: string, isAdmin: boolean) => Promise<void>;
   deleteCollaboratorMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
@@ -55,8 +57,18 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
 
   const updateCollaboratorMutation = useMutation<void, Error, Collaborator>({
     mutationFn: (updatedCollaborator: Collaborator) => updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
+
+  const updateCollaboratorAdminStatusMutation = useMutation<void, Error, { id: string; isAdmin: boolean }>({
+    mutationFn: ({ id, isAdmin }) => updateDocumentInCollection(COLLECTION_NAME, id, { isAdmin }),
+    onSuccess: (_, variables) => {
+        queryClient.setQueryData([COLLECTION_NAME], (oldData: Collaborator[] | undefined) => 
+            oldData ? oldData.map(c => c.id === variables.id ? { ...c, isAdmin: variables.isAdmin } : c) : []
+        );
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, variables.id] });
     },
   });
 
@@ -73,8 +85,9 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     addCollaborator: (collaborator) => addCollaboratorMutation.mutateAsync(collaborator),
     addMultipleCollaborators: (collaborators) => addMultipleCollaboratorsMutation.mutateAsync(collaborators),
     updateCollaborator: (collaborator) => updateCollaboratorMutation.mutateAsync(collaborator),
+    updateCollaboratorAdminStatus: (id, isAdmin) => updateCollaboratorAdminStatusMutation.mutateAsync({ id, isAdmin }),
     deleteCollaboratorMutation,
-  }), [collaborators, isFetching, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, deleteCollaboratorMutation]);
+  }), [collaborators, isFetching, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, updateCollaboratorAdminStatusMutation, deleteCollaboratorMutation]);
 
   return (
     <CollaboratorsContext.Provider value={value}>

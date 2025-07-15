@@ -53,7 +53,7 @@ const navItems = [
 ];
 
 function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
-  const { user, signOut, loading, isAdmin } = useAuth();
+  const { user, signOut, loading, isAdmin, isSuperAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
   const { requests } = useWorkflows();
 
@@ -129,7 +129,7 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                    <Link href="/requests" className="cursor-pointer font-body">
+                     <Link href="/requests" className="cursor-pointer font-body">
                         <Mailbox className="mr-2 h-4 w-4" />
                         <span>Solicitações</span>
                     </Link>
@@ -146,6 +146,14 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
                         <span>Analytics</span>
                     </Link>
                 </DropdownMenuItem>
+                {isSuperAdmin && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/admin/permissions" className="cursor-pointer font-body">
+                            <Shield className="mr-2 h-4 w-4" />
+                            <span>Admin</span>
+                        </Link>
+                    </DropdownMenuItem>
+                )}
             </DropdownMenuGroup>
           </>
         )}

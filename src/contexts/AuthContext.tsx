@@ -1,20 +1,22 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
+import { useCollaborators } from './CollaboratorsContext';
 
-const ADMIN_EMAIL = 'matheus@3ainvestimentos.com.br';
+const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
 const ALLOWED_DOMAINS = ['3ainvestimentos.com.br']; // Adicione outros domínios autorizados aqui
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -25,23 +27,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const { collaborators, loading: loadingCollaborators } = useCollaborators();
   
   const app = getFirebaseApp(); // Initialize Firebase
   const auth = getAuth(app);
   
-  const isAdmin = user?.email === ADMIN_EMAIL;
-
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
-      setLoading(false);
-      if (user) {
-        // Redirecionamento movido para a função de login para garantir a verificação de domínio primeiro
+      if (!user) {
+        setLoading(false);
       }
     });
 
     return () => unsubscribe();
   }, [auth]);
+
+  useEffect(() => {
+      if (user && !loadingCollaborators) {
+          const isSuper = SUPER_ADMIN_EMAILS.includes(user.email || '');
+          setIsSuperAdmin(isSuper);
+
+          const currentUserCollab = collaborators.find(c => c.email === user.email);
+          // A user is an admin if they are a super admin OR if their collaborator profile has the isAdmin flag.
+          setIsAdmin(isSuper || (currentUserCollab?.isAdmin === true));
+          
+          setLoading(false); // Stop loading only after all checks are done
+      } else if (!user && !loading) {
+          // If there's no user and auth is not loading anymore, we're done.
+          setLoading(false);
+      }
+  }, [user, collaborators, loadingCollaborators, loading]);
 
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -72,8 +91,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      // Se o domínio for válido, onAuthStateChanged já terá definido o usuário
-      // e podemos redirecionar com segurança.
       router.push('/dashboard');
 
     } catch (error) {
@@ -95,9 +112,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing out: ", error);
     }
   };
+  
+  const value = useMemo(() => ({
+      user,
+      loading: loading || loadingCollaborators,
+      isAdmin,
+      isSuperAdmin,
+      signInWithGoogle,
+      signOut
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin]);
 
   return (
-    <AuthContext.Provider value={{ user, loading, isAdmin, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

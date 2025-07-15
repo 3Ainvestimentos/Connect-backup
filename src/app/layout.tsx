@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -35,12 +36,12 @@ export default function RootLayout({
       <body className={cn("font-body antialiased")}>
         <ThemeProvider>
           <ReactQueryProvider>
-            <AuthProvider>
-              <ApplicationsProvider>
-                <DocumentsProvider>
-                  <NewsProvider>
-                    <EventsProvider>
-                      <CollaboratorsProvider>
+            <CollaboratorsProvider>
+              <AuthProvider>
+                <ApplicationsProvider>
+                  <DocumentsProvider>
+                    <NewsProvider>
+                      <EventsProvider>
                         <MessagesProvider>
                           <LabsProvider>
                             <WorkflowsProvider>
@@ -49,12 +50,12 @@ export default function RootLayout({
                           </LabsProvider>
                           <Toaster />
                         </MessagesProvider>
-                      </CollaboratorsProvider>
-                    </EventsProvider>
-                  </NewsProvider>
-                </DocumentsProvider>
-              </ApplicationsProvider>
-            </AuthProvider>
+                      </EventsProvider>
+                    </NewsProvider>
+                  </DocumentsProvider>
+                </ApplicationsProvider>
+              </AuthProvider>
+            </CollaboratorsProvider>
           </ReactQueryProvider>
         </ThemeProvider>
       </body>
