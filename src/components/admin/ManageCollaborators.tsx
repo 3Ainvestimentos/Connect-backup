@@ -15,7 +15,6 @@ import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Sea
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
-import { useQueryClient } from '@tanstack/react-query';
 import Papa from 'papaparse';
 
 const collaboratorSchema = z.object({
@@ -46,12 +45,15 @@ export function ManageCollaborators() {
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
-    const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
+        resolver: zodResolver(collaboratorSchema),
+    });
 
 
     const filteredAndSortedCollaborators = useMemo(() => {
@@ -69,8 +71,8 @@ export function ManageCollaborators() {
         }
         if (sortKey) {
             items.sort((a, b) => {
-                const valA = a[sortKey];
-                const valB = b[sortKey];
+                const valA = a[sortKey as keyof Collaborator];
+                const valB = b[sortKey as keyof Collaborator];
                 let comparison = 0;
                 if (valA && valB) {
                     comparison = String(valA).localeCompare(String(valB));
