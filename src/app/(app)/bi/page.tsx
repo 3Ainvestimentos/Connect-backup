@@ -27,10 +27,10 @@ export default function BIPage() {
         </div>
       <div className="flex-grow px-6 md:px-8 pb-6 md:pb-8">
         <iframe
-            title="Power BI Report"
+            title="Captação"
             width="100%"
             height="100%"
-            src="https://app.powerbi.com/view?r=eyJrIjoiYOUR_REPORT_ID_HEREiLCJ0IjoiYOUR_TENANT_ID_HERE"
+            src="https://app.powerbi.com/reportEmbed?reportId=752f561a-52b6-493d-ad99-4522540ac331&autoAuth=true&ctid=d2846deb-ade2-4957-9aa4-54f24234d220"
             frameBorder="0"
             allowFullScreen={true}
             className="border rounded-lg"

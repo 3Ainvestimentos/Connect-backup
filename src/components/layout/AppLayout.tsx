@@ -50,7 +50,7 @@ const navItems = [
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
-  { href: '/bi', label: 'BI', icon: BarChart, external: false, requiredEmail: 'matheus@3ainvestimentos.com.br' },
+  { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false, requiredEmail: 'matheus@3ainvestimentos.com.br' },
 ];
 
 function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
@@ -198,7 +198,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     return null;
                   }
                   
-                  const isTestItem = item.label === 'BI';
+                  const isTestItem = item.label === 'Business Intelligence';
 
                   return (
                     <SidebarMenuItem key={item.href}>
