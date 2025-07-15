@@ -1,11 +1,13 @@
 
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, WithId } from '@/lib/firestore-service';
 import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
+import { getFirestore, writeBatch, doc } from 'firebase/firestore';
+import { getFirebaseApp } from '@/lib/firebase';
 
 // Define os possíveis status de um workflow
 export type WorkflowStatus = string; // Now a generic string, e.g., 'pending_approval', 'in_progress'
@@ -37,14 +39,15 @@ export interface WorkflowRequest {
       id: string; // ID 3A RIVA do responsável
       name: string;
   };
+  viewedBy: string[]; // Array of admin 'id3a' who have seen this request while it was pending
 }
 
 interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
-  addRequest: (request: Omit<WorkflowRequest, 'id'>) => Promise<WithId<Omit<WorkflowRequest, 'id'>>>;
+  addRequest: (request: Omit<WorkflowRequest, 'id' | 'viewedBy'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string) => Promise<void>;
-  deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
+  markRequestsAsViewedBy: (adminId3a: string) => Promise<void>;
 }
 
 const WorkflowsContext = createContext<WorkflowsContextType | undefined>(undefined);
@@ -59,10 +62,13 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<WorkflowRequest>(COLLECTION_NAME),
     // Ordenar por data de submissão mais recente
-    select: (data) => data.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
+    select: (data) => data.map(r => ({
+        ...r,
+        viewedBy: r.viewedBy || []
+    })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
   });
 
-  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id'>>, Error, Omit<WorkflowRequest, 'id'>>({
+  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
       const notificationsToSend: { recipient: string; value: string; field: string}[] = [];
@@ -85,7 +91,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
       // Set initial status from definition
       const initialStatus = definition?.statuses?.[0]?.id || 'pending';
-      const requestWithInitialStatus = { ...requestData, status: initialStatus };
+      const requestWithInitialStatus = { ...requestData, status: initialStatus, viewedBy: [] as string[] };
       if (requestWithInitialStatus.history[0]) {
         requestWithInitialStatus.history[0].status = initialStatus;
       }
@@ -100,13 +106,13 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const updateRequestMutation = useMutation<void, Error, Partial<WorkflowRequest> & { id: string }>({
     mutationFn: (updatedRequest) => {
       const { id, ...data } = updatedRequest;
-      // Ensure we only pass valid fields to Firestore by cleaning the object.
-      // This is especially important for the 'history' array.
-      const updatePayload = {
-        ...data,
-        history: data.history?.map(log => ({...log})) // ensure history is a plain object
+      // When status is no longer pending, clear the viewedBy list
+      const payload = { ...data };
+      if (payload.status && payload.status !== 'pending') {
+          payload.viewedBy = [];
       }
-      return updateDocumentInCollection(COLLECTION_NAME, id, updatePayload);
+      
+      return updateDocumentInCollection(COLLECTION_NAME, id, payload);
     },
     onSuccess: (data, variables) => {
         // Optimistically update the local cache to reflect the change immediately
@@ -120,6 +126,39 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
+
+  const markRequestsAsViewedBy = useCallback(async (adminId3a: string) => {
+    const db = getFirestore(getFirebaseApp());
+    const batch = writeBatch(db);
+
+    const pendingUnseenRequests = requests.filter(req => 
+        req.status === 'pending' && !req.viewedBy.includes(adminId3a)
+    );
+
+    if (pendingUnseenRequests.length === 0) return;
+
+    const locallyUpdatedRequests = requests.map(req => {
+        if (pendingUnseenRequests.some(pr => pr.id === req.id)) {
+            batch.update(doc(db, COLLECTION_NAME, req.id), { viewedBy: [...req.viewedBy, adminId3a] });
+            return { ...req, viewedBy: [...req.viewedBy, adminId3a] };
+        }
+        return req;
+    });
+
+    // Optimistically update the cache
+    queryClient.setQueryData([COLLECTION_NAME], locallyUpdatedRequests);
+
+    try {
+        await batch.commit();
+        // Invalidate to be sure, but UI should be fast
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    } catch (error) {
+        console.error("Failed to mark requests as viewed:", error);
+        // If error, revert optimistic update
+        queryClient.setQueryData([COLLECTION_NAME], requests);
+    }
+  }, [requests, queryClient]);
+
 
   const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage: string) => {
     // First, update the request in Firestore
@@ -136,21 +175,14 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         });
     }
   };
-
-  const deleteRequestMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-    },
-  });
   
   const value = useMemo(() => ({
     requests,
     loading: isFetching,
-    addRequest: (request) => addRequestMutation.mutateAsync(request),
+    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>,
     updateRequestAndNotify,
-    deleteRequestMutation,
-  }), [requests, isFetching, addRequestMutation, deleteRequestMutation, updateRequestAndNotify]);
+    markRequestsAsViewedBy
+  }), [requests, isFetching, addRequestMutation, updateRequestAndNotify, markRequestsAsViewedBy]);
 
   return (
     <WorkflowsContext.Provider value={value}>
@@ -159,7 +191,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useWorkflows = (): WorkflowsContextType => {
+export const useWorkflows = (): Omit<WorkflowsContextType, 'deleteRequestMutation'> => {
   const context = useContext(WorkflowsContext);
   if (context === undefined) {
     throw new Error('useWorkflows must be used within a WorkflowsProvider');

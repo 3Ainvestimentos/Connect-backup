@@ -2,8 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { UseMutationResult } from '@tanstack/react-query';
+import { WithId } from '@/lib/firestore-service';
 
 // Re-exporting from WorkflowsContext to avoid duplication
 export type { WorkflowRequest, WorkflowStatus, WorkflowHistoryLog } from './WorkflowsContext';

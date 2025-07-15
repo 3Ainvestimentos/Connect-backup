@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useWorkflows, WorkflowRequest, WorkflowStatus } from '@/contexts/WorkflowsContext';
 import { useApplications } from '@/contexts/ApplicationsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,9 +26,12 @@ import {
 import Papa from 'papaparse';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 export function ManageRequests() {
-    const { requests, loading } = useWorkflows();
+    const { user, permissions } = useAuth();
+    const { requests, loading, markRequestsAsViewedBy } = useWorkflows();
     const { workflowDefinitions } = useApplications();
     const { collaborators } = useCollaborators();
     const [selectedRequest, setSelectedRequest] = useState<WorkflowRequest | null>(null);
@@ -48,6 +51,14 @@ export function ManageRequests() {
     }, [workflowDefinitions]);
     
     const [statusFilter, setStatusFilter] = useState<WorkflowStatus[]>(['pending']);
+
+    useEffect(() => {
+        const currentUserCollab = collaborators.find(c => c.email === user?.email);
+        if (permissions.canManageRequests && currentUserCollab) {
+            markRequestsAsViewedBy(currentUserCollab.id3a);
+        }
+    }, [requests, user, permissions, collaborators, markRequestsAsViewedBy]);
+
 
     const filteredRequests = useMemo(() => {
         let filtered = requests;
