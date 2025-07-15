@@ -54,10 +54,10 @@ export function ManageRequests() {
 
     useEffect(() => {
         const currentUserCollab = collaborators.find(c => c.email === user?.email);
-        if (permissions.canManageRequests && currentUserCollab?.id3a && requests.length > 0) {
+        if (permissions.canManageRequests && currentUserCollab?.id3a) {
             markRequestsAsViewedBy(currentUserCollab.id3a);
         }
-    }, [requests, user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy]);
+    }, [user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy]);
 
 
     const filteredRequests = useMemo(() => {

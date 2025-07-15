@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -108,6 +108,12 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
          <DropdownMenuItem onClick={onProfileClick} className="cursor-pointer font-body">
             <UserCircle className="mr-2 h-4 w-4" />
             <span>Meu Perfil</span>
+        </DropdownMenuItem>
+         <DropdownMenuItem asChild>
+            <Link href="/me/tasks" className="cursor-pointer font-body">
+                <ListTodo className="mr-2 h-4 w-4" />
+                <span>Minhas Tarefas</span>
+            </Link>
         </DropdownMenuItem>
         <DropdownMenuSub>
             <DropdownMenuSubTrigger>

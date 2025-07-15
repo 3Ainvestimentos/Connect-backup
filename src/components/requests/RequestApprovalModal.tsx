@@ -12,13 +12,24 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, Trash2, AlertTriangle } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { useApplications, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
 import { AssigneeSelectionModal } from './AssigneeSelectionModal';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 
 interface RequestApprovalModalProps {
@@ -30,13 +41,13 @@ interface RequestApprovalModalProps {
 export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprovalModalProps) {
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
-  const { updateRequestAndNotify } = useWorkflows();
+  const { updateRequestAndNotify, deleteRequestMutation } = useWorkflows();
   const { workflowDefinitions } = useApplications();
   const [comment, setComment] = useState('');
   const [assignee, setAssignee] = useState<Collaborator | null>(null);
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [actionType, setActionType] = useState<'statusChange' | 'assign' | null>(null);
+  const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'delete' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatus | null>(null);
 
   const definition = useMemo(() => {
@@ -64,6 +75,22 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   if (!request) return null;
   const adminUser = collaborators.find(c => c.email === user?.email);
+
+  const handleDeleteRequest = async () => {
+    if (!request) return;
+    setActionType('delete');
+    setIsSubmitting(true);
+    try {
+        await deleteRequestMutation.mutateAsync(request.id);
+        toast({ title: "Sucesso!", description: "A solicitação foi excluída." });
+        onClose();
+    } catch(error) {
+        toast({ title: "Erro ao Excluir", description: "Não foi possível excluir a solicitação.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
+        setActionType(null);
+    }
+  }
 
   const handleStatusChange = async (newStatus: WorkflowStatus) => {
     setActionType('statusChange');
@@ -316,7 +343,29 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </Button>
               ))}
             </div>
-            <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
+            <div className="flex gap-2">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" disabled={isSubmitting}>
+                           {isSubmitting && actionType === 'delete' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            Excluir
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso excluirá permanentemente a solicitação e removerá seus dados de nossos servidores.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteRequest}>Continuar</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+                <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

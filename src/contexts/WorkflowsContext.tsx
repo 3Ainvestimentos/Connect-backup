@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
 import { getFirestore, writeBatch, doc } from 'firebase/firestore';
@@ -47,6 +47,7 @@ interface WorkflowsContextType {
   loading: boolean;
   addRequest: (request: Omit<WorkflowRequest, 'id' | 'viewedBy'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string) => Promise<void>;
+  deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string) => Promise<void>;
 }
 
@@ -126,8 +127,22 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
+  
+  const deleteRequestMutation = useMutation<void, Error, string>({
+    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    onSuccess: (data, id) => {
+      queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
+        if (!oldData) return [];
+        return oldData.filter(req => req.id !== id);
+      });
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    }
+  });
+
 
   const markRequestsAsViewedBy = useCallback(async (adminId3a: string) => {
+    if (!adminId3a) return;
+
     const db = getFirestore(getFirebaseApp());
     const batch = writeBatch(db);
 
@@ -181,8 +196,9 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>,
     updateRequestAndNotify,
+    deleteRequestMutation,
     markRequestsAsViewedBy
-  }), [requests, isFetching, addRequestMutation, updateRequestAndNotify, markRequestsAsViewedBy]);
+  }), [requests, isFetching, addRequestMutation, updateRequestAndNotify, deleteRequestMutation, markRequestsAsViewedBy]);
 
   return (
     <WorkflowsContext.Provider value={value}>
@@ -191,7 +207,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useWorkflows = (): Omit<WorkflowsContextType, 'deleteRequestMutation'> => {
+export const useWorkflows = (): WorkflowsContextType => {
   const context = useContext(WorkflowsContext);
   if (context === undefined) {
     throw new Error('useWorkflows must be used within a WorkflowsProvider');
