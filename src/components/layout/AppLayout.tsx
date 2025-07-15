@@ -50,6 +50,7 @@ const navItems = [
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
+  { href: '/bi', label: 'BI', icon: BarChart, external: false, requiredEmail: 'matheus@3ainvestimentos.com.br' },
 ];
 
 function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
@@ -193,9 +194,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {
-                  const linkProps = item.external 
-                      ? { target: "_blank", rel: "noopener noreferrer" } 
-                      : {};
+                  if (item.requiredEmail && user.email !== item.requiredEmail) {
+                    return null;
+                  }
+                  
+                  const isTestItem = item.label === 'BI';
+
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
@@ -203,7 +207,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         isActive={!item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))}
                         tooltip={{children: item.label, className: "font-body"}}
                         onClick={handleLinkClick}
-                        className="font-body"
+                        className={cn("font-body", { "text-red-500 hover:bg-red-500/10 hover:text-red-600 data-[active=true]:bg-red-500 data-[active=true]:text-white": isTestItem })}
                       >
                        <Link
                           href={item.href}
