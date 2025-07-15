@@ -11,6 +11,8 @@ import { toast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Shield, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ManageCollaborators } from '@/components/admin/ManageCollaborators';
 
 const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] = [
     { key: 'canManageContent', label: 'Conteúdo' },
@@ -19,7 +21,7 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canViewAnalytics', label: 'Analytics' },
 ];
 
-function ManagePermissions() {
+function PermissionsTable() {
     const { collaborators, loading, updateCollaboratorPermissions } = useCollaborators();
     const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -118,10 +120,21 @@ export default function PermissionsPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
                     title="Administração"
-                    description="Gerencie as permissões de acesso da plataforma."
+                    description="Gerencie usuários e permissões de acesso da plataforma."
                     icon={Shield}
                 />
-                <ManagePermissions />
+                <Tabs defaultValue="permissions" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 max-w-sm">
+                        <TabsTrigger value="permissions">Permissões</TabsTrigger>
+                        <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="permissions">
+                        <PermissionsTable />
+                    </TabsContent>
+                    <TabsContent value="collaborators">
+                        <ManageCollaborators />
+                    </TabsContent>
+                </Tabs>
             </div>
         </SuperAdminGuard>
     );
