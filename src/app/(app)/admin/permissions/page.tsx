@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { useCollaborators, Collaborator, CollaboratorPermissions } from '@/contexts/CollaboratorsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,8 +11,6 @@ import { toast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Shield, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ManageCollaborators } from '@/components/admin/ManageCollaborators';
 
 const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] = [
     { key: 'canManageContent', label: 'Conteúdo' },
@@ -120,21 +118,10 @@ export default function PermissionsPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
                     title="Administração"
-                    description="Gerencie usuários e permissões de acesso da plataforma."
+                    description="Gerencie as permissões de acesso da plataforma."
                     icon={Shield}
                 />
-                <Tabs defaultValue="permissions" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 max-w-sm">
-                        <TabsTrigger value="permissions">Permissões</TabsTrigger>
-                        <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="permissions">
-                        <PermissionsTable />
-                    </TabsContent>
-                    <TabsContent value="collaborators">
-                        <ManageCollaborators />
-                    </TabsContent>
-                </Tabs>
+                <PermissionsTable />
             </div>
         </SuperAdminGuard>
     );
