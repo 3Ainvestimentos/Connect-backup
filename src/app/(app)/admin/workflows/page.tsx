@@ -49,7 +49,14 @@ export default function ManageWorkflowsPage() {
                 const text = e.target?.result as string;
                 const jsonData = JSON.parse(text);
 
-                // Validate the JSON data using the Zod schema
+                // Pre-process and filter out empty routing rules
+                if (jsonData.routingRules && Array.isArray(jsonData.routingRules)) {
+                    jsonData.routingRules = jsonData.routingRules.filter(
+                        (rule: any) => rule && rule.field && rule.value
+                    );
+                }
+
+                // Validate the cleaned JSON data using the Zod schema
                 const parsedData = workflowDefinitionSchema.parse(jsonData);
 
                 await addWorkflowDefinition(parsedData);
