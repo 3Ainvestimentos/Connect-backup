@@ -228,7 +228,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             <SelectValue placeholder="Selecione um responsável..." />
                         </SelectTrigger>
                         <SelectContent>
-                            {collaborators.map(c => <SelectItem key={c.id3a} value={c.id3a}>{c.name}</SelectItem>)}
+                            {collaborators.map(c => <SelectItem key={c.id} value={c.id3a}>{c.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Button 
