@@ -11,7 +11,15 @@ import { useCollaborators } from './CollaboratorsContext';
 import type { CollaboratorPermissions } from './CollaboratorsContext';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
-const ALLOWED_DOMAINS = ['3ainvestimentos.com.br']; // Adicione outros domínios autorizados aqui
+const ALLOWED_DOMAINS = ['3ainvestimentos.com.br'];
+
+// Lista de usuários com acesso provisório
+const PROVISIONAL_ACCESS_LIST = [
+    'matheus@3ainvestimentos.com.br',
+    'pedro.rosa@3ainvestimentos.com.br',
+    'thiago@3ainvestimentos.com.br'
+];
+
 
 const defaultPermissions: CollaboratorPermissions = {
     canViewAnalytics: false,
@@ -115,6 +123,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             title: "Acesso Negado",
             description: "Este e-mail não pertence a um domínio autorizado para acessar esta aplicação.",
             variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Provisory access check
+      if (!PROVISIONAL_ACCESS_LIST.includes(userEmail)) {
+        await firebaseSignOut(auth);
+        toast({
+            title: "Acesso Suspenso Temporariamente",
+            description: "O acesso à plataforma está temporariamente restrito. Por favor, contate o administrador.",
+            variant: "destructive",
+            duration: 10000,
         });
         setLoading(false);
         return;
