@@ -52,16 +52,28 @@ export function ManageRequests() {
     
     const [statusFilter, setStatusFilter] = useState<WorkflowStatus[]>(['pending']);
 
+    const ownedWorkflows = useMemo(() => {
+        if (!user) return [];
+        return workflowDefinitions.filter(def => def.ownerEmail === user.email);
+    }, [workflowDefinitions, user]);
+    
+    const ownedWorkflowNames = useMemo(() => ownedWorkflows.map(def => def.name), [ownedWorkflows]);
+
     useEffect(() => {
         const currentUserCollab = collaborators.find(c => c.email === user?.email);
         if (permissions.canManageRequests && currentUserCollab?.id3a) {
-            markRequestsAsViewedBy(currentUserCollab.id3a);
+            const ownedRequestIds = requests
+                .filter(req => ownedWorkflowNames.includes(req.type))
+                .map(req => req.id);
+            markRequestsAsViewedBy(currentUserCollab.id3a, ownedRequestIds);
         }
-    }, [user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy]);
+    }, [user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy, requests, ownedWorkflowNames]);
 
 
     const filteredRequests = useMemo(() => {
-        let filtered = requests;
+        // Only show requests for workflows the user owns
+        let filtered = requests.filter(req => ownedWorkflowNames.includes(req.type));
+
         if (statusFilter.length > 0) {
             filtered = filtered.filter(req => statusFilter.includes(req.status));
         }
@@ -71,7 +83,7 @@ export function ManageRequests() {
             filtered = filtered.filter(req => req.assignee?.id === assigneeFilter);
         }
         return filtered;
-    }, [requests, statusFilter, assigneeFilter]);
+    }, [requests, statusFilter, assigneeFilter, ownedWorkflowNames]);
 
     const handleStatusFilterChange = (statusId: WorkflowStatus) => {
         setStatusFilter(prev => 
@@ -141,7 +153,7 @@ export function ManageRequests() {
                         <div>
                             <CardTitle>Caixa de Entrada</CardTitle>
                             <CardDescription>
-                                {filteredRequests.length} solicitação(ões) encontrada(s).
+                                {filteredRequests.length} solicitação(ões) encontrada(s). Apenas workflows de sua propriedade são exibidos.
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -249,7 +261,7 @@ export function ManageRequests() {
                             <Mailbox className="mx-auto h-12 w-12 text-muted-foreground" />
                             <h3 className="mt-4 text-lg font-medium text-foreground">Caixa de entrada vazia</h3>
                             <p className="mt-1 text-sm text-muted-foreground">
-                                Nenhuma solicitação corresponde aos filtros selecionados.
+                                Nenhuma solicitação corresponde aos filtros selecionados ou aos workflows de sua propriedade.
                             </p>
                         </div>
                     )}

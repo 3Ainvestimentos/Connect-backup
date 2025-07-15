@@ -12,46 +12,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer } from 'lucide-react';
+import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useApplications, WorkflowDefinition, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
+import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
 import { iconList, getIcon } from '@/lib/icons';
 import { Switch } from '../ui/switch';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
-const statusSchema = z.object({
-    id: z.string().min(1, "ID do status é obrigatório.").regex(/^[a-z0-9_]+$/, "ID deve conter apenas letras minúsculas, números e underscores."),
-    label: z.string().min(1, "Label é obrigatório."),
-});
-
-const fieldSchema = z.object({
-    id: z.string().min(1, "ID do campo é obrigatório.").regex(/^[a-zA-Z0-9_]+$/, "ID deve conter apenas letras, números e underscores."),
-    label: z.string().min(1, "Label é obrigatório."),
-    type: z.enum(['text', 'textarea', 'select', 'date', 'date-range']),
-    required: z.boolean(),
-    placeholder: z.string().optional(),
-    options: z.string().optional(), // Comma-separated for select
-});
-
-const routingRuleSchema = z.object({
-  field: z.string().min(1, "Campo é obrigatório."),
-  value: z.string().min(1, "Valor é obrigatório."),
-  notify: z.string().min(1, "Emails são obrigatórios.").transform(val => val.split(',').map(s => s.trim())),
-});
-
-
-const definitionSchema = z.object({
-    name: z.string().min(1, "Nome da definição é obrigatório."),
-    description: z.string().min(1, "Descrição é obrigatória."),
-    icon: z.string().min(1, "Ícone é obrigatório."),
-    slaDays: z.coerce.number().int().min(0, "SLA não pode ser negativo.").optional(),
-    fields: z.array(fieldSchema),
-    routingRules: z.array(routingRuleSchema),
-    statuses: z.array(statusSchema).min(1, "Pelo menos um status é necessário."),
-});
-
-type FormValues = z.infer<typeof definitionSchema>;
+type FormValues = z.infer<typeof workflowDefinitionSchema>;
 
 interface WorkflowDefinitionFormProps {
     isOpen: boolean;
@@ -61,18 +31,22 @@ interface WorkflowDefinitionFormProps {
 
 export function WorkflowDefinitionForm({ isOpen, onClose, definition }: WorkflowDefinitionFormProps) {
     const { addWorkflowDefinition, updateWorkflowDefinition } = useApplications();
+    const { collaborators } = useCollaborators();
     const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm<FormValues>({
-        resolver: zodResolver(definitionSchema),
+        resolver: zodResolver(workflowDefinitionSchema),
         defaultValues: definition ? {
             ...definition,
             fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') })),
             routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') })) : [],
             statuses: definition.statuses?.length ? definition.statuses : [{ id: 'pending', label: 'Pendente' }],
+            slaRules: definition.slaRules || [],
         } : {
             name: '',
             description: '',
             icon: 'FileText',
-            slaDays: undefined,
+            ownerEmail: '',
+            defaultSlaDays: undefined,
+            slaRules: [],
             fields: [],
             routingRules: [],
             statuses: [{ id: 'pending', label: 'Pendente' }],
@@ -82,6 +56,8 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
     const { fields, append, remove } = useFieldArray({ control, name: "fields" });
     const { fields: rules, append: appendRule, remove: removeRule } = useFieldArray({ control, name: "routingRules" });
     const { fields: statuses, append: appendStatus, remove: removeStatus } = useFieldArray({ control, name: "statuses" });
+    const { fields: slaRules, append: appendSlaRule, remove: removeSlaRule } = useFieldArray({ control, name: "slaRules" });
+
 
     const watchedFields = watch('fields');
 
@@ -123,55 +99,109 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                     <ScrollArea className="flex-grow pr-6 -mr-6">
                         <div className="space-y-6 pb-6">
                             {/* Basic Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <Label htmlFor="name">Nome do Workflow</Label>
-                                    <Input id="name" {...register('name')} />
-                                    {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                             <div className="space-y-4 p-4 border rounded-md bg-card">
+                                <h3 className="font-semibold text-lg">Informações Básicas</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="name">Nome do Workflow</Label>
+                                        <Input id="name" {...register('name')} />
+                                        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="icon">Ícone</Label>
+                                        <Controller name="icon" control={control} render={({ field }) => {
+                                                const IconToShow = getIcon(field.value);
+                                                return (
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <SelectTrigger><SelectValue>
+                                                            <div className="flex items-center gap-2"><IconToShow className='h-4 w-4' /><span>{field.value}</span></div>
+                                                        </SelectValue></SelectTrigger>
+                                                        <SelectContent><ScrollArea className="h-72">
+                                                            {iconList.map(iconName => {
+                                                                const Icon = getIcon(iconName);
+                                                                return <SelectItem key={iconName} value={iconName}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{iconName}</span></div></SelectItem>
+                                                            })}
+                                                        </ScrollArea></SelectContent>
+                                                    </Select>
+                                                );
+                                            }}
+                                        />
+                                        {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label htmlFor="icon">Ícone</Label>
-                                    <Controller
-                                        name="icon"
-                                        control={control}
-                                        render={({ field }) => {
-                                            const IconToShow = getIcon(field.value);
-                                            return (
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <SelectTrigger><SelectValue>
-                                                        <div className="flex items-center gap-2"><IconToShow className='h-4 w-4' /><span>{field.value}</span></div>
-                                                    </SelectValue></SelectTrigger>
-                                                    <SelectContent><ScrollArea className="h-72">
-                                                        {iconList.map(iconName => {
-                                                            const Icon = getIcon(iconName);
-                                                            return <SelectItem key={iconName} value={iconName}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{iconName}</span></div></SelectItem>
-                                                        })}
-                                                    </ScrollArea></SelectContent>
-                                                </Select>
-                                            );
-                                        }}
-                                    />
-                                    {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
+                                 <div>
+                                    <Label htmlFor="description">Descrição (Exibida ao usuário)</Label>
+                                    <Textarea id="description" {...register('description')} />
+                                    {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
+                                </div>
+                                 <div>
+                                    <Label htmlFor="ownerEmail">Proprietário do Workflow</Label>
+                                     <Controller name="ownerEmail" control={control} render={({ field }) => (
+                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                             <SelectTrigger><SelectValue placeholder="Selecione um proprietário..." /></SelectTrigger>
+                                             <SelectContent>
+                                                 {collaborators.map(c => <SelectItem key={c.id} value={c.email}>{c.name}</SelectItem>)}
+                                             </SelectContent>
+                                         </Select>
+                                     )} />
+                                    {errors.ownerEmail && <p className="text-sm text-destructive mt-1">{errors.ownerEmail.message}</p>}
                                 </div>
                             </div>
-                             <div>
-                                <Label htmlFor="description">Descrição (Exibida ao usuário)</Label>
-                                <Textarea id="description" {...register('description')} />
-                                {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
+                           
+                            {/* SLA Rules */}
+                            <div className="space-y-4 p-4 border rounded-md bg-card">
+                                 <h3 className="font-semibold text-lg flex items-center gap-2"><Timer className="h-5 w-5"/> Service Level Agreement (SLA)</h3>
+                                 <div>
+                                    <Label htmlFor="defaultSlaDays">SLA Padrão (em dias úteis)</Label>
+                                    <Input id="defaultSlaDays" type="number" {...register('defaultSlaDays')} placeholder="Ex: 5" />
+                                    <p className="text-xs text-muted-foreground mt-1">Este SLA será usado se nenhuma regra condicional abaixo for atendida.</p>
+                                    {errors.defaultSlaDays && <p className="text-sm text-destructive mt-1">{errors.defaultSlaDays.message}</p>}
+                                </div>
+                                <Separator />
+                                <Label>Regras de SLA Condicionais (Opcional)</Label>
+                                {slaRules.map((rule, index) => (
+                                     <div key={rule.id} className="p-3 border rounded-lg space-y-3 relative bg-background">
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                            <div>
+                                                <Label htmlFor={`slaRules.${index}.field`}>Se o campo...</Label>
+                                                <Controller name={`slaRules.${index}.field`} control={control} render={({ field }) => (
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <SelectTrigger><SelectValue placeholder="Campo..." /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {watchedFields.map(f => <SelectItem key={f.id} value={f.id}>{f.label}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )} />
+                                                {errors.slaRules?.[index]?.field && <p className="text-sm text-destructive mt-1">{errors.slaRules[index]?.field?.message}</p>}
+                                            </div>
+                                            <div>
+                                                <Label htmlFor={`slaRules.${index}.value`}>...for igual a</Label>
+                                                <Input id={`slaRules.${index}.value`} {...register(`slaRules.${index}.value`)} placeholder="Valor..." />
+                                                {errors.slaRules?.[index]?.value && <p className="text-sm text-destructive mt-1">{errors.slaRules[index]?.value?.message}</p>}
+                                            </div>
+                                             <div>
+                                                <Label htmlFor={`slaRules.${index}.days`}>...o SLA é (dias)</Label>
+                                                <Input id={`slaRules.${index}.days`} type="number" {...register(`slaRules.${index}.days`)} placeholder="Dias..." />
+                                                {errors.slaRules?.[index]?.days && <p className="text-sm text-destructive mt-1">{errors.slaRules[index]?.days?.message}</p>}
+                                            </div>
+                                        </div>
+                                         <div className="flex justify-end">
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => removeSlaRule(index)}><Trash2 className="h-4 w-4" /></Button>
+                                        </div>
+                                    </div>
+                                ))}
+                                 <Button type="button" variant="outline" onClick={() => appendSlaRule({ field: '', value: '', days: 0 })}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Regra de SLA
+                                </Button>
                             </div>
-                            <div>
-                                <Label htmlFor="slaDays">SLA (em dias úteis)</Label>
-                                <Input id="slaDays" type="number" {...register('slaDays')} placeholder="Ex: 5" />
-                                {errors.slaDays && <p className="text-sm text-destructive mt-1">{errors.slaDays.message}</p>}
-                            </div>
-                            <Separator />
+
                             {/* Custom Statuses */}
-                            <div className="space-y-4">
+                            <div className="space-y-4 p-4 border rounded-md bg-card">
                                 <h3 className="font-semibold text-lg flex items-center gap-2"><ListTodo className="h-5 w-5"/> Etapas do Workflow (Status)</h3>
                                 {errors.statuses?.root && <p className="text-sm text-destructive mt-1">{errors.statuses.root.message}</p>}
                                 <p className="text-xs text-muted-foreground">Defina as etapas do seu processo em ordem. A primeira etapa será o status inicial.</p>
                                 {statuses.map((status, index) => (
-                                    <div key={status.id} className="flex items-center gap-2 p-3 border rounded-lg bg-card">
+                                    <div key={status.id} className="flex items-center gap-2 p-3 border rounded-lg bg-background">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 flex-grow">
                                             <div>
                                                 <Label htmlFor={`statuses.${index}.label`}>Nome da Etapa (Ex: Em Análise)</Label>
@@ -192,12 +222,11 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                 </Button>
                             </div>
 
-                            <Separator />
                             {/* Dynamic Fields */}
-                            <div className="space-y-4">
+                            <div className="space-y-4 p-4 border rounded-md bg-card">
                                 <h3 className="font-semibold text-lg">Campos do Formulário</h3>
                                 {fields.map((field, index) => (
-                                    <div key={field.id} className="p-4 border rounded-lg space-y-3 relative bg-card">
+                                    <div key={field.id} className="p-4 border rounded-lg space-y-3 relative bg-background">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <Label htmlFor={`fields.${index}.label`}>Label do Campo</Label>
@@ -254,12 +283,12 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campo
                                 </Button>
                             </div>
-                            <Separator />
+                            
                              {/* Routing Rules */}
-                            <div className="space-y-4">
-                                <h3 className="font-semibold text-lg flex items-center gap-2"><Route className="h-5 w-5"/> Regras de Roteamento</h3>
+                            <div className="space-y-4 p-4 border rounded-md bg-card">
+                                <h3 className="font-semibold text-lg flex items-center gap-2"><Route className="h-5 w-5"/> Regras de Roteamento de Notificação</h3>
                                 {rules.map((rule, index) => (
-                                    <div key={rule.id} className="p-4 border rounded-lg space-y-3 relative bg-card">
+                                    <div key={rule.id} className="p-4 border rounded-lg space-y-3 relative bg-background">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <Label htmlFor={`routingRules.${index}.field`}>Se o campo...</Label>

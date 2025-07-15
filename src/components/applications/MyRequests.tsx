@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useWorkflows, WorkflowRequest, WorkflowStatus } from '@/contexts/WorkflowsContext';
-import { useApplications } from '@/contexts/ApplicationsContext';
+import { useApplications, SlaRule } from '@/contexts/ApplicationsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,13 +38,27 @@ export default function MyRequests() {
 
     const getSlaDate = (request: WorkflowRequest): string | null => {
         const definition = workflowDefinitions.find(d => d.name === request.type);
-        if (typeof definition?.slaDays !== 'number') {
-            return null;
+        if (!definition) return null;
+
+        let slaDays: number | undefined = definition.defaultSlaDays;
+
+        if (definition.slaRules && definition.slaRules.length > 0) {
+            for (const rule of definition.slaRules) {
+                const fieldValue = request.formData[rule.field];
+                if (fieldValue && fieldValue.toString() === rule.value) {
+                    slaDays = rule.days;
+                    break; // Use the first matching rule
+                }
+            }
         }
+        
+        if (typeof slaDays !== 'number') return null;
+
         const submissionDate = parseISO(request.submittedAt);
-        const slaDate = addBusinessDays(submissionDate, definition.slaDays);
+        const slaDate = addBusinessDays(submissionDate, slaDays);
         return format(slaDate, "dd/MM/yyyy");
     };
+
 
     const handleViewDetails = (request: WorkflowRequest) => {
         setSelectedRequest(request);

@@ -54,6 +54,12 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (!request) return null;
     return workflowDefinitions.find(def => def.name === request.type);
   }, [request, workflowDefinitions]);
+  
+  const isOwner = useMemo(() => {
+    if (!user || !definition) return false;
+    return user.email === definition.ownerEmail;
+  }, [user, definition]);
+
 
   const availableTransitions = useMemo(() => {
     if (!definition || !request) return [];
@@ -256,41 +262,43 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
 
-              <div>
-                  <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
-                   <div className="flex items-center gap-2">
-                      <Button
-                          variant="outline"
-                          className="w-full justify-start text-left font-normal"
-                          onClick={() => setIsAssigneeModalOpen(true)}
-                          disabled={isSubmitting}
-                      >
-                          {assignee ? (
-                              <div className="flex items-center gap-2">
-                                  <Avatar className="h-6 w-6">
-                                      <AvatarFallback className="text-xs">
-                                          {assignee.name.charAt(0)}
-                                      </AvatarFallback>
-                                  </Avatar>
-                                  <span>{assignee.name}</span>
-                              </div>
-                          ) : (
-                              <div className="flex items-center gap-2 text-muted-foreground">
-                                  <Users className="h-4 w-4" />
-                                  <span>Selecionar um responsável...</span>
-                              </div>
-                          )}
-                      </Button>
-                       <Button 
-                          onClick={handleAssigneeChange} 
-                          disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
-                          variant="secondary"
-                      >
-                          {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          Atribuir
-                      </Button>
-                  </div>
-              </div>
+              {isOwner && (
+                <div>
+                    <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
+                     <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            className="w-full justify-start text-left font-normal"
+                            onClick={() => setIsAssigneeModalOpen(true)}
+                            disabled={isSubmitting}
+                        >
+                            {assignee ? (
+                                <div className="flex items-center gap-2">
+                                    <Avatar className="h-6 w-6">
+                                        <AvatarFallback className="text-xs">
+                                            {assignee.name.charAt(0)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <span>{assignee.name}</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Users className="h-4 w-4" />
+                                    <span>Selecionar um responsável...</span>
+                                </div>
+                            )}
+                        </Button>
+                         <Button 
+                            onClick={handleAssigneeChange} 
+                            disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
+                            variant="secondary"
+                        >
+                            {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Atribuir
+                        </Button>
+                    </div>
+                </div>
+              )}
 
                <div>
                   <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
@@ -313,60 +321,68 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              <div>
-                  <Label htmlFor="comment">Adicionar Comentário (Opcional)</Label>
-                  <Textarea
-                      id="comment"
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                      placeholder="Deixe uma observação para o solicitante e para o histórico..."
-                      disabled={isSubmitting}
-                  />
-              </div>
+              {isOwner && (
+                <div>
+                    <Label htmlFor="comment">Adicionar Comentário (Opcional)</Label>
+                    <Textarea
+                        id="comment"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Deixe uma observação para o solicitante e para o histórico..."
+                        disabled={isSubmitting}
+                    />
+                </div>
+              )}
           </div>
           </ScrollArea>
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
-            <div className="flex flex-wrap gap-2">
-              {availableTransitions.map(status => (
-                  <Button 
-                      key={status.id}
-                      variant="secondary"
-                      onClick={() => handleStatusChange(status.id)} 
-                      disabled={isSubmitting}
-                  >
-                      {(isSubmitting && actionType === 'statusChange' && targetStatus === status.id) ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                          <MoveRight className="mr-2 h-4 w-4" />
-                      )}
-                      Mover para "{status.label}"
-                  </Button>
-              ))}
-            </div>
-            <div className="flex gap-2">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive" disabled={isSubmitting}>
-                           {isSubmitting && actionType === 'delete' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                            Excluir
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Esta ação não pode ser desfeita. Isso excluirá permanentemente a solicitação e removerá seus dados de nossos servidores.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteRequest}>Continuar</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
-            </div>
+            {isOwner ? (
+                <>
+                <div className="flex flex-wrap gap-2">
+                {availableTransitions.map(status => (
+                    <Button 
+                        key={status.id}
+                        variant="secondary"
+                        onClick={() => handleStatusChange(status.id)} 
+                        disabled={isSubmitting}
+                    >
+                        {(isSubmitting && actionType === 'statusChange' && targetStatus === status.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <MoveRight className="mr-2 h-4 w-4" />
+                        )}
+                        Mover para "{status.label}"
+                    </Button>
+                ))}
+                </div>
+                <div className="flex gap-2">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" disabled={isSubmitting}>
+                               {isSubmitting && actionType === 'delete' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                Excluir
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso excluirá permanentemente a solicitação e removerá seus dados de nossos servidores.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteRequest}>Continuar</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
+                </div>
+                </>
+            ) : (
+                 <DialogClose asChild><Button variant="outline" className="hover:bg-muted w-full">Fechar</Button></DialogClose>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

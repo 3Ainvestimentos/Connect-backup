@@ -8,14 +8,17 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, Timer } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, Timer, User } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getIcon } from '@/lib/icons';
 import { WorkflowDefinitionForm } from '@/components/admin/WorkflowDefinitionForm';
 import { ZodError } from 'zod';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { Badge } from '@/components/ui/badge';
 
 export default function ManageWorkflowsPage() {
     const { workflowDefinitions, loading, deleteWorkflowDefinitionMutation, addWorkflowDefinition } = useApplications();
+    const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingDefinition, setEditingDefinition] = useState<WorkflowDefinition | null>(null);
     const [isImporting, setIsImporting] = useState(false);
@@ -47,12 +50,25 @@ export default function ManageWorkflowsPage() {
         reader.onload = async (e) => {
             try {
                 const text = e.target?.result as string;
-                const jsonData = JSON.parse(text);
+                let jsonData = JSON.parse(text);
+
+                // Compatibility for old "slaDays"
+                if (jsonData.slaDays && !jsonData.defaultSlaDays) {
+                    jsonData.defaultSlaDays = jsonData.slaDays;
+                    delete jsonData.slaDays;
+                }
 
                 // Pre-process and filter out empty routing rules
                 if (jsonData.routingRules && Array.isArray(jsonData.routingRules)) {
                     jsonData.routingRules = jsonData.routingRules.filter(
                         (rule: any) => rule && rule.field && rule.value
+                    );
+                }
+                
+                // Pre-process and filter out empty SLA rules
+                if (jsonData.slaRules && Array.isArray(jsonData.slaRules)) {
+                    jsonData.slaRules = jsonData.slaRules.filter(
+                        (rule: any) => rule && rule.field && rule.value && rule.days !== undefined
                     );
                 }
 
@@ -99,6 +115,11 @@ export default function ManageWorkflowsPage() {
 
         reader.readAsText(file);
     };
+    
+    const getOwnerName = (email: string) => {
+        const owner = collaborators.find(c => c.email === email);
+        return owner?.name || email;
+    }
 
     return (
         <AdminGuard>
@@ -140,7 +161,7 @@ export default function ManageWorkflowsPage() {
                                     <TableRow>
                                         <TableHead>Ícone</TableHead>
                                         <TableHead>Nome</TableHead>
-                                        <TableHead>SLA</TableHead>
+                                        <TableHead>Proprietário</TableHead>
                                         <TableHead>Campos</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
@@ -153,14 +174,10 @@ export default function ManageWorkflowsPage() {
                                                 <TableCell><Icon className="h-5 w-5 text-muted-foreground" /></TableCell>
                                                 <TableCell className="font-medium">{def.name}</TableCell>
                                                 <TableCell>
-                                                    {typeof def.slaDays === 'number' ? (
-                                                        <span className="flex items-center gap-1.5">
-                                                            <Timer className="h-4 w-4" />
-                                                            {def.slaDays} dias
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">-</span>
-                                                    )}
+                                                    <Badge variant="outline" className="flex items-center gap-1.5 w-fit">
+                                                      <User className="h-3 w-3" />
+                                                      {getOwnerName(def.ownerEmail)}
+                                                    </Badge>
                                                 </TableCell>
                                                 <TableCell>{def.fields.length}</TableCell>
                                                 <TableCell className="text-right">

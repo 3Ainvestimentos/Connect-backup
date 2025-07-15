@@ -46,16 +46,25 @@ export const routingRuleSchema = z.object({
   notify: z.array(z.string().email("Um ou mais e-mails de notificação são inválidos.")).min(1, "Pelo menos um e-mail é obrigatório para notificação."),
 });
 
+export const slaRuleSchema = z.object({
+  field: z.string().min(1, "O campo para a regra de SLA é obrigatório."),
+  value: z.string().min(1, "O valor para a regra de SLA é obrigatório."),
+  days: z.coerce.number().int().min(0, "O SLA em dias deve ser um número positivo."),
+});
+
 export const workflowDefinitionSchema = z.object({
     name: z.string().min(1, "Nome da definição é obrigatório."),
     description: z.string().min(1, "Descrição é obrigatória."),
     icon: z.string().min(1, "Ícone é obrigatório."),
-    slaDays: z.number().int().min(0, "SLA não pode ser negativo.").optional(),
+    ownerEmail: z.string().email("O e-mail do proprietário é obrigatório."),
+    slaRules: z.array(slaRuleSchema).optional().default([]),
+    defaultSlaDays: z.number().int().min(0, "SLA padrão não pode ser negativo.").optional(),
     fields: z.array(formFieldSchema),
     routingRules: z.array(routingRuleSchema).optional().default([]),
     statuses: z.array(workflowStatusSchema).min(1, "Pelo menos um status é necessário."),
 });
 
+export type SlaRule = z.infer<typeof slaRuleSchema>;
 export type WorkflowDefinition = WithId<z.infer<typeof workflowDefinitionSchema>>;
 
 
@@ -82,6 +91,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       fields: d.fields || [], 
       routingRules: d.routingRules || [],
       statuses: d.statuses || [],
+      slaRules: d.slaRules || [],
     })),
   });
 

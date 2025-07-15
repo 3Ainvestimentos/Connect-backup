@@ -49,7 +49,7 @@ interface WorkflowsContextType {
   addRequest: (request: Omit<WorkflowRequest, 'id' | 'viewedBy'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
-  markRequestsAsViewedBy: (adminId3a: string) => Promise<void>;
+  markRequestsAsViewedBy: (adminId3a: string, ownedRequestIds: string[]) => Promise<void>;
 }
 
 const WorkflowsContext = createContext<WorkflowsContextType | undefined>(undefined);
@@ -158,14 +158,14 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   });
 
 
-  const markRequestsAsViewedBy = useCallback(async (adminId3a: string) => {
+  const markRequestsAsViewedBy = useCallback(async (adminId3a: string, ownedRequestIds: string[]) => {
     if (!adminId3a) return;
 
     const db = getFirestore(getFirebaseApp());
     const batch = writeBatch(db);
 
     const pendingUnseenRequests = requests.filter(req => 
-        req.status === 'pending' && !req.viewedBy.includes(adminId3a)
+        req.status === 'pending' && ownedRequestIds.includes(req.id) && !req.viewedBy.includes(adminId3a)
     );
 
     if (pendingUnseenRequests.length === 0) return;
