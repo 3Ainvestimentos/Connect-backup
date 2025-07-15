@@ -147,11 +147,13 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const deleteRequestMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: (data, id) => {
-      queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
-        if (!oldData) return [];
-        return oldData.filter(req => req.id !== id);
-      });
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Optimistically update the query data
+        queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
+            if (!oldData) return [];
+            return oldData.filter(req => req.id !== id);
+        });
+        // Invalidate the query to ensure consistency with the backend, just in case
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     }
   });
 
