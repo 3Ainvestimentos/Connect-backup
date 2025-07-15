@@ -55,10 +55,20 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return workflowDefinitions.find(def => def.name === request.type);
   }, [request, workflowDefinitions]);
   
+  const adminUser = useMemo(() => {
+    if (!user) return null;
+    return collaborators.find(c => c.email === user.email);
+  }, [user, collaborators]);
+
   const isOwner = useMemo(() => {
     if (!user || !definition) return false;
     return user.email === definition.ownerEmail;
   }, [user, definition]);
+  
+  const isAssignee = useMemo(() => {
+    if (!adminUser || !request?.assignee) return false;
+    return adminUser.id3a === request.assignee.id;
+  }, [adminUser, request]);
 
 
   const availableTransitions = useMemo(() => {
@@ -80,10 +90,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }, [request, collaborators]);
 
   if (!request) return null;
-  const adminUser = collaborators.find(c => c.email === user?.email);
-
+  
   const handleDeleteRequest = async () => {
-    if (!request) return;
+    if (!request || !isOwner) return;
     setActionType('delete');
     setIsSubmitting(true);
     try {
@@ -219,6 +228,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     );
   };
 
+  const canTakeAction = isOwner || isAssignee;
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -321,7 +332,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {isOwner && (
+              {canTakeAction && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário (Opcional)</Label>
                     <Textarea
@@ -337,27 +348,30 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           </ScrollArea>
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
-            {isOwner ? (
-                <>
-                <div className="flex flex-wrap gap-2">
-                {availableTransitions.map(status => (
-                    <Button 
-                        key={status.id}
-                        variant="secondary"
-                        onClick={() => handleStatusChange(status.id)} 
-                        disabled={isSubmitting}
-                    >
-                        {(isSubmitting && actionType === 'statusChange' && targetStatus === status.id) ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <MoveRight className="mr-2 h-4 w-4" />
-                        )}
-                        Mover para "{status.label}"
-                    </Button>
-                ))}
-                </div>
-                <div className="flex gap-2">
-                    <AlertDialog>
+            <div>
+                {canTakeAction && (
+                     <div className="flex flex-wrap gap-2">
+                        {availableTransitions.map(status => (
+                            <Button 
+                                key={status.id}
+                                variant="secondary"
+                                onClick={() => handleStatusChange(status.id)} 
+                                disabled={isSubmitting}
+                            >
+                                {(isSubmitting && actionType === 'statusChange' && targetStatus === status.id) ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <MoveRight className="mr-2 h-4 w-4" />
+                                )}
+                                Mover para "{status.label}"
+                            </Button>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <div className="flex gap-2">
+                {isOwner && (
+                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive" disabled={isSubmitting}>
                                {isSubmitting && actionType === 'delete' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
@@ -377,12 +391,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                    <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
-                </div>
-                </>
-            ) : (
-                 <DialogClose asChild><Button variant="outline" className="hover:bg-muted w-full">Fechar</Button></DialogClose>
-            )}
+                )}
+                <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
