@@ -53,7 +53,7 @@ const navItems = [
 ];
 
 function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
-  const { user, signOut, loading, isAdmin, isSuperAdmin } = useAuth();
+  const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
   const { requests } = useWorkflows();
 
@@ -72,7 +72,7 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
               {user.displayName ? user.displayName.charAt(0).toUpperCase() : <UserCircle size={24} />}
             </AvatarFallback>
           </Avatar>
-           {pendingRequestsCount > 0 && isAdmin && (
+           {pendingRequestsCount > 0 && permissions.canManageRequests && (
             <span className="absolute bottom-[-2px] left-0 transform translate-y-0 -translate-x-1/4 flex h-5 w-5 items-center justify-center rounded-full bg-admin-primary text-xs font-bold text-white ring-2 ring-background">
                 {pendingRequestsCount}
             </span>
@@ -122,33 +122,13 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Paineis de controle</DropdownMenuLabel>
-                <DropdownMenuItem asChild>
-                    <Link href="/admin/workflows" className="cursor-pointer font-body">
-                        <Workflow className="mr-2 h-4 w-4" />
-                        <span>Aplicações/Workflows</span>
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                     <Link href="/requests" className="cursor-pointer font-body">
-                        <Mailbox className="mr-2 h-4 w-4" />
-                        <span>Solicitações</span>
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/admin" className="cursor-pointer font-body">
-                        <FileText className="mr-2 h-4 w-4" />
-                        <span>Conteúdo interno</span>
-                    </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/analytics" className="cursor-pointer font-body">
-                        <BarChart className="mr-2 h-4 w-4" />
-                        <span>Analytics</span>
-                    </Link>
-                </DropdownMenuItem>
+                {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Aplicações/Workflows</span></Link></DropdownMenuItem>}
+                {permissions.canManageRequests && <DropdownMenuItem asChild><Link href="/requests" className="cursor-pointer font-body"><Mailbox className="mr-2 h-4 w-4" /><span>Solicitações</span></Link></DropdownMenuItem>}
+                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Conteúdo interno</span></Link></DropdownMenuItem>}
+                {permissions.canViewAnalytics && <DropdownMenuItem asChild><Link href="/analytics" className="cursor-pointer font-body"><BarChart className="mr-2 h-4 w-4" /><span>Analytics</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                     <DropdownMenuItem asChild>
-                        <Link href="/admin/permissions" className="cursor-pointer font-body">
+                        <Link href="/admin/permissions" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive">
                             <Shield className="mr-2 h-4 w-4" />
                             <span>Admin</span>
                         </Link>

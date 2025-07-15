@@ -16,7 +16,7 @@ export default function AdminGuard({ children }: { children: React.ReactNode }) 
                 // Se não houver usuário e o carregamento estiver concluído, redirecione para o login
                 router.replace('/login');
             } else if (!isAdmin) {
-                // Redireciona usuários não-admin para o painel principal
+                // Redireciona usuários sem nenhuma permissão de admin para o painel principal
                 router.replace('/dashboard'); 
             } else {
                 setIsAuthorized(true);

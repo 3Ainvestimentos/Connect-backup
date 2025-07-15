@@ -5,6 +5,13 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection } from '@/lib/firestore-service';
 
+export interface CollaboratorPermissions {
+  canViewAnalytics: boolean;
+  canManageWorkflows: boolean;
+  canManageRequests: boolean;
+  canManageContent: boolean;
+}
+
 export interface Collaborator {
   id: string;
   id3a: string;      // ID interno da 3A RIVA
@@ -17,7 +24,7 @@ export interface Collaborator {
   segment: string;   // Segmento
   leader: string;    // Líder
   city: string;      // Cidade
-  isAdmin?: boolean; // Flag to indicate admin privileges
+  permissions: CollaboratorPermissions;
 }
 
 interface CollaboratorsContextType {
@@ -26,12 +33,19 @@ interface CollaboratorsContextType {
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
   addMultipleCollaborators: (collaborators: Omit<Collaborator, 'id'>[]) => Promise<void>;
   updateCollaborator: (collaborator: Collaborator) => Promise<void>;
-  updateCollaboratorAdminStatus: (id: string, isAdmin: boolean) => Promise<void>;
+  updateCollaboratorPermissions: (id: string, permissions: CollaboratorPermissions) => Promise<void>;
   deleteCollaboratorMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'collaborators';
+
+const defaultPermissions: CollaboratorPermissions = {
+  canViewAnalytics: false,
+  canManageWorkflows: false,
+  canManageRequests: false,
+  canManageContent: false,
+};
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
@@ -39,6 +53,10 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
+    select: (data) => data.map(c => ({
+        ...c,
+        permissions: c.permissions || defaultPermissions
+    }))
   });
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
@@ -62,11 +80,11 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     },
   });
 
-  const updateCollaboratorAdminStatusMutation = useMutation<void, Error, { id: string; isAdmin: boolean }>({
-    mutationFn: ({ id, isAdmin }) => updateDocumentInCollection(COLLECTION_NAME, id, { isAdmin }),
+  const updateCollaboratorPermissionsMutation = useMutation<void, Error, { id: string; permissions: CollaboratorPermissions }>({
+    mutationFn: ({ id, permissions }) => updateDocumentInCollection(COLLECTION_NAME, id, { permissions }),
     onSuccess: (_, variables) => {
         queryClient.setQueryData([COLLECTION_NAME], (oldData: Collaborator[] | undefined) => 
-            oldData ? oldData.map(c => c.id === variables.id ? { ...c, isAdmin: variables.isAdmin } : c) : []
+            oldData ? oldData.map(c => c.id === variables.id ? { ...c, permissions: variables.permissions } : c) : []
         );
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, variables.id] });
     },
@@ -85,9 +103,9 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     addCollaborator: (collaborator) => addCollaboratorMutation.mutateAsync(collaborator),
     addMultipleCollaborators: (collaborators) => addMultipleCollaboratorsMutation.mutateAsync(collaborators),
     updateCollaborator: (collaborator) => updateCollaboratorMutation.mutateAsync(collaborator),
-    updateCollaboratorAdminStatus: (id, isAdmin) => updateCollaboratorAdminStatusMutation.mutateAsync({ id, isAdmin }),
+    updateCollaboratorPermissions: (id, permissions) => updateCollaboratorPermissionsMutation.mutateAsync({ id, permissions }),
     deleteCollaboratorMutation,
-  }), [collaborators, isFetching, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, updateCollaboratorAdminStatusMutation, deleteCollaboratorMutation]);
+  }), [collaborators, isFetching, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, updateCollaboratorPermissionsMutation, deleteCollaboratorMutation]);
 
   return (
     <CollaboratorsContext.Provider value={value}>
