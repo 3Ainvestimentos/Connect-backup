@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -11,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo } from 'lucide-react';
+import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useApplications, WorkflowDefinition, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
 import { iconList, getIcon } from '@/lib/icons';
@@ -44,6 +45,7 @@ const definitionSchema = z.object({
     name: z.string().min(1, "Nome da definição é obrigatório."),
     description: z.string().min(1, "Descrição é obrigatória."),
     icon: z.string().min(1, "Ícone é obrigatório."),
+    slaDays: z.coerce.number().int().min(0, "SLA não pode ser negativo.").optional(),
     fields: z.array(fieldSchema),
     routingRules: z.array(routingRuleSchema),
     statuses: z.array(statusSchema).min(1, "Pelo menos um status é necessário."),
@@ -70,6 +72,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             name: '',
             description: '',
             icon: 'FileText',
+            slaDays: undefined,
             fields: [],
             routingRules: [],
             statuses: [{ id: 'pending', label: 'Pendente' }],
@@ -151,10 +154,15 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                     {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
                                 </div>
                             </div>
-                            <div>
-                                <Label htmlFor="description">Descrição</Label>
+                             <div>
+                                <Label htmlFor="description">Descrição (Exibida ao usuário)</Label>
                                 <Textarea id="description" {...register('description')} />
                                 {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="slaDays">SLA (em dias úteis)</Label>
+                                <Input id="slaDays" type="number" {...register('slaDays')} placeholder="Ex: 5" />
+                                {errors.slaDays && <p className="text-sm text-destructive mt-1">{errors.slaDays.message}</p>}
                             </div>
                             <Separator />
                             {/* Custom Statuses */}

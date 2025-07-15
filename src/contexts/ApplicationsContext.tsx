@@ -50,6 +50,7 @@ export const workflowDefinitionSchema = z.object({
     name: z.string().min(1, "Nome da definição é obrigatório."),
     description: z.string().min(1, "Descrição é obrigatória."),
     icon: z.string().min(1, "Ícone é obrigatório."),
+    slaDays: z.number().int().min(0, "SLA não pode ser negativo.").optional(),
     fields: z.array(formFieldSchema),
     routingRules: z.array(routingRuleSchema).optional().default([]),
     statuses: z.array(workflowStatusSchema).min(1, "Pelo menos um status é necessário."),

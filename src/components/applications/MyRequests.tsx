@@ -10,9 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, addBusinessDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FileClock, Inbox, Eye } from 'lucide-react';
+import { FileClock, Inbox, Eye, Timer } from 'lucide-react';
 import { Button } from '../ui/button';
 import { RequestDetailsModal } from './RequestDetailsModal';
 
@@ -34,6 +34,16 @@ export default function MyRequests() {
         const definition = workflowDefinitions.find(d => d.name === request.type);
         const status = definition?.statuses.find(s => s.id === request.status);
         return status?.label || request.status;
+    };
+
+    const getSlaDate = (request: WorkflowRequest): string | null => {
+        const definition = workflowDefinitions.find(d => d.name === request.type);
+        if (typeof definition?.slaDays !== 'number') {
+            return null;
+        }
+        const submissionDate = parseISO(request.submittedAt);
+        const slaDate = addBusinessDays(submissionDate, definition.slaDays);
+        return format(slaDate, "dd/MM/yyyy");
     };
 
     const handleViewDetails = (request: WorkflowRequest) => {
@@ -79,28 +89,40 @@ export default function MyRequests() {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Tipo</TableHead>
-                                        <TableHead>Data de Submissão</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead>Previsão de Conclusão</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {myRequests.map((req) => (
-                                        <TableRow key={req.id}>
-                                            <TableCell className="font-medium">{req.type}</TableCell>
-                                            <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
-                                            <TableCell>
-                                                <Badge variant="secondary" className="font-semibold">
-                                                    {getStatusLabel(req)}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => handleViewDetails(req)}>
-                                                    <Eye className="h-5 w-5" />
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {myRequests.map((req) => {
+                                        const slaDate = getSlaDate(req);
+                                        return (
+                                            <TableRow key={req.id}>
+                                                <TableCell className="font-medium">{req.type}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary" className="font-semibold">
+                                                        {getStatusLabel(req)}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {slaDate ? (
+                                                        <span className="flex items-center gap-1.5 text-sm">
+                                                          <Timer className="h-4 w-4 text-muted-foreground" />
+                                                          {slaDate}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-sm text-muted-foreground">-</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="ghost" size="icon" onClick={() => handleViewDetails(req)}>
+                                                        <Eye className="h-5 w-5" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                         </div>

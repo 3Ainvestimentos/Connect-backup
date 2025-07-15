@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2, Upload } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, Timer } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getIcon } from '@/lib/icons';
 import { WorkflowDefinitionForm } from '@/components/admin/WorkflowDefinitionForm';
@@ -140,6 +140,7 @@ export default function ManageWorkflowsPage() {
                                     <TableRow>
                                         <TableHead>Ícone</TableHead>
                                         <TableHead>Nome</TableHead>
+                                        <TableHead>SLA</TableHead>
                                         <TableHead>Campos</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
@@ -151,6 +152,16 @@ export default function ManageWorkflowsPage() {
                                             <TableRow key={def.id}>
                                                 <TableCell><Icon className="h-5 w-5 text-muted-foreground" /></TableCell>
                                                 <TableCell className="font-medium">{def.name}</TableCell>
+                                                <TableCell>
+                                                    {typeof def.slaDays === 'number' ? (
+                                                        <span className="flex items-center gap-1.5">
+                                                            <Timer className="h-4 w-4" />
+                                                            {def.slaDays} dias
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">-</span>
+                                                    )}
+                                                </TableCell>
                                                 <TableCell>{def.fields.length}</TableCell>
                                                 <TableCell className="text-right">
                                                     <Button variant="ghost" size="icon" onClick={() => handleOpenForm(def)} className="hover:bg-muted">
