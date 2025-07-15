@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -30,11 +31,16 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-   async rewrites() {
+   async headers() {
     return [
       {
-        source: '/templates/:path*',
-        destination: '/:path*',
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/html; charset=utf-8',
+          },
+        ],
       },
     ]
   },
