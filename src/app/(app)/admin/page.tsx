@@ -1,4 +1,7 @@
 
+"use client";
+
+import React, { useState } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Shield } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +15,8 @@ import { ManageCollaborators } from '@/components/admin/ManageCollaborators';
 
 
 export default function AdminPage() {
+    const [activeTab, setActiveTab] = useState("news");
+
     return (
         <AdminGuard>
             <div className="space-y-6 p-6 md:p-8 admin-panel">
@@ -19,7 +24,7 @@ export default function AdminPage() {
                     title="Painel de Conteúdo"
                     description="Gerencie o conteúdo dinâmico da intranet."
                 />
-                <Tabs defaultValue="news" className="w-full">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
