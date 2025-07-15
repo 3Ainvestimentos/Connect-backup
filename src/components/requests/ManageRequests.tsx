@@ -11,22 +11,28 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mailbox, Eye, Filter, FileDown } from 'lucide-react';
+import { Mailbox, Eye, Filter, FileDown, User, Users } from 'lucide-react';
 import { RequestApprovalModal } from './RequestApprovalModal';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Papa from 'papaparse';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { Avatar, AvatarFallback } from '../ui/avatar';
 
 export function ManageRequests() {
     const { requests, loading } = useWorkflows();
     const { workflowDefinitions } = useApplications();
+    const { collaborators } = useCollaborators();
     const [selectedRequest, setSelectedRequest] = useState<WorkflowRequest | null>(null);
+    const [assigneeFilter, setAssigneeFilter] = useState('all'); // 'all', 'unassigned', or collaborator id3a
     
     // Create a flat list of all possible statuses from all definitions
     const allStatuses = useMemo(() => {
@@ -44,9 +50,17 @@ export function ManageRequests() {
     const [statusFilter, setStatusFilter] = useState<WorkflowStatus[]>(['pending']);
 
     const filteredRequests = useMemo(() => {
-        if (statusFilter.length === 0) return requests;
-        return requests.filter(req => statusFilter.includes(req.status));
-    }, [requests, statusFilter]);
+        let filtered = requests;
+        if (statusFilter.length > 0) {
+            filtered = filtered.filter(req => statusFilter.includes(req.status));
+        }
+        if (assigneeFilter === 'unassigned') {
+            filtered = filtered.filter(req => !req.assignee);
+        } else if (assigneeFilter !== 'all') {
+            filtered = filtered.filter(req => req.assignee?.id === assigneeFilter);
+        }
+        return filtered;
+    }, [requests, statusFilter, assigneeFilter]);
 
     const handleStatusFilterChange = (statusId: WorkflowStatus) => {
         setStatusFilter(prev => 
@@ -75,6 +89,7 @@ export function ManageRequests() {
                 ID: req.id,
                 Tipo: req.type,
                 Status: getStatusLabel(req),
+                Responsavel: req.assignee?.name || 'Não atribuído',
                 Solicitante: req.submittedBy.userName,
                 Email_Solicitante: req.submittedBy.userEmail,
                 Data_Submissao: format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm:ss"),
@@ -98,6 +113,14 @@ export function ManageRequests() {
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
         </div>
     );
+    
+    const getAssigneeFilterLabel = () => {
+        if (assigneeFilter === 'all') return 'Todos';
+        if (assigneeFilter === 'unassigned') return 'Não Atribuídos';
+        const collab = collaborators.find(c => c.id3a === assigneeFilter);
+        return collab ? collab.name : 'Desconhecido';
+    }
+
 
     return (
         <>
@@ -111,6 +134,27 @@ export function ManageRequests() {
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        <Users className="mr-2 h-4 w-4" />
+                                        Responsável: {getAssigneeFilterLabel()}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Filtrar por Responsável</DropdownMenuLabel>
+                                    <DropdownMenuRadioGroup value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                                        <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="unassigned">Não Atribuídos</DropdownMenuRadioItem>
+                                        <DropdownMenuSeparator />
+                                        {collaborators.map(c => (
+                                            <DropdownMenuRadioItem key={c.id} value={c.id3a}>
+                                                {c.name}
+                                            </DropdownMenuRadioItem>
+                                        ))}
+                                    </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline">
@@ -149,6 +193,7 @@ export function ManageRequests() {
                                         <TableHead>Solicitante</TableHead>
                                         <TableHead>Data de Submissão</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead>Responsável</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -162,6 +207,20 @@ export function ManageRequests() {
                                                 <Badge variant="secondary" className="font-semibold">
                                                     {getStatusLabel(req)}
                                                 </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {req.assignee ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarFallback className="text-xs">
+                                                                {req.assignee.name.charAt(0)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="text-sm">{req.assignee.name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm text-muted-foreground">Não atribuído</span>
+                                                )}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)}>

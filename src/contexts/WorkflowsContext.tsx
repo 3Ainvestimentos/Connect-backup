@@ -33,9 +33,9 @@ export interface WorkflowRequest {
   lastUpdatedAt: string; // ISO String
   formData: Record<string, any>; // Objeto flexível para os dados do formulário
   history: WorkflowHistoryLog[];
-  currentApprover?: {
-      userId: string; // ID 3A RIVA do aprovador
-      userName: string;
+  assignee?: { // Responsável pela tarefa
+      id: string; // ID 3A RIVA do responsável
+      name: string;
   };
 }
 

@@ -17,6 +17,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { useApplications, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -30,7 +31,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const { updateRequestAndNotify } = useWorkflows();
   const { workflowDefinitions } = useApplications();
   const [comment, setComment] = useState('');
+  const [assigneeId, setAssigneeId] = useState(request?.assignee?.id || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [actionType, setActionType] = useState<'statusChange' | 'assign' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatus | null>(null);
 
   const definition = useMemo(() => {
@@ -40,27 +43,32 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const availableTransitions = useMemo(() => {
     if (!definition || !request) return [];
-    const currentStatusIndex = definition.statuses.findIndex(s => s.id === request.status);
-    if (currentStatusIndex === -1) return [];
-    // For simplicity, allow transition to any other status.
-    // A more complex system could define explicit transitions.
     return definition.statuses.filter(s => s.id !== request.status);
   }, [definition, request]);
 
+  // Reset local state when the request prop changes
+  React.useEffect(() => {
+    if (request) {
+      setAssigneeId(request.assignee?.id || '');
+      setComment('');
+    }
+  }, [request]);
 
   if (!request) return null;
+  const adminUser = collaborators.find(c => c.email === user?.email);
 
-  const handleAction = async (newStatus: WorkflowStatus) => {
-    const adminUser = collaborators.find(c => c.email === user?.email);
+  const handleStatusChange = async (newStatus: WorkflowStatus) => {
+    setActionType('statusChange');
+    setTargetStatus(newStatus);
+
     const newStatusLabel = definition?.statuses.find(s => s.id === newStatus)?.label || newStatus;
 
     if (!user || !adminUser) {
-        toast({ title: "Erro de Autenticação", description: "Você não está logado ou não foi encontrado na lista de colaboradores.", variant: "destructive"});
-        return;
+      toast({ title: "Erro de Autenticação", description: "Você não está logado ou não foi encontrado na lista de colaboradores.", variant: "destructive" });
+      return;
     }
-    
+
     setIsSubmitting(true);
-    setTargetStatus(newStatus);
     const now = new Date();
     
     const historyEntry: WorkflowHistoryLog = {
@@ -72,33 +80,70 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     };
     
     const requestUpdate = {
-        id: request.id,
-        status: newStatus,
-        lastUpdatedAt: formatISO(now),
-        history: [...request.history, historyEntry],
+      id: request.id,
+      status: newStatus,
+      lastUpdatedAt: formatISO(now),
+      history: [...request.history, historyEntry],
     };
-    
+
     const notificationMessage = `O status da sua solicitação de '${request.type}' foi atualizado para "${newStatusLabel}".\nObservações: ${comment || 'Nenhuma.'}`;
 
     try {
-        await updateRequestAndNotify(requestUpdate, notificationMessage);
-        toast({
-            title: "Sucesso!",
-            description: `A solicitação foi atualizada para "${newStatusLabel}". O usuário será notificado.`
-        });
-        setComment('');
-        onClose();
+      await updateRequestAndNotify(requestUpdate, notificationMessage);
+      toast({
+        title: "Sucesso!",
+        description: `A solicitação foi atualizada para "${newStatusLabel}". O usuário será notificado.`
+      });
+      setComment('');
+      onClose();
     } catch (error) {
-        toast({
-            title: "Erro",
-            description: "Não foi possível processar a ação.",
-            variant: "destructive",
-        });
+      toast({ title: "Erro", description: "Não foi possível processar a ação.", variant: "destructive" });
     } finally {
-        setIsSubmitting(false);
-        setTargetStatus(null);
+      setIsSubmitting(false);
+      setActionType(null);
+      setTargetStatus(null);
     }
   };
+
+  const handleAssigneeChange = async () => {
+    setActionType('assign');
+    const selectedCollaborator = collaborators.find(c => c.id3a === assigneeId);
+
+    if (!user || !adminUser || !selectedCollaborator) {
+      toast({ title: "Erro", description: "Usuário administrador ou colaborador selecionado não encontrado.", variant: "destructive" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    const now = new Date();
+    const historyEntry: WorkflowHistoryLog = {
+      timestamp: formatISO(now),
+      status: request.status, // Status doesn't change on assignment
+      userId: adminUser.id3a,
+      userName: adminUser.name,
+      notes: `Solicitação atribuída a ${selectedCollaborator.name}.`,
+    };
+
+    const requestUpdate = {
+      id: request.id,
+      assignee: { id: selectedCollaborator.id3a, name: selectedCollaborator.name },
+      lastUpdatedAt: formatISO(now),
+      history: [...request.history, historyEntry],
+    };
+
+    const notificationMessage = `Sua solicitação de '${request.type}' foi atribuída a ${selectedCollaborator.name} para acompanhamento.`;
+
+    try {
+      await updateRequestAndNotify(requestUpdate, notificationMessage);
+      toast({ title: "Sucesso!", description: `Solicitação atribuída a ${selectedCollaborator.name}.` });
+    } catch (error) {
+       toast({ title: "Erro", description: "Não foi possível atribuir o responsável.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+      setActionType(null);
+    }
+  };
+
 
   const renderFieldValue = (fieldId: string, value: any) => {
     const fieldDef = definition?.fields.find(f => f.id === fieldId);
@@ -175,6 +220,28 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                 </div>
             </div>
 
+            <div>
+                <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
+                 <div className="flex items-center gap-2">
+                    <Select value={assigneeId} onValueChange={setAssigneeId} disabled={isSubmitting}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione um responsável..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {collaborators.map(c => <SelectItem key={c.id3a} value={c.id3a}>{c.name}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                     <Button 
+                        onClick={handleAssigneeChange} 
+                        disabled={isSubmitting || !assigneeId || assigneeId === request.assignee?.id}
+                        variant="secondary"
+                    >
+                        {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Atribuir
+                    </Button>
+                </div>
+            </div>
+
              <div>
                 <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
                     <History className="h-5 w-5"/>
@@ -215,10 +282,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                 <Button 
                     key={status.id}
                     variant="secondary"
-                    onClick={() => handleAction(status.id)} 
+                    onClick={() => handleStatusChange(status.id)} 
                     disabled={isSubmitting}
                 >
-                    {(isSubmitting && targetStatus === status.id) ? (
+                    {(isSubmitting && actionType === 'statusChange' && targetStatus === status.id) ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                         <MoveRight className="mr-2 h-4 w-4" />
