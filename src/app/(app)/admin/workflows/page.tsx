@@ -1,22 +1,25 @@
 
 "use client";
 
-import React, { useState } from 'react';
-import { useApplications, WorkflowDefinition } from '@/contexts/ApplicationsContext';
+import React, { useState, useRef } from 'react';
+import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
 import AdminGuard from '@/components/auth/AdminGuard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getIcon } from '@/lib/icons';
 import { WorkflowDefinitionForm } from '@/components/admin/WorkflowDefinitionForm';
+import { ZodError } from 'zod';
 
 export default function ManageWorkflowsPage() {
-    const { workflowDefinitions, loading, deleteWorkflowDefinitionMutation } = useApplications();
+    const { workflowDefinitions, loading, deleteWorkflowDefinitionMutation, addWorkflowDefinition } = useApplications();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingDefinition, setEditingDefinition] = useState<WorkflowDefinition | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleOpenForm = (definition: WorkflowDefinition | null) => {
         setEditingDefinition(definition);
@@ -33,6 +36,62 @@ export default function ManageWorkflowsPage() {
             toast({ title: "Falha na Exclusão", description: errorMessage, variant: "destructive" });
         }
     };
+    
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        const reader = new FileReader();
+
+        reader.onload = async (e) => {
+            try {
+                const text = e.target?.result as string;
+                const jsonData = JSON.parse(text);
+
+                // Validate the JSON data using the Zod schema
+                const parsedData = workflowDefinitionSchema.parse(jsonData);
+
+                await addWorkflowDefinition(parsedData);
+
+                toast({
+                    title: "Importação Concluída!",
+                    description: `O workflow '${parsedData.name}' foi adicionado com sucesso.`,
+                });
+            } catch (error) {
+                console.error("Erro na importação de Workflow:", error);
+                let description = "Ocorreu um erro desconhecido.";
+                if (error instanceof SyntaxError) {
+                    description = "O arquivo JSON possui um formato inválido.";
+                } else if (error instanceof ZodError) {
+                    description = `Erro de validação: ${error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')}`;
+                } else if (error instanceof Error) {
+                    description = error.message;
+                }
+                toast({
+                    title: "Erro na Importação",
+                    description: description,
+                    variant: "destructive",
+                });
+            } finally {
+                setIsImporting(false);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = ''; // Reset file input
+                }
+            }
+        };
+        
+        reader.onerror = () => {
+             toast({
+                title: "Erro de Leitura",
+                description: "Não foi possível ler o arquivo selecionado.",
+                variant: "destructive",
+            });
+            setIsImporting(false);
+        };
+
+        reader.readAsText(file);
+    };
 
     return (
         <AdminGuard>
@@ -42,17 +101,30 @@ export default function ManageWorkflowsPage() {
                     description="Crie e gerencie os formulários e processos da área de Aplicações."
                 />
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between">
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                             <CardTitle>Definições de Workflow</CardTitle>
                             <CardDescription>
                                 {workflowDefinitions.length} workflow(s) definido(s).
                             </CardDescription>
                         </div>
-                        <Button onClick={() => handleOpenForm(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nova Definição
-                        </Button>
+                        <div className="flex gap-2">
+                             <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isImporting}>
+                                {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                {isImporting ? 'Importando...' : 'Importar JSON'}
+                            </Button>
+                             <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".json"
+                                onChange={handleFileImport}
+                            />
+                            <Button onClick={() => handleOpenForm(null)} className="bg-admin-primary hover:bg-admin-primary/90">
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Nova Definição
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent>
                         <div className="border rounded-lg">
