@@ -54,11 +54,10 @@ export function ManageRequests() {
 
     useEffect(() => {
         const currentUserCollab = collaborators.find(c => c.email === user?.email);
-        if (permissions.canManageRequests && currentUserCollab && requests.length > 0) {
+        if (permissions.canManageRequests && currentUserCollab?.id3a && requests.length > 0) {
             markRequestsAsViewedBy(currentUserCollab.id3a);
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [requests, user, permissions.canManageRequests]); // Removed collaborators and markRequestsAsViewedBy as they are stable
+    }, [requests, user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy]);
 
 
     const filteredRequests = useMemo(() => {
