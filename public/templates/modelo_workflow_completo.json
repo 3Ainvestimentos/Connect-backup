@@ -1,0 +1,79 @@
+
+{
+  "name": "Solicitação de Suporte de TI",
+  "description": "Use este formulário para solicitar suporte técnico. Detalhe o problema para um atendimento mais rápido.",
+  "icon": "Wrench",
+  "ownerEmail": "ti@3ariva.com.br",
+  "defaultSlaDays": 3,
+  "slaRules": [
+    {
+      "field": "prioridade",
+      "value": "Alta",
+      "days": 1
+    },
+    {
+      "field": "prioridade",
+      "value": "Média",
+      "days": 2
+    }
+  ],
+  "statuses": [
+    {
+      "id": "pendente",
+      "label": "Pendente"
+    },
+    {
+      "id": "em_atendimento",
+      "label": "Em Atendimento"
+    },
+    {
+      "id": "aguardando_usuario",
+      "label": "Aguardando Usuário"
+    },
+    {
+      "id": "concluido",
+      "label": "Concluído"
+    },
+    {
+      "id": "cancelado",
+      "label": "Cancelado"
+    }
+  ],
+  "fields": [
+    {
+      "id": "tipo_solicitacao",
+      "label": "Tipo de Solicitação",
+      "type": "select",
+      "required": true,
+      "options": ["Problema de Hardware", "Problema de Software", "Acesso a Sistema", "Pedido de Equipamento", "Outro"]
+    },
+    {
+      "id": "prioridade",
+      "label": "Prioridade",
+      "type": "select",
+      "required": true,
+      "options": ["Baixa", "Média", "Alta"]
+    },
+    {
+      "id": "titulo_problema",
+      "label": "Título do Problema",
+      "type": "text",
+      "required": true,
+      "placeholder": "Ex: Computador não liga"
+    },
+    {
+      "id": "descricao_detalhada",
+      "label": "Descrição Detalhada do Problema",
+      "type": "textarea",
+      "required": true,
+      "placeholder": "Descreva o que aconteceu, quando começou e quais passos você já tentou."
+    }
+  ],
+  "routingRules": [
+    {
+      "field": "tipo_solicitacion",
+      "value": "Pedido de Equipamento",
+      "notify": ["compras@3a.com", "ti@3ariva.com.br"]
+    }
+  ]
+}
