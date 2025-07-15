@@ -8,6 +8,7 @@ import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
 import { getFirestore, writeBatch, doc } from 'firebase/firestore';
 import { getFirebaseApp } from '@/lib/firebase';
+import { useCollaborators } from './CollaboratorsContext';
 
 // Define os possíveis status de um workflow
 export type WorkflowStatus = string; // Now a generic string, e.g., 'pending_approval', 'in_progress'
@@ -46,7 +47,7 @@ interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
   addRequest: (request: Omit<WorkflowRequest, 'id' | 'viewedBy'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>;
-  updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string) => Promise<void>;
+  updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string) => Promise<void>;
 }
@@ -58,6 +59,8 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { addMessage } = useMessages();
   const { workflowDefinitions } = useApplications();
+  const { collaborators } = useCollaborators();
+
 
   const { data: requests = [], isFetching } = useQuery<WorkflowRequest[]>({
     queryKey: [COLLECTION_NAME],
@@ -72,32 +75,45 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
-      const notificationsToSend: { recipient: string; value: string; field: string}[] = [];
-
-      if (definition && definition.routingRules) {
-        for (const rule of definition.routingRules) {
-          const formValue = requestData.formData[rule.field];
-          if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
-            rule.notify.forEach(recipient => {
-                notificationsToSend.push({ recipient, value: formValue, field: rule.field });
-            });
-          }
-        }
-      }
       
-      // For now, we just log this. In a real scenario, we'd trigger an email/notification service here.
-      if (notificationsToSend.length > 0) {
-          console.log("Routing Rules Matched. Would send notifications:", notificationsToSend);
-      }
-
       // Set initial status from definition
       const initialStatus = definition?.statuses?.[0]?.id || 'pending';
       const requestWithInitialStatus = { ...requestData, status: initialStatus, viewedBy: [] as string[] };
       if (requestWithInitialStatus.history[0]) {
         requestWithInitialStatus.history[0].status = initialStatus;
       }
+      
+      const newDoc = await addDocumentToCollection(COLLECTION_NAME, requestWithInitialStatus);
 
-      return addDocumentToCollection(COLLECTION_NAME, requestWithInitialStatus);
+      // --- NOTIFICATION LOGIC ---
+      // 1. Notify requester
+      await addMessage({
+          title: `Solicitação Recebida: ${requestData.type}`,
+          content: `Sua solicitação '${requestData.type}' foi aberta com sucesso e está pendente de análise.`,
+          sender: 'Sistema de Workflows',
+          recipientIds: [requestData.submittedBy.userId],
+      });
+
+      // 2. Notify based on routing rules
+      if (definition && definition.routingRules) {
+        for (const rule of definition.routingRules) {
+          const formValue = requestData.formData[rule.field];
+          if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
+            const recipientUsers = collaborators.filter(c => rule.notify.includes(c.email));
+            const recipientIds = recipientUsers.map(u => u.id3a);
+            if (recipientIds.length > 0) {
+              await addMessage({
+                title: `Nova Solicitação para Análise: ${requestData.type}`,
+                content: `Uma nova solicitação de '${requestData.type}' foi aberta por ${requestData.submittedBy.userName} e requer sua atenção devido à regra do campo '${rule.field}' = '${rule.value}'.`,
+                sender: 'Sistema de Workflows',
+                recipientIds: recipientIds,
+              });
+            }
+          }
+        }
+      }
+
+      return newDoc;
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -175,18 +191,31 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   }, [requests, queryClient]);
 
 
-  const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage: string) => {
+  const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage: string | null = null) => {
     // First, update the request in Firestore
     await updateRequestMutation.mutateAsync(requestUpdate);
     
     // Then, find the original request to get the submitter's ID
     const originalRequest = requests.find(r => r.id === requestUpdate.id);
-    if (originalRequest && originalRequest.submittedBy.userId) {
+    if (!originalRequest) return;
+
+    // Notify requester
+    if (originalRequest.submittedBy.userId) {
         await addMessage({
             title: `Atualização: ${originalRequest.type}`,
             content: notificationMessage,
             sender: 'Sistema de Workflows',
-            recipientIds: [originalRequest.submittedBy.userId], // Send only to the user who made the request
+            recipientIds: [originalRequest.submittedBy.userId],
+        });
+    }
+
+    // Notify assignee if a message is provided
+    if (notifyAssigneeMessage && requestUpdate.assignee?.id) {
+       await addMessage({
+            title: `Nova Tarefa Atribuída: ${originalRequest.type}`,
+            content: notifyAssigneeMessage,
+            sender: 'Sistema de Workflows',
+            recipientIds: [requestUpdate.assignee.id],
         });
     }
   };

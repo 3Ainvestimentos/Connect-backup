@@ -165,10 +165,11 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       history: [...request.history, historyEntry],
     };
 
-    const notificationMessage = `Sua solicitação de '${request.type}' foi atribuída a ${assignee.name} para acompanhamento.`;
+    const requesterNotification = `Sua solicitação de '${request.type}' foi atribuída a ${assignee.name} para acompanhamento.`;
+    const assigneeNotification = `Uma nova solicitação de '${request.type}', enviada por ${request.submittedBy.userName}, foi atribuída a você.`;
 
     try {
-      await updateRequestAndNotify(requestUpdate, notificationMessage);
+      await updateRequestAndNotify(requestUpdate, requesterNotification, assigneeNotification);
       toast({ title: "Sucesso!", description: `Solicitação atribuída a ${assignee.name}.` });
     } catch (error) {
        toast({ title: "Erro", description: "Não foi possível atribuir o responsável.", variant: "destructive" });
