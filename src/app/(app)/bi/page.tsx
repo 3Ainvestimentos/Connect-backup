@@ -1,10 +1,8 @@
-
 "use client";
 
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function BIPage() {
   const { user, loading } = useAuth();
@@ -18,14 +16,7 @@ export default function BIPage() {
   }
   
   return (
-    <div className="flex flex-col h-full w-full">
-        <div className="p-6 md:p-8">
-            <PageHeader 
-                title="Business Intelligence" 
-                description="Painéis e relatórios do Power BI."
-            />
-        </div>
-      <div className="flex-grow px-6 md:px-8 pb-6 md:pb-8">
+    <div className="flex-grow p-0 m-0 h-full w-full">
         <iframe
             title="Captação"
             width="100%"
@@ -33,9 +24,8 @@ export default function BIPage() {
             src="https://app.powerbi.com/reportEmbed?reportId=752f561a-52b6-493d-ad99-4522540ac331&autoAuth=true&ctid=d2846deb-ade2-4957-9aa4-54f24234d220"
             frameBorder="0"
             allowFullScreen={true}
-            className="border rounded-lg"
+            className="border-0 rounded-none w-full h-full"
         ></iframe>
-      </div>
     </div>
   );
 }
