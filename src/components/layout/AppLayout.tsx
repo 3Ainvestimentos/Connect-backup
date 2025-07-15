@@ -32,7 +32,8 @@ import {
   DropdownMenuSubContent,
   DropdownMenuPortal,
   DropdownMenuRadioGroup,
-  DropdownMenuRadioItem
+  DropdownMenuRadioItem,
+  DropdownMenuGroup
 } from "@/components/ui/dropdown-menu";
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
@@ -119,32 +120,35 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-             <DropdownMenuItem asChild>
-                <Link href="/admin/workflows" className="cursor-pointer font-body">
-                    <Workflow className="mr-2 h-4 w-4" />
-                    <span>Gerenciar Workflows</span>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-                <Link href="/requests" className="cursor-pointer font-body flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Mailbox className="mr-2 h-4 w-4" />
-                    <span>Painel de solicitações</span>
-                  </div>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-                <Link href="/admin" className="cursor-pointer font-body">
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>Painel Admin</span>
-                </Link>
-            </DropdownMenuItem>
-             <DropdownMenuItem asChild>
-                <Link href="/analytics" className="cursor-pointer font-body">
-                    <BarChart className="mr-2 h-4 w-4" />
-                    <span>Analytics</span>
-                </Link>
-            </DropdownMenuItem>
+            <DropdownMenuGroup>
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Paineis de controle</DropdownMenuLabel>
+                <DropdownMenuItem asChild>
+                    <Link href="/admin/workflows" className="cursor-pointer font-body">
+                        <Workflow className="mr-2 h-4 w-4" />
+                        <span>Aplicações/Workflows</span>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/requests" className="cursor-pointer font-body flex justify-between items-center">
+                    <div className="flex items-center">
+                        <Mailbox className="mr-2 h-4 w-4" />
+                        <span>Solicitações</span>
+                    </div>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/admin" className="cursor-pointer font-body">
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Conteúdo interno</span>
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                    <Link href="/analytics" className="cursor-pointer font-body">
+                        <BarChart className="mr-2 h-4 w-4" />
+                        <span>Analytics</span>
+                    </Link>
+                </DropdownMenuItem>
+            </DropdownMenuGroup>
           </>
         )}
 
