@@ -93,12 +93,14 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
             <UserCircle className="mr-2 h-4 w-4" />
             <span>Meu Perfil</span>
         </DropdownMenuItem>
-         <DropdownMenuItem asChild>
-            <Link href="/me/tasks" className="cursor-pointer font-body">
-                <ListTodo className="mr-2 h-4 w-4" />
-                <span>Minhas Tarefas</span>
-            </Link>
-        </DropdownMenuItem>
+        {permissions.canViewTasks && (
+            <DropdownMenuItem asChild>
+                <Link href="/me/tasks" className="cursor-pointer font-body">
+                    <ListTodo className="mr-2 h-4 w-4" />
+                    <span>Minhas Tarefas</span>
+                </Link>
+            </DropdownMenuItem>
+        )}
         <DropdownMenuSub>
             <DropdownMenuSubTrigger>
                 {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
@@ -210,7 +212,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
-      <div className="flex flex-1 w-full bg-background"> 
+      <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">

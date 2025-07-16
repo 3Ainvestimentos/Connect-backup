@@ -18,6 +18,7 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canManageWorkflows', label: 'Workflows' },
     { key: 'canManageRequests', label: 'Solicitações' },
     { key: 'canViewAnalytics', label: 'Analytics' },
+    { key: 'canViewTasks', label: 'Minhas Tarefas' },
 ];
 
 function PermissionsTable() {
@@ -43,7 +44,7 @@ function PermissionsTable() {
             await updateCollaboratorPermissions(collaborator.id, newPermissions);
             toast({
                 title: "Permissão Atualizada",
-                description: `${collaborator.name} ${newPermissions[permissionKey] ? 'agora pode' : 'não pode mais'} gerenciar '${permissionLabels.find(p => p.key === permissionKey)?.label}'.`,
+                description: `${collaborator.name} ${newPermissions[permissionKey] ? 'agora tem acesso a' : 'não tem mais acesso a'} '${permissionLabels.find(p => p.key === permissionKey)?.label}'.`,
             });
         } catch (error) {
             toast({
@@ -66,6 +67,7 @@ function PermissionsTable() {
                            <Skeleton className="h-3 w-64" />
                         </div>
                          <div className="flex gap-4">
+                            <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />

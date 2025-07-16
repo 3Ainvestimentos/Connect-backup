@@ -10,6 +10,7 @@ export interface CollaboratorPermissions {
   canManageWorkflows: boolean;
   canManageRequests: boolean;
   canManageContent: boolean;
+  canViewTasks: boolean;
 }
 
 export interface Collaborator {
@@ -45,6 +46,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageWorkflows: false,
   canManageRequests: false,
   canManageContent: false,
+  canViewTasks: false,
 };
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
@@ -55,7 +57,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
     select: (data) => data.map(c => ({
         ...c,
-        permissions: c.permissions || defaultPermissions
+        permissions: { ...defaultPermissions, ...c.permissions }
     }))
   });
 

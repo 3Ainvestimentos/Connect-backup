@@ -27,6 +27,7 @@ const defaultPermissions: CollaboratorPermissions = {
     canManageWorkflows: false,
     canManageRequests: false,
     canManageContent: false,
+    canViewTasks: false,
 };
 
 interface AuthContextType {
@@ -83,11 +84,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   canManageWorkflows: true,
                   canManageRequests: true,
                   canManageContent: true,
+                  canViewTasks: true,
               };
               setPermissions(allPermissions);
               setIsAdmin(true);
           } else {
-              setPermissions(userPermissions);
+              setPermissions({ ...defaultPermissions, ...userPermissions });
               // User is an admin if they have at least one specific permission
               const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
               setIsAdmin(hasAnyPermission);
