@@ -50,29 +50,23 @@ export function ManageRequests() {
         return Array.from(statusMap.entries()).map(([id, label]) => ({ id, label }));
     }, [workflowDefinitions]);
     
-    const [statusFilter, setStatusFilter] = useState<WorkflowStatus[]>(['pending']);
-
-    const ownedWorkflows = useMemo(() => {
-        if (!user) return [];
-        return workflowDefinitions.filter(def => def.ownerEmail === user.email);
-    }, [workflowDefinitions, user]);
-    
-    const ownedWorkflowNames = useMemo(() => ownedWorkflows.map(def => def.name), [ownedWorkflows]);
+    const [statusFilter, setStatusFilter] = useState<string[]>([]);
 
     useEffect(() => {
         const currentUserCollab = collaborators.find(c => c.email === user?.email);
         if (permissions.canManageRequests && currentUserCollab?.id3a) {
             const ownedRequestIds = requests
-                .filter(req => ownedWorkflowNames.includes(req.type))
+                .filter(req => req.ownerEmail === user?.email)
                 .map(req => req.id);
             markRequestsAsViewedBy(currentUserCollab.id3a, ownedRequestIds);
         }
-    }, [user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy, requests, ownedWorkflowNames]);
+    }, [user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy, requests]);
 
 
     const filteredRequests = useMemo(() => {
+        if (!user) return [];
         // Only show requests for workflows the user owns
-        let filtered = requests.filter(req => ownedWorkflowNames.includes(req.type));
+        let filtered = requests.filter(req => req.ownerEmail === user.email);
 
         if (statusFilter.length > 0) {
             filtered = filtered.filter(req => statusFilter.includes(req.status));
@@ -83,9 +77,9 @@ export function ManageRequests() {
             filtered = filtered.filter(req => req.assignee?.id === assigneeFilter);
         }
         return filtered;
-    }, [requests, statusFilter, assigneeFilter, ownedWorkflowNames]);
+    }, [requests, statusFilter, assigneeFilter, user]);
 
-    const handleStatusFilterChange = (statusId: WorkflowStatus) => {
+    const handleStatusFilterChange = (statusId: string) => {
         setStatusFilter(prev => 
             prev.includes(statusId) 
                 ? prev.filter(s => s !== statusId) 

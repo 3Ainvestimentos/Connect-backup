@@ -27,6 +27,7 @@ export interface WorkflowRequest {
   id: string;
   type: string; // Ex: 'vacation_request', 'reimbursement'
   status: WorkflowStatus;
+  ownerEmail: string; // Email of the workflow definition owner
   submittedBy: {
     userId: string; // ID 3A RIVA do colaborador
     userName: string;
@@ -75,10 +76,19 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
+      if (!definition) {
+        throw new Error(`Definição de workflow para '${requestData.type}' não encontrada.`);
+      }
       
-      // Set initial status from definition
+      // Set initial status from definition and add ownerEmail
       const initialStatus = definition?.statuses?.[0]?.id || 'pending';
-      const requestWithInitialStatus = { ...requestData, status: initialStatus, viewedBy: [] as string[] };
+      const requestWithInitialStatus = { 
+        ...requestData, 
+        status: initialStatus, 
+        ownerEmail: definition.ownerEmail,
+        viewedBy: [] as string[] 
+      };
+      
       if (requestWithInitialStatus.history[0]) {
         requestWithInitialStatus.history[0].status = initialStatus;
       }
@@ -94,7 +104,19 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
           recipientIds: [requestData.submittedBy.userId],
       });
 
-      // 2. Notify based on routing rules
+      // 2. Notify the workflow owner
+      const owner = collaborators.find(c => c.email === definition.ownerEmail);
+      if (owner) {
+          await addMessage({
+              title: `Nova Solicitação: ${requestData.type}`,
+              content: `Uma nova solicitação de '${requestData.type}' foi enviada por ${requestData.submittedBy.userName} e aguarda sua revisão.`,
+              sender: 'Sistema de Workflows',
+              recipientIds: [owner.id3a],
+          });
+      }
+
+
+      // 3. Notify based on routing rules
       if (definition && definition.routingRules) {
         for (const rule of definition.routingRules) {
           const formValue = requestData.formData[rule.field];
