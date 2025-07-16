@@ -140,17 +140,10 @@ function PermissionsTable() {
     );
 }
 
-export default function PermissionsPage() {
+export default function PermissionsPageContent() {
     return (
         <SuperAdminGuard>
-            <div className="space-y-6 p-6 md:p-8">
-                <PageHeader
-                    title="Administração"
-                    description="Gerencie as permissões de acesso da plataforma."
-                    icon={Shield}
-                />
-                <PermissionsTable />
-            </div>
+            <PermissionsTable />
         </SuperAdminGuard>
     );
 }

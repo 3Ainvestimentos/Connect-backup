@@ -13,6 +13,7 @@ import { ManageMessages } from '@/components/admin/ManageMessages';
 import { ManageEvents } from '@/components/admin/ManageEvents';
 import { ManageCollaborators } from '@/components/admin/ManageCollaborators';
 import { AllRequestsView } from '@/components/admin/AllRequestsView';
+import PermissionsPageContent from '@/components/admin/PermissionsPageContent';
 
 
 export default function AdminPage() {
@@ -22,11 +23,11 @@ export default function AdminPage() {
         <AdminGuard>
             <div className="space-y-6 p-6 md:p-8 admin-panel">
                 <PageHeader 
-                    title="Painel de Conteúdo"
-                    description="Gerencie o conteúdo dinâmico da intranet."
+                    title="Painel de Administração"
+                    description="Gerencie o conteúdo e as permissões da intranet."
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="labs">Labs</TabsTrigger>
@@ -34,6 +35,7 @@ export default function AdminPage() {
                         <TabsTrigger value="events">Eventos</TabsTrigger>
                         <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
                         <TabsTrigger value="requests">Solicitações</TabsTrigger>
+                        <TabsTrigger value="permissions">Permissões</TabsTrigger>
                     </TabsList>
                     <TabsContent value="news">
                         <ManageNews />
@@ -55,6 +57,9 @@ export default function AdminPage() {
                     </TabsContent>
                      <TabsContent value="requests">
                         <AllRequestsView />
+                    </TabsContent>
+                     <TabsContent value="permissions">
+                        <PermissionsPageContent />
                     </TabsContent>
                 </Tabs>
             </div>
