@@ -10,7 +10,7 @@ import { ManageCollaborators } from '@/components/admin/ManageCollaborators';
 import { AllRequestsView } from '@/components/admin/AllRequestsView';
 import PermissionsPageContent from '@/components/admin/PermissionsPageContent';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 
 
 export default function AdminPage() {
@@ -30,19 +30,13 @@ export default function AdminPage() {
                         <TabsTrigger value="permissions">Permissões</TabsTrigger>
                     </TabsList>
                      <TabsContent value="collaborators">
-                        <Card>
-                           <ManageCollaborators />
-                        </Card>
+                        <ManageCollaborators />
                     </TabsContent>
                      <TabsContent value="requests">
-                         <Card>
-                            <AllRequestsView />
-                        </Card>
+                        <AllRequestsView />
                     </TabsContent>
                      <TabsContent value="permissions">
-                        <Card>
-                           <PermissionsPageContent />
-                        </Card>
+                        <PermissionsPageContent />
                     </TabsContent>
                 </Tabs>
             </div>
