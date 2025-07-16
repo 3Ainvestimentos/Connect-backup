@@ -11,34 +11,81 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ListChecks, User, Search, Filter, FileDown } from 'lucide-react';
+import { ListChecks, User, Search, Filter, FileDown, ChevronUp, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import Papa from 'papaparse';
+
+type SortKey = 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | '';
+type SortDirection = 'asc' | 'desc';
 
 export function AllRequestsView() {
     const { requests, loading } = useWorkflows();
     const { workflowDefinitions } = useApplications();
     const { collaborators } = useCollaborators();
     const [searchTerm, setSearchTerm] = useState('');
+    const [sortKey, setSortKey] = useState<SortKey>('submittedAt');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
-    const filteredRequests = useMemo(() => {
-        let filtered = requests;
+    const filteredAndSortedRequests = useMemo(() => {
+        let items = [...requests];
 
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
-            filtered = filtered.filter(req =>
+            items = items.filter(req =>
                 req.type.toLowerCase().includes(lowercasedTerm) ||
                 req.submittedBy.userName.toLowerCase().includes(lowercasedTerm) ||
                 (req.assignee && req.assignee.name.toLowerCase().includes(lowercasedTerm)) ||
                 (req.ownerEmail && req.ownerEmail.toLowerCase().includes(lowercasedTerm))
             );
         }
+        
+        if (sortKey) {
+            items.sort((a, b) => {
+                let valA: any, valB: any;
 
-        return filtered;
-    }, [requests, searchTerm]);
+                switch (sortKey) {
+                    case 'submittedBy':
+                        valA = a.submittedBy.userName;
+                        valB = b.submittedBy.userName;
+                        break;
+                    case 'assignee':
+                        valA = a.assignee?.name || '';
+                        valB = b.assignee?.name || '';
+                        break;
+                    case 'submittedAt':
+                        valA = new Date(a.submittedAt).getTime();
+                        valB = new Date(b.submittedAt).getTime();
+                        break;
+                    default:
+                        valA = a[sortKey];
+                        valB = b[sortKey];
+                }
 
+                let comparison = 0;
+                if (valA > valB) {
+                    comparison = 1;
+                } else if (valA < valB) {
+                    comparison = -1;
+                }
+
+                return sortDirection === 'asc' ? comparison : -comparison;
+            });
+        }
+
+        return items;
+    }, [requests, searchTerm, sortKey, sortDirection]);
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
+    
     const getStatusLabel = (request: WorkflowRequest) => {
         const definition = workflowDefinitions.find(d => d.name === request.type);
         const status = definition?.statuses.find(s => s.id === request.status);
@@ -51,7 +98,7 @@ export function AllRequestsView() {
     }
 
     const handleExportCSV = () => {
-        const dataToExport = filteredRequests.map(req => {
+        const dataToExport = filteredAndSortedRequests.map(req => {
              const flatFormData = Object.entries(req.formData).map(([key, value]) => {
                 if (typeof value === 'object' && value !== null && 'from' in value && 'to' in value) {
                     return { [key]: `${value.from} a ${value.to}` };
@@ -88,6 +135,15 @@ export function AllRequestsView() {
             {[...Array(10)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
         </div>
     );
+    
+    const SortableHeader = ({ tkey, label }: { tkey: SortKey; label: string }) => (
+      <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
+          <div className="flex items-center gap-1">
+              {label}
+              {sortKey === tkey && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+          </div>
+      </TableHead>
+    );
 
     return (
         <Card>
@@ -99,7 +155,7 @@ export function AllRequestsView() {
                            Visão Geral de Solicitações
                         </CardTitle>
                         <CardDescription>
-                            {filteredRequests.length} solicitação(ões) encontrada(s) em todo o sistema.
+                            {filteredAndSortedRequests.length} solicitação(ões) encontrada(s) em todo o sistema.
                         </CardDescription>
                     </div>
                     <div className="flex w-full sm:w-auto gap-2">
@@ -112,7 +168,7 @@ export function AllRequestsView() {
                                 className="pl-10 w-full"
                             />
                         </div>
-                        <Button variant="secondary" onClick={handleExportCSV} disabled={filteredRequests.length === 0}>
+                        <Button variant="secondary" onClick={handleExportCSV} disabled={filteredAndSortedRequests.length === 0}>
                             <FileDown className="mr-2 h-4 w-4" />
                             Exportar CSV
                         </Button>
@@ -125,16 +181,16 @@ export function AllRequestsView() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Tipo</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Solicitante</TableHead>
-                                    <TableHead>Responsável</TableHead>
-                                    <TableHead>Proprietário</TableHead>
-                                    <TableHead>Data</TableHead>
+                                    <SortableHeader tkey="type" label="Tipo" />
+                                    <SortableHeader tkey="status" label="Status" />
+                                    <SortableHeader tkey="submittedBy" label="Solicitante" />
+                                    <SortableHeader tkey="assignee" label="Responsável" />
+                                    <SortableHeader tkey="ownerEmail" label="Proprietário" />
+                                    <SortableHeader tkey="submittedAt" label="Data" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredRequests.map((req) => (
+                                {filteredAndSortedRequests.map((req) => (
                                     <TableRow key={req.id}>
                                         <TableCell className="font-medium">{req.type}</TableCell>
                                         <TableCell>
@@ -170,7 +226,7 @@ export function AllRequestsView() {
                         </Table>
                      </div>
                 )}
-                {!loading && filteredRequests.length === 0 && (
+                {!loading && filteredAndSortedRequests.length === 0 && (
                     <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
                         <ListChecks className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma solicitação encontrada</h3>

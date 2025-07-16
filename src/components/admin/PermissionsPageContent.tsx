@@ -27,8 +27,10 @@ function PermissionsTable() {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredCollaborators = useMemo(() => {
-        if (!searchTerm) return collaborators;
-        return collaborators.filter(c => 
+        const sortedByName = [...collaborators].sort((a, b) => a.name.localeCompare(b.name));
+        if (!searchTerm) return sortedByName;
+        
+        return sortedByName.filter(c => 
             c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             c.email.toLowerCase().includes(searchTerm.toLowerCase())
         );
