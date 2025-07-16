@@ -401,7 +401,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           isOpen={isAssigneeModalOpen}
           onClose={() => setIsAssigneeModalOpen(false)}
           allCollaborators={collaborators}
-          currentAssigneeId={assignee?.id3a}
+          currentAssigneeId={assignee?.id}
           onConfirm={(selected) => {
               setAssignee(selected);
               setIsAssigneeModalOpen(false);
@@ -410,3 +410,4 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
