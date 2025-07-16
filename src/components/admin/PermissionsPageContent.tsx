@@ -82,7 +82,7 @@ function PermissionsTable() {
     }
 
     return (
-        <Card>
+        <div>
             <CardHeader>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
@@ -140,7 +140,7 @@ function PermissionsTable() {
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </div>
     );
 }
 

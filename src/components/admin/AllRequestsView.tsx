@@ -146,7 +146,7 @@ export function AllRequestsView() {
     );
 
     return (
-        <Card>
+        <div>
             <CardHeader>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
@@ -236,6 +236,6 @@ export function AllRequestsView() {
                     </div>
                 )}
             </CardContent>
-        </Card>
+        </div>
     );
 }
