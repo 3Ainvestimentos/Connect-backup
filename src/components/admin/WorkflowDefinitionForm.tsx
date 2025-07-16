@@ -36,8 +36,8 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         resolver: zodResolver(workflowDefinitionSchema),
         defaultValues: definition ? {
             ...definition,
-            fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') })),
-            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') })) : [],
+            fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') as any })),
+            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') as any })) : [],
             statuses: definition.statuses?.length ? definition.statuses : [{ id: 'pending', label: 'Pendente' }],
             slaRules: definition.slaRules || [],
         } : {
@@ -61,16 +61,25 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
 
     const watchedFields = watch('fields');
 
+    const uniqueCollaborators = React.useMemo(() => {
+        const seen = new Set();
+        return collaborators.filter(el => {
+            const duplicate = seen.has(el.email);
+            seen.add(el.email);
+            return !duplicate;
+        });
+    }, [collaborators]);
+
     const onSubmit = async (data: FormValues) => {
         const payload = {
             ...data,
             fields: data.fields.map(f => ({
                 ...f,
-                options: f.type === 'select' ? f.options?.split(',').map(opt => opt.trim()).filter(Boolean) : [],
+                options: f.type === 'select' ? (f.options as unknown as string)?.split(',').map(opt => opt.trim()).filter(Boolean) : [],
             })),
             routingRules: data.routingRules.map(r => ({
                 ...r,
-                notify: Array.isArray(r.notify) ? r.notify : r.notify.split(',').map(s => s.trim())
+                notify: Array.isArray(r.notify) ? r.notify : (r.notify as unknown as string).split(',').map(s => s.trim())
             }))
         };
 
@@ -140,7 +149,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                          <Select onValueChange={field.onChange} defaultValue={field.value}>
                                              <SelectTrigger><SelectValue placeholder="Selecione um proprietário..." /></SelectTrigger>
                                              <SelectContent>
-                                                 {collaborators.map(c => <SelectItem key={c.id} value={c.email}>{c.name}</SelectItem>)}
+                                                 {uniqueCollaborators.map(c => <SelectItem key={c.email} value={c.email}>{c.name}</SelectItem>)}
                                              </SelectContent>
                                          </Select>
                                      )} />
@@ -153,7 +162,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                  <h3 className="font-semibold text-lg flex items-center gap-2"><Timer className="h-5 w-5"/> Service Level Agreement (SLA)</h3>
                                  <div>
                                     <Label htmlFor="defaultSlaDays">SLA Padrão (em dias úteis)</Label>
-                                    <Input id="defaultSlaDays" type="number" {...register('defaultSlaDays')} placeholder="Ex: 5" />
+                                    <Input id="defaultSlaDays" type="number" {...register('defaultSlaDays', { valueAsNumber: true })} placeholder="Ex: 5" />
                                     <p className="text-xs text-muted-foreground mt-1">Este SLA será usado se nenhuma regra condicional abaixo for atendida.</p>
                                     {errors.defaultSlaDays && <p className="text-sm text-destructive mt-1">{errors.defaultSlaDays.message}</p>}
                                 </div>
@@ -181,7 +190,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                             </div>
                                              <div>
                                                 <Label htmlFor={`slaRules.${index}.days`}>...o SLA é (dias)</Label>
-                                                <Input id={`slaRules.${index}.days`} type="number" {...register(`slaRules.${index}.days`)} placeholder="Dias..." />
+                                                <Input id={`slaRules.${index}.days`} type="number" {...register(`slaRules.${index}.days`, { valueAsNumber: true })} placeholder="Dias..." />
                                                 {errors.slaRules?.[index]?.days && <p className="text-sm text-destructive mt-1">{errors.slaRules[index]?.days?.message}</p>}
                                             </div>
                                         </div>
@@ -279,7 +288,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                         </div>
                                     </div>
                                 ))}
-                                <Button type="button" variant="outline" onClick={() => append({ id: `campo_${fields.length + 1}`, label: '', type: 'text', required: false, placeholder: '', options: '' })}>
+                                <Button type="button" variant="outline" onClick={() => append({ id: `campo_${fields.length + 1}`, label: '', type: 'text', required: false, placeholder: '', options: '' as any })}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campo
                                 </Button>
                             </div>
@@ -300,12 +309,12 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                         </SelectContent>
                                                     </Select>
                                                 )} />
-                                                {errors.routingRules?.[index]?.field && <p className="text-sm text-destructive mt-1">{errors.routingRules?.[index]?.field?.message}</p>}
+                                                {errors.routingRules?.[index]?.field && <p className="text-sm text-destructive mt-1">{errors.routingRules[index]?.field?.message}</p>}
                                             </div>
                                             <div>
                                                 <Label htmlFor={`routingRules.${index}.value`}>...tiver o valor</Label>
                                                 <Input id={`routingRules.${index}.value`} {...register(`routingRules.${index}.value`)} placeholder="Ex: Alta" />
-                                                {errors.routingRules?.[index]?.value && <p className="text-sm text-destructive mt-1">{errors.routingRules?.[index]?.value?.message}</p>}
+                                                {errors.routingRules?.[index]?.value && <p className="text-sm text-destructive mt-1">{errors.routingRules[index]?.value?.message}</p>}
                                             </div>
                                         </div>
                                         <div>
