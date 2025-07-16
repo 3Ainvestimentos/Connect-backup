@@ -47,7 +47,7 @@ export interface WorkflowRequest {
 interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
-  addRequest: (request: Omit<WorkflowRequest, 'id' | 'viewedBy'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>;
+  addRequest: (request: Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string, ownedRequestIds: string[]) => Promise<void>;
@@ -73,27 +73,27 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
   });
 
-  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy'>>({
+  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
       if (!definition) {
         throw new Error(`Definição de workflow para '${requestData.type}' não encontrada.`);
       }
       
-      // Set initial status from definition and add ownerEmail
       const initialStatus = definition?.statuses?.[0]?.id || 'pending';
-      const requestWithInitialStatus = { 
+      const requestWithDefaults = { 
         ...requestData, 
         status: initialStatus, 
         ownerEmail: definition.ownerEmail,
-        viewedBy: [] as string[] 
+        viewedBy: [] as string[],
+        assignee: undefined,
       };
       
-      if (requestWithInitialStatus.history[0]) {
-        requestWithInitialStatus.history[0].status = initialStatus;
+      if (requestWithDefaults.history[0]) {
+        requestWithDefaults.history[0].status = initialStatus;
       }
       
-      const newDoc = await addDocumentToCollection(COLLECTION_NAME, requestWithInitialStatus);
+      const newDoc = await addDocumentToCollection(COLLECTION_NAME, requestWithDefaults);
 
       // --- NOTIFICATION LOGIC ---
       // 1. Notify requester
@@ -135,7 +135,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      return newDoc;
+      return newDoc as WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>;
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -145,7 +145,6 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const updateRequestMutation = useMutation<void, Error, Partial<WorkflowRequest> & { id: string }>({
     mutationFn: (updatedRequest) => {
       const { id, ...data } = updatedRequest;
-      // When status is no longer pending, clear the viewedBy list
       const payload = { ...data };
       if (payload.status && payload.status !== 'pending') {
           payload.viewedBy = [];
@@ -154,14 +153,12 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, id, payload);
     },
     onSuccess: (data, variables) => {
-        // Optimistically update the local cache to reflect the change immediately
         queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
             if (!oldData) return [];
             return oldData.map(req => 
                 req.id === variables.id ? { ...req, ...variables } : req
             );
         });
-        // Invalidate to refetch and ensure consistency
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -169,12 +166,10 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const deleteRequestMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: (data, id) => {
-        // Optimistically update the query data
         queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
             if (!oldData) return [];
             return oldData.filter(req => req.id !== id);
         });
-        // Invalidate the query to ensure consistency with the backend, just in case
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     }
   });
@@ -200,30 +195,24 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         return req;
     });
 
-    // Optimistically update the cache
     queryClient.setQueryData([COLLECTION_NAME], locallyUpdatedRequests);
 
     try {
         await batch.commit();
-        // Invalidate to be sure, but UI should be fast
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     } catch (error) {
         console.error("Failed to mark requests as viewed:", error);
-        // If error, revert optimistic update
         queryClient.setQueryData([COLLECTION_NAME], requests);
     }
   }, [requests, queryClient]);
 
 
   const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage: string | null = null) => {
-    // First, update the request in Firestore
     await updateRequestMutation.mutateAsync(requestUpdate);
     
-    // Then, find the original request to get the submitter's ID
     const originalRequest = requests.find(r => r.id === requestUpdate.id);
     if (!originalRequest) return;
 
-    // Notify requester
     if (originalRequest.submittedBy.userId) {
         await addMessage({
             title: `Atualização: ${originalRequest.type}`,
@@ -233,7 +222,6 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         });
     }
 
-    // Notify assignee if a message is provided
     if (notifyAssigneeMessage && requestUpdate.assignee?.id) {
        await addMessage({
             title: `Nova Tarefa Atribuída: ${originalRequest.type}`,
@@ -247,7 +235,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     requests,
     loading: isFetching,
-    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy'>>>,
+    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>>,
     updateRequestAndNotify,
     deleteRequestMutation,
     markRequestsAsViewedBy
