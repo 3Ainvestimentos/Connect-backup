@@ -17,7 +17,7 @@ export default function AdminPage() {
 
     return (
         <SuperAdminGuard>
-            <div className="space-y-6 p-6 md:p-8 admin-panel">
+            <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
                     title="Administração do Sistema"
                     description="Gerencie colaboradores, permissões e visualize todas as solicitações."
