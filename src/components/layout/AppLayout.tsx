@@ -138,7 +138,7 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Admin (Conteúdo)</span></Link></DropdownMenuItem>}
+                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Conteúdo interno</span></Link></DropdownMenuItem>}
                 {permissions.canViewAnalytics && <DropdownMenuItem asChild><Link href="/analytics" className="cursor-pointer font-body"><BarChart className="mr-2 h-4 w-4" /><span>Analytics</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                     <DropdownMenuItem asChild>
@@ -164,7 +164,7 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
 
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
   const { requests, loading: workflowsLoading } = useWorkflows();
   const router = useRouter();
@@ -175,12 +175,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const hasPendingRequests = useMemo(() => {
-    if (!user || workflowsLoading || !requests.length) return false;
+    if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
+    // Check if there's any request for a workflow the user owns that is unassigned.
     return requests.some(req => 
       req.ownerEmail === user.email && !req.assignee
     );
-  }, [user, requests, workflowsLoading]);
+  }, [user, requests, workflowsLoading, permissions.canManageRequests]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -209,7 +210,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
-      <div className="flex flex-1 w-full"> 
+      <div className="flex flex-1 w-full bg-background"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
@@ -296,7 +297,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Sidebar>
         )}
         
-        <SidebarInset className="flex-1 bg-background overflow-y-auto">
+        <SidebarInset>
           {children}
         </SidebarInset>
       </div>
