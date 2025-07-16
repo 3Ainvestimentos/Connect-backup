@@ -58,7 +58,7 @@ export const workflowDefinitionSchema = z.object({
     icon: z.string().min(1, "Ícone é obrigatório."),
     ownerEmail: z.string().email("O e-mail do proprietário é obrigatório."),
     slaRules: z.array(slaRuleSchema).optional().default([]),
-    defaultSlaDays: z.number().int().min(0, "SLA padrão não pode ser negativo.").optional(),
+    defaultSlaDays: z.coerce.number().int().min(0, "SLA padrão não pode ser negativo.").optional(),
     fields: z.array(formFieldSchema),
     routingRules: z.array(routingRuleSchema).optional().default([]),
     statuses: z.array(workflowStatusSchema).min(1, "Pelo menos um status é necessário."),
