@@ -12,6 +12,7 @@ import AdminGuard from '@/components/auth/AdminGuard';
 import { ManageMessages } from '@/components/admin/ManageMessages';
 import { ManageEvents } from '@/components/admin/ManageEvents';
 import { ManageCollaborators } from '@/components/admin/ManageCollaborators';
+import { AllRequestsView } from '@/components/admin/AllRequestsView';
 
 
 export default function AdminPage() {
@@ -25,13 +26,14 @@ export default function AdminPage() {
                     description="Gerencie o conteúdo dinâmico da intranet."
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="labs">Labs</TabsTrigger>
                         <TabsTrigger value="messages">Mensagens</TabsTrigger>
                         <TabsTrigger value="events">Eventos</TabsTrigger>
                         <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
+                        <TabsTrigger value="requests">Solicitações</TabsTrigger>
                     </TabsList>
                     <TabsContent value="news">
                         <ManageNews />
@@ -50,6 +52,9 @@ export default function AdminPage() {
                     </TabsContent>
                      <TabsContent value="collaborators">
                         <ManageCollaborators />
+                    </TabsContent>
+                     <TabsContent value="requests">
+                        <AllRequestsView />
                     </TabsContent>
                 </Tabs>
             </div>
