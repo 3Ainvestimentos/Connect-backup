@@ -41,7 +41,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 import FAQModal from '@/components/guides/FAQModal';
 import ProfileModal from '../applications/ProfileModal';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
-import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
 
 const navItems = [
@@ -55,7 +54,7 @@ const navItems = [
   { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false, requiredEmail: 'matheus@3ainvestimentos.com.br' },
 ];
 
-function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
+function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () => void; hasPendingRequests: boolean; }) {
   const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
 
@@ -65,7 +64,10 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
+        <Button variant="ghost" className={cn(
+          "relative h-10 w-10 rounded-full p-0 transition-all duration-300",
+          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header ring-admin-primary"
+        )}>
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
             <AvatarFallback>
@@ -124,7 +126,17 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
             <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Paineis de controle</DropdownMenuLabel>
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Aplicações/Workflows</span></Link></DropdownMenuItem>}
-                {permissions.canManageRequests && <DropdownMenuItem asChild><Link href="/requests" className="cursor-pointer font-body"><Mailbox className="mr-2 h-4 w-4" /><span>Solicitações</span></Link></DropdownMenuItem>}
+                {permissions.canManageRequests && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/requests" className={cn(
+                      "cursor-pointer font-body",
+                      hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+                    )}>
+                      <Mailbox className="mr-2 h-4 w-4" />
+                      <span>Solicitações</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Conteúdo interno</span></Link></DropdownMenuItem>}
                 {permissions.canViewAnalytics && <DropdownMenuItem asChild><Link href="/analytics" className="cursor-pointer font-body"><BarChart className="mr-2 h-4 w-4" /><span>Analytics</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
@@ -151,8 +163,9 @@ function UserNav({ onProfileClick }: { onProfileClick: () => void }) {
 
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut, isAdmin } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { requests, loading: workflowsLoading } = useWorkflows();
   const router = useRouter();
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
@@ -160,6 +173,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
+  const hasPendingRequests = useMemo(() => {
+    if (!user || workflowsLoading || !requests.length) return false;
+    
+    return requests.some(req => 
+      req.ownerEmail === user.email && !req.assignee
+    );
+  }, [user, requests, workflowsLoading]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -187,7 +207,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
+      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
