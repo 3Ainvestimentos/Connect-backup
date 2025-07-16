@@ -66,7 +66,8 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className={cn(
           "relative h-10 w-10 rounded-full p-0 transition-all duration-300",
-          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header ring-admin-primary"
+          "focus-visible:ring-0 focus-visible:ring-offset-0",
+          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary"
         )}>
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
@@ -137,13 +138,13 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Conteúdo interno</span></Link></DropdownMenuItem>}
+                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Admin (Conteúdo)</span></Link></DropdownMenuItem>}
                 {permissions.canViewAnalytics && <DropdownMenuItem asChild><Link href="/analytics" className="cursor-pointer font-body"><BarChart className="mr-2 h-4 w-4" /><span>Analytics</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                     <DropdownMenuItem asChild>
-                        <Link href="/admin/permissions" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive">
+                        <Link href="/admin" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive">
                             <Shield className="mr-2 h-4 w-4" />
-                            <span>Admin</span>
+                            <span>Admin (Sistema)</span>
                         </Link>
                     </DropdownMenuItem>
                 )}
@@ -189,7 +190,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (loading || !user) {
      return (
-        <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <div className="flex h-screen w-screen items-center justify-center">
           <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
