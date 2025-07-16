@@ -30,20 +30,18 @@ export default function AdminPage() {
                         <TabsTrigger value="permissions">Permissões</TabsTrigger>
                     </TabsList>
                      <TabsContent value="collaborators">
-                        <ManageCollaborators />
+                        <Card>
+                           <ManageCollaborators />
+                        </Card>
                     </TabsContent>
                      <TabsContent value="requests">
                          <Card>
-                            <CardContent className="p-0">
-                                <AllRequestsView />
-                            </CardContent>
+                            <AllRequestsView />
                         </Card>
                     </TabsContent>
                      <TabsContent value="permissions">
                         <Card>
-                            <CardContent className="p-0">
-                                <PermissionsPageContent />
-                            </CardContent>
+                           <PermissionsPageContent />
                         </Card>
                     </TabsContent>
                 </Tabs>

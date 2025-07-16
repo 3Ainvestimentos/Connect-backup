@@ -237,85 +237,83 @@ export function ManageCollaborators() {
 
     return (
         <>
-            <Card>
-                <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                     <div className="flex-grow">
-                        <CardTitle>Gerenciar Colaboradores</CardTitle>
-                        <CardDescription>Adicione, edite ou remova colaboradores da lista.</CardDescription>
+            <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                 <div className="flex-grow">
+                    <CardTitle>Gerenciar Colaboradores</CardTitle>
+                    <CardDescription>Adicione, edite ou remova colaboradores da lista.</CardDescription>
+                </div>
+                 <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                    <div className="relative flex-grow sm:flex-grow-0">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Buscar colaborador..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 w-full"
+                        />
                     </div>
-                     <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-                        <div className="relative flex-grow sm:flex-grow-0">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Buscar colaborador..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 w-full"
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Importar
-                            </Button>
-                            <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90 flex-grow">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adicionar
-                            </Button>
-                        </div>
+                    <div className="flex gap-2">
+                        <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Importar
+                        </Button>
+                        <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90 flex-grow">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar
+                        </Button>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="border rounded-lg overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <SortableHeader tkey="id3a" label="ID 3A RIVA" />
-                                    <SortableHeader tkey="name" label="Nome" />
-                                    <SortableHeader tkey="email" label="Email" />
-                                    <SortableHeader tkey="area" label="Área" />
-                                    <SortableHeader tkey="position" label="Cargo" />
-                                    <SortableHeader tkey="axis" label="Eixo" />
-                                    <SortableHeader tkey="segment" label="Segmento" />
-                                    <SortableHeader tkey="city" label="Cidade" />
-                                    <TableHead className="text-right">Ações</TableHead>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <SortableHeader tkey="id3a" label="ID 3A RIVA" />
+                                <SortableHeader tkey="name" label="Nome" />
+                                <SortableHeader tkey="email" label="Email" />
+                                <SortableHeader tkey="area" label="Área" />
+                                <SortableHeader tkey="position" label="Cargo" />
+                                <SortableHeader tkey="axis" label="Eixo" />
+                                <SortableHeader tkey="segment" label="Segmento" />
+                                <SortableHeader tkey="city" label="Cidade" />
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredAndSortedCollaborators.map(item => (
+                                <TableRow key={item.id}>
+                                    <TableCell>{item.id3a}</TableCell>
+                                    <TableCell className="font-medium">{item.name}</TableCell>
+                                    <TableCell>{item.email}</TableCell>
+                                    <TableCell>{item.area}</TableCell>
+                                    <TableCell>{item.position}</TableCell>
+                                    <TableCell>{item.axis}</TableCell>
+                                    <TableCell>{item.segment}</TableCell>
+                                    <TableCell>{item.city}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" onClick={() => handleFormDialogOpen(item)} className="hover:bg-muted">
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id}>
+                                            {deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id ? (
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            )}
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredAndSortedCollaborators.map(item => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{item.id3a}</TableCell>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell>{item.email}</TableCell>
-                                        <TableCell>{item.area}</TableCell>
-                                        <TableCell>{item.position}</TableCell>
-                                        <TableCell>{item.axis}</TableCell>
-                                        <TableCell>{item.segment}</TableCell>
-                                        <TableCell>{item.city}</TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleFormDialogOpen(item)} className="hover:bg-muted">
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id}>
-                                                {deleteCollaboratorMutation.isPending && deleteCollaboratorMutation.variables === item.id ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                )}
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                 {filteredAndSortedCollaborators.length === 0 && (
+                    <div className="text-center py-10">
+                        <p className="text-muted-foreground">Nenhum colaborador encontrado.</p>
                     </div>
-                     {filteredAndSortedCollaborators.length === 0 && (
-                        <div className="text-center py-10">
-                            <p className="text-muted-foreground">Nenhum colaborador encontrado.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                )}
+            </CardContent>
 
             <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingCollaborator(null); setIsFormOpen(isOpen); }}>
                 <DialogContent className="max-w-2xl">
