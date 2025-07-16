@@ -63,11 +63,13 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
 
     const uniqueCollaborators = React.useMemo(() => {
         const seen = new Set();
-        return collaborators.filter(el => {
-            const duplicate = seen.has(el.email);
-            seen.add(el.email);
-            return !duplicate;
-        });
+        return collaborators
+            .filter(el => {
+                const duplicate = seen.has(el.email);
+                seen.add(el.email);
+                return !duplicate;
+            })
+            .sort((a, b) => a.name.localeCompare(b.name));
     }, [collaborators]);
 
     const onSubmit = async (data: FormValues) => {
