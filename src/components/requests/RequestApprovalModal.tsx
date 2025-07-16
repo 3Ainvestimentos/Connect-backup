@@ -349,7 +349,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
             <div>
-                {canTakeAction && (
+                {isAssignee && (
                      <div className="flex flex-wrap gap-2">
                         {availableTransitions.map(status => (
                             <Button 
