@@ -163,6 +163,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
+      throw error;
     }
   };
   

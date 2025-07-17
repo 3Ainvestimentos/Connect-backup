@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -41,6 +41,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import FAQModal from '@/components/guides/FAQModal';
 import ProfileModal from '../applications/ProfileModal';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
+import { toast } from '@/hooks/use-toast';
 
 
 const navItems = [
@@ -184,6 +185,38 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       req.ownerEmail === user.email && !req.assignee
     );
   }, [user, requests, workflowsLoading, permissions.canManageRequests]);
+
+  // Inactivity Logout Logic
+  const handleSignOut = useCallback(() => {
+    signOut().then(() => {
+        toast({
+            title: "Sessão Expirada",
+            description: "Você foi desconectado por inatividade. Por favor, faça login novamente.",
+        });
+    });
+  }, [signOut]);
+
+  useEffect(() => {
+      if (typeof window === 'undefined') return;
+
+      const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+      let inactivityTimer: NodeJS.Timeout;
+
+      const resetTimer = () => {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = setTimeout(handleSignOut, INACTIVITY_TIMEOUT);
+      };
+
+      const activityEvents = ['mousemove', 'keydown', 'click', 'scroll'];
+      activityEvents.forEach(event => window.addEventListener(event, resetTimer));
+
+      resetTimer(); // Initialize timer
+
+      return () => {
+          clearTimeout(inactivityTimer);
+          activityEvents.forEach(event => window.removeEventListener(event, resetTimer));
+      };
+  }, [handleSignOut]);
 
   useEffect(() => {
     if (!loading && !user) {
