@@ -8,9 +8,9 @@ import { getCollection, WithId } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Fingerprint, LineChart as LineChartIcon, User, Eye, Download, Search } from 'lucide-react';
-import { Pie, ResponsiveContainer, Tooltip, Legend, Cell, Line, LineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc } from 'date-fns';
+import { Fingerprint, LineChart as LineChartIcon, User, Eye, Download, Search, BarChart as BarChartIcon } from 'lucide-react';
+import { Pie, ResponsiveContainer, Tooltip, Legend, Cell, Line, LineChart, CartesianGrid, XAxis, YAxis, Bar, BarChart } from 'recharts';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 type AuditLogEvent = WithId<{
@@ -83,10 +83,41 @@ export default function AuditPage() {
 
     }, [events, isLoading]);
 
+    const loginsLast7Days = useMemo(() => {
+        if (isLoading || events.length === 0) return [];
+        
+        const loginEvents = events.filter(event => event.eventType === 'login');
+        if (loginEvents.length === 0) return [];
+
+        const endDate = endOfDay(new Date());
+        const startDate = startOfDay(subDays(endDate, 6)); // Last 7 days including today
+        
+        const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+
+        const loginsByDay: { [key: string]: number } = {};
+        loginEvents.forEach(event => {
+            const eventDate = parseISO(event.timestamp);
+            if (isWithinInterval(eventDate, { start: startDate, end: endDate })) {
+                const dayKey = format(startOfDay(eventDate), 'yyyy-MM-dd');
+                loginsByDay[dayKey] = (loginsByDay[dayKey] || 0) + 1;
+            }
+        });
+
+        return dateRange.map(day => {
+            const dayKey = format(day, 'yyyy-MM-dd');
+            return {
+                date: format(day, 'EEE', { locale: ptBR }),
+                Logins: loginsByDay[dayKey] || 0,
+            };
+        });
+    }, [events, isLoading]);
+
+
     if (isLoading) {
         return (
             <div className="space-y-6">
-                 <div className="grid grid-cols-1 gap-6">
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
                 </div>
                 <Card><CardHeader><Skeleton className="h-6 w-1/4" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
@@ -104,7 +135,7 @@ export default function AuditPage() {
                     </CardHeader>
                 </Card>
                 
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2 text-lg"><LineChartIcon className="h-5 w-5"/>Total Acumulado de Logins</CardTitle>
@@ -119,6 +150,21 @@ export default function AuditPage() {
                                     <Legend />
                                     <Line type="monotone" dataKey="Logins Acumulados" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 8 }}/>
                                 </LineChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg"><BarChartIcon className="h-5 w-5"/>Logins nos Últimos 7 Dias</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={loginsLast7Days}>
+                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "var(--radius)" }} cursor={{fill: 'hsl(var(--muted))'}} />
+                                    <Bar dataKey="Logins" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
@@ -160,4 +206,3 @@ export default function AuditPage() {
         </SuperAdminGuard>
     );
 }
-
