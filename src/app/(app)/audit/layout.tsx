@@ -22,8 +22,6 @@ export default function AuditLayout({
   let activeTab = "/audit";
   if (pathname.includes('/content-interaction')) {
     activeTab = "/audit/content-interaction";
-  } else if (pathname.includes('/workflow-efficiency')) {
-    activeTab = "/audit/workflow-efficiency";
   } else if (pathname.includes('/usability')) {
     activeTab = "/audit/usability";
   }
@@ -36,10 +34,9 @@ export default function AuditLayout({
           description="Monitore eventos, uso e engajamento da plataforma."
         />
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3">
                 <TabsTrigger value="/audit">Logins</TabsTrigger>
                 <TabsTrigger value="/audit/content-interaction">Conteúdos</TabsTrigger>
-                <TabsTrigger value="/audit/workflow-efficiency">Workflows</TabsTrigger>
                 <TabsTrigger value="/audit/usability">Busca e Usabilidade</TabsTrigger>
             </TabsList>
         </Tabs>
