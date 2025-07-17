@@ -291,7 +291,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                              <div>
                                                 <Label htmlFor={`fields.${index}.id`}>ID do Campo (único, sem espaços)</Label>
                                                 <Input id={`fields.${index}.id`} {...register(`fields.${index}.id`)} placeholder="Ex: nome_completo" />
-                                                {errors.fields?.[index]?.id && <p className="text-sm text-destructive mt-1">{errors.fields?.[index]?.id?.message}</p>}
+                                                {errors.fields?.[index]?.id && <p className="text-sm text-destructive mt-1">{errors.fields[index]?.id?.message}</p>}
                                             </div>
                                              <div>
                                                 <Label htmlFor={`fields.${index}.placeholder`}>Placeholder (opcional)</Label>
@@ -304,6 +304,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                     <div>
                                                         <Label htmlFor={`fields.${index}.options`}>Opções (separadas por vírgula)</Label>
                                                         <Input id={`fields.${index}.options`} {...register(`fields.${index}.options`)} placeholder="Opção 1, Opção 2" />
+                                                        {errors.fields?.[index]?.options && <p className="text-sm text-destructive mt-1">{errors.fields[index]?.options?.message as string}</p>}
                                                     </div>
                                                 )
                                             }
