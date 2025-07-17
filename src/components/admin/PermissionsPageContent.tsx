@@ -17,7 +17,6 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canManageContent', label: 'Conteúdo' },
     { key: 'canManageWorkflows', label: 'Workflows' },
     { key: 'canManageRequests', label: 'Solicitações' },
-    { key: 'canViewAnalytics', label: 'Analytics' },
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
 ];
 

@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection } from '@/lib/firestore-service';
 
 export interface CollaboratorPermissions {
-  canViewAnalytics: boolean;
   canManageWorkflows: boolean;
   canManageRequests: boolean;
   canManageContent: boolean;
@@ -42,7 +41,6 @@ const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>
 const COLLECTION_NAME = 'collaborators';
 
 const defaultPermissions: CollaboratorPermissions = {
-  canViewAnalytics: false,
   canManageWorkflows: false,
   canManageRequests: false,
   canManageContent: false,

@@ -25,7 +25,6 @@ const PROVISIONAL_ACCESS_LIST = [
 
 
 const defaultPermissions: CollaboratorPermissions = {
-    canViewAnalytics: false,
     canManageWorkflows: false,
     canManageRequests: false,
     canManageContent: false,
@@ -82,7 +81,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (isSuper) {
               // Super admin has all permissions
               const allPermissions: CollaboratorPermissions = {
-                  canViewAnalytics: true,
                   canManageWorkflows: true,
                   canManageRequests: true,
                   canManageContent: true,
