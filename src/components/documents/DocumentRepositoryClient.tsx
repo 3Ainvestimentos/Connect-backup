@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import type { DocumentType } from '@/app/(app)/documents/page';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +27,21 @@ interface DocumentRepositoryClientProps {
   categories: string[];
   types: string[];
 }
+
+// Debounce hook
+const useDebounce = (value: string, delay: number) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+};
+
 
 const getFileIcon = (type: string) => {
   switch (type.toLowerCase()) {
@@ -54,6 +69,8 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
 
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
+  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms delay
+  const hasLoggedSearch = useRef(false);
 
   const handleDownload = (doc: DocumentType) => {
     const currentUserCollab = collaborators.find(c => c.email === user?.email);
@@ -115,6 +132,33 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
     }
     return items;
   }, [initialDocuments, searchTerm, selectedCategories, selectedTypes, sortKey, sortDirection]);
+
+  // Effect to log search term
+  useEffect(() => {
+      const termToLog = debouncedSearchTerm.trim();
+
+      // Only log if term is substantial and hasn't been logged for this specific term value yet
+      if (termToLog.length > 2) {
+          const currentUserCollab = collaborators.find(c => c.email === user?.email);
+          if (!currentUserCollab) return;
+
+          const resultsCount = filteredAndSortedDocuments.length;
+
+          addDocumentToCollection('audit_logs', {
+              eventType: 'search_term_used',
+              userId: currentUserCollab.id3a,
+              userName: currentUserCollab.name,
+              timestamp: new Date().toISOString(),
+              details: {
+                  term: termToLog,
+                  source: 'document_repository',
+                  resultsCount,
+                  hasResults: resultsCount > 0,
+              }
+          }).catch(console.error);
+      }
+  }, [debouncedSearchTerm, user, collaborators]);
+
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {

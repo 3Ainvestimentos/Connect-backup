@@ -10,10 +10,10 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Download, Fingerprint, LogIn, Eye } from 'lucide-react';
+import { Download, Fingerprint, LogIn, Eye, Search } from 'lucide-react';
 
 type AuditLogEvent = WithId<{
-    eventType: 'document_download' | 'login' | 'page_view' | 'content_view';
+    eventType: 'document_download' | 'login' | 'page_view' | 'content_view' | 'search_term_used';
     userId: string;
     userName: string;
     timestamp: string; // ISO String
@@ -25,6 +25,8 @@ type AuditLogEvent = WithId<{
         contentId?: string;
         contentTitle?: string;
         contentType?: 'news' | 'document';
+        term?: string;
+        hasResults?: boolean;
     }
 }>;
 
@@ -48,6 +50,11 @@ const eventTypeConfig = {
         label: "Visualização",
         icon: Eye,
         className: "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700",
+    },
+    search_term_used: {
+        label: "Busca",
+        icon: Search,
+        className: "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700",
     }
 };
 
@@ -74,6 +81,8 @@ export function EventLogView() {
                 return `Baixou o documento: ${event.details.documentName}`;
             case 'content_view':
                 return `Visualizou o conteúdo: ${event.details.contentTitle}`;
+            case 'search_term_used':
+                return `Buscou por "${event.details.term}" e ${event.details.hasResults ? 'encontrou' : 'não encontrou'} resultados.`;
             default:
                 return JSON.stringify(event.details);
         }
