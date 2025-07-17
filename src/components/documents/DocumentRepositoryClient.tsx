@@ -67,6 +67,9 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
       details: {
         documentId: doc.id,
         documentName: doc.name,
+        contentType: 'document',
+        contentId: doc.id,
+        contentTitle: doc.name,
       }
     });
 

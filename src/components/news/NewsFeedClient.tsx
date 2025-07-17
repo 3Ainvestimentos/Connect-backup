@@ -10,6 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { addDocumentToCollection } from '@/lib/firestore-service';
 
 interface NewsFeedClientProps {
   initialNewsItems: NewsItemType[];
@@ -18,6 +21,32 @@ interface NewsFeedClientProps {
 export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps) {
   const [selectedNews, setSelectedNews] = useState<NewsItemType | null>(null);
   const sortedNews = [...initialNewsItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+  const { user } = useAuth();
+  const { collaborators } = useCollaborators();
+
+  const logContentView = (item: NewsItemType) => {
+    const currentUserCollab = collaborators.find(c => c.email === user?.email);
+    if (!currentUserCollab) return;
+
+    addDocumentToCollection('audit_logs', {
+        eventType: 'content_view',
+        userId: currentUserCollab.id3a,
+        userName: currentUserCollab.name,
+        timestamp: new Date().toISOString(),
+        details: {
+            contentId: item.id,
+            contentTitle: item.title,
+            contentType: 'news'
+        }
+    }).catch(console.error); // Log silently
+  };
+
+  const handleViewNews = (item: NewsItemType) => {
+    setSelectedNews(item);
+    logContentView(item);
+  };
+
 
   return (
     <>
@@ -27,8 +56,8 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
             <Card 
               key={item.id} 
               className="flex flex-col overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 cursor-pointer"
-              onClick={() => setSelectedNews(item)}
-              onKeyDown={(e) => e.key === 'Enter' && setSelectedNews(item)}
+              onClick={() => handleViewNews(item)}
+              onKeyDown={(e) => e.key === 'Enter' && handleViewNews(item)}
               tabIndex={0}
               aria-label={`Ver notícia: ${item.title}`}
             >

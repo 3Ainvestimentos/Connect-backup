@@ -13,7 +13,7 @@ import { ptBR } from 'date-fns/locale';
 import { Download, Fingerprint, LogIn, Eye } from 'lucide-react';
 
 type AuditLogEvent = WithId<{
-    eventType: 'document_download' | 'login' | 'page_view';
+    eventType: 'document_download' | 'login' | 'page_view' | 'content_view';
     userId: string;
     userName: string;
     timestamp: string; // ISO String
@@ -22,6 +22,9 @@ type AuditLogEvent = WithId<{
         documentName?: string;
         path?: string;
         message?: string;
+        contentId?: string;
+        contentTitle?: string;
+        contentType?: 'news' | 'document';
     }
 }>;
 
@@ -41,6 +44,11 @@ const eventTypeConfig = {
         icon: Download,
         className: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
     },
+    content_view: {
+        label: "Visualização",
+        icon: Eye,
+        className: "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/50 dark:text-teal-300 dark:border-teal-700",
+    }
 };
 
 export function EventLogView() {
@@ -64,6 +72,8 @@ export function EventLogView() {
                 return `Acessou a página: ${event.details.path}`;
             case 'document_download':
                 return `Baixou o documento: ${event.details.documentName}`;
+            case 'content_view':
+                return `Visualizou o conteúdo: ${event.details.contentTitle}`;
             default:
                 return JSON.stringify(event.details);
         }

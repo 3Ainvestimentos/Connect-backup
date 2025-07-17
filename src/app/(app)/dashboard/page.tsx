@@ -27,6 +27,7 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { isSameMonth, parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { toast } from '@/hooks/use-toast';
+import { addDocumentToCollection } from '@/lib/firestore-service';
 
 
 export default function DashboardPage() {
@@ -102,6 +103,26 @@ export default function DashboardPage() {
     // Open the dialog to show the full message
     setSelectedMessage(messageToView);
   };
+
+  const logContentView = (item: NewsItemType) => {
+    if (!currentUserCollab) return;
+    addDocumentToCollection('audit_logs', {
+        eventType: 'content_view',
+        userId: currentUserCollab.id3a,
+        userName: currentUserCollab.name,
+        timestamp: new Date().toISOString(),
+        details: {
+            contentId: item.id,
+            contentTitle: item.title,
+            contentType: 'news'
+        }
+    }).catch(console.error); // Log silently
+  };
+
+  const handleViewNews = (item: NewsItemType) => {
+      setSelectedNews(item);
+      logContentView(item);
+  };
   
   const handleUserDeleteMessage = async () => {
     if (!selectedMessage || !currentUserCollab || isDeleting) return;
@@ -157,8 +178,8 @@ export default function DashboardPage() {
   const HighlightCard = ({ item, className = "" }: { item: NewsItemType, className?: string }) => (
     <div 
         className={cn("relative rounded-lg overflow-hidden group block cursor-pointer", className)}
-        onClick={() => setSelectedNews(item)}
-        onKeyDown={(e) => e.key === 'Enter' && setSelectedNews(item)}
+        onClick={() => handleViewNews(item)}
+        onKeyDown={(e) => e.key === 'Enter' && handleViewNews(item)}
         tabIndex={0}
         role="button"
         aria-label={`Ver notícia: ${item.title}`}
