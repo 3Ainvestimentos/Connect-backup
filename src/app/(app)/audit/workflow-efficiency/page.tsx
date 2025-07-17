@@ -1,7 +1,6 @@
 
 "use client";
 
-import AdminGuard from '@/components/auth/AdminGuard';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Bar, BarChart as BarChartComponent, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
@@ -119,7 +118,7 @@ export default function WorkflowEfficiencyPage() {
 
 
   return (
-    <AdminGuard>
+    <SuperAdminGuard>
         <section className="space-y-6">
              <Card>
                 <CardHeader>
@@ -239,6 +238,6 @@ export default function WorkflowEfficiencyPage() {
                 </Card>
              </div>
         </section>
-    </AdminGuard>
+    </SuperAdminGuard>
   );
 }
