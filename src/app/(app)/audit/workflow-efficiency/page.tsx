@@ -119,7 +119,7 @@ export default function WorkflowEfficiencyPage() {
 
 
   return (
-    <SuperAdminGuard>
+    <AdminGuard>
         <section className="space-y-6">
              <Card>
                 <CardHeader>
@@ -239,6 +239,6 @@ export default function WorkflowEfficiencyPage() {
                 </Card>
              </div>
         </section>
-    </SuperAdminGuard>
+    </AdminGuard>
   );
 }
