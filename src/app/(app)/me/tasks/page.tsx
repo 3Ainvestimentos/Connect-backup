@@ -30,9 +30,11 @@ export default function MyTasksPage() {
         if (loading || !user) return [];
         const currentUserCollab = collaborators.find(c => c.email === user.email);
         if (!currentUserCollab) return [];
-        // Corrected logic: Ensure assignee exists and the ID matches.
+        
         return requests.filter(req => 
-            req.assignee && req.assignee.id === currentUserCollab.id3a
+            !req.isArchived && // <-- FIX: Only show non-archived requests
+            req.assignee && 
+            req.assignee.id === currentUserCollab.id3a
         );
     }, [requests, user, collaborators, loading]);
 
