@@ -173,3 +173,31 @@ export const deleteDocumentFromCollection = async (collectionName: string, id: s
         throw new Error('Não foi possível remover o item. Verifique suas permissões ou tente novamente.');
     }
 };
+
+/**
+ * Gets the next sequential ID from a dedicated counter document in a Firestore transaction.
+ * @param counterId The ID of the counter to use (e.g., 'workflowCounter').
+ * @returns A promise that resolves to the next number in the sequence.
+ */
+export const getNextSequentialId = async (counterId: string): Promise<number> => {
+  const counterRef = doc(db, 'counters', counterId);
+
+  try {
+    const newId = await runTransaction(db, async (transaction) => {
+      const counterDoc = await transaction.get(counterRef);
+      
+      let nextValue = 1; // Default to 1 if counter doesn't exist
+      if (counterDoc.exists()) {
+        nextValue = (counterDoc.data().currentNumber || 0) + 1;
+      }
+      
+      transaction.set(counterRef, { currentNumber: nextValue }, { merge: true });
+      
+      return nextValue;
+    });
+    return newId;
+  } catch (error) {
+    console.error("Transaction failed: ", error);
+    throw new Error("Não foi possível gerar um novo ID para a solicitação.");
+  }
+};

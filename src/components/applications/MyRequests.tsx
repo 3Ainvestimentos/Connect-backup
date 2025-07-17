@@ -102,6 +102,7 @@ export default function MyRequests() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>#</TableHead>
                                         <TableHead>Tipo</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Previsão de Conclusão</TableHead>
@@ -113,6 +114,7 @@ export default function MyRequests() {
                                         const slaDate = getSlaDate(req);
                                         return (
                                             <TableRow key={req.id}>
+                                                <TableCell className="font-mono text-muted-foreground text-xs">{req.requestId}</TableCell>
                                                 <TableCell className="font-medium">{req.type}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="secondary" className="font-semibold">

@@ -136,7 +136,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       history: [...request.history, historyEntry],
     };
 
-    const notificationMessage = `O status da sua solicitação de '${request.type}' foi atualizado para "${newStatusLabel}".\nObservações: ${comment || 'Nenhuma.'}`;
+    const notificationMessage = `O status da sua solicitação de '${request.type}' #${request.requestId} foi atualizado para "${newStatusLabel}".\nObservações: ${comment || 'Nenhuma.'}`;
 
     try {
       await updateRequestAndNotify(requestUpdate, notificationMessage);
@@ -180,8 +180,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       history: [...request.history, historyEntry],
     };
 
-    const requesterNotification = `Sua solicitação de '${request.type}' foi atribuída a ${assignee.name} para acompanhamento.`;
-    const assigneeNotification = `Uma nova solicitação de '${request.type}', enviada por ${request.submittedBy.userName}, foi atribuída a você.`;
+    const requesterNotification = `Sua solicitação de '${request.type}' #${request.requestId} foi atribuída a ${assignee.name} para acompanhamento.`;
+    const assigneeNotification = `A solicitação #${request.requestId} de '${request.type}', enviada por ${request.submittedBy.userName}, foi atribuída a você.`;
 
     try {
       await updateRequestAndNotify(requestUpdate, requesterNotification, assigneeNotification);
@@ -239,7 +239,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
               <FileText className="h-6 w-6" /> Detalhes da Solicitação
             </DialogTitle>
             <DialogDescription>
-              Revise as informações e tome uma ação.
+              {`Revise a solicitação #${request.requestId} e tome uma ação.`}
             </DialogDescription>
           </DialogHeader>
           
@@ -410,4 +410,3 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
-

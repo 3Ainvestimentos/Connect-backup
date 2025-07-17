@@ -103,7 +103,7 @@ export function ManageRequests() {
             }).reduce((acc, current) => ({ ...acc, ...current }), {});
 
             return {
-                ID: req.id,
+                ID_Solicitacao: req.requestId,
                 Tipo: req.type,
                 Status: getStatusLabel(req),
                 Responsavel: req.assignee?.name || 'Não atribuído',
@@ -206,6 +206,7 @@ export function ManageRequests() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>#</TableHead>
                                         <TableHead>Tipo</TableHead>
                                         <TableHead>Solicitante</TableHead>
                                         <TableHead>Data de Submissão</TableHead>
@@ -217,6 +218,7 @@ export function ManageRequests() {
                                 <TableBody>
                                     {filteredRequests.map((req) => (
                                         <TableRow key={req.id}>
+                                            <TableCell className="font-mono text-muted-foreground text-xs">{req.requestId}</TableCell>
                                             <TableCell className="font-medium">{req.type}</TableCell>
                                             <TableCell>{req.submittedBy.userName}</TableCell>
                                             <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>

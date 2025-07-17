@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getNextSequentialId } from '@/lib/firestore-service';
 import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
 import { getFirestore, writeBatch, doc } from 'firebase/firestore';
@@ -25,6 +25,7 @@ export interface WorkflowHistoryLog {
 // Define a estrutura principal de uma solicitação de workflow
 export interface WorkflowRequest {
   id: string;
+  requestId: string; // The user-facing sequential ID, e.g., "0001"
   type: string; // Ex: 'vacation_request', 'reimbursement'
   status: WorkflowStatus;
   ownerEmail: string; // Email of the workflow definition owner
@@ -47,7 +48,7 @@ export interface WorkflowRequest {
 interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
-  addRequest: (request: Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>>;
+  addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string, ownedRequestIds: string[]) => Promise<void>;
@@ -55,6 +56,7 @@ interface WorkflowsContextType {
 
 const WorkflowsContext = createContext<WorkflowsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'workflows';
+const COUNTER_ID = 'workflowCounter';
 
 export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
@@ -73,16 +75,19 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
   });
 
-  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>({
+  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>, Error, Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
       if (!definition) {
         throw new Error(`Definição de workflow para '${requestData.type}' não encontrada.`);
       }
       
+      const nextId = await getNextSequentialId(COUNTER_ID);
+      
       const initialStatus = definition?.statuses?.[0]?.id || 'pending';
       const requestWithDefaults = { 
         ...requestData, 
+        requestId: nextId.toString().padStart(4, '0'),
         status: initialStatus, 
         ownerEmail: definition.ownerEmail,
         viewedBy: [] as string[],
@@ -98,7 +103,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       // --- NOTIFICATION LOGIC ---
       // 1. Notify requester
       await addMessage({
-          title: `Solicitação Recebida: ${requestData.type}`,
+          title: `Solicitação Recebida: ${requestData.type} #${requestWithDefaults.requestId}`,
           content: `Sua solicitação '${requestData.type}' foi aberta com sucesso e está pendente de análise.`,
           sender: 'Sistema de Workflows',
           recipientIds: [requestData.submittedBy.userId],
@@ -108,7 +113,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       const owner = collaborators.find(c => c.email === definition.ownerEmail);
       if (owner) {
           await addMessage({
-              title: `Nova Solicitação: ${requestData.type}`,
+              title: `Nova Solicitação: ${requestData.type} #${requestWithDefaults.requestId}`,
               content: `Uma nova solicitação de '${requestData.type}' foi enviada por ${requestData.submittedBy.userName} e aguarda sua revisão.`,
               sender: 'Sistema de Workflows',
               recipientIds: [owner.id3a],
@@ -135,7 +140,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      return newDoc as WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>;
+      return newDoc as WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>;
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -215,7 +220,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
     if (originalRequest.submittedBy.userId) {
         await addMessage({
-            title: `Atualização: ${originalRequest.type}`,
+            title: `Atualização: ${originalRequest.type} #${originalRequest.requestId}`,
             content: notificationMessage,
             sender: 'Sistema de Workflows',
             recipientIds: [originalRequest.submittedBy.userId],
@@ -224,7 +229,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
     if (notifyAssigneeMessage && requestUpdate.assignee?.id) {
        await addMessage({
-            title: `Nova Tarefa Atribuída: ${originalRequest.type}`,
+            title: `Nova Tarefa Atribuída: ${originalRequest.type} #${originalRequest.requestId}`,
             content: notifyAssigneeMessage,
             sender: 'Sistema de Workflows',
             recipientIds: [requestUpdate.assignee.id],
@@ -235,7 +240,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     requests,
     loading: isFetching,
-    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee'>>>,
+    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>>,
     updateRequestAndNotify,
     deleteRequestMutation,
     markRequestsAsViewedBy

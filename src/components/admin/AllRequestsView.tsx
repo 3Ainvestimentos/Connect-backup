@@ -17,7 +17,7 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import Papa from 'papaparse';
 
-type SortKey = 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | '';
+type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | '';
 type SortDirection = 'asc' | 'desc';
 
 export function AllRequestsView() {
@@ -34,6 +34,7 @@ export function AllRequestsView() {
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             items = items.filter(req =>
+                req.requestId.includes(lowercasedTerm) ||
                 req.type.toLowerCase().includes(lowercasedTerm) ||
                 req.submittedBy.userName.toLowerCase().includes(lowercasedTerm) ||
                 (req.assignee && req.assignee.name.toLowerCase().includes(lowercasedTerm)) ||
@@ -57,6 +58,10 @@ export function AllRequestsView() {
                     case 'submittedAt':
                         valA = new Date(a.submittedAt).getTime();
                         valB = new Date(b.submittedAt).getTime();
+                        break;
+                    case 'requestId':
+                        valA = parseInt(a.requestId, 10);
+                        valB = parseInt(b.requestId, 10);
                         break;
                     default:
                         valA = a[sortKey];
@@ -107,7 +112,7 @@ export function AllRequestsView() {
             }).reduce((acc, current) => ({ ...acc, ...current }), {});
 
             return {
-                ID: req.id,
+                ID_Solicitacao: req.requestId,
                 Tipo: req.type,
                 Status: getStatusLabel(req),
                 Responsavel: req.assignee?.name || 'Não atribuído',
@@ -181,6 +186,7 @@ export function AllRequestsView() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <SortableHeader tkey="requestId" label="#" />
                                     <SortableHeader tkey="type" label="Tipo" />
                                     <SortableHeader tkey="status" label="Status" />
                                     <SortableHeader tkey="submittedBy" label="Solicitante" />
@@ -192,6 +198,7 @@ export function AllRequestsView() {
                             <TableBody>
                                 {filteredAndSortedRequests.map((req) => (
                                     <TableRow key={req.id}>
+                                        <TableCell className="font-mono text-muted-foreground text-xs">{req.requestId}</TableCell>
                                         <TableCell className="font-medium">{req.type}</TableCell>
                                         <TableCell>
                                             <Badge variant="secondary" className="font-semibold">
