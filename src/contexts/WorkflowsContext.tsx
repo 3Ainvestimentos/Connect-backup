@@ -9,6 +9,7 @@ import { useApplications } from './ApplicationsContext';
 import { getFirestore, writeBatch, doc } from 'firebase/firestore';
 import { getFirebaseApp } from '@/lib/firebase';
 import { useCollaborators } from './CollaboratorsContext';
+import { useAuth } from './AuthContext';
 
 // Define os possíveis status de um workflow
 export type WorkflowStatus = string; // Now a generic string, e.g., 'pending_approval', 'in_progress'
@@ -49,6 +50,7 @@ export interface WorkflowRequest {
 interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
+  hasNewAssignedTasks: boolean;
   addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage?: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   archiveRequestMutation: UseMutationResult<void, Error, string, unknown>;
@@ -64,6 +66,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const { addMessage } = useMessages();
   const { workflowDefinitions } = useApplications();
   const { collaborators } = useCollaborators();
+  const { user } = useAuth();
 
 
   const { data: requests = [], isFetching } = useQuery<WorkflowRequest[]>({
@@ -75,6 +78,28 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         viewedBy: r.viewedBy || []
     })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
   });
+
+  const hasNewAssignedTasks = useMemo(() => {
+    if (!user) return false;
+    const currentUserCollab = collaborators.find(c => c.email === user.email);
+    if (!currentUserCollab) return false;
+
+    return requests.some(req => {
+      // Check if assigned to current user
+      if (req.assignee?.id !== currentUserCollab.id3a) {
+        return false;
+      }
+      // Find the definition to get the initial status
+      const definition = workflowDefinitions.find(d => d.name === req.type);
+      if (!definition || !definition.statuses || definition.statuses.length === 0) {
+        return false;
+      }
+      const initialStatus = definition.statuses[0].id;
+      // Return true if the request is in its initial status
+      return req.status === initialStatus;
+    });
+  }, [requests, user, collaborators, workflowDefinitions]);
+
 
   const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'requestId'>>({
     mutationFn: async (requestData) => {
@@ -247,11 +272,12 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     requests,
     loading: isFetching,
+    hasNewAssignedTasks,
     addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>>,
     updateRequestAndNotify,
     archiveRequestMutation,
     markRequestsAsViewedBy
-  }), [requests, isFetching, addRequestMutation, updateRequestAndNotify, archiveRequestMutation, markRequestsAsViewedBy]);
+  }), [requests, isFetching, hasNewAssignedTasks, addRequestMutation, updateRequestAndNotify, archiveRequestMutation, markRequestsAsViewedBy]);
 
   return (
     <WorkflowsContext.Provider value={value}>

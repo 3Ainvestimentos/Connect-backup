@@ -131,18 +131,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Provisory access check
-      if (!PROVISIONAL_ACCESS_LIST.includes(userEmail)) {
-        await firebaseSignOut(auth);
-        toast({
-            title: "Acesso Suspenso Temporariamente",
-            description: "O acesso à plataforma está temporariamente restrito. Por favor, contate o administrador.",
-            variant: "destructive",
-            duration: 10000,
-        });
-        setLoading(false);
-        return;
-      }
+      // Provisory access check - REMOVED TO ALLOW ALL DOMAIN USERS
+      // if (!PROVISIONAL_ACCESS_LIST.includes(userEmail)) {
+      //   await firebaseSignOut(auth);
+      //   toast({
+      //       title: "Acesso Suspenso Temporariamente",
+      //       description: "O acesso à plataforma está temporariamente restrito. Por favor, contate o administrador.",
+      //       variant: "destructive",
+      //       duration: 10000,
+      //   });
+      //   setLoading(false);
+      //   return;
+      // }
 
       // Find collaborator before logging to ensure we can log the event with the correct ID
       const collaborator = collaborators.find(c => c.email === userEmail);

@@ -57,7 +57,7 @@ const navItems = [
   { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false, requiredEmail: 'matheus@3ainvestimentos.com.br' },
 ];
 
-function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () => void; hasPendingRequests: boolean; }) {
+function UserNav({ onProfileClick, hasPendingRequests, hasNewAssignedTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasNewAssignedTasks: boolean; }) {
   const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
 
@@ -70,7 +70,8 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
         <Button variant="ghost" className={cn(
           "relative h-10 w-10 rounded-full p-0 transition-all duration-300",
           "focus-visible:ring-0 focus-visible:ring-offset-0",
-          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary"
+          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-destructive",
+          hasNewAssignedTasks && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary"
         )}>
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
@@ -98,7 +99,10 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
         </DropdownMenuItem>
         {permissions.canViewTasks && (
             <DropdownMenuItem asChild>
-                <Link href="/me/tasks" className="cursor-pointer font-body">
+                <Link href="/me/tasks" className={cn(
+                  "cursor-pointer font-body",
+                  hasNewAssignedTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+                )}>
                     <ListTodo className="mr-2 h-4 w-4" />
                     <span>Minhas Tarefas</span>
                 </Link>
@@ -107,7 +111,7 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
         <DropdownMenuItem asChild>
            <Link href="/requests" className={cn(
               "cursor-pointer font-body",
-              hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+              hasPendingRequests && "bg-destructive/10 text-destructive font-bold hover:!bg-destructive/20"
             )}>
               <Mailbox className="mr-2 h-4 w-4" />
               <span>Caixa de Entrada</span>
@@ -169,7 +173,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut, permissions } = useAuth();
   const { collaborators } = useCollaborators();
   const { theme, setTheme } = useTheme();
-  const { requests, loading: workflowsLoading } = useWorkflows();
+  const { requests, hasNewAssignedTasks, loading: workflowsLoading } = useWorkflows();
   const router = useRouter();
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
@@ -180,11 +184,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
-    // Check if there's any request for a workflow the user owns that is unassigned.
+    // Check if there's any request for a workflow the user owns that is unassigned and not yet viewed by them.
+    const currentUserCollab = collaborators.find(c => c.email === user.email);
+    if (!currentUserCollab) return false;
+
     return requests.some(req => 
-      req.ownerEmail === user.email && !req.assignee
+      req.ownerEmail === user.email && !req.assignee && !req.viewedBy.includes(currentUserCollab.id3a)
     );
-  }, [user, requests, workflowsLoading, permissions.canManageRequests]);
+  }, [user, requests, workflowsLoading, permissions.canManageRequests, collaborators]);
 
   // Page view logging
   useEffect(() => {
@@ -263,7 +270,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
+      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasNewAssignedTasks={hasNewAssignedTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 

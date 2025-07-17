@@ -1,9 +1,11 @@
+
 "use client";
 
 import Link from 'next/link';
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import Image from 'next/image';
 import { Button } from '../ui/button';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   userNav?: React.ReactNode;
@@ -13,7 +15,7 @@ interface HeaderProps {
 
 export function Header({ userNav, showSidebarTrigger = true, showDashboardButton = false }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-50 flex h-[var(--header-height)] w-full items-center gap-x-4 bg-header text-header-foreground px-4 md:px-6">
+    <header className={cn("sticky top-0 z-50 flex h-[var(--header-height)] w-full items-center gap-x-4 bg-header text-header-foreground px-4 md:px-6")}>
       {/* Sidebar Trigger for mobile, hidden on md+ */}
       {showSidebarTrigger && (
         <SidebarTrigger className="md:hidden text-header-foreground/80 hover:text-header-foreground" />
