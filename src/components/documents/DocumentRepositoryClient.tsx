@@ -17,7 +17,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { addDocumentToCollection } from '@/lib/firestore-service';
 
 interface DocumentRepositoryClientProps {
   initialDocuments: DocumentType[];
@@ -49,6 +52,27 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
+  const { user } = useAuth();
+  const { collaborators } = useCollaborators();
+
+  const handleDownload = (doc: DocumentType) => {
+    const currentUserCollab = collaborators.find(c => c.email === user?.email);
+    if (!user || !currentUserCollab) return;
+
+    addDocumentToCollection('audit_logs', {
+      eventType: 'document_download',
+      userId: currentUserCollab.id3a,
+      userName: currentUserCollab.name,
+      timestamp: new Date().toISOString(),
+      details: {
+        documentId: doc.id,
+        documentName: doc.name,
+      }
+    });
+
+    // Open download link in a new tab
+    window.open(doc.downloadUrl, '_blank');
+  };
 
   const filteredAndSortedDocuments = useMemo(() => {
     let items = initialDocuments;
@@ -203,10 +227,8 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
                     {new Date(doc.lastModified).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" asChild aria-label="Baixar documento" className="hover:bg-muted">
-                      <a href={doc.downloadUrl} target="_blank" rel="noopener noreferrer">
+                    <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} aria-label="Baixar documento" className="hover:bg-muted">
                         <Download className="h-5 w-5 text-muted-foreground" />
-                      </a>
                     </Button>
                   </TableCell>
                 </TableRow>
