@@ -6,10 +6,9 @@ import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { useQuery } from '@tanstack/react-query';
 import { getCollection, WithId } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Fingerprint, LineChart as LineChartIcon, User, Eye, Download, Search, BarChart as BarChartIcon, Users as UsersIcon } from 'lucide-react';
-import { Pie, ResponsiveContainer, Tooltip, Legend, Cell, Line, LineChart, CartesianGrid, XAxis, YAxis, Bar, BarChart } from 'recharts';
+import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon } from 'lucide-react';
+import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
 import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
@@ -24,40 +23,19 @@ type AuditLogEvent = WithId<{
     details: { [key: string]: any };
 }>;
 
-const EVENT_TYPE_LABELS: { [key in AuditLogEvent['eventType']]: { label: string, icon: React.ElementType } } = {
-    login: { label: 'Logins', icon: User },
-    page_view: { label: 'Acessos de Página', icon: Eye },
-    document_download: { label: 'Downloads', icon: Download },
-    content_view: { label: 'Visualizações de Conteúdo', icon: Eye },
-    search_term_used: { label: 'Buscas Realizadas', icon: Search },
-};
-
 
 export default function AuditPage() {
     const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
+        select: (data) => data.filter(e => e.eventType === 'login'),
     });
     const { collaborators, loading: loadingCollaborators } = useCollaborators();
-
-    const eventCountsByType = useMemo(() => {
-        if (isLoading) return [];
-        const counts = events.reduce((acc, event) => {
-            acc[event.eventType] = (acc[event.eventType] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
-
-        return Object.entries(counts).map(([name, value]) => ({
-            name: EVENT_TYPE_LABELS[name as keyof typeof EVENT_TYPE_LABELS]?.label || name,
-            value,
-        }));
-    }, [events, isLoading]);
 
     const cumulativeLogins = useMemo(() => {
         if (isLoading || events.length === 0) return [];
         
         const loginEvents = events
-            .filter(event => event.eventType === 'login')
             .sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
             
         if (loginEvents.length === 0) return [];
@@ -90,16 +68,13 @@ export default function AuditPage() {
     const loginsLast7Days = useMemo(() => {
         if (isLoading || events.length === 0) return [];
         
-        const loginEvents = events.filter(event => event.eventType === 'login');
-        if (loginEvents.length === 0) return [];
-
         const endDate = endOfDay(new Date());
         const startDate = startOfDay(subDays(endDate, 6)); // Last 7 days including today
         
         const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
 
         const loginsByDay: { [key: string]: number } = {};
-        loginEvents.forEach(event => {
+        events.forEach(event => {
             const eventDate = parseISO(event.timestamp);
             if (isWithinInterval(eventDate, { start: startDate, end: endDate })) {
                 const dayKey = format(startOfDay(eventDate), 'yyyy-MM-dd');
@@ -126,7 +101,6 @@ export default function AuditPage() {
         const end = endOfMonth(now);
 
         const monthlyLogins = events.filter(event => {
-            if (event.eventType !== 'login') return false;
             const eventDate = parseISO(event.timestamp);
             return isWithinInterval(eventDate, { start, end });
         });
@@ -149,7 +123,6 @@ export default function AuditPage() {
                     <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
                 </div>
                 <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-6 w-1/4" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
             </div>
         );
     }
@@ -159,8 +132,8 @@ export default function AuditPage() {
             <div className="space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Fingerprint className="h-6 w-6"/>Visão Geral de Eventos</CardTitle>
-                        <CardDescription>Análise da atividade geral registrada na plataforma.</CardDescription>
+                        <CardTitle className="flex items-center gap-2"><LogIn className="h-6 w-6"/>Análise de Logins</CardTitle>
+                        <CardDescription>Análise da frequência e do volume de acessos à plataforma.</CardDescription>
                     </CardHeader>
                 </Card>
                 
@@ -218,39 +191,6 @@ export default function AuditPage() {
                         </div>
                     </CardContent>
                 </Card>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Tabela Sintética</CardTitle>
-                        <CardDescription>Contagem total de cada tipo de evento registrado.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Tipo de Evento</TableHead>
-                                        <TableHead className="text-right">Total</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {eventCountsByType.map((event, index) => {
-                                      const Icon = EVENT_TYPE_LABELS[Object.keys(EVENT_TYPE_LABELS).find(key => EVENT_TYPE_LABELS[key as keyof typeof EVENT_TYPE_LABELS].label === event.name) as keyof typeof EVENT_TYPE_LABELS]?.icon;
-                                      return (
-                                        <TableRow key={index}>
-                                            <TableCell className="font-medium flex items-center gap-2">
-                                                {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-                                                {event.name}
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono font-bold">{event.value}</TableCell>
-                                        </TableRow>
-                                    )})}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-
             </div>
         </SuperAdminGuard>
     );

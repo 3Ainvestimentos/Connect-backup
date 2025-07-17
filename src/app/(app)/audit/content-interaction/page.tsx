@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery } from '@tanstack/react-query';
 import { getCollection, WithId } from '@/lib/firestore-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, FileText, Newspaper, User, TrendingUp, TrendingDown, Medal, Bomb } from 'lucide-react';
+import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 type AuditLogEvent = WithId<{
@@ -27,14 +27,22 @@ type AuditLogEvent = WithId<{
     }
 }>;
 
+const EVENT_TYPE_CONFIG: { [key in AuditLogEvent['eventType']]?: { label: string, icon: React.ElementType } } = {
+    content_view: { label: 'Visualização de Conteúdo', icon: Newspaper },
+    document_download: { label: 'Download de Documento', icon: Download },
+    page_view: { label: 'Acesso de Página', icon: Eye },
+};
+
+
 export default function ContentInteractionPage() {
     const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
+        select: (data) => data.filter(e => e.eventType !== 'login' && e.eventType !== 'search_term_used')
     });
 
-    const { contentStats, mostViewed, leastViewed } = useMemo(() => {
-        if (isLoading || !events.length) return { contentStats: [], mostViewed: null, leastViewed: null };
+    const { contentStats, mostViewed, leastViewed, eventCounts } = useMemo(() => {
+        if (isLoading || !events.length) return { contentStats: [], mostViewed: null, leastViewed: null, eventCounts: [] };
 
         const viewEvents = events.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download');
 
@@ -56,6 +64,17 @@ export default function ContentInteractionPage() {
             stats[contentId].totalViews += 1;
             stats[contentId].uniqueViewers.add(event.userId);
         });
+        
+        const counts = events.reduce((acc, event) => {
+            acc[event.eventType] = (acc[event.eventType] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const eventCounts = Object.entries(counts).map(([name, value]) => ({
+            name: EVENT_TYPE_CONFIG[name as keyof typeof EVENT_TYPE_CONFIG]?.label || name,
+            value,
+            icon: EVENT_TYPE_CONFIG[name as keyof typeof EVENT_TYPE_CONFIG]?.icon || Fingerprint,
+        }));
 
         const contentStats = Object.entries(stats)
           .map(([id, s]) => ({ id, ...s, uniqueViews: s.uniqueViewers.size }))
@@ -64,7 +83,7 @@ export default function ContentInteractionPage() {
         const mostViewed = contentStats.length > 0 ? contentStats[0] : null;
         const leastViewed = contentStats.length > 1 ? contentStats[contentStats.length - 1] : null;
 
-        return { contentStats, mostViewed, leastViewed };
+        return { contentStats, mostViewed, leastViewed, eventCounts };
 
     }, [events, isLoading]);
     
@@ -80,7 +99,7 @@ export default function ContentInteractionPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Eye className="h-6 w-6"/>Interação com Conteúdo</CardTitle>
-                        <CardDescription>Análise de visualizações e downloads de notícias e documentos para entender o engajamento.</CardDescription>
+                        <CardDescription>Análise de visualizações, downloads e acessos para entender o engajamento.</CardDescription>
                     </CardHeader>
                 </Card>
 
@@ -121,8 +140,8 @@ export default function ContentInteractionPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Tabela Sintética</CardTitle>
-                        <CardDescription>Lista de todo o conteúdo visualizado, ordenado por visualizadores únicos.</CardDescription>
+                        <CardTitle className="text-lg">Tabela Sintética de Conteúdo</CardTitle>
+                        <CardDescription>Lista de todo o conteúdo consumido, ordenado por visualizadores únicos.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? renderSkeleton() : (
@@ -173,6 +192,38 @@ export default function ContentInteractionPage() {
                                 </p>
                             </div>
                         )}
+                    </CardContent>
+                </Card>
+                
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Tabela Sintética de Eventos</CardTitle>
+                        <CardDescription>Contagem total de cada tipo de evento de interação.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <div className="border rounded-lg overflow-hidden">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Tipo de Evento</TableHead>
+                                        <TableHead className="text-right">Total</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {eventCounts.map((event, index) => {
+                                      const Icon = event.icon;
+                                      return (
+                                        <TableRow key={index}>
+                                            <TableCell className="font-medium flex items-center gap-2">
+                                                {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
+                                                {event.name}
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono font-bold">{event.value}</TableCell>
+                                        </TableRow>
+                                    )})}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
