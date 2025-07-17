@@ -8,10 +8,13 @@ import { getCollection, WithId } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Fingerprint, LineChart as LineChartIcon, User, Eye, Download, Search, BarChart as BarChartIcon } from 'lucide-react';
+import { Fingerprint, LineChart as LineChartIcon, User, Eye, Download, Search, BarChart as BarChartIcon, Users as UsersIcon } from 'lucide-react';
 import { Pie, ResponsiveContainer, Tooltip, Legend, Cell, Line, LineChart, CartesianGrid, XAxis, YAxis, Bar, BarChart } from 'recharts';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { Progress } from '@/components/ui/progress';
+
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view' | 'search_term_used';
@@ -35,6 +38,7 @@ export default function AuditPage() {
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
     });
+    const { collaborators, loading: loadingCollaborators } = useCollaborators();
 
     const eventCountsByType = useMemo(() => {
         if (isLoading) return [];
@@ -111,15 +115,40 @@ export default function AuditPage() {
             };
         });
     }, [events, isLoading]);
+    
+    const uniqueLoginsThisMonth = useMemo(() => {
+        if (isLoading || loadingCollaborators || events.length === 0 || collaborators.length === 0) {
+            return { uniqueCount: 0, totalCount: 0, percentage: 0 };
+        }
+
+        const now = new Date();
+        const start = startOfMonth(now);
+        const end = endOfMonth(now);
+
+        const monthlyLogins = events.filter(event => {
+            if (event.eventType !== 'login') return false;
+            const eventDate = parseISO(event.timestamp);
+            return isWithinInterval(eventDate, { start, end });
+        });
+
+        const uniqueUserIds = new Set(monthlyLogins.map(event => event.userId));
+        
+        return {
+            uniqueCount: uniqueUserIds.size,
+            totalCount: collaborators.length,
+            percentage: (uniqueUserIds.size / collaborators.length) * 100,
+        };
+    }, [events, collaborators, isLoading, loadingCollaborators]);
 
 
-    if (isLoading) {
+    if (isLoading || loadingCollaborators) {
         return (
             <div className="space-y-6">
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
                     <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
                 </div>
+                <Card><CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>
                 <Card><CardHeader><Skeleton className="h-6 w-1/4" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
             </div>
         );
@@ -169,6 +198,26 @@ export default function AuditPage() {
                         </CardContent>
                     </Card>
                 </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg">
+                            <UsersIcon className="h-5 w-5" />
+                            Logins Únicos (Mês Atual)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-2">
+                             <p className="text-2xl font-bold">
+                                {uniqueLoginsThisMonth.uniqueCount} de {uniqueLoginsThisMonth.totalCount} colaboradores
+                            </p>
+                            <Progress value={uniqueLoginsThisMonth.percentage} className="h-3"/>
+                            <p className="text-sm text-muted-foreground">
+                                {uniqueLoginsThisMonth.percentage.toFixed(1)}% dos colaboradores fizeram login pelo menos uma vez este mês.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
                 
                 <Card>
                     <CardHeader>
