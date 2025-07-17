@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, Timer, User } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, Timer, User, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getIcon } from '@/lib/icons';
 import { WorkflowDefinitionForm } from '@/components/admin/WorkflowDefinitionForm';
@@ -71,6 +71,11 @@ export default function ManageWorkflowsPage() {
                         (rule: any) => rule && rule.field && rule.value && rule.days !== undefined
                     );
                 }
+                
+                // Ensure allowedUserIds exists, default to ['all'] if not present
+                if (!jsonData.allowedUserIds) {
+                    jsonData.allowedUserIds = ['all'];
+                }
 
                 // Validate the cleaned JSON data using the Zod schema
                 const parsedData = workflowDefinitionSchema.parse(jsonData);
@@ -120,6 +125,13 @@ export default function ManageWorkflowsPage() {
         const owner = collaborators.find(c => c.email === email);
         return owner?.name || email;
     }
+    
+    const getAccessDescription = (ids: string[]) => {
+        if (!ids || ids.length === 0) return 'Ninguém';
+        if (ids.includes('all')) return 'Todos';
+        return `${ids.length} Colaborador(es)`;
+    };
+
 
     return (
         <AdminGuard>
@@ -162,7 +174,7 @@ export default function ManageWorkflowsPage() {
                                         <TableHead>Ícone</TableHead>
                                         <TableHead>Nome</TableHead>
                                         <TableHead>Proprietário</TableHead>
-                                        <TableHead>Campos</TableHead>
+                                        <TableHead>Acesso</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -179,7 +191,12 @@ export default function ManageWorkflowsPage() {
                                                       {getOwnerName(def.ownerEmail)}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell>{def.fields.length}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={def.allowedUserIds?.includes('all') ? 'default' : 'secondary'} className="flex items-center gap-1.5 w-fit">
+                                                      <Users className="h-3 w-3" />
+                                                      {getAccessDescription(def.allowedUserIds || ['all'])}
+                                                    </Badge>
+                                                </TableCell>
                                                 <TableCell className="text-right">
                                                     <Button variant="ghost" size="icon" onClick={() => handleOpenForm(def)} className="hover:bg-muted">
                                                         <Edit className="h-4 w-4" />

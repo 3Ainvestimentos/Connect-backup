@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User } from 'lucide-react';
+import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User, ShieldCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
 import { iconList, getIcon } from '@/lib/icons';
@@ -20,6 +20,7 @@ import { Switch } from '../ui/switch';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { RecipientSelectionModal } from './RecipientSelectionModal';
 
 type FormValues = z.infer<typeof workflowDefinitionSchema>;
 
@@ -32,7 +33,9 @@ interface WorkflowDefinitionFormProps {
 export function WorkflowDefinitionForm({ isOpen, onClose, definition }: WorkflowDefinitionFormProps) {
     const { addWorkflowDefinition, updateWorkflowDefinition } = useApplications();
     const { collaborators } = useCollaborators();
-    const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch } = useForm<FormValues>({
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
+
+    const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<FormValues>({
         resolver: zodResolver(workflowDefinitionSchema),
         defaultValues: definition ? {
             ...definition,
@@ -40,6 +43,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') as any })) : [],
             statuses: definition.statuses?.length ? definition.statuses : [{ id: 'pending', label: 'Pendente' }],
             slaRules: definition.slaRules || [],
+            allowedUserIds: definition.allowedUserIds || ['all'],
         } : {
             name: '',
             description: '',
@@ -50,6 +54,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             fields: [],
             routingRules: [],
             statuses: [{ id: 'pending', label: 'Pendente' }],
+            allowedUserIds: ['all'],
         },
     });
 
@@ -60,6 +65,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
 
 
     const watchedFields = watch('fields');
+    const watchAllowedUserIds = watch('allowedUserIds');
 
     const uniqueCollaborators = React.useMemo(() => {
         const seen = new Set();
@@ -99,6 +105,13 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         }
     };
     
+    const getAccessDescription = (ids: string[]) => {
+        if (!ids || ids.length === 0) return 'Nenhum destinatário selecionado';
+        if (ids.includes('all')) return 'Acesso público para todos os colaboradores';
+        if (ids.length === 1) return `Acesso restrito a 1 colaborador`;
+        return `Acesso restrito a ${ids.length} colaboradores`;
+    };
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-3xl flex flex-col h-[90vh]">
@@ -156,6 +169,19 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                          </Select>
                                      )} />
                                     {errors.ownerEmail && <p className="text-sm text-destructive mt-1">{errors.ownerEmail.message}</p>}
+                                </div>
+                            </div>
+                            
+                             {/* Access Control */}
+                            <div className="space-y-4 p-4 border rounded-md bg-card">
+                                 <h3 className="font-semibold text-lg flex items-center gap-2"><ShieldCheck className="h-5 w-5"/> Controle de Acesso</h3>
+                                 <div>
+                                    <Label>Quem pode visualizar e iniciar este workflow?</Label>
+                                    <Button type="button" variant="outline" className="w-full justify-start text-left mt-2" onClick={() => setIsSelectionModalOpen(true)}>
+                                       <Users className="mr-2 h-4 w-4" />
+                                       <span className="truncate">{getAccessDescription(watchAllowedUserIds)}</span>
+                                    </Button>
+                                    {errors.allowedUserIds && <p className="text-sm text-destructive mt-1">{errors.allowedUserIds.message as string}</p>}
                                 </div>
                             </div>
                            
@@ -343,6 +369,18 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                         </Button>
                     </DialogFooter>
                 </form>
+
+                <RecipientSelectionModal
+                    isOpen={isSelectionModalOpen}
+                    onClose={() => setIsSelectionModalOpen(false)}
+                    allCollaborators={collaborators}
+                    selectedIds={watchAllowedUserIds}
+                    onConfirm={(newIds) => {
+                        setValue('allowedUserIds', newIds, { shouldValidate: true });
+                        setIsSelectionModalOpen(false);
+                    }}
+                />
+
             </DialogContent>
         </Dialog>
     );

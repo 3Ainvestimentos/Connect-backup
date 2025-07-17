@@ -10,14 +10,34 @@ import { useApplications, WorkflowDefinition } from '@/contexts/ApplicationsCont
 import { Separator } from '@/components/ui/separator';
 import MyRequests from '@/components/applications/MyRequests';
 import WorkflowSubmissionModal from '@/components/applications/WorkflowSubmissionModal';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
 export default function ApplicationsPage() {
+  const { user } = useAuth();
+  const { collaborators } = useCollaborators();
   const { workflowDefinitions } = useApplications();
   const [activeWorkflow, setActiveWorkflow] = React.useState<WorkflowDefinition | null>(null);
 
+  const currentUserCollab = React.useMemo(() => {
+    if (!user) return null;
+    return collaborators.find(c => c.email === user.email);
+  }, [user, collaborators]);
+
   const sortedWorkflows = React.useMemo(() => {
-    return [...workflowDefinitions].sort((a, b) => a.name.localeCompare(b.name));
-  }, [workflowDefinitions]);
+    if (!currentUserCollab) return [];
+    
+    const accessibleWorkflows = workflowDefinitions.filter(def => {
+      // If allowedUserIds is not defined, or includes 'all', it's public
+      if (!def.allowedUserIds || def.allowedUserIds.includes('all')) {
+        return true;
+      }
+      // Otherwise, check if the current user's ID is in the list
+      return def.allowedUserIds.includes(currentUserCollab.id3a);
+    });
+
+    return [...accessibleWorkflows].sort((a, b) => a.name.localeCompare(b.name));
+  }, [workflowDefinitions, currentUserCollab]);
   
   const handleAppClick = (workflow: WorkflowDefinition) => {
     setActiveWorkflow(workflow);
