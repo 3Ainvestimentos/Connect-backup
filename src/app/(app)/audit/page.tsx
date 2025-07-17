@@ -57,14 +57,16 @@ export default function AuditPage() {
         
         const countsByDay = last7Days.map(day => ({
             date: format(day, 'dd/MM'),
-            count: 0,
+            Logins: 0,
         }));
 
         events.forEach(event => {
-            const eventDay = startOfDay(parseISO(event.timestamp));
-            const dayIndex = last7Days.findIndex(d => d.getTime() === eventDay.getTime());
-            if (dayIndex !== -1) {
-                countsByDay[dayIndex].count++;
+            if (event.eventType === 'login') {
+              const eventDay = startOfDay(parseISO(event.timestamp));
+              const dayIndex = last7Days.findIndex(d => d.getTime() === eventDay.getTime());
+              if (dayIndex !== -1) {
+                  countsByDay[dayIndex].Logins++;
+              }
             }
         });
         
@@ -114,7 +116,7 @@ export default function AuditPage() {
                     </Card>
                     <Card className="lg:col-span-2">
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><LineChartIcon className="h-5 w-5"/>Atividade nos Últimos 7 Dias</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-lg"><LineChartIcon className="h-5 w-5"/>Logins nos Últimos 7 Dias</CardTitle>
                         </CardHeader>
                         <CardContent>
                              <ResponsiveContainer width="100%" height={300}>
@@ -123,7 +125,7 @@ export default function AuditPage() {
                                     <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12}/>
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false}/>
                                     <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }}/>
-                                    <Line type="monotone" dataKey="count" name="Eventos" stroke="hsl(var(--primary))" strokeWidth={2} activeDot={{ r: 8 }}/>
+                                    <Line type="monotone" dataKey="Logins" name="Logins" stroke="hsl(var(--primary))" strokeWidth={2} activeDot={{ r: 8 }}/>
                                 </LineChart>
                             </ResponsiveContainer>
                         </CardContent>
