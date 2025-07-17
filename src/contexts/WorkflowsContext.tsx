@@ -43,14 +43,15 @@ export interface WorkflowRequest {
       name: string;
   };
   viewedBy: string[]; // Array of admin 'id3a' who have seen this request while it was pending
+  isArchived?: boolean; // Flag for soft deletion by owner
 }
 
 interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
-  addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>>;
+  addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage?: string, notifyAssigneeMessage?: string | null) => Promise<void>;
-  deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
+  archiveRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string, ownedRequestIds: string[]) => Promise<void>;
 }
 
@@ -75,7 +76,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
   });
 
-  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>, Error, Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>({
+  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>, Error, Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
       if (!definition) {
@@ -92,6 +93,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         ownerEmail: definition.ownerEmail,
         viewedBy: [] as string[],
         assignee: undefined,
+        isArchived: false,
       };
       
       if (requestWithDefaults.history[0]) {
@@ -140,7 +142,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      return newDoc as WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>;
+      return newDoc as WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>;
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -168,12 +170,13 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
   
-  const deleteRequestMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+  const archiveRequestMutation = useMutation<void, Error, string>({
+    mutationFn: (id: string) => updateDocumentInCollection(COLLECTION_NAME, id, { isArchived: true }),
     onSuccess: (data, id) => {
         queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
             if (!oldData) return [];
-            return oldData.filter(req => req.id !== id);
+            // Optimistically update the item to be archived
+            return oldData.map(req => req.id === id ? { ...req, isArchived: true } : req);
         });
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     }
@@ -240,11 +243,11 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     requests,
     loading: isFetching,
-    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>>,
+    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>>,
     updateRequestAndNotify,
-    deleteRequestMutation,
+    archiveRequestMutation,
     markRequestsAsViewedBy
-  }), [requests, isFetching, addRequestMutation, updateRequestAndNotify, deleteRequestMutation, markRequestsAsViewedBy]);
+  }), [requests, isFetching, addRequestMutation, updateRequestAndNotify, archiveRequestMutation, markRequestsAsViewedBy]);
 
   return (
     <WorkflowsContext.Provider value={value}>

@@ -11,13 +11,14 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ListChecks, User, Search, Filter, FileDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { ListChecks, User, Search, Filter, FileDown, ChevronUp, ChevronDown, Archive } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import Papa from 'papaparse';
+import { cn } from '@/lib/utils';
 
-type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | '';
+type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | 'isArchived' | '';
 type SortDirection = 'asc' | 'desc';
 
 export function AllRequestsView() {
@@ -27,9 +28,14 @@ export function AllRequestsView() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('submittedAt');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+    const [showArchived, setShowArchived] = useState(false);
 
     const filteredAndSortedRequests = useMemo(() => {
         let items = [...requests];
+
+        if (!showArchived) {
+            items = items.filter(req => !req.isArchived);
+        }
 
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
@@ -63,6 +69,10 @@ export function AllRequestsView() {
                         valA = parseInt(a.requestId, 10);
                         valB = parseInt(b.requestId, 10);
                         break;
+                    case 'isArchived':
+                        valA = a.isArchived ?? false;
+                        valB = b.isArchived ?? false;
+                        break;
                     default:
                         valA = a[sortKey];
                         valB = b[sortKey];
@@ -80,7 +90,7 @@ export function AllRequestsView() {
         }
 
         return items;
-    }, [requests, searchTerm, sortKey, sortDirection]);
+    }, [requests, searchTerm, sortKey, sortDirection, showArchived]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -120,6 +130,7 @@ export function AllRequestsView() {
                 Solicitante: req.submittedBy.userName,
                 Email_Solicitante: req.submittedBy.userEmail,
                 Data_Submissao: format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm:ss"),
+                Arquivada: req.isArchived ? 'Sim' : 'Não',
                 ...flatFormData
             };
         });
@@ -141,8 +152,8 @@ export function AllRequestsView() {
         </div>
     );
     
-    const SortableHeader = ({ tkey, label }: { tkey: SortKey; label: string }) => (
-      <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
+    const SortableHeader = ({ tkey, label, className }: { tkey: SortKey; label: string; className?: string }) => (
+      <TableHead onClick={() => handleSort(tkey)} className={cn("cursor-pointer hover:bg-muted/50", className)}>
           <div className="flex items-center gap-1">
               {label}
               {sortKey === tkey && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
@@ -173,9 +184,13 @@ export function AllRequestsView() {
                                 className="pl-10 w-full"
                             />
                         </div>
+                        <Button variant={showArchived ? "secondary" : "outline"} onClick={() => setShowArchived(!showArchived)}>
+                            <Archive className="mr-2 h-4 w-4"/>
+                            {showArchived ? "Ocultar Arquivadas" : "Mostrar Arquivadas"}
+                        </Button>
                         <Button variant="secondary" onClick={handleExportCSV} disabled={filteredAndSortedRequests.length === 0}>
                             <FileDown className="mr-2 h-4 w-4" />
-                            Exportar CSV
+                            Exportar
                         </Button>
                     </div>
                 </div>
@@ -186,6 +201,7 @@ export function AllRequestsView() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <SortableHeader tkey="isArchived" label="Arq." className="w-[50px]"/>
                                     <SortableHeader tkey="requestId" label="#" />
                                     <SortableHeader tkey="type" label="Tipo" />
                                     <SortableHeader tkey="status" label="Status" />
@@ -197,8 +213,11 @@ export function AllRequestsView() {
                             </TableHeader>
                             <TableBody>
                                 {filteredAndSortedRequests.map((req) => (
-                                    <TableRow key={req.id}>
-                                        <TableCell className="font-mono text-muted-foreground text-xs">{req.requestId}</TableCell>
+                                    <TableRow key={req.id} className={cn(req.isArchived && "bg-muted/30 text-muted-foreground")}>
+                                        <TableCell>
+                                            {req.isArchived && <Archive className="h-4 w-4" title="Arquivado"/>}
+                                        </TableCell>
+                                        <TableCell className="font-mono text-xs">{req.requestId}</TableCell>
                                         <TableCell className="font-medium">{req.type}</TableCell>
                                         <TableCell>
                                             <Badge variant="secondary" className="font-semibold">
@@ -217,12 +236,12 @@ export function AllRequestsView() {
                                                     <span className="text-sm">{req.assignee.name}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-sm text-muted-foreground">Não atribuído</span>
+                                                <span className="text-sm">Não atribuído</span>
                                             )}
                                         </TableCell>
                                         <TableCell>
                                              <div className="flex items-center gap-2">
-                                                <User className="h-4 w-4 text-muted-foreground"/>
+                                                <User className="h-4 w-4"/>
                                                 <span className="text-sm">{getOwnerName(req.ownerEmail)}</span>
                                             </div>
                                         </TableCell>

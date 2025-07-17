@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mailbox, Eye, Filter, FileDown, User, Users, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Mailbox, Eye, Filter, FileDown, User, Users, Archive, Loader2 } from 'lucide-react';
 import { RequestApprovalModal } from './RequestApprovalModal';
 import {
   DropdownMenu,
@@ -44,7 +44,7 @@ import { toast } from '@/hooks/use-toast';
 
 export function ManageRequests() {
     const { user, permissions } = useAuth();
-    const { requests, loading, markRequestsAsViewedBy, deleteRequestMutation } = useWorkflows();
+    const { requests, loading, markRequestsAsViewedBy, archiveRequestMutation } = useWorkflows();
     const { workflowDefinitions } = useApplications();
     const { collaborators } = useCollaborators();
     const [selectedRequest, setSelectedRequest] = useState<WorkflowRequest | null>(null);
@@ -78,8 +78,8 @@ export function ManageRequests() {
 
     const filteredRequests = useMemo(() => {
         if (!user) return [];
-        // Only show requests for workflows the user owns
-        let filtered = requests.filter(req => req.ownerEmail === user.email);
+        // Only show requests for workflows the user owns that are not archived
+        let filtered = requests.filter(req => req.ownerEmail === user.email && !req.isArchived);
 
         if (statusFilter.length > 0) {
             filtered = filtered.filter(req => statusFilter.includes(req.status));
@@ -106,12 +106,12 @@ export function ManageRequests() {
         return status?.label || request.status;
     };
     
-    const handleDeleteRequest = async (id: string) => {
+    const handleArchiveRequest = async (id: string) => {
         try {
-            await deleteRequestMutation.mutateAsync(id);
-            toast({ title: "Sucesso!", description: "A solicitação foi excluída." });
+            await archiveRequestMutation.mutateAsync(id);
+            toast({ title: "Sucesso!", description: "A solicitação foi arquivada." });
         } catch(error) {
-            toast({ title: "Erro ao Excluir", description: "Não foi possível excluir a solicitação.", variant: "destructive" });
+            toast({ title: "Erro ao Arquivar", description: "Não foi possível arquivar a solicitação.", variant: "destructive" });
         }
     }
 
@@ -266,24 +266,24 @@ export function ManageRequests() {
                                             <TableCell className="text-right">
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" disabled={deleteRequestMutation.isPending && deleteRequestMutation.variables === req.id}>
-                                                            {deleteRequestMutation.isPending && deleteRequestMutation.variables === req.id ? (
+                                                        <Button variant="ghost" size="icon" disabled={archiveRequestMutation.isPending && archiveRequestMutation.variables === req.id}>
+                                                            {archiveRequestMutation.isPending && archiveRequestMutation.variables === req.id ? (
                                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                                             ) : (
-                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                                <Archive className="h-4 w-4 text-muted-foreground" />
                                                             )}
                                                         </Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
-                                                        <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                                                        <AlertDialogTitle>Arquivar Solicitação?</AlertDialogTitle>
                                                         <AlertDialogDescription>
-                                                            Esta ação não pode ser desfeita. Isso excluirá permanentemente a solicitação e removerá seus dados de nossos servidores.
+                                                            Esta ação irá remover a solicitação da sua caixa de entrada, mas ela continuará existindo no sistema para fins de auditoria. Tem certeza que deseja arquivar?
                                                         </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => handleDeleteRequest(req.id)}>Continuar</AlertDialogAction>
+                                                        <AlertDialogAction onClick={() => handleArchiveRequest(req.id)}>Arquivar</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
