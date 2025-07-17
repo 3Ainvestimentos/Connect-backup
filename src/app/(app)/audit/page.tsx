@@ -158,7 +158,7 @@ export default function AuditPage() {
                         </div>
                         <Button onClick={handleExport} disabled={isLoading || events.length === 0}>
                             <FileDown className="mr-2 h-4 w-4" />
-                            Exportar Log de Logins
+                            Exportar CSV
                         </Button>
                     </CardHeader>
                 </Card>
