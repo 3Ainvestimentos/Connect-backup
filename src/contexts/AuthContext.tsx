@@ -19,6 +19,7 @@ const PROVISIONAL_ACCESS_LIST = [
     'pedro.rosa@3ainvestimentos.com.br',
     'thiago@3ainvestimentos.com.br',
     'ti@3ariva.com.br',
+    'joao.pompeu@3ainvestimentos.com.br',
 ];
 
 

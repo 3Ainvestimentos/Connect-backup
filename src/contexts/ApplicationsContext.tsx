@@ -49,7 +49,7 @@ export const routingRuleSchema = z.object({
 export const slaRuleSchema = z.object({
   field: z.string().min(1, "O campo para a regra de SLA é obrigatório."),
   value: z.string().min(1, "O valor para a regra de SLA é obrigatório."),
-  days: z.coerce.number().int().min(0, "O SLA em dias deve ser um número positivo."),
+  days: z.coerce.number().min(0, "O SLA em dias deve ser um número positivo.").transform(val => Math.round(val)),
 });
 
 export const workflowDefinitionSchema = z.object({
