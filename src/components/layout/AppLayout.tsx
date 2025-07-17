@@ -104,6 +104,15 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
                 </Link>
             </DropdownMenuItem>
         )}
+        <DropdownMenuItem asChild>
+           <Link href="/requests" className={cn(
+              "cursor-pointer font-body",
+              hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+            )}>
+              <Mailbox className="mr-2 h-4 w-4" />
+              <span>Minhas Solicitações</span>
+            </Link>
+        </DropdownMenuItem>
         <DropdownMenuSub>
             <DropdownMenuSubTrigger>
                 {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
@@ -130,26 +139,14 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Paineis de controle</DropdownMenuLabel>
-                {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Aplicações/Workflows</span></Link></DropdownMenuItem>}
-                {permissions.canManageRequests && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/requests" className={cn(
-                      "cursor-pointer font-body",
-                      hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-                    )}>
-                      <Mailbox className="mr-2 h-4 w-4" />
-                      <span>Solicitações</span>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Conteúdo interno</span></Link></DropdownMenuItem>}
-                {isSuperAdmin && <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>}
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Admin</DropdownMenuLabel>
+                {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
+                {isSuperAdmin && <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                     <DropdownMenuItem asChild>
                         <Link href="/admin" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive">
                             <Shield className="mr-2 h-4 w-4" />
-                            <span>Admin (Sistema)</span>
+                            <span>Sistema</span>
                         </Link>
                     </DropdownMenuItem>
                 )}
