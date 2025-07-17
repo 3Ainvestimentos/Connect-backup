@@ -144,7 +144,6 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
                   </DropdownMenuItem>
                 )}
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><FileText className="mr-2 h-4 w-4" /><span>Conteúdo interno</span></Link></DropdownMenuItem>}
-                {isSuperAdmin && <DropdownMenuItem asChild><Link href="/workflow-analytics" className="cursor-pointer font-body"><BarChart className="mr-2 h-4 w-4" /><span>Análise de Workflows</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                     <DropdownMenuItem asChild>

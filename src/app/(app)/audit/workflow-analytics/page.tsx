@@ -9,8 +9,6 @@ import { useWorkflows, WorkflowRequest } from '@/contexts/WorkflowsContext';
 import { useMemo } from 'react';
 import { FileClock, Timer, Hourglass, ListChecks, Workflow as WorkflowIcon } from 'lucide-react';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
-import { PageHeader } from '@/components/layout/PageHeader';
-
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
 
@@ -119,11 +117,6 @@ export default function WorkflowAnalyticsPage() {
 
   return (
     <section className="space-y-6">
-        <PageHeader
-            title="Análise de Workflows"
-            description="Métricas de tempo e gargalos nos processos de workflow."
-        />
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
