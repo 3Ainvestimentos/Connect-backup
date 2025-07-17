@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
 import type { CollaboratorPermissions } from './CollaboratorsContext';
+import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
 const ALLOWED_DOMAINS = ['3ainvestimentos.com.br', '3ariva.com.br'];
@@ -143,6 +144,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         setLoading(false);
         return;
+      }
+
+      // Find collaborator before logging to ensure we can log the event with the correct ID
+      const collaborator = collaborators.find(c => c.email === userEmail);
+
+      // Log the login event for auditing purposes
+      if (collaborator) {
+        await addDocumentToCollection('audit_logs', {
+            eventType: 'login',
+            userId: collaborator.id3a,
+            userName: collaborator.name,
+            timestamp: new Date().toISOString(),
+            details: {
+                message: `${collaborator.name} logged in.`,
+            }
+        });
       }
       
       router.push('/dashboard');

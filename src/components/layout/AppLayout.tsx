@@ -42,6 +42,8 @@ import FAQModal from '@/components/guides/FAQModal';
 import ProfileModal from '../applications/ProfileModal';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { toast } from '@/hooks/use-toast';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { addDocumentToCollection } from '@/lib/firestore-service';
 
 
 const navItems = [
@@ -169,6 +171,7 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut, permissions } = useAuth();
+  const { collaborators } = useCollaborators();
   const { theme, setTheme } = useTheme();
   const { requests, loading: workflowsLoading } = useWorkflows();
   const router = useRouter();
@@ -186,6 +189,25 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       req.ownerEmail === user.email && !req.assignee
     );
   }, [user, requests, workflowsLoading, permissions.canManageRequests]);
+
+  // Page view logging
+  useEffect(() => {
+    if (user && pathname) {
+        const currentUserCollab = collaborators.find(c => c.email === user.email);
+        if (currentUserCollab) {
+            addDocumentToCollection('audit_logs', {
+                eventType: 'page_view',
+                userId: currentUserCollab.id3a,
+                userName: currentUserCollab.name,
+                timestamp: new Date().toISOString(),
+                details: {
+                    path: pathname,
+                }
+            }).catch(console.error); // Log silently without disturbing user
+        }
+    }
+  }, [pathname, user, collaborators]);
+
 
   // Inactivity Logout Logic
   const handleSignOut = useCallback(() => {

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { getCollection, WithId } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,18 +10,38 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Download, Fingerprint } from 'lucide-react';
+import { Download, Fingerprint, LogIn, Eye } from 'lucide-react';
 
 type AuditLogEvent = WithId<{
-    eventType: 'document_download';
+    eventType: 'document_download' | 'login' | 'page_view';
     userId: string;
     userName: string;
-    timestamp: string;
+    timestamp: string; // ISO String
     details: {
-        documentId: string;
-        documentName: string;
+        documentId?: string;
+        documentName?: string;
+        path?: string;
+        message?: string;
     }
 }>;
+
+const eventTypeConfig = {
+    login: {
+        label: "Login",
+        icon: LogIn,
+        className: "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700",
+    },
+    page_view: {
+        label: "Acesso de Página",
+        icon: Eye,
+        className: "bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700",
+    },
+    document_download: {
+        label: "Download",
+        icon: Download,
+        className: "bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
+    },
+};
 
 export function EventLogView() {
     const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
@@ -36,15 +56,39 @@ export function EventLogView() {
         </div>
     );
     
+    const renderEventDetails = (event: AuditLogEvent) => {
+        switch (event.eventType) {
+            case 'login':
+                return `Usuário ${event.userName} entrou no sistema.`;
+            case 'page_view':
+                return `Acessou a página: ${event.details.path}`;
+            case 'document_download':
+                return `Baixou o documento: ${event.details.documentName}`;
+            default:
+                return JSON.stringify(event.details);
+        }
+    };
+    
+    const renderEventTypeBadge = (eventType: AuditLogEvent['eventType']) => {
+        const config = eventTypeConfig[eventType] || {};
+        const Icon = config.icon || Fingerprint;
+        return (
+            <Badge variant="outline" className={`font-semibold flex items-center gap-1.5 w-fit ${config.className}`}>
+                <Icon className="h-3 w-3"/>
+                {config.label || eventType}
+            </Badge>
+        );
+    };
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Fingerprint className="h-6 w-6" />
-                    Registros de Download de Documentos
+                    Registros de Eventos
                 </CardTitle>
                 <CardDescription>
-                    Eventos de download de documentos por colaborador.
+                    Atividades de logins, acessos a páginas e downloads de documentos.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -53,9 +97,9 @@ export function EventLogView() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Evento</TableHead>
+                                    <TableHead>Tipo de Evento</TableHead>
                                     <TableHead>Colaborador</TableHead>
-                                    <TableHead>Documento</TableHead>
+                                    <TableHead>Detalhes</TableHead>
                                     <TableHead>Data</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -63,13 +107,10 @@ export function EventLogView() {
                                 {events.map((event) => (
                                     <TableRow key={event.id}>
                                         <TableCell>
-                                            <Badge variant="secondary" className="font-semibold flex items-center gap-1.5 w-fit">
-                                                <Download className="h-3 w-3"/>
-                                                Download
-                                            </Badge>
+                                            {renderEventTypeBadge(event.eventType)}
                                         </TableCell>
                                         <TableCell className="font-medium">{event.userName}</TableCell>
-                                        <TableCell>{event.details.documentName}</TableCell>
+                                        <TableCell>{renderEventDetails(event)}</TableCell>
                                         <TableCell>{format(parseISO(event.timestamp), "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}</TableCell>
                                     </TableRow>
                                 ))}
@@ -82,7 +123,7 @@ export function EventLogView() {
                         <Fingerprint className="mx-auto h-12 w-12 text-muted-foreground" />
                         <h3 className="mt-4 text-lg font-medium text-foreground">Nenhum evento registrado</h3>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            Ainda não há eventos de download para exibir.
+                            Ainda não há eventos para exibir.
                         </p>
                     </div>
                 )}
