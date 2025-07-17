@@ -1,7 +1,6 @@
 
 "use client";
 
-import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Bar, BarChart as BarChartComponent, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useApplications } from '@/contexts/ApplicationsContext';
@@ -118,126 +117,124 @@ export default function WorkflowEfficiencyPage() {
 
 
   return (
-    <SuperAdminGuard>
-        <section className="space-y-6">
+    <section className="space-y-6">
+         <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <FileClock className="h-6 w-6" />
+                    Analytics de Workflows
+                </CardTitle>
+                <CardDescription>
+                    Análise de métricas de tempo e gargalos nos processos de workflow.
+                </CardDescription>
+            </CardHeader>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
+                </CardHeader>
+                <CardContent>
+                   <ResponsiveContainer width="100%" height={300}>
+                        <BarChartComponent data={requestsByType}>
+                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false}/>
+                            <Tooltip
+                                contentStyle={{ 
+                                    backgroundColor: "hsl(var(--background))",
+                                    borderColor: "hsl(var(--border))",
+                                    borderRadius: "var(--radius)",
+                                }}
+                                cursor={{fill: 'hsl(var(--muted))'}}
+                            />
+                            <Bar dataKey="value" name="Total de Solicitações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChartComponent>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
              <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <FileClock className="h-6 w-6" />
-                        Analytics de Workflows
-                    </CardTitle>
-                    <CardDescription>
-                        Análise de métricas de tempo e gargalos nos processos de workflow.
-                    </CardDescription>
+                    <CardTitle>Solicitações por Status</CardTitle>
                 </CardHeader>
-            </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                       <ResponsiveContainer width="100%" height={300}>
-                            <BarChartComponent data={requestsByType}>
-                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false}/>
-                                <Tooltip
-                                    contentStyle={{ 
-                                        backgroundColor: "hsl(var(--background))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "var(--radius)",
-                                    }}
-                                    cursor={{fill: 'hsl(var(--muted))'}}
-                                />
-                                <Bar dataKey="value" name="Total de Solicitações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                            </BarChartComponent>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Solicitações por Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie data={requestsByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
-                                    {requestsByStatus.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip
-                                    contentStyle={{ 
-                                        backgroundColor: "hsl(var(--background))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "var(--radius)",
-                                    }}
-                                />
-                                <Legend wrapperStyle={{fontSize: "14px"}}/>
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <Timer className="h-5 w-5" />
-                           Tempo Médio de Resolução (Dias Úteis)
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChartComponent data={averageResolutionTime}>
-                                <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                                <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d"/>
-                                <Tooltip
-                                    contentStyle={{ 
-                                        backgroundColor: "hsl(var(--background))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "var(--radius)",
-                                    }}
-                                    cursor={{fill: 'hsl(var(--muted))'}}
-                                    formatter={(value: number) => `${value} dias`}
-                                />
-                                <Bar dataKey="Tempo Médio (dias)" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-                            </BarChartComponent>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Hourglass className="h-5 w-5" />
-                            Tempo Médio por Etapa (Dias Úteis)
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChartComponent data={averageTimePerStatus} layout="vertical">
-                                <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d" />
-                                <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={150} />
-                                <Tooltip
-                                    contentStyle={{ 
-                                        backgroundColor: "hsl(var(--background))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "var(--radius)",
-                                    }}
-                                     cursor={{fill: 'hsl(var(--muted))'}}
-                                     formatter={(value: number) => `${value} dias`}
-                                />
-                                <Legend wrapperStyle={{fontSize: "14px"}}/>
-                                {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
-                                    <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
+                <CardContent>
+                     <ResponsiveContainer width="100%" height={300}>
+                        <PieChart>
+                            <Pie data={requestsByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
+                                {requestsByStatus.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
-                            </BarChartComponent>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-             </div>
-        </section>
-    </SuperAdminGuard>
+                            </Pie>
+                            <Tooltip
+                                contentStyle={{ 
+                                    backgroundColor: "hsl(var(--background))",
+                                    borderColor: "hsl(var(--border))",
+                                    borderRadius: "var(--radius)",
+                                }}
+                            />
+                            <Legend wrapperStyle={{fontSize: "14px"}}/>
+                        </PieChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+        </div>
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                       <Timer className="h-5 w-5" />
+                       Tempo Médio de Resolução (Dias Úteis)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChartComponent data={averageResolutionTime}>
+                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
+                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d"/>
+                            <Tooltip
+                                contentStyle={{ 
+                                    backgroundColor: "hsl(var(--background))",
+                                    borderColor: "hsl(var(--border))",
+                                    borderRadius: "var(--radius)",
+                                }}
+                                cursor={{fill: 'hsl(var(--muted))'}}
+                                formatter={(value: number) => `${value} dias`}
+                            />
+                            <Bar dataKey="Tempo Médio (dias)" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                        </BarChartComponent>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Hourglass className="h-5 w-5" />
+                        Tempo Médio por Etapa (Dias Úteis)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                     <ResponsiveContainer width="100%" height={300}>
+                        <BarChartComponent data={averageTimePerStatus} layout="vertical">
+                            <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d" />
+                            <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={150} />
+                            <Tooltip
+                                contentStyle={{ 
+                                    backgroundColor: "hsl(var(--background))",
+                                    borderColor: "hsl(var(--border))",
+                                    borderRadius: "var(--radius)",
+                                }}
+                                 cursor={{fill: 'hsl(var(--muted))'}}
+                                 formatter={(value: number) => `${value} dias`}
+                            />
+                            <Legend wrapperStyle={{fontSize: "14px"}}/>
+                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
+                                <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </BarChartComponent>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+         </div>
+    </section>
   );
 }
