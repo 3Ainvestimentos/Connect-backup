@@ -18,8 +18,11 @@ interface WorkflowDefinition {
   name: string;          // Nome único e descritivo do workflow. Ex: "Solicitação de Reembolso".
   description: string;   // Texto exibido no cabeçalho do formulário de solicitação.
   icon: string;          // Nome de um ícone da biblioteca `lucide-react`. Ex: "DollarSign".
+  ownerEmail: string;    // (Obrigatório) E-mail do colaborador proprietário deste workflow.
   fields: FormFieldDefinition[]; // Array de objetos que define os campos do formulário.
   statuses: WorkflowStatusDefinition[]; // Array de objetos que define as etapas do processo.
+  defaultSlaDays?: number; // (Opcional) Prazo padrão em dias úteis para a conclusão da solicitação.
+  slaRules?: SlaRule[];    // (Opcional) Array de regras para definir SLAs condicionais.
   routingRules?: RoutingRule[]; // (Opcional) Array de regras para notificação automática.
 }
 ```
@@ -59,7 +62,20 @@ interface WorkflowStatusDefinition {
 }
 ```
 
-### 2.3. Regras de Roteamento (`RoutingRule`)
+### 2.3. Regras de SLA (`SlaRule`)
+
+Esta é uma funcionalidade (opcional) para definir um prazo de conclusão (SLA) condicional.
+
+```typescript
+// Estrutura de uma Regra de SLA
+interface SlaRule {
+  field: string; // O `id` do campo do formulário que acionará a regra.
+  value: string; // O valor que o campo deve ter para a regra ser ativada.
+  days: number;  // O número de dias úteis para o SLA.
+}
+```
+
+### 2.4. Regras de Roteamento (`RoutingRule`)
 
 Esta é uma funcionalidade (opcional) para notificar automaticamente pessoas específicas com base nos dados preenchidos no formulário.
 
@@ -106,6 +122,8 @@ Este exemplo pode ser usado como um modelo para criar um arquivo `reembolso.json
   "name": "Solicitação de Reembolso",
   "description": "Utilize este formulário para solicitar o reembolso de despesas relacionadas ao trabalho. Anexe o comprovante na seção apropriada.",
   "icon": "DollarSign",
+  "ownerEmail": "responsavel.financeiro@3a.com",
+  "defaultSlaDays": 5,
   "fields": [
     {
       "id": "tipo_despesa",
@@ -151,6 +169,13 @@ Este exemplo pode ser usado como um modelo para criar um arquivo `reembolso.json
     {
       "id": "reprovado",
       "label": "Reprovado"
+    }
+  ],
+  "slaRules": [
+    {
+      "field": "tipo_despesa",
+      "value": "Hospedagem",
+      "days": 10
     }
   ],
   "routingRules": [
