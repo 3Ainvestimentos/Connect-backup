@@ -8,9 +8,9 @@ import { getCollection, WithId } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Fingerprint, PieChart, LineChart as LineChartIcon, User, Eye, Download, Search } from 'lucide-react';
+import { Fingerprint, LineChart as LineChartIcon, User, Eye, Download, Search } from 'lucide-react';
 import { Pie, ResponsiveContainer, Tooltip, Legend, Cell, Line, LineChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { format, parseISO, startOfToday, subDays, startOfDay } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 type AuditLogEvent = WithId<{
@@ -21,7 +21,6 @@ type AuditLogEvent = WithId<{
     details: { [key: string]: any };
 }>;
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 const EVENT_TYPE_LABELS: { [key in AuditLogEvent['eventType']]: { label: string, icon: React.ElementType } } = {
     login: { label: 'Logins', icon: User },
     page_view: { label: 'Acessos de Página', icon: Eye },
@@ -50,35 +49,45 @@ export default function AuditPage() {
         }));
     }, [events, isLoading]);
 
-    const activityOverTime = useMemo(() => {
-        if (isLoading) return [];
-        const today = startOfToday();
-        const last7Days = Array.from({ length: 7 }).map((_, i) => subDays(today, 6 - i));
+    const cumulativeLogins = useMemo(() => {
+        if (isLoading || events.length === 0) return [];
         
-        const countsByDay = last7Days.map(day => ({
-            date: format(day, 'dd/MM'),
-            Logins: 0,
-        }));
+        const loginEvents = events
+            .filter(event => event.eventType === 'login')
+            .sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
+            
+        if (loginEvents.length === 0) return [];
 
-        events.forEach(event => {
-            if (event.eventType === 'login') {
-              const eventDay = startOfDay(parseISO(event.timestamp));
-              const dayIndex = last7Days.findIndex(d => d.getTime() === eventDay.getTime());
-              if (dayIndex !== -1) {
-                  countsByDay[dayIndex].Logins++;
-              }
-            }
-        });
+        const startDate = startOfDay(parseISO(loginEvents[0].timestamp));
+        const endDate = startOfDay(new Date());
         
-        return countsByDay;
+        const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+
+        const loginsByDay: { [key: string]: number } = {};
+        loginEvents.forEach(event => {
+            const dayKey = format(startOfDay(parseISO(event.timestamp)), 'yyyy-MM-dd');
+            loginsByDay[dayKey] = (loginsByDay[dayKey] || 0) + 1;
+        });
+
+        let accumulatedLogins = 0;
+        const cumulativeData = dateRange.map(day => {
+            const dayKey = format(day, 'yyyy-MM-dd');
+            accumulatedLogins += (loginsByDay[dayKey] || 0);
+            return {
+                date: format(day, 'dd/MM/yy'),
+                'Logins Acumulados': accumulatedLogins,
+            };
+        });
+
+        return cumulativeData;
+
     }, [events, isLoading]);
 
     if (isLoading) {
         return (
             <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Card className="lg:col-span-1"><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full rounded-full" /></CardContent></Card>
-                    <Card className="lg:col-span-2"><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
+                 <div className="grid grid-cols-1 gap-6">
+                    <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-64 w-full" /></CardContent></Card>
                 </div>
                 <Card><CardHeader><Skeleton className="h-6 w-1/4" /></CardHeader><CardContent><Skeleton className="h-40 w-full" /></CardContent></Card>
             </div>
@@ -95,37 +104,20 @@ export default function AuditPage() {
                     </CardHeader>
                 </Card>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <Card className="lg:col-span-1">
+                <div className="grid grid-cols-1 gap-6">
+                    <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><PieChart className="h-5 w-5"/>Distribuição de Eventos</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <PieChart>
-                                    <Pie data={eventCountsByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                        {eventCountsByType.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }} />
-                                    <Legend wrapperStyle={{fontSize: "12px"}}/>
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                    <Card className="lg:col-span-2">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><LineChartIcon className="h-5 w-5"/>Logins nos Últimos 7 Dias</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-lg"><LineChartIcon className="h-5 w-5"/>Total Acumulado de Logins</CardTitle>
                         </CardHeader>
                         <CardContent>
                              <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={activityOverTime}>
+                                <LineChart data={cumulativeLogins}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))"/>
                                     <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12}/>
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false}/>
                                     <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }}/>
-                                    <Line type="monotone" dataKey="Logins" name="Logins" stroke="hsl(var(--primary))" strokeWidth={2} activeDot={{ r: 8 }}/>
+                                    <Legend />
+                                    <Line type="monotone" dataKey="Logins Acumulados" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 8 }}/>
                                 </LineChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -168,3 +160,4 @@ export default function AuditPage() {
         </SuperAdminGuard>
     );
 }
+
