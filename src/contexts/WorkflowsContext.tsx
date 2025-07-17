@@ -49,7 +49,7 @@ interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
   addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee'>>>;
-  updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage?: string | null) => Promise<void>;
+  updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage?: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   deleteRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string, ownedRequestIds: string[]) => Promise<void>;
 }
@@ -212,13 +212,13 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   }, [requests, queryClient]);
 
 
-  const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage: string, notifyAssigneeMessage: string | null = null) => {
+  const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage?: string, notifyAssigneeMessage: string | null = null) => {
     await updateRequestMutation.mutateAsync(requestUpdate);
     
     const originalRequest = requests.find(r => r.id === requestUpdate.id);
     if (!originalRequest) return;
 
-    if (originalRequest.submittedBy.userId) {
+    if (notificationMessage && originalRequest.submittedBy.userId) {
         await addMessage({
             title: `Atualização: ${originalRequest.type} #${originalRequest.requestId}`,
             content: notificationMessage,

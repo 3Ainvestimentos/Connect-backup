@@ -12,25 +12,13 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, Trash2, AlertTriangle } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { useApplications, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
 import { AssigneeSelectionModal } from './AssigneeSelectionModal';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -41,13 +29,13 @@ interface RequestApprovalModalProps {
 export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprovalModalProps) {
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
-  const { updateRequestAndNotify, deleteRequestMutation } = useWorkflows();
+  const { updateRequestAndNotify } = useWorkflows();
   const { workflowDefinitions } = useApplications();
   const [comment, setComment] = useState('');
   const [assignee, setAssignee] = useState<Collaborator | null>(null);
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'delete' | null>(null);
+  const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatus | null>(null);
 
   const definition = useMemo(() => {
@@ -70,13 +58,13 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return adminUser.id3a === request.assignee.id;
   }, [adminUser, request]);
 
+  const canTakeAction = isOwner || isAssignee;
 
   const availableTransitions = useMemo(() => {
     if (!definition || !request) return [];
     return definition.statuses.filter(s => s.id !== request.status);
   }, [definition, request]);
 
-  // Reset local state when the request prop changes
   React.useEffect(() => {
     if (request) {
       setComment('');
@@ -91,26 +79,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   if (!request) return null;
   
-  const handleDeleteRequest = async () => {
-    if (!request || !isOwner) return;
-    setActionType('delete');
-    setIsSubmitting(true);
-    try {
-        await deleteRequestMutation.mutateAsync(request.id);
-        toast({ title: "Sucesso!", description: "A solicitação foi excluída." });
-        onClose();
-    } catch(error) {
-        toast({ title: "Erro ao Excluir", description: "Não foi possível excluir a solicitação.", variant: "destructive" });
-    } finally {
-        setIsSubmitting(false);
-        setActionType(null);
-    }
-  }
-
   const handleStatusChange = async (newStatus: WorkflowStatus) => {
     setActionType('statusChange');
     setTargetStatus(newStatus);
-
     const newStatusLabel = definition?.statuses.find(s => s.id === newStatus)?.label || newStatus;
 
     if (!user || !adminUser) {
@@ -157,7 +128,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const handleAssigneeChange = async () => {
     setActionType('assign');
-
     if (!user || !adminUser || !assignee) {
       toast({ title: "Erro", description: "Usuário administrador ou colaborador selecionado não encontrado.", variant: "destructive" });
       return;
@@ -167,10 +137,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     const now = new Date();
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
-      status: request.status, // Status doesn't change on assignment
+      status: request.status,
       userId: adminUser.id3a,
       userName: adminUser.name,
-      notes: `Solicitação atribuída a ${assignee.name}.`,
+      notes: comment ? `Solicitação atribuída a ${assignee.name}. Comentário: ${comment}` : `Solicitação atribuída a ${assignee.name}.`,
     };
 
     const requestUpdate = {
@@ -186,11 +156,54 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     try {
       await updateRequestAndNotify(requestUpdate, requesterNotification, assigneeNotification);
       toast({ title: "Sucesso!", description: `Solicitação atribuída a ${assignee.name}.` });
+      setComment('');
     } catch (error) {
        toast({ title: "Erro", description: "Não foi possível atribuir o responsável.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
       setActionType(null);
+    }
+  };
+
+  const handleAddComment = async () => {
+    setActionType('comment');
+    if (!comment.trim()) {
+        toast({ title: "Atenção", description: "O campo de comentário não pode estar vazio.", variant: "destructive" });
+        return;
+    }
+
+    if (!user || !adminUser) {
+        toast({ title: "Erro de Autenticação", variant: "destructive" });
+        return;
+    }
+
+    setIsSubmitting(true);
+    const now = new Date();
+    const historyEntry: WorkflowHistoryLog = {
+        timestamp: formatISO(now),
+        status: request.status,
+        userId: adminUser.id3a,
+        userName: adminUser.name,
+        notes: comment,
+    };
+    
+    const requestUpdate = {
+        id: request.id,
+        lastUpdatedAt: formatISO(now),
+        history: [...request.history, historyEntry],
+    };
+
+    const notificationMessage = `Um novo comentário foi adicionado à sua solicitação '${request.type}' #${request.requestId} por ${adminUser.name}.\nComentário: ${comment}`;
+    
+    try {
+        await updateRequestAndNotify(requestUpdate, notificationMessage);
+        toast({ title: "Sucesso!", description: "Comentário adicionado ao histórico." });
+        setComment('');
+    } catch (error) {
+        toast({ title: "Erro", description: "Não foi possível adicionar o comentário.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
+        setActionType(null);
     }
   };
 
@@ -227,8 +240,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         </div>
     );
   };
-
-  const canTakeAction = isOwner || isAssignee;
 
   return (
     <>
@@ -334,14 +345,27 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
               
               {canTakeAction && (
                 <div>
-                    <Label htmlFor="comment">Adicionar Comentário (Opcional)</Label>
-                    <Textarea
-                        id="comment"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        placeholder="Deixe uma observação para o solicitante e para o histórico..."
-                        disabled={isSubmitting}
-                    />
+                    <Label htmlFor="comment">Adicionar Comentário</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                        <Textarea
+                            id="comment"
+                            value={comment}
+                            onChange={(e) => setComment(e.target.value)}
+                            placeholder="Deixe uma observação para o solicitante e para o histórico..."
+                            disabled={isSubmitting}
+                        />
+                        {isOwner && (
+                            <Button 
+                                variant="secondary" 
+                                onClick={handleAddComment} 
+                                disabled={isSubmitting || !comment.trim()}
+                                className="h-full"
+                            >
+                                {isSubmitting && actionType === 'comment' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                                <span className="sr-only">Salvar comentário</span>
+                            </Button>
+                        )}
+                    </div>
                 </div>
               )}
           </div>
@@ -369,29 +393,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                     </div>
                 )}
             </div>
-            <div className="flex gap-2">
-                {isOwner && (
-                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" disabled={isSubmitting}>
-                               {isSubmitting && actionType === 'delete' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                Excluir
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                            <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Esta ação não pode ser desfeita. Isso excluirá permanentemente a solicitação e removerá seus dados de nossos servidores.
-                            </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteRequest}>Continuar</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                )}
+            <div className="flex gap-2 self-end">
                 <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
             </div>
           </DialogFooter>

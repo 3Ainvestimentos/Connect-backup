@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Mailbox, Eye, Filter, FileDown, User, Users } from 'lucide-react';
+import { Mailbox, Eye, Filter, FileDown, User, Users, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import { RequestApprovalModal } from './RequestApprovalModal';
 import {
   DropdownMenu,
@@ -23,15 +23,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
 import Papa from 'papaparse';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 
 export function ManageRequests() {
     const { user, permissions } = useAuth();
-    const { requests, loading, markRequestsAsViewedBy } = useWorkflows();
+    const { requests, loading, markRequestsAsViewedBy, deleteRequestMutation } = useWorkflows();
     const { workflowDefinitions } = useApplications();
     const { collaborators } = useCollaborators();
     const [selectedRequest, setSelectedRequest] = useState<WorkflowRequest | null>(null);
@@ -92,6 +105,15 @@ export function ManageRequests() {
         const status = definition?.statuses.find(s => s.id === request.status);
         return status?.label || request.status;
     };
+    
+    const handleDeleteRequest = async (id: string) => {
+        try {
+            await deleteRequestMutation.mutateAsync(id);
+            toast({ title: "Sucesso!", description: "A solicitação foi excluída." });
+        } catch(error) {
+            toast({ title: "Erro ao Excluir", description: "Não foi possível excluir a solicitação.", variant: "destructive" });
+        }
+    }
 
     const handleExportCSV = () => {
         const dataToExport = filteredRequests.map(req => {
@@ -242,6 +264,29 @@ export function ManageRequests() {
                                                 )}
                                             </TableCell>
                                             <TableCell className="text-right">
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" disabled={deleteRequestMutation.isPending && deleteRequestMutation.variables === req.id}>
+                                                            {deleteRequestMutation.isPending && deleteRequestMutation.variables === req.id ? (
+                                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                            ) : (
+                                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                            )}
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                        <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Esta ação não pode ser desfeita. Isso excluirá permanentemente a solicitação e removerá seus dados de nossos servidores.
+                                                        </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => handleDeleteRequest(req.id)}>Continuar</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                                 <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)}>
                                                     <Eye className="h-5 w-5" />
                                                 </Button>
