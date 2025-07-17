@@ -7,13 +7,14 @@ import { useQuery } from '@tanstack/react-query';
 import { getCollection, WithId } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon } from 'lucide-react';
+import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
 import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Progress } from '@/components/ui/progress';
-
+import { Button } from '@/components/ui/button';
+import Papa from 'papaparse';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view' | 'search_term_used';
@@ -114,6 +115,25 @@ export default function AuditPage() {
         };
     }, [events, collaborators, isLoading, loadingCollaborators]);
 
+    const handleExport = () => {
+        const dataForCsv = events.map(event => ({
+            'Nome do Colaborador': event.userName,
+            'ID do Colaborador': event.userId,
+            'Data e Hora do Login': format(parseISO(event.timestamp), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR }),
+        }));
+
+        const csv = Papa.unparse(dataForCsv);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.href) {
+            URL.revokeObjectURL(link.href);
+        }
+        link.href = URL.createObjectURL(blob);
+        link.download = `relatorio_logins_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     if (isLoading || loadingCollaborators) {
         return (
@@ -131,9 +151,15 @@ export default function AuditPage() {
         <SuperAdminGuard>
             <div className="space-y-6">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><LogIn className="h-6 w-6"/>Análise de Logins</CardTitle>
-                        <CardDescription>Análise da frequência e do volume de acessos à plataforma.</CardDescription>
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div>
+                            <CardTitle className="flex items-center gap-2"><LogIn className="h-6 w-6"/>Análise de Logins</CardTitle>
+                            <CardDescription>Análise da frequência e do volume de acessos à plataforma.</CardDescription>
+                        </div>
+                        <Button onClick={handleExport} disabled={isLoading || events.length === 0}>
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Exportar Log de Logins
+                        </Button>
                     </CardHeader>
                 </Card>
                 

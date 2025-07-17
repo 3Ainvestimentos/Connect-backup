@@ -8,8 +8,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery } from '@tanstack/react-query';
 import { getCollection, WithId } from '@/lib/firestore-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint } from 'lucide-react';
+import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import Papa from 'papaparse';
+import { format } from 'date-fns';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view';
@@ -86,6 +89,27 @@ export default function ContentInteractionPage() {
         return { contentStats, mostViewed, leastViewed, eventCounts };
 
     }, [events, isLoading]);
+
+    const handleExport = () => {
+        const dataForCsv = contentStats.map(item => ({
+            'Conteúdo': item.title,
+            'Tipo': item.type,
+            'Total de Visualizações': item.totalViews,
+            'Visualizadores Únicos': item.uniqueViews,
+        }));
+
+        const csv = Papa.unparse(dataForCsv);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.href) {
+            URL.revokeObjectURL(link.href);
+        }
+        link.href = URL.createObjectURL(blob);
+        link.download = `relatorio_interacao_conteudo_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
     
     const renderSkeleton = () => (
         <div className="space-y-2">
@@ -97,9 +121,15 @@ export default function ContentInteractionPage() {
         <SuperAdminGuard>
             <div className="space-y-6">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Eye className="h-6 w-6"/>Interação com Conteúdo</CardTitle>
-                        <CardDescription>Análise de visualizações, downloads e acessos para entender o engajamento.</CardDescription>
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div>
+                            <CardTitle className="flex items-center gap-2"><Eye className="h-6 w-6"/>Interação com Conteúdo</CardTitle>
+                            <CardDescription>Análise de visualizações, downloads e acessos para entender o engajamento.</CardDescription>
+                        </div>
+                        <Button onClick={handleExport} disabled={isLoading || contentStats.length === 0}>
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Exportar CSV
+                        </Button>
                     </CardHeader>
                 </Card>
 

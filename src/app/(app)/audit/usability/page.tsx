@@ -9,9 +9,12 @@ import { useQuery } from '@tanstack/react-query';
 import { getCollection, WithId } from '@/lib/firestore-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Search, ListFilter, AlertTriangle, CheckCircle, Percent, BarChart } from 'lucide-react';
+import { Search, ListFilter, AlertTriangle, CheckCircle, Percent, BarChart, FileDown } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { ResponsiveContainer, Bar, Tooltip, XAxis, YAxis, BarChart as BarChartComponent } from 'recharts';
+import { Button } from '@/components/ui/button';
+import Papa from 'papaparse';
+import { format } from 'date-fns';
 
 type AuditLogEvent = WithId<{
     eventType: 'search_term_used';
@@ -72,6 +75,31 @@ export default function UsabilitySearchPage() {
 
     }, [events, isLoading]);
 
+    const handleExport = () => {
+        const topSearchesCsv = Papa.unparse({
+            fields: ["Termo", "Nº de Buscas", "Taxa de Sucesso (%)"],
+            data: topSearches.map(item => [item.term, item.count, item.successRate.toFixed(0)])
+        });
+
+        const noResultsCsv = Papa.unparse({
+            fields: ["Termo", "Nº de Tentativas"],
+            data: noResultsSearches.map(item => [item.term, item.count])
+        });
+
+        const csvContent = `TERMOS MAIS BUSCADOS\n${topSearchesCsv}\n\nPRINCIPAIS BUSCAS SEM RESULTADOS\n${noResultsCsv}`;
+        
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.href) {
+            URL.revokeObjectURL(link.href);
+        }
+        link.href = URL.createObjectURL(blob);
+        link.download = `relatorio_busca_usabilidade_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const renderSkeleton = () => (
         <div className="space-y-2">
             {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
@@ -82,9 +110,15 @@ export default function UsabilitySearchPage() {
         <SuperAdminGuard>
              <div className="space-y-6">
                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Search className="h-6 w-6"/>Análise de Usabilidade e Busca</CardTitle>
-                        <CardDescription>Entenda o que os colaboradores procuram e se estão encontrando as informações necessárias.</CardDescription>
+                    <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div>
+                            <CardTitle className="flex items-center gap-2"><Search className="h-6 w-6"/>Análise de Usabilidade e Busca</CardTitle>
+                            <CardDescription>Entenda o que os colaboradores procuram e se estão encontrando as informações necessárias.</CardDescription>
+                        </div>
+                        <Button onClick={handleExport} disabled={isLoading || events.length === 0}>
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Exportar CSV
+                        </Button>
                     </CardHeader>
                 </Card>
 
