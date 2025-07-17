@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { format, formatISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Loader2, Paperclip, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -21,6 +21,7 @@ import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { FormFieldDefinition, WorkflowDefinition } from '@/contexts/ApplicationsContext';
+import { uploadFile } from '@/lib/firestore-service';
 
 type DynamicFormData = { [key: string]: any };
 
@@ -32,7 +33,8 @@ interface WorkflowSubmissionModalProps {
 
 export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDefinition }: WorkflowSubmissionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { addRequest } = useWorkflows();
+  const [fileFields, setFileFields] = useState<{[key: string]: File | null}>({});
+  const { addRequest, updateRequestAndNotify } = useWorkflows();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
 
@@ -46,8 +48,15 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         defaultValues[field.id] = field.type === 'date-range' ? { from: undefined, to: undefined } : '';
       });
       reset(defaultValues);
+      setFileFields({});
     }
   }, [open, workflowDefinition, reset]);
+
+  const handleFileChange = (fieldId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFileFields(prev => ({...prev, [fieldId]: e.target.files![0]}));
+    }
+  };
 
   const onSubmit = async (data: DynamicFormData) => {
     const currentUserCollab = collaborators.find(c => c.email === user?.email);
@@ -57,60 +66,65 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       return;
     }
 
-    // Basic validation
-    for (const field of workflowDefinition.fields) {
-      if (field.required && !data[field.id]) {
-        toast({ title: "Erro de Validação", description: `O campo '${field.label}' é obrigatório.`, variant: "destructive" });
-        return;
-      }
-      if (field.type === 'date-range' && field.required && (!data[field.id].from || !data[field.id].to)) {
-        toast({ title: "Erro de Validação", description: `O campo '${field.label}' precisa de uma data de início e fim.`, variant: "destructive" });
-        return;
-      }
-    }
-
     setIsSubmitting(true);
 
     try {
-      const now = new Date();
-      // Sanitize data for Firestore
-      const formDataForFirestore = { ...data };
-      workflowDefinition.fields.forEach(field => {
-        if (field.type === 'date-range' && formDataForFirestore[field.id]) {
-          formDataForFirestore[field.id] = {
-            from: formDataForFirestore[field.id].from ? formatISO(formDataForFirestore[field.id].from, { representation: 'date' }) : null,
-            to: formDataForFirestore[field.id].to ? formatISO(formDataForFirestore[field.id].to, { representation: 'date' }) : null,
-          };
+        const now = new Date();
+        const initialStatus = workflowDefinition.statuses?.[0]?.id || 'pending';
+        
+        // 1. Create the initial request to get an ID
+        const initialRequestPayload = {
+            type: workflowDefinition.name,
+            status: initialStatus,
+            submittedBy: { userId: currentUserCollab.id3a, userName: currentUserCollab.name, userEmail: currentUserCollab.email },
+            submittedAt: formatISO(now),
+            lastUpdatedAt: formatISO(now),
+            formData: {}, // To be populated later
+            history: [{ timestamp: formatISO(now), status: initialStatus, userId: currentUserCollab.id3a, userName: currentUserCollab.name, notes: 'Solicitação criada.' }],
+        };
+
+        const newRequest = await addRequest(initialRequestPayload);
+
+        // 2. Upload files if any
+        const fileUploadPromises = Object.entries(fileFields).map(([fieldId, file]) => {
+            if (file) {
+                return uploadFile(file, currentUserCollab.id3a, newRequest.id, file.name);
+            }
+            return Promise.resolve(null);
+        });
+
+        const uploadedFileUrls = await Promise.all(fileUploadPromises);
+        
+        // 3. Prepare the final form data
+        const formDataForFirestore = { ...data };
+        let fileUrlIndex = 0;
+        for (const fieldId in fileFields) {
+            if (fileFields[fieldId]) {
+                formDataForFirestore[fieldId] = uploadedFileUrls[fileUrlIndex];
+                fileUrlIndex++;
+            }
         }
-      });
+         workflowDefinition.fields.forEach(field => {
+            if (field.type === 'date-range' && formDataForFirestore[field.id]) {
+                formDataForFirestore[field.id] = {
+                    from: formDataForFirestore[field.id].from ? formatISO(formDataForFirestore[field.id].from, { representation: 'date' }) : null,
+                    to: formDataForFirestore[field.id].to ? formatISO(formDataForFirestore[field.id].to, { representation: 'date' }) : null,
+                };
+            }
+        });
 
-      const initialStatus = workflowDefinition.statuses?.[0]?.id || 'pending';
+        // 4. Update the request with the complete form data
+        await updateRequestAndNotify({
+            id: newRequest.id,
+            formData: formDataForFirestore
+        });
 
-      await addRequest({
-        type: workflowDefinition.name,
-        status: initialStatus, // Use the first defined status as initial
-        submittedBy: {
-          userId: currentUserCollab.id3a,
-          userName: currentUserCollab.name,
-          userEmail: currentUserCollab.email,
-        },
-        submittedAt: formatISO(now),
-        lastUpdatedAt: formatISO(now),
-        formData: formDataForFirestore,
-        history: [{
-          timestamp: formatISO(now),
-          status: initialStatus,
-          userId: currentUserCollab.id3a,
-          userName: currentUserCollab.name,
-          notes: 'Solicitação criada.'
-        }],
-      });
+        toast({ title: "Solicitação Enviada!", description: `Seu pedido de '${workflowDefinition.name}' foi enviado para aprovação.` });
+        onOpenChange(false);
 
-      toast({ title: "Solicitação Enviada!", description: `Seu pedido de '${workflowDefinition.name}' foi enviado para aprovação.` });
-      onOpenChange(false);
     } catch (error) {
       console.error("Failed to submit workflow request:", error);
-      toast({ title: "Erro ao Enviar", description: "Não foi possível enviar sua solicitação. Tente novamente.", variant: "destructive" });
+      toast({ title: "Erro ao Enviar", description: error instanceof Error ? error.message : "Não foi possível enviar sua solicitação.", variant: "destructive" });
     } finally {
       setIsSubmitting(false);
     }
@@ -120,11 +134,23 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
     const error = errors[field.id];
     
     switch (field.type) {
+      case 'file':
+        return (
+          <div key={field.id} className="space-y-2">
+            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <div className="relative">
+                <Input id={field.id} type="file" onChange={(e) => handleFileChange(field.id, e)} className="pl-10" disabled={isSubmitting}/>
+                <Paperclip className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
+            {fileFields[field.id] && <p className="text-xs text-muted-foreground">Arquivo selecionado: {fileFields[field.id]?.name}</p>}
+            {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
+          </div>
+        );
       case 'text':
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
-            <Controller name={field.id} control={control} render={({ field: controllerField }) => <Input id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
+            <Controller name={field.id} control={control} rules={{ required: field.required }} render={({ field: controllerField }) => <Input id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
             {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
         );
@@ -132,7 +158,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
-            <Controller name={field.id} control={control} render={({ field: controllerField }) => <Textarea id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
+            <Controller name={field.id} control={control} rules={{ required: field.required }} render={({ field: controllerField }) => <Textarea id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
             {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
         );
@@ -143,6 +169,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             <Controller
               name={field.id}
               control={control}
+              rules={{ required: field.required }}
               render={({ field: controllerField }) => (
                 <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value} disabled={isSubmitting}>
                   <SelectTrigger id={field.id}><SelectValue placeholder={field.placeholder || 'Selecione...'} /></SelectTrigger>
@@ -162,6 +189,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             <Controller
               name={field.id}
               control={control}
+              rules={{ required: field.required }}
               render={({ field: controllerField }) => (
                 <Popover>
                   <PopoverTrigger asChild>

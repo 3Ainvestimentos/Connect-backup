@@ -2,13 +2,37 @@
 import { getFirebaseApp } from './firebase'; // Import the initialized app function
 import { getFirestore, writeBatch } from "firebase/firestore";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { cleanDataForFirestore } from './data-sanitizer';
 
 // Initialize Firestore with the app instance
 const app = getFirebaseApp();
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 export type WithId<T> = T & { id: string };
+
+/**
+ * Uploads a file to Firebase Storage.
+ * @param file The file to upload.
+ * @param userId The ID of the user uploading the file.
+ * @param requestId The ID of the workflow request this file is associated with.
+ * @param fileName The name of the file.
+ * @returns A promise that resolves to the download URL of the uploaded file.
+ */
+export const uploadFile = async (file: File, userId: string, requestId: string, fileName: string): Promise<string> => {
+    const filePath = `workflow-attachments/${userId}/${requestId}/${fileName}`;
+    const storageRef = ref(storage, filePath);
+    try {
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+        return downloadUrl;
+    } catch (error) {
+        console.error("Error uploading file:", error);
+        throw new Error("Não foi possível carregar o arquivo.");
+    }
+};
+
 
 /**
  * Fetches all documents from a specified collection.

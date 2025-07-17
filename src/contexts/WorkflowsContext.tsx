@@ -49,7 +49,7 @@ export interface WorkflowRequest {
 interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
-  addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>>;
+  addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage?: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   archiveRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string, ownedRequestIds: string[]) => Promise<void>;
@@ -76,7 +76,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
   });
 
-  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>, Error, Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>({
+  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'requestId'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
       if (!definition) {
@@ -84,11 +84,12 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const nextId = await getNextSequentialId(COUNTER_ID);
+      const requestId = nextId.toString().padStart(4, '0');
       
       const initialStatus = definition?.statuses?.[0]?.id || 'pending';
       const requestWithDefaults = { 
         ...requestData, 
-        requestId: nextId.toString().padStart(4, '0'),
+        requestId,
         status: initialStatus, 
         ownerEmail: definition.ownerEmail,
         viewedBy: [] as string[],
@@ -103,46 +104,49 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       const newDoc = await addDocumentToCollection(COLLECTION_NAME, requestWithDefaults);
 
       // --- NOTIFICATION LOGIC ---
-      // 1. Notify requester
-      await addMessage({
-          title: `Solicitação Recebida: ${requestData.type} #${requestWithDefaults.requestId}`,
-          content: `Sua solicitação '${requestData.type}' foi aberta com sucesso e está pendente de análise.`,
-          sender: 'Sistema de Workflows',
-          recipientIds: [requestData.submittedBy.userId],
-      });
-
-      // 2. Notify the workflow owner
-      const owner = collaborators.find(c => c.email === definition.ownerEmail);
-      if (owner) {
-          await addMessage({
-              title: `Nova Solicitação: ${requestData.type} #${requestWithDefaults.requestId}`,
-              content: `Uma nova solicitação de '${requestData.type}' foi enviada por ${requestData.submittedBy.userName} e aguarda sua revisão.`,
-              sender: 'Sistema de Workflows',
-              recipientIds: [owner.id3a],
-          });
-      }
-
-
-      // 3. Notify based on routing rules
-      if (definition && definition.routingRules) {
-        for (const rule of definition.routingRules) {
-          const formValue = requestData.formData[rule.field];
-          if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
-            const recipientUsers = collaborators.filter(c => rule.notify.includes(c.email));
-            const recipientIds = recipientUsers.map(u => u.id3a);
-            if (recipientIds.length > 0) {
-              await addMessage({
-                title: `Nova Solicitação para Análise: ${requestData.type}`,
-                content: `Uma nova solicitação de '${requestData.type}' foi aberta por ${requestData.submittedBy.userName} e requer sua atenção devido à regra do campo '${rule.field}' = '${rule.value}'.`,
+      // This logic will only run when a new request is created, but not when it's updated with file URLs
+      if (Object.keys(requestData.formData).length === 0) { // Check if it's the initial creation
+            // 1. Notify requester
+            await addMessage({
+                title: `Solicitação Recebida: ${requestData.type} #${requestWithDefaults.requestId}`,
+                content: `Sua solicitação '${requestData.type}' foi aberta com sucesso e está pendente de análise.`,
                 sender: 'Sistema de Workflows',
-                recipientIds: recipientIds,
-              });
+                recipientIds: [requestData.submittedBy.userId],
+            });
+
+            // 2. Notify the workflow owner
+            const owner = collaborators.find(c => c.email === definition.ownerEmail);
+            if (owner) {
+                await addMessage({
+                    title: `Nova Solicitação: ${requestData.type} #${requestWithDefaults.requestId}`,
+                    content: `Uma nova solicitação de '${requestData.type}' foi enviada por ${requestData.submittedBy.userName} e aguarda sua revisão.`,
+                    sender: 'Sistema de Workflows',
+                    recipientIds: [owner.id3a],
+                });
             }
-          }
-        }
+
+
+            // 3. Notify based on routing rules
+            if (definition && definition.routingRules && requestData.formData) {
+                for (const rule of definition.routingRules) {
+                const formValue = requestData.formData[rule.field];
+                if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
+                    const recipientUsers = collaborators.filter(c => rule.notify.includes(c.email));
+                    const recipientIds = recipientUsers.map(u => u.id3a);
+                    if (recipientIds.length > 0) {
+                    await addMessage({
+                        title: `Nova Solicitação para Análise: ${requestData.type}`,
+                        content: `Uma nova solicitação de '${requestData.type}' foi aberta por ${requestData.submittedBy.userName} e requer sua atenção devido à regra do campo '${rule.field}' = '${rule.value}'.`,
+                        sender: 'Sistema de Workflows',
+                        recipientIds: recipientIds,
+                    });
+                    }
+                }
+                }
+            }
       }
 
-      return newDoc as WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>;
+      return { ...newDoc, requestId };
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
@@ -243,7 +247,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
     requests,
     loading: isFetching,
-    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>>>,
+    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>>,
     updateRequestAndNotify,
     archiveRequestMutation,
     markRequestsAsViewedBy

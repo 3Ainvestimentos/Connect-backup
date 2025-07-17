@@ -7,7 +7,7 @@ import { ptBR } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { User, Calendar, Type, Clock, FileText, History } from 'lucide-react';
+import { User, Calendar, Type, Clock, FileText, History, Download, ExternalLink } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
@@ -36,7 +36,21 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
     
     let displayValue: React.ReactNode = value;
 
-    if (fieldDef.type === 'date' && value) {
+    if (fieldDef.type === 'file' && typeof value === 'string' && value) {
+      const fileName = value.split('%2F').pop()?.split('?')[0] || 'Arquivo';
+      return (
+        <div className="flex items-center gap-2">
+            <p className="text-muted-foreground"><strong className="font-medium text-foreground">{fieldDef.label}:</strong></p>
+            <Button asChild variant="link" className="p-0 h-auto">
+                <a href={value} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                    {decodeURIComponent(fileName)}
+                    <ExternalLink className="h-3 w-3" />
+                </a>
+            </Button>
+        </div>
+      );
+    }
+    else if (fieldDef.type === 'date' && value) {
       const date = parseISO(value);
       displayValue = isValid(date) ? format(date, 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida';
     } else if (fieldDef.type === 'date-range' && value) {

@@ -21,7 +21,7 @@ export const workflowStatusSchema = z.object({
 export interface FormFieldDefinition {
   id: string; // Unique ID for the field within the form
   label: string;
-  type: 'text' | 'textarea' | 'select' | 'date' | 'date-range';
+  type: 'text' | 'textarea' | 'select' | 'date' | 'date-range' | 'file';
   required: boolean;
   placeholder?: string;
   options?: string[]; // For 'select' type
@@ -29,7 +29,7 @@ export interface FormFieldDefinition {
 export const formFieldSchema = z.object({
   id: z.string().min(1, "ID do campo é obrigatório.").regex(/^[a-zA-Z0-9_]+$/, "ID deve conter apenas letras, números e underscores."),
   label: z.string().min(1, "Label é obrigatório."),
-  type: z.enum(['text', 'textarea', 'select', 'date', 'date-range']),
+  type: z.enum(['text', 'textarea', 'select', 'date', 'date-range', 'file']),
   required: z.boolean(),
   placeholder: z.string().optional(),
   options: z.array(z.string()).optional(), // Changed to array of strings

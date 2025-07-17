@@ -268,7 +268,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                             <div>
                                                 <Label htmlFor={`fields.${index}.label`}>Label do Campo</Label>
                                                 <Input id={`fields.${index}.label`} {...register(`fields.${index}.label`)} placeholder="Ex: Nome Completo" />
-                                                {errors.fields?.[index]?.label && <p className="text-sm text-destructive mt-1">{errors.fields?.[index]?.label?.message}</p>}
+                                                {errors.fields?.[index]?.label && <p className="text-sm text-destructive mt-1">{errors.fields[index]?.label?.message}</p>}
                                             </div>
                                             <div>
                                                 <Label htmlFor={`fields.${index}.type`}>Tipo de Campo</Label>
@@ -281,6 +281,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                             <SelectItem value="select">Seleção</SelectItem>
                                                             <SelectItem value="date">Data</SelectItem>
                                                             <SelectItem value="date-range">Período (Data)</SelectItem>
+                                                            <SelectItem value="file">Anexo de Arquivo</SelectItem>
                                                         </SelectContent>
                                                     </Select>
                                                 )} />
@@ -297,14 +298,24 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                 <Input id={`fields.${index}.placeholder`} {...register(`fields.${index}.placeholder`)} />
                                             </div>
                                         </div>
-                                         <Controller name={`fields.${index}.type`} control={control} render={({ field: { value } }) => (
-                                            value === 'select' ? (
-                                                 <div>
-                                                    <Label htmlFor={`fields.${index}.options`}>Opções (separadas por vírgula)</Label>
-                                                    <Input id={`fields.${index}.options`} {...register(`fields.${index}.options`)} placeholder="Opção 1, Opção 2" />
-                                                </div>
-                                            ) : null
-                                        )} />
+                                         <Controller name={`fields.${index}.type`} control={control} render={({ field: { value } }) => {
+                                            if (value === 'select') {
+                                                return (
+                                                    <div>
+                                                        <Label htmlFor={`fields.${index}.options`}>Opções (separadas por vírgula)</Label>
+                                                        <Input id={`fields.${index}.options`} {...register(`fields.${index}.options`)} placeholder="Opção 1, Opção 2" />
+                                                    </div>
+                                                )
+                                            }
+                                            if (value === 'file') {
+                                                return (
+                                                    <p className="text-xs text-muted-foreground bg-blue-500/10 p-2 rounded-md">
+                                                        O usuário poderá anexar um único arquivo. Tipos de arquivo permitidos e limites de tamanho são gerenciados pelo sistema.
+                                                    </p>
+                                                )
+                                            }
+                                            return null;
+                                        }} />
                                         <div className="flex justify-between items-center pt-2">
                                             <div className="flex items-center gap-2">
                                                 <Controller name={`fields.${index}.required`} control={control} render={({ field: controllerField }) => (
