@@ -2,11 +2,12 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Bar, BarChart as BarChartComponent, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { useApplications } from '@/contexts/ApplicationsContext';
 import { useWorkflows, WorkflowRequest } from '@/contexts/WorkflowsContext';
 import { useMemo } from 'react';
-import { FileClock, Timer, Hourglass, ListChecks } from 'lucide-react';
+import { FileClock, Timer, Hourglass, ListChecks, Workflow as WorkflowIcon } from 'lucide-react';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
 import { PageHeader } from '@/components/layout/PageHeader';
 
@@ -40,7 +41,7 @@ export default function WorkflowAnalyticsPage() {
       requests.forEach(req => {
           typeCounts[req.type] = (typeCounts[req.type] || 0) + 1;
       });
-      return Object.entries(typeCounts).map(([name, value]) => ({ name, value }));
+      return Object.entries(typeCounts).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
   }, [requests, loadingRequests]);
 
   const averageResolutionTime = useMemo(() => {
@@ -127,23 +128,30 @@ export default function WorkflowAnalyticsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
+                    <CardDescription>Volume total de solicitações enviadas para cada workflow.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                   <ResponsiveContainer width="100%" height={300}>
-                        <BarChartComponent data={requestsByType}>
-                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false}/>
-                            <Tooltip
-                                contentStyle={{ 
-                                    backgroundColor: "hsl(var(--background))",
-                                    borderColor: "hsl(var(--border))",
-                                    borderRadius: "var(--radius)",
-                                }}
-                                cursor={{fill: 'hsl(var(--muted))'}}
-                            />
-                            <Bar dataKey="value" name="Total de Solicitações" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                        </BarChartComponent>
-                    </ResponsiveContainer>
+                    <div className="border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Tipo de Workflow</TableHead>
+                                    <TableHead className="text-right">Total de Solicitações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {requestsByType.map((item) => (
+                                    <TableRow key={item.name}>
+                                        <TableCell className="font-medium flex items-center gap-2">
+                                            <WorkflowIcon className="h-4 w-4 text-muted-foreground" />
+                                            {item.name}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono font-bold">{item.value}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
              <Card>
@@ -231,4 +239,3 @@ export default function WorkflowAnalyticsPage() {
     </section>
   );
 }
-
