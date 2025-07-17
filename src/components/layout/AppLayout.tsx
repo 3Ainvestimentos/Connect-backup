@@ -110,7 +110,7 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
               hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
             )}>
               <Mailbox className="mr-2 h-4 w-4" />
-              <span>Minhas Solicitações</span>
+              <span>Caixa de Entrada</span>
             </Link>
         </DropdownMenuItem>
         <DropdownMenuSub>
@@ -139,7 +139,7 @@ function UserNav({ onProfileClick, hasPendingRequests }: { onProfileClick: () =>
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Admin</DropdownMenuLabel>
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Painéis de controle</DropdownMenuLabel>
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
