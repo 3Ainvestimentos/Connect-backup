@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery } from '@tanstack/react-query';
 import { getCollection, WithId } from '@/lib/firestore-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint, FileDown } from 'lucide-react';
+import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint, FileDown, Route } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Papa from 'papaparse';
@@ -41,11 +41,11 @@ export default function ContentInteractionPage() {
     const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
-        select: (data) => data.filter(e => e.eventType !== 'login' && e.eventType !== 'search_term_used')
+        select: (data) => data.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download' || e.eventType === 'page_view')
     });
 
-    const { contentStats, mostViewed, leastViewed, eventCounts } = useMemo(() => {
-        if (isLoading || !events.length) return { contentStats: [], mostViewed: null, leastViewed: null, eventCounts: [] };
+    const { contentStats, mostViewed, leastViewed, pageAccessCounts } = useMemo(() => {
+        if (isLoading || !events.length) return { contentStats: [], mostViewed: null, leastViewed: null, pageAccessCounts: [] };
 
         const viewEvents = events.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download');
 
@@ -68,16 +68,17 @@ export default function ContentInteractionPage() {
             stats[contentId].uniqueViewers.add(event.userId);
         });
         
-        const counts = events.reduce((acc, event) => {
-            acc[event.eventType] = (acc[event.eventType] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+        const pageAccess = events
+            .filter(e => e.eventType === 'page_view' && e.details.path)
+            .reduce((acc, event) => {
+                const path = event.details.path!;
+                acc[path] = (acc[path] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>);
 
-        const eventCounts = Object.entries(counts).map(([name, value]) => ({
-            name: EVENT_TYPE_CONFIG[name as keyof typeof EVENT_TYPE_CONFIG]?.label || name,
-            value,
-            icon: EVENT_TYPE_CONFIG[name as keyof typeof EVENT_TYPE_CONFIG]?.icon || Fingerprint,
-        }));
+        const pageAccessCounts = Object.entries(pageAccess)
+            .map(([path, count]) => ({ path, count }))
+            .sort((a, b) => b.count - a.count);
 
         const contentStats = Object.entries(stats)
           .map(([id, s]) => ({ id, ...s, uniqueViews: s.uniqueViewers.size }))
@@ -86,7 +87,7 @@ export default function ContentInteractionPage() {
         const mostViewed = contentStats.length > 0 ? contentStats[0] : null;
         const leastViewed = contentStats.length > 1 ? contentStats[contentStats.length - 1] : null;
 
-        return { contentStats, mostViewed, leastViewed, eventCounts };
+        return { contentStats, mostViewed, leastViewed, pageAccessCounts };
 
     }, [events, isLoading]);
 
@@ -123,7 +124,7 @@ export default function ContentInteractionPage() {
                 <Card>
                     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><Eye className="h-6 w-6"/>Interação com Conteúdo</CardTitle>
+                            <CardTitle className="flex items-center gap-2"><Eye className="h-6 w-6"/>Análise de Conteúdos e Páginas</CardTitle>
                             <CardDescription>Análise de visualizações, downloads e acessos para entender o engajamento.</CardDescription>
                         </div>
                         <Button onClick={handleExport} disabled={isLoading || contentStats.length === 0}>
@@ -168,94 +169,94 @@ export default function ContentInteractionPage() {
                     </Card>
                 </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Tabela Sintética de Conteúdo</CardTitle>
-                        <CardDescription>Lista de todo o conteúdo consumido, ordenado por visualizadores únicos.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? renderSkeleton() : (
-                            <div className="border rounded-lg overflow-x-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <Card className="lg:col-span-2">
+                        <CardHeader>
+                            <CardTitle className="text-lg">Tabela Sintética de Conteúdo</CardTitle>
+                            <CardDescription>Lista de todo o conteúdo consumido, ordenado por visualizadores únicos.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? renderSkeleton() : (
+                                <div className="border rounded-lg overflow-x-auto">
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Conteúdo</TableHead>
+                                                <TableHead>Tipo</TableHead>
+                                                <TableHead>Total de Visualizações</TableHead>
+                                                <TableHead>Visualizadores Únicos</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {contentStats.map((item) => (
+                                                <TableRow key={item.id}>
+                                                    <TableCell className="font-medium">{item.title}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="outline" className="flex items-center gap-1.5 w-fit">
+                                                            {item.type === 'Notícia' ? <Newspaper className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                                                            {item.type}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-1.5">
+                                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                                        {item.totalViews}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-1.5 font-semibold">
+                                                        <User className="h-4 w-4 text-muted-foreground" />
+                                                        {item.uniqueViews}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            )}
+                            {!isLoading && contentStats.length === 0 && (
+                                <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
+                                    <Eye className="mx-auto h-12 w-12 text-muted-foreground" />
+                                    <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma interação registrada</h3>
+                                    <p className="mt-1 text-sm text-muted-foreground">
+                                        Ainda não há dados de visualização de conteúdo para exibir.
+                                    </p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Tabela Sintética de Páginas</CardTitle>
+                            <CardDescription>Contagem total de acessos para cada página da intranet.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="border rounded-lg overflow-hidden">
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
-                                            <TableHead>Conteúdo</TableHead>
-                                            <TableHead>Tipo</TableHead>
-                                            <TableHead>Total de Visualizações</TableHead>
-                                            <TableHead>Visualizadores Únicos</TableHead>
+                                            <TableHead>Página</TableHead>
+                                            <TableHead className="text-right">Acessos</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {contentStats.map((item) => (
-                                            <TableRow key={item.id}>
-                                                <TableCell className="font-medium">{item.title}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="outline" className="flex items-center gap-1.5 w-fit">
-                                                        {item.type === 'Notícia' ? <Newspaper className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
-                                                        {item.type}
-                                                    </Badge>
+                                        {pageAccessCounts.map((page) => (
+                                            <TableRow key={page.path}>
+                                                <TableCell className="font-medium flex items-center gap-2">
+                                                    <Route className="h-4 w-4 text-muted-foreground" />
+                                                    {page.path}
                                                 </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-1.5">
-                                                    <Eye className="h-4 w-4 text-muted-foreground" />
-                                                    {item.totalViews}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-1.5 font-semibold">
-                                                    <User className="h-4 w-4 text-muted-foreground" />
-                                                    {item.uniqueViews}
-                                                    </div>
-                                                </TableCell>
+                                                <TableCell className="text-right font-mono font-bold">{page.count}</TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
                             </div>
-                        )}
-                        {!isLoading && contentStats.length === 0 && (
-                            <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
-                                <Eye className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma interação registrada</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Ainda não há dados de visualização de conteúdo para exibir.
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-                
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg">Tabela Sintética de Eventos</CardTitle>
-                        <CardDescription>Contagem total de cada tipo de evento de interação.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Tipo de Evento</TableHead>
-                                        <TableHead className="text-right">Total</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {eventCounts.map((event, index) => {
-                                      const Icon = event.icon;
-                                      return (
-                                        <TableRow key={index}>
-                                            <TableCell className="font-medium flex items-center gap-2">
-                                                {Icon && <Icon className="h-4 w-4 text-muted-foreground" />}
-                                                {event.name}
-                                            </TableCell>
-                                            <TableCell className="text-right font-mono font-bold">{event.value}</TableCell>
-                                        </TableRow>
-                                    )})}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </SuperAdminGuard>
     );
