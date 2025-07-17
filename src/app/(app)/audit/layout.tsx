@@ -39,7 +39,7 @@ export default function AuditLayout({
             <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                 <TabsTrigger value="/audit">Registro de Eventos</TabsTrigger>
                 <TabsTrigger value="/audit/content-interaction">Interação com Conteúdo</TabsTrigger>
-                <TabsTrigger value="/audit/workflow-efficiency" disabled>Workflows (Em breve)</TabsTrigger>
+                <TabsTrigger value="/audit/workflow-efficiency">Eficiência dos Workflows</TabsTrigger>
                 <TabsTrigger value="/audit/usability">Busca e Usabilidade</TabsTrigger>
             </TabsList>
         </Tabs>
