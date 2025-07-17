@@ -33,9 +33,8 @@ export default function AnalyticsLayout({
           description="Métricas de uso e engajamento da plataforma 3A RIVA Connect."
         />
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsList className="grid w-full grid-cols-1 max-w-md">
                 <TabsTrigger value="/analytics">Uso e Conteúdo</TabsTrigger>
-                <TabsTrigger value="/analytics/workflows">Workflows</TabsTrigger>
             </TabsList>
         </Tabs>
         <div className="pt-4">
