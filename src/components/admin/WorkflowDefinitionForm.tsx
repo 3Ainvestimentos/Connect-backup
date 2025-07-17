@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User, ShieldCheck } from 'lucide-react';
+import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User, ShieldCheck, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
 import { iconList, getIcon } from '@/lib/icons';
