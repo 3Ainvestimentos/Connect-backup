@@ -163,7 +163,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                 </div>
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <div>
-                                        <Label htmlFor="areaId">Área do Workflow</Label>
+                                        <Label htmlFor="areaId">Área do Workflow (Agrupamento)</Label>
                                         <Controller name="areaId" control={control} render={({ field }) => (
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <SelectTrigger><SelectValue placeholder="Selecione uma área..." /></SelectTrigger>
@@ -175,7 +175,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                         {errors.areaId && <p className="text-sm text-destructive mt-1">{errors.areaId.message}</p>}
                                      </div>
                                      <div>
-                                        <Label htmlFor="ownerEmail">Proprietário do Workflow (para notificações)</Label>
+                                        <Label htmlFor="ownerEmail">Proprietário do Workflow (Notificações)</Label>
                                         <Controller name="ownerEmail" control={control} render={({ field }) => (
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <SelectTrigger><SelectValue placeholder="Selecione um proprietário..." /></SelectTrigger>
