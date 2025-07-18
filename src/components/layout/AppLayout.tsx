@@ -53,8 +53,8 @@ const navItems = [
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
-  { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
   { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false, requiredEmail: 'matheus@3ainvestimentos.com.br' },
+  { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
 ];
 
 function UserNav({ onProfileClick, hasPendingRequests, hasNewAssignedTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasNewAssignedTasks: boolean; }) {
@@ -282,8 +282,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     return null;
                   }
                   
-                  const isTestItem = item.label === 'Business Intelligence';
-
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
@@ -291,7 +289,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                         isActive={!item.external && (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))}
                         tooltip={{children: item.label, className: "font-body"}}
                         onClick={handleLinkClick}
-                        className={cn("font-body", { "text-red-500 hover:bg-red-500/10 hover:text-red-600 data-[active=true]:bg-red-500 data-[active=true]:text-white": isTestItem })}
+                        className="font-body"
                       >
                        <Link
                           href={item.href}
@@ -321,31 +319,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     <HelpCircle />
                     <span>Guias e FAQ</span>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuButton tooltip={{ children: "Configurações", className: "font-body" }} className="font-body w-full justify-start">
-                        <Settings />
-                        <span>Configurações</span>
-                      </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="start" className="w-56 mb-2">
-                      <DropdownMenuLabel>Tema</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuRadioGroup value={theme} onValueChange={(value) => setTheme(value as "light" | "dark")}>
-                        <DropdownMenuRadioItem value="light">
-                          <Sun className="mr-2 h-4 w-4" />
-                          <span>Claro</span>
-                        </DropdownMenuRadioItem>
-                        <DropdownMenuRadioItem value="dark">
-                          <Moon className="mr-2 h-4 w-4" />
-                          <span>Escuro</span>
-                        </DropdownMenuRadioItem>
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
