@@ -252,7 +252,7 @@ export default function DashboardPage() {
                  ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-6">
                         <MessageSquare className="h-10 w-10 mb-4" />
-                        <p className="font-semibold font-body text-foreground">
+                        <p className="text-sm text-muted-foreground font-body">
                             Por hora nenhuma mensagem nova por aqui, {user?.displayName?.split(' ')[0]}!
                         </p>
                     </div>
