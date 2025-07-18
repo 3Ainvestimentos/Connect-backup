@@ -52,8 +52,8 @@ const navItems = [
   { href: '/applications', label: 'Solicitações', icon: Workflow, external: false },
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false },
-  { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true },
-  { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false, requiredEmail: 'matheus@3ainvestimentos.com.br' },
+  { href: '/store', label: 'Store', icon: ShoppingCart, external: true },
+  { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
 ];
 
@@ -70,7 +70,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasNewAssignedTasks }: { 
         <Button variant="ghost" className={cn(
           "relative h-10 w-10 rounded-full p-0 transition-all duration-300",
           "focus-visible:ring-0 focus-visible:ring-offset-0",
-          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-destructive",
+          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary",
           hasNewAssignedTasks && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary"
         )}>
           <Avatar className="h-10 w-10">
@@ -111,7 +111,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasNewAssignedTasks }: { 
         <DropdownMenuItem asChild>
            <Link href="/requests" className={cn(
               "cursor-pointer font-body",
-              hasPendingRequests && "bg-destructive/10 text-destructive font-bold hover:!bg-destructive/20"
+              hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
             )}>
               <Mailbox className="mr-2 h-4 w-4" />
               <span>Caixa de Entrada</span>
@@ -278,10 +278,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {
-                  if (item.requiredEmail && user.email !== item.requiredEmail) {
-                    return null;
-                  }
-                  
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
