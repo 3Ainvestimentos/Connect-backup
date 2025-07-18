@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
   Clock, 
-  Megaphone, MessageSquare, CalendarDays, MapPin, Link as LinkIcon, Trash2,
+  Megaphone, MessageSquare, CalendarDays, MapPin, Link as LinkIcon, Trash2, ExternalLink
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { useNews, type NewsItemType } from '@/contexts/NewsContext';
 import { useEvents } from '@/contexts/EventsContext';
 import { useMessages, type MessageType } from '@/contexts/MessagesContext';
+import { useQuickLinks } from '@/contexts/QuickLinksContext';
 import { getIcon } from '@/lib/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
@@ -42,6 +43,7 @@ export default function DashboardPage() {
   const { events, getEventRecipients } = useEvents();
   const { messages, markMessageAsRead, getMessageRecipients, markMessageAsDeleted } = useMessages();
   const { newsItems } = useNews();
+  const { getVisibleLinksForUser } = useQuickLinks();
   
   const currentUserCollab = useMemo(() => {
       if (!user || !collaborators) return null;
@@ -70,6 +72,10 @@ export default function DashboardPage() {
           return recipients.some(r => r.id3a === currentUserCollab.id3a);
       });
   }, [events, currentUserCollab, collaborators, getEventRecipients]);
+
+  const quickLinks = useMemo(() => {
+    return getVisibleLinksForUser(currentUserCollab, collaborators);
+  }, [currentUserCollab, collaborators, getVisibleLinksForUser]);
 
   const eventsForMonth = useMemo(() => {
     if (!displayedMonth) return [];
@@ -207,7 +213,7 @@ export default function DashboardPage() {
           </section>
         )}
         
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Messages Card */}
           <div className="lg:col-span-1">
             <Card className="shadow-sm flex flex-col h-full">
@@ -246,30 +252,29 @@ export default function DashboardPage() {
             </Card>
           </div>
             
-          {/* Events Card */}
-          <div className="lg:col-span-1">
-            <Card className="shadow-sm flex flex-col h-full">
-              <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                  Eventos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 grid md:grid-cols-5 gap-6 min-h-0">
-                  <div className="md:col-span-3 flex items-start justify-center">
-                      <Calendar
-                          mode="single"
-                          selected={undefined}
-                          onSelect={undefined}
-                          className="rounded-md border no-day-hover"
-                          month={displayedMonth}
-                          onMonthChange={setDisplayedMonth}
-                          modifiers={{ event: eventDates }}
-                          modifiersClassNames={{ event: 'bg-primary/20 rounded-full', day_today: '' }}
-                      />
-                  </div>
-                  <div className="md:col-span-2 relative min-h-0">
-                    <div className="absolute inset-0">
-                      <ScrollArea className="h-full pr-4">
+          <div className="lg:col-span-2 flex flex-col gap-3">
+             {/* Events Card */}
+              <Card className="shadow-sm flex-1">
+                <CardHeader>
+                  <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
+                    Eventos
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid md:grid-cols-5 gap-6">
+                    <div className="md:col-span-3 flex items-start justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={undefined}
+                            onSelect={undefined}
+                            className="rounded-md border no-day-hover"
+                            month={displayedMonth}
+                            onMonthChange={setDisplayedMonth}
+                            modifiers={{ event: eventDates }}
+                            modifiersClassNames={{ event: 'bg-primary/20 rounded-full', day_today: '' }}
+                        />
+                    </div>
+                    <div className="md:col-span-2 relative min-h-[200px]">
+                      <ScrollArea className="h-full pr-4 absolute inset-0">
                           <div className="space-y-4">
                           {eventsForMonth.map((event, index) => {
                             const Icon = getIcon(event.icon) as LucideIcon;
@@ -304,9 +309,32 @@ export default function DashboardPage() {
                           </div>
                       </ScrollArea>
                     </div>
-                  </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* Quick Links Card */}
+              {quickLinks.length > 0 && (
+                <Card className="shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                        {quickLinks.map(link => {
+                            const Icon = getIcon(link.icon);
+                            return (
+                            <a href={link.link} key={link.id} target="_blank" rel="noopener noreferrer" className="block text-center group">
+                                <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center aspect-square transition-all duration-200 group-hover:bg-accent group-hover:scale-105">
+                                <Icon className="h-8 w-8 text-muted-foreground group-hover:text-accent-foreground" />
+                                </div>
+                                <span className="mt-2 text-xs font-medium text-muted-foreground group-hover:text-foreground">{link.name}</span>
+                            </a>
+                            );
+                        })}
+                        </div>
+                    </CardContent>
+                </Card>
+              )}
           </div>
         </section>
       </div>
