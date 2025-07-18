@@ -320,17 +320,22 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                        {quickLinks.map(link => {
-                            const Icon = getIcon(link.icon);
-                            return (
+                        {quickLinks.map(link => (
                             <a href={link.link} key={link.id} target="_blank" rel="noopener noreferrer" className="block text-center group">
                                 <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center aspect-square transition-all duration-200 group-hover:bg-accent group-hover:scale-105">
-                                <Icon className="h-8 w-8 text-muted-foreground group-hover:text-accent-foreground" />
+                                    <div className="relative h-10 w-10">
+                                        <Image
+                                            src={link.imageUrl}
+                                            alt={link.name}
+                                            layout="fill"
+                                            objectFit="contain"
+                                            className="transition-transform group-hover:scale-110"
+                                        />
+                                    </div>
                                 </div>
                                 <span className="mt-2 text-xs font-medium text-muted-foreground group-hover:text-foreground">{link.name}</span>
                             </a>
-                            );
-                        })}
+                        ))}
                         </div>
                     </CardContent>
                 </Card>

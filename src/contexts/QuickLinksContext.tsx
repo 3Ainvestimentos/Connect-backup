@@ -9,7 +9,7 @@ import type { Collaborator } from './CollaboratorsContext';
 
 export const quickLinkSchema = z.object({
   name: z.string().min(1, "Nome do link é obrigatório."),
-  icon: z.string().min(1, "Ícone é obrigatório."),
+  imageUrl: z.string().url("Por favor, insira uma URL de imagem válida."),
   link: z.string().min(1, "URL do Link é obrigatória.").refine(value => {
     try {
       new URL(value.includes('{') ? value.replace(/\{.*\}/, 'placeholder') : value);

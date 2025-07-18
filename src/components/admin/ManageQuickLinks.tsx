@@ -5,7 +5,7 @@ import { useQuickLinks, type QuickLinkType, quickLinkSchema } from '@/contexts/Q
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
@@ -13,13 +13,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '../ui/scroll-area';
-import { iconList, getIcon } from '@/lib/icons';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { Switch } from '../ui/switch';
+import Image from 'next/image';
 
 type QuickLinkFormValues = z.infer<typeof quickLinkSchema>;
 
@@ -34,7 +33,7 @@ export function ManageQuickLinks() {
         resolver: zodResolver(quickLinkSchema),
         defaultValues: {
             name: '',
-            icon: 'Link',
+            imageUrl: '',
             link: '',
             isUserSpecific: false,
             recipientIds: ['all'],
@@ -51,7 +50,7 @@ export function ManageQuickLinks() {
         } else {
             form.reset({
                 name: '',
-                icon: 'Link',
+                imageUrl: '',
                 link: '',
                 isUserSpecific: false,
                 recipientIds: ['all'],
@@ -113,6 +112,7 @@ export function ManageQuickLinks() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Imagem</TableHead>
                                 <TableHead>Nome</TableHead>
                                 <TableHead>Destinatários</TableHead>
                                 <TableHead>Dinâmico</TableHead>
@@ -120,12 +120,12 @@ export function ManageQuickLinks() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {quickLinks.map(item => {
-                                const Icon = getIcon(item.icon);
-                                return (
+                            {quickLinks.map(item => (
                                 <TableRow key={item.id}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                      <Icon className="h-5 w-5 text-muted-foreground" />
+                                    <TableCell>
+                                      <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="rounded-md object-contain" />
+                                    </TableCell>
+                                    <TableCell className="font-medium">
                                       {item.name}
                                     </TableCell>
                                     <TableCell>
@@ -149,7 +149,7 @@ export function ManageQuickLinks() {
                                         </Button>
                                     </TableCell>
                                 </TableRow>
-                            )})}
+                            ))}
                         </TableBody>
                     </Table>
                 </div>
@@ -161,37 +161,20 @@ export function ManageQuickLinks() {
                         <DialogTitle>{editingLink ? 'Editar Link Rápido' : 'Adicionar Link Rápido'}</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <Label htmlFor="name">Nome do Link</Label>
-                                <Input id="name" {...form.register('name')} disabled={form.formState.isSubmitting}/>
-                                {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
-                            </div>
-                            <div>
-                                <Label htmlFor="icon">Ícone</Label>
-                                <Controller name="icon" control={form.control} render={({ field }) => {
-                                    const IconToShow = getIcon(field.value);
-                                    return (
-                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={form.formState.isSubmitting}>
-                                        <SelectTrigger>
-                                            <SelectValue>
-                                                {field.value && (<div className="flex items-center gap-2"><IconToShow className='h-4 w-4' /><span>{field.value}</span></div>)}
-                                            </SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent><ScrollArea className="h-72">
-                                            {iconList.map(iconName => {
-                                                const Icon = getIcon(iconName);
-                                                return (<SelectItem key={iconName} value={iconName}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{iconName}</span></div></SelectItem>)
-                                            })}
-                                        </ScrollArea></SelectContent>
-                                    </Select>
-                                )}}/>
-                                {form.formState.errors.icon && <p className="text-sm text-destructive mt-1">{form.formState.errors.icon.message}</p>}
-                            </div>
+                        <div>
+                            <Label htmlFor="name">Nome do Link</Label>
+                            <Input id="name" {...form.register('name')} disabled={form.formState.isSubmitting}/>
+                            {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
 
                         <div>
-                            <Label htmlFor="link">URL</Label>
+                            <Label htmlFor="imageUrl">URL da Imagem</Label>
+                            <Input id="imageUrl" {...form.register('imageUrl')} placeholder="https://..." disabled={form.formState.isSubmitting}/>
+                            {form.formState.errors.imageUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.imageUrl.message}</p>}
+                        </div>
+
+                        <div>
+                            <Label htmlFor="link">URL do Link de Destino</Label>
                             <Input id="link" {...form.register('link')} disabled={form.formState.isSubmitting}/>
                             {form.formState.errors.link && <p className="text-sm text-destructive mt-1">{form.formState.errors.link.message}</p>}
                         </div>
