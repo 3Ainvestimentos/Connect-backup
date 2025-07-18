@@ -22,6 +22,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { FormFieldDefinition, WorkflowDefinition } from '@/contexts/ApplicationsContext';
 import { uploadFile } from '@/lib/firestore-service';
+import { ScrollArea } from '../ui/scroll-area';
 
 type DynamicFormData = { [key: string]: any };
 
@@ -240,9 +241,13 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           <DialogTitle className="font-headline text-2xl">{workflowDefinition.name}</DialogTitle>
           <DialogDescription>{workflowDefinition.description}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto">
-          {workflowDefinition.fields.map(field => renderField(field))}
-        </form>
+        <div className="max-h-[60vh] overflow-hidden">
+            <ScrollArea className="h-full pr-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                    {workflowDefinition.fields.map(field => renderField(field))}
+                </form>
+            </ScrollArea>
+        </div>
          <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline" disabled={isSubmitting} className="hover:bg-muted">
