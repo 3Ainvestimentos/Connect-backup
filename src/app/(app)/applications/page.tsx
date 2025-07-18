@@ -52,7 +52,7 @@ export default function ApplicationsPage() {
       <div className="space-y-8 p-6 md:p-8">
         <div>
           <PageHeader 
-            title="Aplicações" 
+            title="Workflows" 
             description="Inicie processos e acesse as ferramentas da empresa."
           />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
