@@ -8,9 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -23,7 +23,7 @@ import Image from 'next/image';
 type QuickLinkFormValues = z.infer<typeof quickLinkSchema>;
 
 export function ManageQuickLinks() {
-    const { quickLinks, addQuickLink, updateQuickLink, deleteQuickLinkMutation } = useQuickLinks();
+    const { quickLinks, addQuickLink, updateQuickLink, deleteQuickLinkMutation, reorderQuickLinks, loading } = useQuickLinks();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
@@ -37,6 +37,7 @@ export function ManageQuickLinks() {
             link: '',
             isUserSpecific: false,
             recipientIds: ['all'],
+            order: 0,
         }
     });
 
@@ -54,6 +55,7 @@ export function ManageQuickLinks() {
                 link: '',
                 isUserSpecific: false,
                 recipientIds: ['all'],
+                order: quickLinks.length,
             });
         }
         setIsFormOpen(true);
@@ -66,6 +68,20 @@ export function ManageQuickLinks() {
             toast({ title: "Sucesso!", description: "Link rápido excluído." });
         } catch (error) {
             toast({ title: "Falha na Exclusão", description: (error as Error).message, variant: "destructive" });
+        }
+    };
+    
+    const handleReorder = async (index: number, direction: 'up' | 'down') => {
+        const linkToMove = quickLinks[index];
+        const swapIndex = direction === 'up' ? index - 1 : index + 1;
+        const linkToSwap = quickLinks[swapIndex];
+        
+        if (!linkToMove || !linkToSwap) return;
+
+        try {
+            await reorderQuickLinks(linkToMove, linkToSwap);
+        } catch (error) {
+            toast({ title: "Erro ao reordenar", description: (error as Error).message, variant: "destructive" });
         }
     };
     
@@ -112,6 +128,7 @@ export function ManageQuickLinks() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[80px]">Ordem</TableHead>
                                 <TableHead>Imagem</TableHead>
                                 <TableHead>Nome</TableHead>
                                 <TableHead>Destinatários</TableHead>
@@ -120,8 +137,18 @@ export function ManageQuickLinks() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {quickLinks.map(item => (
+                            {quickLinks.map((item, index) => (
                                 <TableRow key={item.id}>
+                                    <TableCell>
+                                        <div className="flex gap-1">
+                                            <Button variant="ghost" size="icon" onClick={() => handleReorder(index, 'up')} disabled={index === 0 || loading}>
+                                                <ArrowUp className="h-4 w-4" />
+                                            </Button>
+                                             <Button variant="ghost" size="icon" onClick={() => handleReorder(index, 'down')} disabled={index === quickLinks.length - 1 || loading}>
+                                                <ArrowDown className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                       <Image src={item.imageUrl} alt={item.name || ''} width={40} height={40} className="rounded-md object-contain" />
                                     </TableCell>
@@ -179,16 +206,10 @@ export function ManageQuickLinks() {
                             {form.formState.errors.link && <p className="text-sm text-destructive mt-1">{form.formState.errors.link.message}</p>}
                         </div>
                         
-                        <Controller
-                            name="isUserSpecific"
-                            control={form.control}
-                            render={({ field }) => (
-                                <div className="flex items-center space-x-2">
-                                    <Switch id="isUserSpecific" checked={field.value} onCheckedChange={field.onChange} />
-                                    <Label htmlFor="isUserSpecific">Link dinâmico por usuário</Label>
-                                </div>
-                            )}
-                        />
+                        <div className="flex items-center space-x-2">
+                            <Switch id="isUserSpecific" checked={watchIsUserSpecific} onCheckedChange={(checked) => form.setValue('isUserSpecific', checked)} />
+                            <Label htmlFor="isUserSpecific">Link dinâmico por usuário</Label>
+                        </div>
 
                         {watchIsUserSpecific && (
                              <div className="p-3 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">

@@ -225,3 +225,5 @@ export const getNextSequentialId = async (counterId: string): Promise<number> =>
     throw new Error("Não foi possível gerar um novo ID para a solicitação.");
   }
 };
+
+export { writeBatch, doc, getFirestore };
