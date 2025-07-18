@@ -176,7 +176,7 @@ export default function AuditPage() {
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false}/>
                                     <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }}/>
                                     <Legend />
-                                    <Line type="monotone" dataKey="Logins Acumulados" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} activeDot={{ r: 8 }}/>
+                                    <Line type="monotone" dataKey="Logins Acumulados" stroke="hsl(var(--admin-primary))" strokeWidth={2} dot={false} activeDot={{ r: 8 }}/>
                                 </LineChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -191,7 +191,7 @@ export default function AuditPage() {
                                     <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                                     <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "var(--radius)" }} cursor={{fill: 'hsl(var(--muted))'}} />
-                                    <Bar dataKey="Logins" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="Logins" fill="hsl(var(--admin-primary))" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
@@ -210,7 +210,7 @@ export default function AuditPage() {
                              <p className="text-2xl font-bold">
                                 {uniqueLoginsThisMonth.uniqueCount} de {uniqueLoginsThisMonth.totalCount} colaboradores
                             </p>
-                            <Progress value={uniqueLoginsThisMonth.percentage} className="h-3"/>
+                            <Progress value={uniqueLoginsThisMonth.percentage} className="h-3 [&>div]:bg-admin-primary"/>
                             <p className="text-sm text-muted-foreground">
                                 {uniqueLoginsThisMonth.percentage.toFixed(1)}% dos colaboradores fizeram login pelo menos uma vez este mês.
                             </p>
