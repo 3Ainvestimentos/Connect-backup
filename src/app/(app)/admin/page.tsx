@@ -21,19 +21,15 @@ export default function AdminPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
                     title="Administração do Sistema"
-                    description="Gerencie colaboradores, permissões e visualize todas as solicitações."
+                    description="Gerencie colaboradores e suas permissões de acesso aos painéis de controle."
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
-                        <TabsTrigger value="requests">Solicitações</TabsTrigger>
                         <TabsTrigger value="permissions">Permissões</TabsTrigger>
                     </TabsList>
                      <TabsContent value="collaborators">
                         <ManageCollaborators />
-                    </TabsContent>
-                     <TabsContent value="requests">
-                        <AllRequestsView />
                     </TabsContent>
                      <TabsContent value="permissions">
                         <PermissionsPageContent />
