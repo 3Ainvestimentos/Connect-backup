@@ -26,7 +26,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89%; /* Slightly darker gray border */
     --input: 0 0% 93%; /* Lighter gray for input */
-    --ring: 30 39% 46%; /* Primary gold for rings */
+    --ring: 220 10% 45%; /* Medium blueish gray for rings - was primary gold */
 
     /* Admin specific colors */
     --admin-primary: 170 60% 50%;
@@ -72,7 +72,7 @@ body {
     --accent-foreground: 0 0% 10%; /* Dark text on active gold - Unchanged */
     --border: 210 15% 25%; /* Visible cool gray border */
     --input: 210 15% 25%;
-    --ring: 30 39% 46%; /* Unchanged */
+    --ring: 210 15% 70%; /* Light cool gray for rings */
 
     /* Admin specific colors */
     --admin-primary: 170 60% 50%;

@@ -136,11 +136,9 @@ export default function ManageWorkflowAreas() {
                                 const IconToShow = getIcon(field.value);
                                 return (
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <SelectTrigger>
-                                            <SelectValue>
+                                        <SelectTrigger><SelectValue>
                                                 <div className="flex items-center gap-2"><IconToShow className='h-4 w-4' /><span>{field.value}</span></div>
-                                            </SelectValue>
-                                        </SelectTrigger>
+                                            </SelectValue></SelectTrigger>
                                         <SelectContent><ScrollArea className="h-72">
                                             {iconList.map(iconName => {
                                                 const Icon = getIcon(iconName);
