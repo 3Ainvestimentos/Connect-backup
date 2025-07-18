@@ -235,64 +235,95 @@ export default function DashboardPage() {
         )}
         
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {/* Messages Card (now larger) */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-sm flex flex-col h-full">
-              <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
-                  <span>Mensagens</span>
-                  {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 min-h-0 relative">
-                {userMessages.length > 0 ? (
-                    <div className="absolute inset-0">
-                        <ScrollArea className="h-full">
-                            <div className="space-y-4 p-6 pt-0">
-                                {userMessages.map((msg) => {
-                                    const isRead = currentUserCollab ? msg.readBy.includes(currentUserCollab.id3a) : false;
-                                    return (
-                                    <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
-                                        <div className="flex justify-between items-start gap-2">
-                                            <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                <Checkbox checked={!isRead} aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} className={cn("pointer-events-none mt-0.5 flex-shrink-0", { 'border-muted-foreground data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:border-muted-foreground': !isRead, 'border-input data-[state=checked]:bg-transparent': isRead })} />
-                                                <p className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</p>
-                                            </div>
-                                            <span className="text-xs text-muted-foreground whitespace-nowrap pl-1 flex-shrink-0">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
-                                        </div>
-                                        <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
-                                          {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                          {msg.content.length > 80 && <span className={cn("text-black ml-1 hover:underline", { 'font-semibold': !isRead, 'font-normal': isRead })} >Leia mais</span>}
-                                        </p>
-                                        <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
-                                    </div>
-                                )})}
-                            </div>
-                        </ScrollArea>
-                    </div>
-                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-6">
-                        <MessageSquare className="h-10 w-10 mb-4" />
-                        <p className="text-sm text-muted-foreground font-body">
-                          Por enquanto nenhuma mensagem nova, {user?.displayName?.split(' ')[0]}!
-                        </p>
-                    </div>
-                )}
-              </CardContent>
-            </Card>
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 flex flex-col gap-3">
+              <Card className="shadow-sm flex flex-col flex-1">
+                <CardHeader>
+                  <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
+                    <span>Mensagens</span>
+                    {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 min-h-0 relative">
+                  {userMessages.length > 0 ? (
+                      <div className="absolute inset-0">
+                          <ScrollArea className="h-full">
+                              <div className="space-y-4 p-6 pt-0">
+                                  {userMessages.map((msg) => {
+                                      const isRead = currentUserCollab ? msg.readBy.includes(currentUserCollab.id3a) : false;
+                                      return (
+                                      <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
+                                          <div className="flex justify-between items-start gap-2">
+                                              <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                  <Checkbox checked={!isRead} aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} className={cn("pointer-events-none mt-0.5 flex-shrink-0", { 'border-muted-foreground data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:border-muted-foreground': !isRead, 'border-input data-[state=checked]:bg-transparent': isRead })} />
+                                                  <p className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</p>
+                                              </div>
+                                              <span className="text-xs text-muted-foreground whitespace-nowrap pl-1 flex-shrink-0">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                          </div>
+                                          <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
+                                            {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
+                                            {msg.content.length > 80 && <span className={cn("text-black ml-1 hover:underline", { 'font-semibold': !isRead, 'font-normal': isRead })} >Leia mais</span>}
+                                          </p>
+                                          <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
+                                      </div>
+                                  )})}
+                              </div>
+                          </ScrollArea>
+                      </div>
+                   ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-6">
+                          <MessageSquare className="h-10 w-10 mb-4" />
+                          <p className="text-sm text-muted-foreground font-body">
+                            Por enquanto nenhuma mensagem nova, {user?.displayName?.split(' ')[0]}!
+                          </p>
+                      </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Quick Links Card */}
+              {quickLinks.length > 0 && (
+                <Card className="shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                        <div className="flex justify-center flex-wrap gap-3">
+                          {quickLinks.map(link => (
+                              <a 
+                                 href={link.link} 
+                                 key={link.id} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer" 
+                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card aspect-video w-32"
+                                 title={link.name || 'Link Rápido'}
+                               >
+                                  <Image
+                                      src={link.imageUrl}
+                                      alt={link.name || 'Quick Link'}
+                                      layout="fill"
+                                      objectFit="contain"
+                                      className="p-2"
+                                  />
+                              </a>
+                          ))}
+                        </div>
+                    </CardContent>
+                </Card>
+              )}
           </div>
             
-          {/* Events and Quick Links Column (now smaller) */}
-          <div className="lg:col-span-1 flex flex-col gap-3">
+          {/* Sidebar Column */}
+          <div className="lg:col-span-1">
              {/* Events Card */}
-              <Card className="shadow-sm flex-1">
+              <Card className="shadow-sm">
                 <CardHeader>
                   <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
                     Eventos
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2 flex items-start justify-center">
+                <CardContent className="grid md:grid-cols-2 lg:grid-cols-1 gap-6">
+                    <div className="md:col-span-2 lg:col-span-1 flex items-start justify-center">
                         <Calendar
                             mode="single"
                             selected={undefined}
@@ -308,7 +339,7 @@ export default function DashboardPage() {
                             locale={ptBR}
                         />
                     </div>
-                    <div className="md:col-span-2 relative min-h-[200px]">
+                    <div className="md:col-span-2 lg:col-span-1 relative min-h-[200px]">
                       <ScrollArea className="h-full pr-4 absolute inset-0">
                           <div className="space-y-4">
                           {eventsForMonth.map((event, index) => {
@@ -346,37 +377,6 @@ export default function DashboardPage() {
                     </div>
                 </CardContent>
               </Card>
-
-              {/* Quick Links Card */}
-              {quickLinks.length > 0 && (
-                <Card className="shadow-sm">
-                    <CardHeader>
-                        <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex justify-center flex-wrap gap-3">
-                          {quickLinks.map(link => (
-                              <a 
-                                 href={link.link} 
-                                 key={link.id} 
-                                 target="_blank" 
-                                 rel="noopener noreferrer" 
-                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card w-32 h-20"
-                                 title={link.name || 'Link Rápido'}
-                               >
-                                  <Image
-                                      src={link.imageUrl}
-                                      alt={link.name || 'Quick Link'}
-                                      layout="fill"
-                                      objectFit="contain"
-                                      className="p-2"
-                                  />
-                              </a>
-                          ))}
-                        </div>
-                    </CardContent>
-                </Card>
-              )}
           </div>
         </section>
       </div>
@@ -460,4 +460,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
 
