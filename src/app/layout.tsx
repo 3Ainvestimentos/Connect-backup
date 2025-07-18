@@ -14,6 +14,7 @@ import { CollaboratorsProvider } from '@/contexts/CollaboratorsContext';
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
 import { LabsProvider } from '@/contexts/LabsContext';
 import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
+import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
 
 export const metadata: Metadata = {
   title: '3A RIVA Connect',
@@ -42,22 +43,24 @@ export default function RootLayout({
           <ReactQueryProvider>
             <CollaboratorsProvider>
               <AuthProvider>
-                <ApplicationsProvider>
-                  <DocumentsProvider>
-                    <NewsProvider>
-                      <EventsProvider>
-                        <MessagesProvider>
-                          <LabsProvider>
-                            <WorkflowsProvider>
-                              {children}
-                            </WorkflowsProvider>
-                          </LabsProvider>
-                          <Toaster />
-                        </MessagesProvider>
-                      </EventsProvider>
-                    </NewsProvider>
-                  </DocumentsProvider>
-                </ApplicationsProvider>
+                <WorkflowAreasProvider>
+                  <ApplicationsProvider>
+                    <DocumentsProvider>
+                      <NewsProvider>
+                        <EventsProvider>
+                          <MessagesProvider>
+                            <LabsProvider>
+                              <WorkflowsProvider>
+                                {children}
+                              </WorkflowsProvider>
+                            </LabsProvider>
+                            <Toaster />
+                          </MessagesProvider>
+                        </EventsProvider>
+                      </NewsProvider>
+                    </DocumentsProvider>
+                  </ApplicationsProvider>
+                </WorkflowAreasProvider>
               </AuthProvider>
             </CollaboratorsProvider>
           </ReactQueryProvider>

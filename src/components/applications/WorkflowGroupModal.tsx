@@ -17,16 +17,13 @@ import { getIcon } from '@/lib/icons';
 interface WorkflowGroupModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  areaName: string;
   group: WorkflowDefinition[];
   onWorkflowSelect: (workflow: WorkflowDefinition) => void;
 }
 
-export function WorkflowGroupModal({ open, onOpenChange, group, onWorkflowSelect }: WorkflowGroupModalProps) {
+export function WorkflowGroupModal({ open, onOpenChange, areaName, group, onWorkflowSelect }: WorkflowGroupModalProps) {
   if (!group || group.length === 0) return null;
-
-  const areaName = group[0]?.ownerEmail ? // A bit of a hack to find area name
-      'Workflows Disponíveis' : 
-      'Workflows Disponíveis'; 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

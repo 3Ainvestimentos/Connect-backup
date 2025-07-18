@@ -8,17 +8,21 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, Timer, User, Users } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, Timer, User, Users, FolderOpen } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getIcon } from '@/lib/icons';
 import { WorkflowDefinitionForm } from '@/components/admin/WorkflowDefinitionForm';
 import { ZodError } from 'zod';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import ManageWorkflowAreas from '@/components/admin/ManageWorkflowAreas';
+import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 
 export default function ManageWorkflowsPage() {
     const { workflowDefinitions, loading, deleteWorkflowDefinitionMutation, addWorkflowDefinition } = useApplications();
     const { collaborators } = useCollaborators();
+    const { workflowAreas } = useWorkflowAreas();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingDefinition, setEditingDefinition] = useState<WorkflowDefinition | null>(null);
     const [isImporting, setIsImporting] = useState(false);
@@ -79,6 +83,11 @@ export default function ManageWorkflowsPage() {
                 if (!jsonData.allowedUserIds) {
                     jsonData.allowedUserIds = ['all'];
                 }
+                
+                // Check if areaId exists, if not, it's an old format
+                if (!jsonData.areaId) {
+                    throw new Error("O arquivo JSON é de um formato antigo e não contém 'areaId'. Por favor, atualize o arquivo ou crie o workflow manualmente.");
+                }
 
                 // Validate the cleaned JSON data using the Zod schema
                 const parsedData = workflowDefinitionSchema.parse(jsonData);
@@ -124,9 +133,9 @@ export default function ManageWorkflowsPage() {
         reader.readAsText(file);
     };
     
-    const getOwnerName = (email: string) => {
-        const owner = collaborators.find(c => c.email === email);
-        return owner?.name || email;
+    const getAreaName = (areaId: string) => {
+        const area = workflowAreas.find(a => a.id === areaId);
+        return area?.name || 'Área Desconhecida';
     }
     
     const getAccessDescription = (ids: string[]) => {
@@ -141,8 +150,13 @@ export default function ManageWorkflowsPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
                     title="Gerenciamento de Workflows"
-                    description="Crie e gerencie os formulários e processos da área de Aplicações."
+                    description="Crie e gerencie os formulários e processos da área de Workflows."
                 />
+
+                <ManageWorkflowAreas />
+
+                <Separator />
+                
                 <Card>
                     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
@@ -176,7 +190,7 @@ export default function ManageWorkflowsPage() {
                                     <TableRow>
                                         <TableHead>Ícone</TableHead>
                                         <TableHead>Nome</TableHead>
-                                        <TableHead>Proprietário</TableHead>
+                                        <TableHead>Área</TableHead>
                                         <TableHead>Acesso</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
@@ -190,8 +204,8 @@ export default function ManageWorkflowsPage() {
                                                 <TableCell className="font-medium">{def.name}</TableCell>
                                                 <TableCell>
                                                     <Badge variant="outline" className="flex items-center gap-1.5 w-fit">
-                                                      <User className="h-3 w-3" />
-                                                      {getOwnerName(def.ownerEmail)}
+                                                      <FolderOpen className="h-3 w-3" />
+                                                      {getAreaName(def.areaId)}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>

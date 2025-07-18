@@ -56,6 +56,7 @@ export const workflowDefinitionSchema = z.object({
     name: z.string().min(1, "Nome da definição é obrigatório."),
     description: z.string().min(1, "Descrição é obrigatória."),
     icon: z.string().min(1, "Ícone é obrigatório."),
+    areaId: z.string().min(1, "A área do workflow é obrigatória."),
     ownerEmail: z.string().email("O e-mail do proprietário é obrigatório."),
     slaRules: z.array(slaRuleSchema).optional().default([]),
     defaultSlaDays: z.coerce.number().min(0, "SLA padrão não pode ser negativo.").optional(),

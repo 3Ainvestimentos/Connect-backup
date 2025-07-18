@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User, ShieldCheck, Users } from 'lucide-react';
+import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User, ShieldCheck, Users, FolderOpen } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
 import { iconList, getIcon } from '@/lib/icons';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
+import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 
 type FormValues = z.infer<typeof workflowDefinitionSchema>;
 
@@ -33,6 +34,7 @@ interface WorkflowDefinitionFormProps {
 export function WorkflowDefinitionForm({ isOpen, onClose, definition }: WorkflowDefinitionFormProps) {
     const { addWorkflowDefinition, updateWorkflowDefinition } = useApplications();
     const { collaborators } = useCollaborators();
+    const { workflowAreas } = useWorkflowAreas();
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
 
     const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<FormValues>({
@@ -48,6 +50,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             name: '',
             description: '',
             icon: 'FileText',
+            areaId: '',
             ownerEmail: '',
             defaultSlaDays: undefined,
             slaRules: [],
@@ -158,18 +161,32 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                     <Textarea id="description" {...register('description')} />
                                     {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
                                 </div>
-                                 <div>
-                                    <Label htmlFor="ownerEmail">Proprietário do Workflow</Label>
-                                     <Controller name="ownerEmail" control={control} render={({ field }) => (
-                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                             <SelectTrigger><SelectValue placeholder="Selecione um proprietário..." /></SelectTrigger>
-                                             <SelectContent>
-                                                 {uniqueCollaborators.map(c => <SelectItem key={c.email} value={c.email}>{c.name}</SelectItem>)}
-                                             </SelectContent>
-                                         </Select>
-                                     )} />
-                                    {errors.ownerEmail && <p className="text-sm text-destructive mt-1">{errors.ownerEmail.message}</p>}
-                                </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div>
+                                        <Label htmlFor="areaId">Área do Workflow</Label>
+                                        <Controller name="areaId" control={control} render={({ field }) => (
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger><SelectValue placeholder="Selecione uma área..." /></SelectTrigger>
+                                                <SelectContent>
+                                                    {workflowAreas.map(a => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        )} />
+                                        {errors.areaId && <p className="text-sm text-destructive mt-1">{errors.areaId.message}</p>}
+                                     </div>
+                                     <div>
+                                        <Label htmlFor="ownerEmail">Proprietário do Workflow (para notificações)</Label>
+                                        <Controller name="ownerEmail" control={control} render={({ field }) => (
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger><SelectValue placeholder="Selecione um proprietário..." /></SelectTrigger>
+                                                <SelectContent>
+                                                    {uniqueCollaborators.map(c => <SelectItem key={c.email} value={c.email}>{c.name}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        )} />
+                                        {errors.ownerEmail && <p className="text-sm text-destructive mt-1">{errors.ownerEmail.message}</p>}
+                                     </div>
+                                 </div>
                             </div>
                             
                              {/* Access Control */}
