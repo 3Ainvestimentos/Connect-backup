@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItemType | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [greeting, setGreeting] = useState('');
 
   // Get global data from contexts
   const { user } = useAuth();
@@ -49,6 +50,23 @@ export default function DashboardPage() {
       if (!user || !collaborators) return null;
       return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
+
+  useEffect(() => {
+    const getGreeting = () => {
+      if (typeof window === 'undefined') return '';
+      const hour = new Date().getHours();
+      if (hour >= 5 && hour < 12) return 'Bom dia';
+      if (hour >= 12 && hour < 18) return 'Boa tarde';
+      return 'Boa noite';
+    };
+    setGreeting(getGreeting());
+  }, []);
+
+  const pageTitle = useMemo(() => {
+    if (!greeting || !user?.displayName) return "Bem-vindo(a)!";
+    return `${greeting}, ${user.displayName.split(' ')[0]}!`;
+  }, [greeting, user]);
+
 
   const userMessages = useMemo(() => {
     if (!currentUserCollab) return [];
@@ -206,8 +224,8 @@ export default function DashboardPage() {
         {activeHighlights.length > 0 && (
           <section>
             <PageHeader
-              title={<Link href="/news" className="hover:underline">O que há de novo</Link>}
-              description="Veja os últimos anúncios e destaques."
+              title={pageTitle}
+              description={<Link href="/news" className="hover:underline">Veja os últimos anúncios e destaques.</Link>}
             />
             <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>
               {renderHighlights()}
@@ -436,3 +454,4 @@ export default function DashboardPage() {
     </>
   );
 }
+
