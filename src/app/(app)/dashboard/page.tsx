@@ -321,15 +321,16 @@ export default function DashboardPage() {
                     <CardContent>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         {quickLinks.map(link => (
-                            <a href={link.link} key={link.id} target="_blank" rel="noopener noreferrer" className="block text-center group relative overflow-hidden rounded-lg aspect-square transition-opacity hover:opacity-90">
-                                <Image
-                                    src={link.imageUrl}
-                                    alt={link.name}
-                                    layout="fill"
-                                    objectFit="cover"
-                                    className="transition-transform duration-300 group-hover:scale-105"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-2 flex items-end justify-center">
+                            <a href={link.link} key={link.id} target="_blank" rel="noopener noreferrer" className="block text-center group relative overflow-hidden rounded-lg aspect-video transition-opacity hover:opacity-90 bg-muted/50 p-2">
+                                <div className="relative w-full h-full">
+                                    <Image
+                                        src={link.imageUrl}
+                                        alt={link.name}
+                                        layout="fill"
+                                        objectFit="contain"
+                                    />
+                                </div>
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-2 flex items-end justify-center">
                                     <span className="text-xs font-medium text-white text-center drop-shadow-sm">{link.name}</span>
                                 </div>
                             </a>
