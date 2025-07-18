@@ -19,6 +19,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { useApplications, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
 import { AssigneeSelectionModal } from './AssigneeSelectionModal';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { cn } from '@/lib/utils';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -327,7 +328,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                          <Button 
                             onClick={handleAssigneeChange} 
                             disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
-                            variant="secondary"
+                            className={cn(
+                                "bg-admin-primary text-primary-foreground hover:bg-admin-primary/90",
+                                !assignee || assignee?.id3a === request.assignee?.id ? "bg-muted text-muted-foreground hover:bg-muted" : ""
+                            )}
                         >
                             {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Atribuir
