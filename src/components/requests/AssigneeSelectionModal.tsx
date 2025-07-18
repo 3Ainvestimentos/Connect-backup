@@ -141,7 +141,7 @@ export function AssigneeSelectionModal({
                         </p>
                         <div>
                             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-                            <Button type="button" onClick={handleConfirm} className="ml-2" disabled={!selectedAssignee}>Confirmar Seleção</Button>
+                            <Button type="button" onClick={handleConfirm} className="ml-2 bg-admin-primary hover:bg-admin-primary/90" disabled={!selectedAssignee}>Confirmar Seleção</Button>
                         </div>
                     </div>
                 </DialogFooter>
