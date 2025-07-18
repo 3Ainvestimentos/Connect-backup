@@ -29,6 +29,7 @@ import { isSameMonth, parseISO } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
+import { ptBR } from 'date-fns/locale';
 
 
 export default function DashboardPage() {
@@ -300,6 +301,7 @@ export default function DashboardPage() {
                             onMonthChange={setDisplayedMonth}
                             modifiers={{ event: eventDates }}
                             modifiersClassNames={{ event: 'bg-primary/20 rounded-full', day_today: '' }}
+                            locale={ptBR}
                         />
                     </div>
                     <div className="md:col-span-2 relative min-h-[200px]">
