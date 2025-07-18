@@ -4,7 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import { format, formatISO, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useWorkflows, WorkflowRequest, WorkflowStatus, WorkflowHistoryLog } from '@/contexts/WorkflowsContext';
+import { useWorkflows, WorkflowRequest, WorkflowHistoryLog } from '@/contexts/WorkflowsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators, Collaborator } from '@/contexts/CollaboratorsContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -37,7 +37,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | null>(null);
-  const [targetStatus, setTargetStatus] = useState<WorkflowStatus | null>(null);
+  const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
 
   const definition = useMemo(() => {
     if (!request) return null;
@@ -61,10 +61,15 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const canTakeAction = isOwner || isAssignee;
 
-  const availableTransitions = useMemo(() => {
-    if (!definition || !request) return [];
-    return definition.statuses.filter(s => s.id !== request.status);
+  const nextStatus = useMemo((): WorkflowStatusDefinition | null => {
+    if (!definition || !request) return null;
+    const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
+    if (currentIndex === -1 || currentIndex >= definition.statuses.length - 1) {
+      return null; // No next status if not found or already at the last status
+    }
+    return definition.statuses[currentIndex + 1];
   }, [definition, request]);
+
 
   React.useEffect(() => {
     if (request) {
@@ -80,10 +85,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   if (!request) return null;
   
-  const handleStatusChange = async (newStatus: WorkflowStatus) => {
+  const handleStatusChange = async (newStatus: WorkflowStatusDefinition) => {
     setActionType('statusChange');
     setTargetStatus(newStatus);
-    const newStatusLabel = definition?.statuses.find(s => s.id === newStatus)?.label || newStatus;
 
     if (!user || !adminUser) {
       toast({ title: "Erro de Autenticação", description: "Você não está logado ou não foi encontrado na lista de colaboradores.", variant: "destructive" });
@@ -95,26 +99,26 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
-      status: newStatus,
+      status: newStatus.id,
       userId: adminUser.id3a,
       userName: adminUser.name,
-      notes: comment || `Status alterado para "${newStatusLabel}".`,
+      notes: comment || `Status alterado para "${newStatus.label}".`,
     };
     
     const requestUpdate = {
       id: request.id,
-      status: newStatus,
+      status: newStatus.id,
       lastUpdatedAt: formatISO(now),
       history: [...request.history, historyEntry],
     };
 
-    const notificationMessage = `O status da sua solicitação de '${request.type}' #${request.requestId} foi atualizado para "${newStatusLabel}".\nObservações: ${comment || 'Nenhuma.'}`;
+    const notificationMessage = `O status da sua solicitação de '${request.type}' #${request.requestId} foi atualizado para "${newStatus.label}".\nObservações: ${comment || 'Nenhuma.'}`;
 
     try {
       await updateRequestAndNotify(requestUpdate, notificationMessage);
       toast({
         title: "Sucesso!",
-        description: `A solicitação foi atualizada para "${newStatusLabel}". O usuário será notificado.`
+        description: `A solicitação foi atualizada para "${newStatus.label}". O usuário será notificado.`
       });
       setComment('');
       onClose();
@@ -391,23 +395,21 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
             <div>
-                {isAssignee && (
+                {isAssignee && nextStatus && (
                      <div className="flex flex-wrap gap-2">
-                        {availableTransitions.map(status => (
-                            <Button 
-                                key={status.id}
-                                variant="secondary"
-                                onClick={() => handleStatusChange(status.id)} 
-                                disabled={isSubmitting}
-                            >
-                                {(isSubmitting && actionType === 'statusChange' && targetStatus === status.id) ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <MoveRight className="mr-2 h-4 w-4" />
-                                )}
-                                Mover para "{status.label}"
-                            </Button>
-                        ))}
+                        <Button 
+                            key={nextStatus.id}
+                            variant="secondary"
+                            onClick={() => handleStatusChange(nextStatus)} 
+                            disabled={isSubmitting}
+                        >
+                            {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <MoveRight className="mr-2 h-4 w-4" />
+                            )}
+                            Mover para "{nextStatus.label}"
+                        </Button>
                     </div>
                 )}
             </div>
