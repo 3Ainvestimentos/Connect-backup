@@ -13,14 +13,14 @@ O objetivo principal é substituir canais de comunicação dispersos (e-mails, g
 
 A aplicação consolida diversas funcionalidades essenciais para o dia a dia corporativo:
 
--   **Painel Inicial (Dashboard):** Tela principal que apresenta informações personalizadas para o usuário, como notícias em destaque, mensagens importantes e um calendário de eventos. É o ponto de partida do colaborador.
--   **Feed de Notícias:** Seção dedicada a comunicados oficiais, notícias da empresa e atualizações de mercado, com um painel administrativo para gerenciamento de conteúdo.
--   **Repositório de Documentos:** Biblioteca centralizada para documentos importantes (políticas, manuais, relatórios), com funcionalidades de busca e filtragem por categoria.
--   **Aplicações (Workflows):** Um hub para iniciar processos digitais através de formulários dinâmicos (ex: solicitação de férias, reembolso). As solicitações podem ser acompanhadas pelo usuário e gerenciadas por gestores.
+-   **Painel Inicial (Dashboard):** Tela principal que apresenta informações personalizadas, como notícias em destaque, mensagens importantes, um calendário de eventos e uma seção de **Links Rápidos** para ferramentas e recursos externos.
+-   **Feed de Notícias:** Seção dedicada a comunicados oficiais, notícias da empresa e atualizações de mercado.
+-   **Repositório de Documentos:** Biblioteca centralizada para documentos importantes (políticas, manuais, relatórios), com funcionalidades de busca e filtragem.
+-   **Solicitações (Workflows):** Um hub onde colaboradores iniciam processos digitais. Os workflows são agrupados por **Áreas de Negócio** (ex: Financeiro, RH) para facilitar a navegação. Ao submeter um formulário, a solicitação pode ser acompanhada pelo usuário e gerenciada por gestores.
 -   **Chatbot "Bob":** Um assistente virtual com IA (Inteligência Artificial) integrado, capaz de responder a perguntas, buscar informações em uma base de conhecimento e executar tarefas simples como resumir conversas.
 -   **Painéis de Controle (Admin):** Uma área restrita onde administradores podem gerenciar todo o conteúdo e as configurações da plataforma de forma intuitiva. Inclui:
-    -   **Gerenciamento de Conteúdo:** Para gerenciar notícias, documentos, eventos, mensagens e vídeos do Labs.
-    -   **Gerenciamento de Workflows:** Ferramenta para criar e editar processos, definindo formulários, etapas, regras de SLA, roteamento de notificações e permissões de acesso.
+    -   **Gerenciamento de Conteúdo:** Para gerenciar notícias, documentos, eventos, mensagens, vídeos do Labs e os links rápidos da dashboard.
+    -   **Gerenciamento de Workflows:** Ferramenta para criar e editar **Áreas de Workflow** (os grupos) e as **Definições de Workflow**, definindo formulários, etapas, regras de SLA, roteamento de notificações e permissões de acesso. Inclui também uma **Visão Geral** de todas as solicitações do sistema.
     -   **Administração do Sistema:** Painel para gerenciar a lista de colaboradores e suas permissões de acesso aos painéis de controle.
     -   **Painel de Auditoria:** Uma visão centralizada para Super Admins monitorarem a atividade da plataforma, incluindo logs de login, engajamento com conteúdos, termos de busca mais utilizados e métricas de eficiência dos workflows.
 -   **Autenticação Segura:** Sistema de login seguro utilizando contas Google, integrado ao Firebase Authentication, com uma distinção visual para acesso administrativo.
@@ -75,3 +75,70 @@ A inteligência artificial é orquestrada por meio de um framework específico p
 -   **Manutenibilidade:** O uso de TypeScript, componentes reutilizáveis (ShadCN) e uma estrutura de projeto clara (Next.js App Router) facilita a manutenção e a adição de novas funcionalidades no futuro. O uso de React Query para o gerenciamento de dados centraliza a lógica de comunicação com o backend, simplificando a depuração e o desenvolvimento.
 -   **Segurança:** O Firebase Authentication oferece uma camada de segurança robusta e gerenciada. A próxima etapa crítica seria a implementação de **Regras de Segurança (Security Rules)** no Firestore e no Cloud Storage para garantir que cada usuário só possa ler e escrever os dados aos quais tem permissão.
 -   **Dependência de Fornecedor (Vendor Lock-in):** A aplicação é fortemente integrada ao ecossistema do Google (Firebase, Genkit, Gemini). Embora isso traga sinergia e facilidade de desenvolvimento, é um ponto a ser considerado em uma estratégia de longo prazo. A modularidade do Genkit, no entanto, permite a troca de modelos de LLM se necessário no futuro.
+
+---
+
+## 5. Diagrama de Arquitetura da Informação
+
+Esta é uma visão estruturada das páginas e funcionalidades disponíveis para cada tipo de usuário.
+
+```
+/ (Raiz)
+├── /login (Página de Autenticação)
+│
+└── / (Área Autenticada)
+    ├── /dashboard (Painel Inicial)
+    │   ├── Destaques de Notícias
+    │   ├── Mensagens Importantes
+    │   ├── Calendário de Eventos
+    │   └── Links Rápidos
+    │
+    ├── /news (Feed de Notícias)
+    │
+    ├── /solicitacoes (Antigo "Workflows")
+    │   ├── Agrupamentos por Área de Negócio
+    │   ├── Lista de Workflows (Modal)
+    │   ├── Formulário de Submissão (Modal)
+    │   └── Tabela "Minhas Solicitações"
+    │
+    ├── /documents (Repositório de Documentos)
+    │
+    ├── /labs (Vídeos e Materiais)
+    │
+    ├── /store (Loja 3A RIVA - NuvemShop Embed)
+    │
+    ├── /chatbot (Assistente Bob 1.0)
+    │
+    ├── /bi (Business Intelligence - Acesso Restrito)
+    │
+    ├── /me (Páginas do Usuário)
+    │   └── /tasks (Minhas Tarefas Atribuídas)
+    │
+    └── /requests (Caixa de Entrada - Acesso de Admin)
+        │
+        └── /admin (Painéis de Controle - Acesso de Admin)
+            ├── /content (Gerenciamento de Conteúdo)
+            │   ├── Gerenciar Notícias
+            │   ├── Gerenciar Documentos
+            │   ├── Gerenciar Labs
+            │   ├── Gerenciar Mensagens
+            │   ├── Gerenciar Eventos
+            │   └── Gerenciar Links Rápidos
+            │
+            ├── /workflows (Gerenciamento de Workflows)
+            │   ├── Aba "Definições"
+            │   │   ├── Gerenciar Áreas de Workflow
+            │   │   └── Gerenciar Definições de Workflow (criar/editar/importar)
+            │   └── Aba "Visão Geral"
+            │       └── Tabela com Todas as Solicitações do Sistema
+            │
+            ├── /admin (Administração do Sistema - Super Admin)
+            │   ├── Gerenciar Colaboradores
+            │   └── Gerenciar Permissões
+            │
+            └── /audit (Painel de Auditoria - Super Admin)
+                ├── /audit (Análise de Logins)
+                ├── /audit/content-interaction (Análise de Conteúdos e Páginas)
+                ├── /audit/usability (Análise de Busca e Usabilidade)
+                └── /audit/workflow-analytics (Análise de Workflows)
+```
