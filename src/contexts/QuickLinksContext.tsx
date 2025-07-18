@@ -3,10 +3,9 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, writeBatch, doc, getFirestore } from '@/lib/firestore-service';
+import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import * as z from 'zod';
 import type { Collaborator } from './CollaboratorsContext';
-import { getFirebaseApp } from '@/lib/firebase';
 
 export const quickLinkSchema = z.object({
   name: z.string().optional(),
@@ -33,7 +32,6 @@ interface QuickLinksContextType {
   addQuickLink: (link: Omit<QuickLinkType, 'id'>) => Promise<QuickLinkType>;
   updateQuickLink: (link: QuickLinkType) => Promise<void>;
   deleteQuickLinkMutation: UseMutationResult<void, Error, string, unknown>;
-  reorderQuickLinks: (link1: QuickLinkType, link2: QuickLinkType) => Promise<void>;
   getVisibleLinksForUser: (user: Collaborator | null, allCollaborators: Collaborator[]) => QuickLinkType[];
 }
 
@@ -100,29 +98,14 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const reorderQuickLinks = useCallback(async (link1: QuickLinkType, link2: QuickLinkType) => {
-    const db = getFirestore(getFirebaseApp());
-    const batch = writeBatch(db);
-
-    const link1Ref = doc(db, COLLECTION_NAME, link1.id);
-    batch.update(link1Ref, { order: link2.order });
-
-    const link2Ref = doc(db, COLLECTION_NAME, link2.id);
-    batch.update(link2Ref, { order: link1.order });
-
-    await batch.commit();
-    queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-  }, [queryClient]);
-
   const value = useMemo(() => ({
     quickLinks,
     loading: isFetching,
     addQuickLink: (link) => addQuickLinkMutation.mutateAsync(link) as Promise<QuickLinkType>,
     updateQuickLink: (link) => updateQuickLinkMutation.mutateAsync(link),
     deleteQuickLinkMutation,
-    reorderQuickLinks,
     getVisibleLinksForUser
-  }), [quickLinks, isFetching, addQuickLinkMutation, updateQuickLinkMutation, deleteQuickLinkMutation, reorderQuickLinks, getVisibleLinksForUser]);
+  }), [quickLinks, isFetching, addQuickLinkMutation, updateQuickLinkMutation, deleteQuickLinkMutation, getVisibleLinksForUser]);
 
   return (
     <QuickLinksContext.Provider value={value}>

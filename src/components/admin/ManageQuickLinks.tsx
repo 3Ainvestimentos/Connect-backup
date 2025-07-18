@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuickLinks, type QuickLinkType, quickLinkSchema } from '@/contexts/QuickLinksContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle, ArrowUp, ArrowDown } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -23,7 +23,7 @@ import Image from 'next/image';
 type QuickLinkFormValues = z.infer<typeof quickLinkSchema>;
 
 export function ManageQuickLinks() {
-    const { quickLinks, addQuickLink, updateQuickLink, deleteQuickLinkMutation, reorderQuickLinks, loading } = useQuickLinks();
+    const { quickLinks, addQuickLink, updateQuickLink, deleteQuickLinkMutation, loading } = useQuickLinks();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
@@ -55,7 +55,7 @@ export function ManageQuickLinks() {
                 link: '',
                 isUserSpecific: false,
                 recipientIds: ['all'],
-                order: quickLinks.length,
+                order: quickLinks.length > 0 ? Math.max(...quickLinks.map(l => l.order)) + 1 : 0,
             });
         }
         setIsFormOpen(true);
@@ -71,17 +71,15 @@ export function ManageQuickLinks() {
         }
     };
     
-    const handleReorder = async (index: number, direction: 'up' | 'down') => {
-        const linkToMove = quickLinks[index];
-        const swapIndex = direction === 'up' ? index - 1 : index + 1;
-        const linkToSwap = quickLinks[swapIndex];
-        
-        if (!linkToMove || !linkToSwap) return;
-
-        try {
-            await reorderQuickLinks(linkToMove, linkToSwap);
-        } catch (error) {
-            toast({ title: "Erro ao reordenar", description: (error as Error).message, variant: "destructive" });
+    const handleOrderChange = async (linkId: string, newOrder: number) => {
+        const linkToUpdate = quickLinks.find(link => link.id === linkId);
+        if (linkToUpdate) {
+            try {
+                await updateQuickLink({ ...linkToUpdate, order: newOrder });
+                toast({ title: "Ordem atualizada", description: `A ordem do link "${linkToUpdate.name}" foi salva.` });
+            } catch (error) {
+                 toast({ title: "Erro ao atualizar ordem", description: (error as Error).message, variant: "destructive" });
+            }
         }
     };
     
@@ -116,7 +114,7 @@ export function ManageQuickLinks() {
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Gerenciar Links Rápidos</CardTitle>
-                    <CardDescription>Adicione, edite ou remova os links da página inicial.</CardDescription>
+                    <CardDescription>Adicione, edite e ordene os links da página inicial.</CardDescription>
                 </div>
                 <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -128,7 +126,7 @@ export function ManageQuickLinks() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[80px]">Ordem</TableHead>
+                                <TableHead className="w-[100px]">Ordem</TableHead>
                                 <TableHead>Imagem</TableHead>
                                 <TableHead>Nome</TableHead>
                                 <TableHead>Destinatários</TableHead>
@@ -140,14 +138,13 @@ export function ManageQuickLinks() {
                             {quickLinks.map((item, index) => (
                                 <TableRow key={item.id}>
                                     <TableCell>
-                                        <div className="flex gap-1">
-                                            <Button variant="ghost" size="icon" onClick={() => handleReorder(index, 'up')} disabled={index === 0 || loading}>
-                                                <ArrowUp className="h-4 w-4" />
-                                            </Button>
-                                             <Button variant="ghost" size="icon" onClick={() => handleReorder(index, 'down')} disabled={index === quickLinks.length - 1 || loading}>
-                                                <ArrowDown className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                                        <Input
+                                          type="number"
+                                          defaultValue={item.order}
+                                          onBlur={(e) => handleOrderChange(item.id, parseInt(e.target.value, 10) || 0)}
+                                          className="w-20"
+                                          aria-label={`Ordem do link ${item.name}`}
+                                        />
                                     </TableCell>
                                     <TableCell>
                                       <Image src={item.imageUrl} alt={item.name || ''} width={40} height={40} className="rounded-md object-contain" />
