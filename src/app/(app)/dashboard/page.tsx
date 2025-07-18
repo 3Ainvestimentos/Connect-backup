@@ -235,8 +235,8 @@ export default function DashboardPage() {
         )}
         
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {/* Messages Card */}
-          <div className="lg:col-span-1">
+          {/* Messages Card (now larger) */}
+          <div className="lg:col-span-2">
             <Card className="shadow-sm flex flex-col h-full">
               <CardHeader>
                 <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
@@ -274,7 +274,7 @@ export default function DashboardPage() {
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-6">
                         <MessageSquare className="h-10 w-10 mb-4" />
                         <p className="text-sm text-muted-foreground font-body">
-                            Por enquanto nenhuma mensagem nova, {user?.displayName?.split(' ')[0]}!
+                          Por enquanto nenhuma mensagem nova, {user?.displayName?.split(' ')[0]}!
                         </p>
                     </div>
                 )}
@@ -282,7 +282,8 @@ export default function DashboardPage() {
             </Card>
           </div>
             
-          <div className="lg:col-span-2 flex flex-col gap-3">
+          {/* Events and Quick Links Column (now smaller) */}
+          <div className="lg:col-span-1 flex flex-col gap-3">
              {/* Events Card */}
               <Card className="shadow-sm flex-1">
                 <CardHeader>
@@ -290,8 +291,8 @@ export default function DashboardPage() {
                     Eventos
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-5 gap-6">
-                    <div className="md:col-span-3 flex items-start justify-center">
+                <CardContent className="grid md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2 flex items-start justify-center">
                         <Calendar
                             mode="single"
                             selected={undefined}
