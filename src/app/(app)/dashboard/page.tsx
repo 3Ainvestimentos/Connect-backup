@@ -321,19 +321,17 @@ export default function DashboardPage() {
                     <CardContent>
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                         {quickLinks.map(link => (
-                            <a href={link.link} key={link.id} target="_blank" rel="noopener noreferrer" className="block text-center group">
-                                <div className="p-4 bg-muted/50 rounded-lg flex flex-col items-center justify-center aspect-square transition-all duration-200 group-hover:bg-accent group-hover:scale-105">
-                                    <div className="relative h-10 w-10">
-                                        <Image
-                                            src={link.imageUrl}
-                                            alt={link.name}
-                                            layout="fill"
-                                            objectFit="contain"
-                                            className="transition-transform group-hover:scale-110"
-                                        />
-                                    </div>
+                            <a href={link.link} key={link.id} target="_blank" rel="noopener noreferrer" className="block text-center group relative overflow-hidden rounded-lg aspect-square transition-opacity hover:opacity-90">
+                                <Image
+                                    src={link.imageUrl}
+                                    alt={link.name}
+                                    layout="fill"
+                                    objectFit="cover"
+                                    className="transition-transform duration-300 group-hover:scale-105"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-2 flex items-end justify-center">
+                                    <span className="text-xs font-medium text-white text-center drop-shadow-sm">{link.name}</span>
                                 </div>
-                                <span className="mt-2 text-xs font-medium text-muted-foreground group-hover:text-foreground">{link.name}</span>
                             </a>
                         ))}
                         </div>
