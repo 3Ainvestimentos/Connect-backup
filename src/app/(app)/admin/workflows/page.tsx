@@ -50,6 +50,9 @@ export default function ManageWorkflowsPage() {
         reader.onload = async (e) => {
             try {
                 const text = e.target?.result as string;
+                if (!text || text.trim() === '') {
+                    throw new Error("O arquivo JSON está vazio ou é inválido.");
+                }
                 let jsonData = JSON.parse(text);
 
                 // Compatibility for old "slaDays"
