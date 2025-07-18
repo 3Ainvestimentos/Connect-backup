@@ -39,7 +39,7 @@ A aplicação consolida diversas funcionalidades essenciais para o dia a dia cor
 
 ### 2.3. Painéis de Controle (Acesso de Admin)
 
--   **Caixa de Entrada (`/requests`):** Visão de gerenciamento para proprietários de workflows, onde eles podem visualizar, atribuir e processar as solicitações pendentes.
+-   **Caixa de Entrada (`/requests`):** Visão de gerenciamento para proprietários de workflows, onde eles podem visualizar, atribuir, arquivar e processar as solicitações pendentes.
 -   **Gerenciamento de Conteúdo (`/admin/content`):** Painel central para administrar todo o conteúdo dinâmico da intranet.
     -   **Gerenciar Notícias, Documentos, Labs, Mensagens, Eventos, Links Rápidos:** Cada uma dessas seções possui uma interface dedicada para criar, editar, excluir e, em alguns casos, definir a visibilidade dos respectivos conteúdos.
 -   **Gerenciamento de Workflows (`/admin/workflows`):** O centro de controle para todos os processos digitais da empresa.
