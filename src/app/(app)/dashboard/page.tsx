@@ -300,7 +300,10 @@ export default function DashboardPage() {
                             month={displayedMonth}
                             onMonthChange={setDisplayedMonth}
                             modifiers={{ event: eventDates }}
-                            modifiersClassNames={{ event: 'bg-primary/20 rounded-full', day_today: '' }}
+                            modifiersClassNames={{
+                              event: 'bg-muted rounded-full',
+                              today: 'bg-muted-foreground/40 text-foreground rounded-full',
+                            }}
                             locale={ptBR}
                         />
                     </div>
