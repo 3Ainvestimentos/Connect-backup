@@ -32,11 +32,12 @@ body {
     --admin-primary: 170 60% 50%;
     --admin-ring: 170 60% 50%;
     
-    --chart-1: 30 39% 46%;
-    --chart-2: 30 35% 55%;
-    --chart-3: 0 0% 40%;
-    --chart-4: 0 0% 60%;
-    --chart-5: 0 0% 75%;
+    /* Chart Colors - Green Palette */
+    --chart-1: 170 55% 45%; /* Slightly darker green */
+    --chart-2: 170 50% 60%; /* Lighter green */
+    --chart-3: 170 65% 35%; /* Darker green */
+    --chart-4: 170 45% 70%; /* Soft light green */
+    --chart-5: 170 40% 80%; /* Very light green */
     --radius: 0.5rem;
 
     /* Sidebar specific */
@@ -77,8 +78,12 @@ body {
     --admin-primary: 170 60% 50%;
     --admin-ring: 170 60% 50%;
 
-    --chart-1: 30 39% 46%;
-    --chart-2: 30 35% 55%;
+    /* Chart Colors - Green Palette */
+    --chart-1: 170 55% 45%; /* Slightly darker green */
+    --chart-2: 170 50% 60%; /* Lighter green */
+    --chart-3: 170 65% 35%; /* Darker green */
+    --chart-4: 170 45% 70%; /* Soft light green */
+    --chart-5: 170 40% 80%; /* Very light green */
 
     /* Sidebar specific for dark */
     --sidebar-background: 210 20% 14%; /* Slightly different cool dark gray */
