@@ -235,12 +235,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[525px] font-body">
+      <DialogContent className="sm:max-w-lg font-body">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{workflowDefinition.name}</DialogTitle>
           <DialogDescription>{workflowDefinition.description}</DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4 max-h-[60vh] overflow-y-auto">
           {workflowDefinition.fields.map(field => renderField(field))}
         </form>
          <DialogFooter>
