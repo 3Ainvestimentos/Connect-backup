@@ -80,11 +80,13 @@ export default function DashboardPage() {
   const eventsForMonth = useMemo(() => {
     if (!displayedMonth) return [];
     const timeZone = 'America/Sao_Paulo';
-    return userEvents.filter(event => {
-      const eventDateInSaoPaulo = toZonedTime(parseISO(event.date), timeZone);
-      const displayedMonthInSaoPaulo = toZonedTime(displayedMonth, timeZone);
-      return isSameMonth(eventDateInSaoPaulo, displayedMonthInSaoPaulo);
-    });
+    return userEvents
+      .filter(event => {
+        const eventDateInSaoPaulo = toZonedTime(parseISO(event.date), timeZone);
+        const displayedMonthInSaoPaulo = toZonedTime(displayedMonth, timeZone);
+        return isSameMonth(eventDateInSaoPaulo, displayedMonthInSaoPaulo);
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [userEvents, displayedMonth]);
   
   const eventDates = useMemo(() => userEvents.map(e => toZonedTime(parseISO(e.date), 'UTC')), [userEvents]);
