@@ -243,10 +243,7 @@ export function ManageCollaborators() {
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                      <div className="flex-grow">
                         <CardTitle>Gerenciar Colaboradores</CardTitle>
-                        <CardDescription className="flex items-center text-xs text-muted-foreground mt-1">
-                           <Clock className="h-3 w-3 mr-1.5"/> 
-                           {lastUpdated ? `Lista atualizada ${formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: ptBR })}.` : 'Carregando...'}
-                        </CardDescription>
+                        <CardDescription>Adicione, edite ou remova colaboradores da plataforma.</CardDescription>
                     </div>
                      <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
                         <div className="relative flex-grow sm:flex-grow-0">
@@ -457,3 +454,4 @@ export function ManageCollaborators() {
     );
 }
 
+    
