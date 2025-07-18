@@ -127,7 +127,7 @@ export default function ContentInteractionPage() {
                             <CardTitle className="flex items-center gap-2"><Eye className="h-6 w-6"/>Análise de Conteúdos e Páginas</CardTitle>
                             <CardDescription>Análise de visualizações, downloads e acessos para entender o engajamento.</CardDescription>
                         </div>
-                        <Button onClick={handleExport} disabled={isLoading || contentStats.length === 0}>
+                        <Button onClick={handleExport} disabled={isLoading || contentStats.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                             <FileDown className="mr-2 h-4 w-4" />
                             Exportar CSV
                         </Button>

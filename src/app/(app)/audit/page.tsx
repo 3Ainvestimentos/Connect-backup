@@ -156,7 +156,7 @@ export default function AuditPage() {
                             <CardTitle className="flex items-center gap-2"><LogIn className="h-6 w-6"/>Análise de Logins</CardTitle>
                             <CardDescription>Análise da frequência e do volume de acessos à plataforma.</CardDescription>
                         </div>
-                        <Button onClick={handleExport} disabled={isLoading || events.length === 0}>
+                        <Button onClick={handleExport} disabled={isLoading || events.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                             <FileDown className="mr-2 h-4 w-4" />
                             Exportar CSV
                         </Button>

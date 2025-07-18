@@ -115,7 +115,7 @@ export default function UsabilitySearchPage() {
                             <CardTitle className="flex items-center gap-2"><Search className="h-6 w-6"/>Análise de Usabilidade e Busca</CardTitle>
                             <CardDescription>Entenda o que os colaboradores procuram e se estão encontrando as informações necessárias.</CardDescription>
                         </div>
-                        <Button onClick={handleExport} disabled={isLoading || events.length === 0}>
+                        <Button onClick={handleExport} disabled={isLoading || events.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                             <FileDown className="mr-2 h-4 w-4" />
                             Exportar CSV
                         </Button>
