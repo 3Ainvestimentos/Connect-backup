@@ -42,7 +42,7 @@ type SortDirection = 'asc' | 'desc';
 
 
 export function ManageCollaborators() {
-    const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators, lastUpdated } = useCollaborators();
+    const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -453,5 +453,7 @@ export function ManageCollaborators() {
         </>
     );
 }
+
+    
 
     
