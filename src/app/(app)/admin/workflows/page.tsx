@@ -137,6 +137,11 @@ export default function ManageWorkflowsPage() {
         const area = workflowAreas.find(a => a.id === areaId);
         return area?.name || 'Área Desconhecida';
     }
+
+    const getOwnerName = (email: string) => {
+        const owner = collaborators.find(c => c.email === email);
+        return owner?.name || email;
+    }
     
     const getAccessDescription = (ids: string[]) => {
         if (!ids || ids.length === 0) return 'Ninguém';
@@ -191,6 +196,7 @@ export default function ManageWorkflowsPage() {
                                         <TableHead>Ícone</TableHead>
                                         <TableHead>Nome</TableHead>
                                         <TableHead>Área</TableHead>
+                                        <TableHead>Proprietário</TableHead>
                                         <TableHead>Acesso</TableHead>
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
@@ -206,6 +212,12 @@ export default function ManageWorkflowsPage() {
                                                     <Badge variant="outline" className="flex items-center gap-1.5 w-fit">
                                                       <FolderOpen className="h-3 w-3" />
                                                       {getAreaName(def.areaId)}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className="flex items-center gap-1.5 w-fit">
+                                                      <User className="h-3 w-3" />
+                                                      {getOwnerName(def.ownerEmail)}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell>
