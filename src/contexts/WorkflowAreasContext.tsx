@@ -30,6 +30,8 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
     const { data: workflowAreas = [], isFetching } = useQuery<WorkflowArea[]>({
         queryKey: [COLLECTION_NAME],
         queryFn: () => getCollection<WorkflowArea>(COLLECTION_NAME),
+        // Sort the data alphabetically by name after fetching
+        select: (data) => data.sort((a, b) => a.name.localeCompare(b.name)),
     });
 
     const addWorkflowAreaMutation = useMutation<WithId<Omit<WorkflowArea, 'id'>>, Error, Omit<WorkflowArea, 'id'>>({
