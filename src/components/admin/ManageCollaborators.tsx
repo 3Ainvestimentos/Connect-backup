@@ -11,11 +11,13 @@ import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
 import Papa from 'papaparse';
+import { format, formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -40,7 +42,7 @@ type SortDirection = 'asc' | 'desc';
 
 
 export function ManageCollaborators() {
-    const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators } = useCollaborators();
+    const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators, lastUpdated } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
@@ -241,7 +243,10 @@ export function ManageCollaborators() {
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                      <div className="flex-grow">
                         <CardTitle>Gerenciar Colaboradores</CardTitle>
-                        <CardDescription>Adicione, edite ou remova colaboradores da lista.</CardDescription>
+                        <CardDescription className="flex items-center text-xs text-muted-foreground mt-1">
+                           <Clock className="h-3 w-3 mr-1.5"/> 
+                           {lastUpdated ? `Lista atualizada ${formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: ptBR })}.` : 'Carregando...'}
+                        </CardDescription>
                     </div>
                      <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
                         <div className="relative flex-grow sm:flex-grow-0">
@@ -271,8 +276,7 @@ export function ManageCollaborators() {
                             <TableHeader>
                                 <TableRow>
                                     <SortableHeader tkey="id3a" label="ID 3A RIVA" />
-                                    <SortableHeader tkey="name" label="Nome" />
-                                    <SortableHeader tkey="email" label="Email" />
+                                    <SortableHeader tkey="name" label="Colaborador" />
                                     <SortableHeader tkey="area" label="Área" />
                                     <SortableHeader tkey="position" label="Cargo" />
                                     <SortableHeader tkey="axis" label="Eixo" />
@@ -285,8 +289,7 @@ export function ManageCollaborators() {
                                 {filteredAndSortedCollaborators.map(item => (
                                     <TableRow key={item.id}>
                                         <TableCell>{item.id3a}</TableCell>
-                                        <TableCell className="font-medium">{item.name}</TableCell>
-                                        <TableCell>{item.email}</TableCell>
+                                        <TableCell className="font-medium">{item.name}<br/><span className="text-xs text-muted-foreground">{item.email}</span></TableCell>
                                         <TableCell>{item.area}</TableCell>
                                         <TableCell>{item.position}</TableCell>
                                         <TableCell>{item.axis}</TableCell>
@@ -453,3 +456,4 @@ export function ManageCollaborators() {
         </>
     );
 }
+

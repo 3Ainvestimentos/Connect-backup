@@ -30,6 +30,7 @@ export interface Collaborator {
 interface CollaboratorsContextType {
   collaborators: Collaborator[];
   loading: boolean;
+  lastUpdated: number | null;
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
   addMultipleCollaborators: (collaborators: Omit<Collaborator, 'id'>[]) => Promise<void>;
   updateCollaborator: (collaborator: Collaborator) => Promise<void>;
@@ -50,7 +51,7 @@ const defaultPermissions: CollaboratorPermissions = {
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
 
-  const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
+  const { data: collaborators = [], isFetching, dataUpdatedAt } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
     select: (data) => data.map(c => ({
@@ -100,12 +101,13 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   const value = useMemo(() => ({
     collaborators,
     loading: isFetching,
+    lastUpdated: dataUpdatedAt > 0 ? dataUpdatedAt : null,
     addCollaborator: (collaborator) => addCollaboratorMutation.mutateAsync(collaborator),
     addMultipleCollaborators: (collaborators) => addMultipleCollaboratorsMutation.mutateAsync(collaborators),
     updateCollaborator: (collaborator) => updateCollaboratorMutation.mutateAsync(collaborator),
     updateCollaboratorPermissions: (id, permissions) => updateCollaboratorPermissionsMutation.mutateAsync({ id, permissions }),
     deleteCollaboratorMutation,
-  }), [collaborators, isFetching, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, updateCollaboratorPermissionsMutation, deleteCollaboratorMutation]);
+  }), [collaborators, isFetching, dataUpdatedAt, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, updateCollaboratorPermissionsMutation, deleteCollaboratorMutation]);
 
   return (
     <CollaboratorsContext.Provider value={value}>
