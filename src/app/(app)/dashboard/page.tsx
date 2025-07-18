@@ -319,22 +319,25 @@ export default function DashboardPage() {
                         <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                        {quickLinks.map(link => (
-                            <a href={link.link} key={link.id} target="_blank" rel="noopener noreferrer" className="block text-center group relative overflow-hidden rounded-lg aspect-video transition-opacity hover:opacity-90 bg-muted/50 p-2">
-                                <div className="relative w-full h-full">
-                                    <Image
-                                        src={link.imageUrl}
-                                        alt={link.name}
-                                        layout="fill"
-                                        objectFit="contain"
-                                    />
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent p-2 flex items-end justify-center">
-                                    <span className="text-xs font-medium text-white text-center drop-shadow-sm">{link.name}</span>
-                                </div>
-                            </a>
-                        ))}
+                        <div className="flex justify-center flex-wrap gap-3">
+                          {quickLinks.map(link => (
+                              <a 
+                                 href={link.link} 
+                                 key={link.id} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer" 
+                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-muted/50 w-32 h-20"
+                                 title={link.name}
+                               >
+                                  <Image
+                                      src={link.imageUrl}
+                                      alt={link.name || 'Quick Link'}
+                                      layout="fill"
+                                      objectFit="contain"
+                                      className="p-2"
+                                  />
+                              </a>
+                          ))}
                         </div>
                     </CardContent>
                 </Card>

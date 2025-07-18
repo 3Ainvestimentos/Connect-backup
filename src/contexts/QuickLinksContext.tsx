@@ -8,19 +8,22 @@ import * as z from 'zod';
 import type { Collaborator } from './CollaboratorsContext';
 
 export const quickLinkSchema = z.object({
-  name: z.string().min(1, "Nome do link é obrigatório."),
+  name: z.string().optional(), // Tornando o nome opcional
   imageUrl: z.string().url("Por favor, insira uma URL de imagem válida."),
   link: z.string().min(1, "URL do Link é obrigatória.").refine(value => {
     try {
+      // Tenta construir uma URL, substituindo placeholders para validação
       new URL(value.includes('{') ? value.replace(/\{.*\}/, 'placeholder') : value);
       return true;
     } catch {
+      // Aceita links relativos que começam com '/'
       return value.startsWith('/');
     }
   }, { message: "URL inválida." }),
   isUserSpecific: z.boolean().default(false),
   recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário.").default(['all']),
 });
+
 
 export type QuickLinkType = WithId<z.infer<typeof quickLinkSchema>>;
 

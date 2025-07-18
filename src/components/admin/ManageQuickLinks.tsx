@@ -123,7 +123,7 @@ export function ManageQuickLinks() {
                             {quickLinks.map(item => (
                                 <TableRow key={item.id}>
                                     <TableCell>
-                                      <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="rounded-md object-contain" />
+                                      <Image src={item.imageUrl} alt={item.name || ''} width={40} height={40} className="rounded-md object-contain" />
                                     </TableCell>
                                     <TableCell className="font-medium">
                                       {item.name}
@@ -162,7 +162,7 @@ export function ManageQuickLinks() {
                     </DialogHeader>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div>
-                            <Label htmlFor="name">Nome do Link</Label>
+                            <Label htmlFor="name">Nome do Link (Opcional)</Label>
                             <Input id="name" {...form.register('name')} disabled={form.formState.isSubmitting}/>
                             {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
