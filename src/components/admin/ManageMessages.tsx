@@ -20,6 +20,7 @@ import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { Switch } from '../ui/switch';
+import { cn } from '@/lib/utils';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -194,7 +195,7 @@ export function ManageMessages() {
                 </div>
                  <div className="flex items-center gap-4">
                     <div className="flex items-center space-x-2">
-                        <Switch id="show-system" checked={showSystemMessages} onCheckedChange={setShowSystemMessages} />
+                        <Switch id="show-system" checked={showSystemMessages} onCheckedChange={setShowSystemMessages} className="data-[state=checked]:bg-admin-primary" />
                         <Label htmlFor="show-system" className="text-sm text-muted-foreground">Mostrar mensagens do sistema</Label>
                     </div>
                     <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
