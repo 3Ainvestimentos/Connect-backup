@@ -124,6 +124,7 @@ function PermissionsTable() {
                                                     onCheckedChange={() => handlePermissionToggle(collaborator, p.key)}
                                                     disabled={updatingId === collaborator.id}
                                                     aria-label={`Ativar/desativar permissão ${p.label} para ${collaborator.name}`}
+                                                    className="data-[state=checked]:bg-admin-primary"
                                                 />
                                             )}
                                         </TableCell>
