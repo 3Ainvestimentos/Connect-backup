@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useMemo } from 'react';
 import { useMessages, type MessageType } from '@/contexts/MessagesContext';
@@ -12,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2, Users } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2, Users, Bot } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -20,6 +19,7 @@ import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useQueryClient } from '@tanstack/react-query';
+import { Switch } from '../ui/switch';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -80,6 +80,7 @@ export function ManageMessages() {
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
     const [viewingStatusFor, setViewingStatusFor] = useState<MessageType | null>(null);
+    const [showSystemMessages, setShowSystemMessages] = useState(false);
     const queryClient = useQueryClient();
     
     const form = useForm<MessageFormValues>({
@@ -88,6 +89,13 @@ export function ManageMessages() {
     });
 
     const watchRecipientIds = form.watch('recipientIds');
+
+    const filteredMessages = useMemo(() => {
+        if (showSystemMessages) {
+            return messages;
+        }
+        return messages.filter(msg => msg.sender !== 'Sistema de Workflows');
+    }, [messages, showSystemMessages]);
 
     const handleDialogOpen = (message: MessageType | null) => {
         setEditingMessage(message);
@@ -184,10 +192,16 @@ export function ManageMessages() {
                     <CardTitle>Gerenciar Mensagens</CardTitle>
                     <CardDescription>Adicione, edite ou remova mensagens do mural.</CardDescription>
                 </div>
-                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar Mensagem
-                </Button>
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-2">
+                        <Switch id="show-system" checked={showSystemMessages} onCheckedChange={setShowSystemMessages} />
+                        <Label htmlFor="show-system" className="text-sm text-muted-foreground">Mostrar mensagens do sistema</Label>
+                    </div>
+                    <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adicionar Mensagem
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="border rounded-lg">
@@ -202,13 +216,17 @@ export function ManageMessages() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {messages.map(item => {
+                            {filteredMessages.map(item => {
                                 const recipients = getMessageRecipients(item, collaborators);
                                 const totalRecipients = recipients.length;
                                 const readCount = item.readBy.length;
+                                const isSystemMessage = item.sender === 'Sistema de Workflows';
                                 return (
                                 <TableRow key={item.id}>
-                                    <TableCell className="font-medium">{item.title}</TableCell>
+                                    <TableCell className="font-medium flex items-center gap-2">
+                                      {isSystemMessage && <Bot className="h-4 w-4 text-muted-foreground" />}
+                                      {item.title}
+                                    </TableCell>
                                     <TableCell>
                                         <Badge variant="outline">
                                             {getRecipientDescription(item.recipientIds)}
