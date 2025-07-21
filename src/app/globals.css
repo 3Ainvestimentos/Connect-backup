@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: var(--font-archivo), sans-serif;
-}
-
 @layer base {
   :root {
     --background: 0 0% 100%; /* white */
@@ -102,7 +98,7 @@ body {
 
 @layer base {
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

@@ -16,6 +16,20 @@ import { LabsProvider } from '@/contexts/LabsContext';
 import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
 import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
 import { QuickLinksProvider } from '@/contexts/QuickLinksContext';
+import { Roboto, Archivo } from 'next/font/google';
+
+const fontRoboto = Roboto({
+  subsets: ['latin'],
+  weight: ['700'],
+  variable: '--font-roboto',
+});
+
+const fontArchivo = Archivo({
+  subsets: ['latin'],
+  weight: ['300'],
+  variable: '--font-archivo',
+});
+
 
 export const metadata: Metadata = {
   title: '3A RIVA Connect',
@@ -34,12 +48,8 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet" />
-        <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@300&display=swap" rel="stylesheet" />
       </head>
-      <body className={cn("font-body antialiased")}>
+      <body className={cn("font-sans antialiased", fontRoboto.variable, fontArchivo.variable)}>
         <ThemeProvider>
           <ReactQueryProvider>
             <CollaboratorsProvider>
