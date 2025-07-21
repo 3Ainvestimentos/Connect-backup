@@ -213,7 +213,11 @@ export function AllRequestsView() {
                             </TableHeader>
                             <TableBody>
                                 {filteredAndSortedRequests.map((req) => {
-                                    const needsAttention = !req.assignee && differenceInHours(new Date(), parseISO(req.submittedAt)) > 24;
+                                    const isUnassignedForTooLong = !req.assignee && differenceInHours(new Date(), parseISO(req.submittedAt)) > 24;
+                                    const hasOverdueActionRequest = (req.actionRequests?.[req.status] || []).some(ar =>
+                                        ar.status === 'pending' && differenceInHours(new Date(), parseISO(ar.requestedAt)) > 24
+                                    );
+                                    const needsAttention = isUnassignedForTooLong || hasOverdueActionRequest;
 
                                     return (
                                     <TableRow key={req.id} className={cn(
@@ -271,4 +275,3 @@ export function AllRequestsView() {
         </Card>
     );
 }
-
