@@ -218,7 +218,7 @@ export function AllRequestsView() {
                                     return (
                                     <TableRow key={req.id} className={cn(
                                         req.isArchived && "bg-muted/30 text-muted-foreground",
-                                        needsAttention && "bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-100/80"
+                                        needsAttention && "bg-muted/60 hover:bg-muted/80"
                                     )}>
                                         <TableCell>
                                             {req.isArchived && <Archive className="h-4 w-4" title="Arquivado"/>}
