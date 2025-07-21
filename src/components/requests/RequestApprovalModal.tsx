@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink, ShieldQuestion, CheckCircle, Hourglass } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
@@ -20,6 +20,7 @@ import { useApplications, WorkflowStatusDefinition } from '@/contexts/Applicatio
 import { AssigneeSelectionModal } from './AssigneeSelectionModal';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { cn } from '@/lib/utils';
+import { RecipientSelectionModal } from '../admin/RecipientSelectionModal';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -35,8 +36,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [comment, setComment] = useState('');
   const [assignee, setAssignee] = useState<Collaborator | null>(null);
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
+  const [isActionSelectionModalOpen, setIsActionSelectionModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | null>(null);
+  const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
 
   const definition = useMemo(() => {
@@ -61,14 +63,24 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const canTakeAction = isOwner || isAssignee;
 
+  const currentStatusDefinition = useMemo(() => {
+    if (!definition || !request) return null;
+    return definition.statuses.find(s => s.id === request.status);
+  }, [definition, request]);
+
   const nextStatus = useMemo((): WorkflowStatusDefinition | null => {
     if (!definition || !request) return null;
     const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
     if (currentIndex === -1 || currentIndex >= definition.statuses.length - 1) {
-      return null; // No next status if not found or already at the last status
+      return null;
     }
     return definition.statuses[currentIndex + 1];
   }, [definition, request]);
+
+  const actionRequestsForCurrentStatus = useMemo(() => {
+    if (!request?.actionRequests || !request.status) return [];
+    return request.actionRequests[request.status] || [];
+  }, [request]);
 
 
   React.useEffect(() => {
@@ -84,6 +96,50 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }, [request, collaborators]);
 
   if (!request) return null;
+
+  const handleRequestAction = async (approverIds: string[]) => {
+    setActionType('requestAction');
+    setIsActionSelectionModalOpen(false);
+    if (!user || !adminUser || !currentStatusDefinition?.action) return;
+    if (approverIds.length === 0) return;
+
+    setIsSubmitting(true);
+    const now = new Date();
+    const historyNote = `Solicitação de "${currentStatusDefinition.action.label}" enviada para ${approverIds.length} colaborador(es).`;
+
+    const newActionRequests = approverIds.map(id => {
+      const approver = collaborators.find(c => c.id3a === id);
+      return {
+        userId: id,
+        userName: approver?.name || 'Usuário Desconhecido',
+        status: 'pending',
+        requestedAt: formatISO(now),
+        respondedAt: '',
+      };
+    });
+
+    const requestUpdate = {
+      id: request.id,
+      lastUpdatedAt: formatISO(now),
+      actionRequests: {
+        ...request.actionRequests,
+        [request.status]: [...(request.actionRequests?.[request.status] || []), ...newActionRequests],
+      },
+      history: [...request.history, { timestamp: formatISO(now), status: request.status, userId: adminUser.id3a, userName: adminUser.name, notes: historyNote }],
+    };
+
+    const notificationMessage = `Uma ação de '${currentStatusDefinition.action.label}' foi solicitada na sua tarefa '${request.type}' #${request.requestId}.`;
+    
+    try {
+      await updateRequestAndNotify(requestUpdate, undefined, notificationMessage);
+      toast({ title: "Sucesso!", description: "Solicitação de ação enviada." });
+    } catch(error) {
+       toast({ title: "Erro", description: "Não foi possível solicitar a ação.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+      setActionType(null);
+    }
+  };
   
   const handleStatusChange = async (newStatus: WorkflowStatusDefinition) => {
     setActionType('statusChange');
@@ -212,7 +268,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   };
 
-
   const renderFieldValue = (fieldId: string, value: any) => {
     const fieldDef = definition?.fields.find(f => f.id === fieldId);
     if (!fieldDef) return <p><strong>{fieldId}:</strong> {JSON.stringify(value)}</p>;
@@ -259,6 +314,17 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         </div>
     );
   };
+  
+  const getActionRequestIcon = (status: string) => {
+    switch (status) {
+        case 'pending': return <Hourglass className="h-4 w-4 text-yellow-500" />;
+        case 'approved': return <CheckCircle className="h-4 w-4 text-green-500" />;
+        case 'acknowledged': return <CheckCircle className="h-4 w-4 text-blue-500" />;
+        case 'rejected': return <X className="h-4 w-4 text-red-500" />;
+        default: return <ShieldQuestion className="h-4 w-4 text-muted-foreground" />;
+    }
+  }
+
 
   return (
     <>
@@ -332,15 +398,43 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                          <Button 
                             onClick={handleAssigneeChange} 
                             disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
-                            className={cn(
-                                "bg-admin-primary text-primary-foreground hover:bg-admin-primary/90",
-                                !assignee || assignee?.id3a === request.assignee?.id ? "bg-muted text-muted-foreground hover:bg-muted" : ""
-                            )}
+                            className="bg-admin-primary hover:bg-admin-primary/90"
                         >
                             {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Atribuir
                         </Button>
                     </div>
+                </div>
+              )}
+            
+              {currentStatusDefinition?.action && isAssignee && (
+                <div>
+                    <h3 className="font-semibold text-lg mb-2">Ações da Etapa</h3>
+                    <Button
+                        variant="outline"
+                        onClick={() => setIsActionSelectionModalOpen(true)}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting && actionType === 'requestAction' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldQuestion className="mr-2 h-4 w-4" />}
+                        {currentStatusDefinition.action.label}
+                    </Button>
+                </div>
+              )}
+              
+              {actionRequestsForCurrentStatus.length > 0 && (
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">Status das Ações Solicitadas</h3>
+                  <div className="p-4 bg-muted/50 rounded-md text-sm space-y-2">
+                      {actionRequestsForCurrentStatus.map((ar) => (
+                          <div key={ar.userId} className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                  {getActionRequestIcon(ar.status)}
+                                  <span>{ar.userName}</span>
+                              </div>
+                              <Badge variant="secondary" className="capitalize">{ar.status}</Badge>
+                          </div>
+                      ))}
+                  </div>
                 </div>
               )}
 
@@ -428,6 +522,13 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
               setAssignee(selected);
               setIsAssigneeModalOpen(false);
           }}
+      />
+      <RecipientSelectionModal
+        isOpen={isActionSelectionModalOpen}
+        onClose={() => setIsActionSelectionModalOpen(false)}
+        allCollaborators={collaborators}
+        selectedIds={[]}
+        onConfirm={handleRequestAction}
       />
     </>
   );
