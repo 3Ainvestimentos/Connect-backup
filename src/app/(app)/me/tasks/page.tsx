@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Eye, ListTodo, Inbox } from 'lucide-react';
+import { Eye, ListTodo, Inbox, ShieldCheck, UserCheck } from 'lucide-react';
 import { RequestApprovalModal } from '@/components/requests/RequestApprovalModal';
 import { useApplications } from '@/contexts/ApplicationsContext';
 
@@ -26,16 +26,36 @@ export default function MyTasksPage() {
 
     const loading = userLoading || requestsLoading || collabLoading;
 
-    const myAssignedTasks = useMemo(() => {
-        if (loading || !user) return [];
-        const currentUserCollab = collaborators.find(c => c.email === user.email);
-        if (!currentUserCollab) return [];
+    const { assignedTasks, actionTasks } = useMemo(() => {
+        if (loading || !user) return { assignedTasks: [], actionTasks: [] };
         
-        return requests.filter(req => 
-            !req.isArchived && // <-- FIX: Only show non-archived requests
-            req.assignee && 
-            req.assignee.id === currentUserCollab.id3a
-        );
+        const currentUserCollab = collaborators.find(c => c.email === user.email);
+        if (!currentUserCollab) return { assignedTasks: [], actionTasks: [] };
+
+        const myAssignedTasks: WorkflowRequest[] = [];
+        const myActionTasks: WorkflowRequest[] = [];
+
+        requests.forEach(req => {
+            if (req.isArchived) return;
+
+            // Check for assigned tasks
+            if (req.assignee?.id === currentUserCollab.id3a) {
+                myAssignedTasks.push(req);
+            }
+            
+            // Check for pending action requests
+            const actionRequestsForStatus = req.actionRequests?.[req.status] || [];
+            const isUserActionPending = actionRequestsForStatus.some(
+                ar => ar.userId === currentUserCollab.id3a && ar.status === 'pending'
+            );
+
+            if (isUserActionPending) {
+                myActionTasks.push(req);
+            }
+        });
+        
+        return { assignedTasks: myAssignedTasks, actionTasks: myActionTasks };
+
     }, [requests, user, collaborators, loading]);
 
     const getStatusLabel = (request: WorkflowRequest) => {
@@ -59,14 +79,78 @@ export default function MyTasksPage() {
             </CardContent>
         </Card>
     );
+    
+    const TasksTable = ({ title, description, tasks, icon }: { title: string; description: string; tasks: WorkflowRequest[]; icon: React.ElementType }) => {
+        const Icon = icon;
+        return (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Icon className="h-6 w-6" />
+                        {title}
+                    </CardTitle>
+                    <CardDescription>
+                        {tasks.length} {description}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {tasks.length > 0 ? (
+                        <div className="border rounded-lg">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>#</TableHead>
+                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Solicitante</TableHead>
+                                        <TableHead>Data de Submissão</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {tasks.map((req) => (
+                                        <TableRow key={req.id}>
+                                            <TableCell className="font-mono text-muted-foreground text-xs">{req.requestId}</TableCell>
+                                            <TableCell className="font-medium">{req.type}</TableCell>
+                                            <TableCell>{req.submittedBy.userName}</TableCell>
+                                            <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className="font-semibold">
+                                                    {getStatusLabel(req)}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)}>
+                                                    <Eye className="h-5 w-5" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    ) : (
+                        <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
+                            <Inbox className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma tarefa encontrada</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Você não possui nenhuma pendência deste tipo no momento.
+                            </p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        )
+    }
 
     if (loading) {
         return (
              <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
                     title="Minhas Tarefas"
-                    description="Gerencie as solicitações que foram atribuídas a você."
+                    description="Gerencie as solicitações e ações pendentes atribuídas a você."
                 />
+                {renderSkeleton()}
                 {renderSkeleton()}
             </div>
         )
@@ -77,65 +161,24 @@ export default function MyTasksPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
                     title="Minhas Tarefas"
-                    description="Gerencie as solicitações que foram atribuídas a você."
+                    description="Gerencie as solicitações e ações pendentes atribuídas a você."
                 />
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <ListTodo className="h-6 w-6" />
-                            Tarefas Atribuídas
-                        </CardTitle>
-                        <CardDescription>
-                            {myAssignedTasks.length} tarefa(s) atribuída(s) a você.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {myAssignedTasks.length > 0 ? (
-                            <div className="border rounded-lg">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>#</TableHead>
-                                            <TableHead>Tipo</TableHead>
-                                            <TableHead>Solicitante</TableHead>
-                                            <TableHead>Data de Submissão</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Ações</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {myAssignedTasks.map((req) => (
-                                            <TableRow key={req.id}>
-                                                <TableCell className="font-mono text-muted-foreground text-xs">{req.requestId}</TableCell>
-                                                <TableCell className="font-medium">{req.type}</TableCell>
-                                                <TableCell>{req.submittedBy.userName}</TableCell>
-                                                <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant="secondary" className="font-semibold">
-                                                        {getStatusLabel(req)}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)}>
-                                                        <Eye className="h-5 w-5" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </div>
-                        ) : (
-                            <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
-                                <Inbox className="mx-auto h-12 w-12 text-muted-foreground" />
-                                <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma tarefa encontrada</h3>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                    Você não possui nenhuma solicitação atribuída no momento.
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                
+                <div className="space-y-6">
+                    <TasksTable
+                        title="Ações Pendentes"
+                        description="solicitação(ões) aguardando sua aprovação ou ciência."
+                        tasks={actionTasks}
+                        icon={ShieldCheck}
+                    />
+
+                    <TasksTable
+                        title="Tarefas Atribuídas"
+                        description="tarefa(s) atribuída(s) a você para processamento."
+                        tasks={assignedTasks}
+                        icon={UserCheck}
+                    />
+                </div>
             </div>
             
             <RequestApprovalModal

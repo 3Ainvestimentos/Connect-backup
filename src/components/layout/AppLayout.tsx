@@ -57,12 +57,14 @@ const navItems = [
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
 ];
 
-function UserNav({ onProfileClick, hasPendingRequests, hasNewAssignedTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasNewAssignedTasks: boolean; }) {
+function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
   const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
 
   if (loading) return <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
+
+  const hasAnyNotification = hasPendingRequests || hasPendingTasks;
 
   return (
     <DropdownMenu>
@@ -70,8 +72,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasNewAssignedTasks }: { 
         <Button variant="ghost" className={cn(
           "relative h-10 w-10 rounded-full p-0 transition-all duration-300",
           "focus-visible:ring-0 focus-visible:ring-offset-0",
-          hasPendingRequests && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary",
-          hasNewAssignedTasks && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary"
+          hasAnyNotification && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary",
         )}>
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
@@ -101,7 +102,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasNewAssignedTasks }: { 
             <DropdownMenuItem asChild>
                 <Link href="/me/tasks" className={cn(
                   "cursor-pointer font-body",
-                  hasNewAssignedTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+                  hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
                 )}>
                     <ListTodo className="mr-2 h-4 w-4" />
                     <span>Minhas Tarefas</span>
@@ -185,7 +186,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
-    // Check if there's any request for a workflow the user owns that is unassigned and not yet viewed by them.
     const currentUserCollab = collaborators.find(c => c.email === user.email);
     if (!currentUserCollab) return false;
 
@@ -193,6 +193,28 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       req.ownerEmail === user.email && !req.assignee && !req.viewedBy.includes(currentUserCollab.id3a)
     );
   }, [user, requests, workflowsLoading, permissions.canManageRequests, collaborators]);
+  
+  const hasPendingTasks = useMemo(() => {
+    if (!user || workflowsLoading || !requests.length) return false;
+    const currentUserCollab = collaborators.find(c => c.email === user.email);
+    if (!currentUserCollab) return false;
+    
+    // Check for main assigned tasks
+    const hasMainTask = requests.some(req => !req.isArchived && req.assignee?.id === currentUserCollab.id3a);
+    if(hasMainTask) return true;
+
+    // Check for pending action requests
+    const hasActionRequest = requests.some(req => {
+      if (req.isArchived) return false;
+      const actionRequestsForStatus = req.actionRequests?.[req.status] || [];
+      return actionRequestsForStatus.some(
+        ar => ar.userId === currentUserCollab.id3a && ar.status === 'pending'
+      );
+    });
+
+    return hasActionRequest;
+  }, [user, requests, workflowsLoading, collaborators]);
+
 
   // Page view logging
   useEffect(() => {
@@ -271,7 +293,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasNewAssignedTasks={hasNewAssignedTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
+      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
