@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ListChecks, User, Search, Filter, FileDown, ChevronUp, ChevronDown, Archive } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -212,8 +212,14 @@ export function AllRequestsView() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredAndSortedRequests.map((req) => (
-                                    <TableRow key={req.id} className={cn(req.isArchived && "bg-muted/30 text-muted-foreground")}>
+                                {filteredAndSortedRequests.map((req) => {
+                                    const needsAttention = !req.assignee && differenceInHours(new Date(), parseISO(req.submittedAt)) > 24;
+
+                                    return (
+                                    <TableRow key={req.id} className={cn(
+                                        req.isArchived && "bg-muted/30 text-muted-foreground",
+                                        needsAttention && "bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-100/80"
+                                    )}>
                                         <TableCell>
                                             {req.isArchived && <Archive className="h-4 w-4" title="Arquivado"/>}
                                         </TableCell>
@@ -236,7 +242,7 @@ export function AllRequestsView() {
                                                     <span className="text-sm">{req.assignee.name}</span>
                                                 </div>
                                             ) : (
-                                                <span className="text-sm">Não atribuído</span>
+                                                <span className="text-sm font-semibold text-destructive">Não atribuído</span>
                                             )}
                                         </TableCell>
                                         <TableCell>
@@ -247,7 +253,7 @@ export function AllRequestsView() {
                                         </TableCell>
                                         <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
                                     </TableRow>
-                                ))}
+                                )})}
                             </TableBody>
                         </Table>
                      </div>
@@ -265,3 +271,4 @@ export function AllRequestsView() {
         </Card>
     );
 }
+
