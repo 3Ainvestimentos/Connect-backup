@@ -295,7 +295,7 @@ export default function DashboardPage() {
                                  key={link.id} 
                                  target="_blank" 
                                  rel="noopener noreferrer" 
-                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card aspect-video w-32"
+                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-video w-32"
                                  title={link.name || 'Link Rápido'}
                                >
                                   <Image
@@ -460,5 +460,6 @@ export default function DashboardPage() {
     </>
   );
 }
+
 
 
