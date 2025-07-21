@@ -23,6 +23,15 @@ export interface WorkflowHistoryLog {
   notes?: string;
 }
 
+// Define a estrutura para uma solicitação de ação (Aprovação/Ciente)
+export interface ActionRequest {
+  userId: string;
+  userName: string;
+  status: 'pending' | 'approved' | 'rejected' | 'acknowledged';
+  requestedAt: string; // ISO String
+  respondedAt?: string; // ISO String
+}
+
 // Define a estrutura principal de uma solicitação de workflow
 export interface WorkflowRequest {
   id: string;
@@ -45,13 +54,16 @@ export interface WorkflowRequest {
   };
   viewedBy: string[]; // Array of admin 'id3a' who have seen this request while it was pending
   isArchived?: boolean; // Flag for soft deletion by owner
+  actionRequests?: {
+    [statusId: string]: ActionRequest[]; // Key is the status ID where the action was requested
+  };
 }
 
 interface WorkflowsContextType {
   requests: WorkflowRequest[];
   loading: boolean;
   hasNewAssignedTasks: boolean;
-  addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>>;
+  addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived' | 'actionRequests'>) => Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'actionRequests'>>>;
   updateRequestAndNotify: (request: Partial<WorkflowRequest> & { id: string }, notificationMessage?: string, notifyAssigneeMessage?: string | null) => Promise<void>;
   archiveRequestMutation: UseMutationResult<void, Error, string, unknown>;
   markRequestsAsViewedBy: (adminId3a: string, ownedRequestIds: string[]) => Promise<void>;
@@ -101,7 +113,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   }, [requests, user, collaborators, workflowDefinitions]);
 
 
-  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'requestId'>>({
+  const addRequestMutation = useMutation<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'actionRequests'>>, Error, Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'requestId' | 'actionRequests'>>({
     mutationFn: async (requestData) => {
       const definition = workflowDefinitions.find(def => def.name === requestData.type);
       if (!definition) {
@@ -120,6 +132,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         viewedBy: [] as string[],
         assignee: undefined,
         isArchived: false,
+        actionRequests: {},
       };
       
       if (requestWithDefaults.history[0]) {
@@ -273,7 +286,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     requests,
     loading: isFetching,
     hasNewAssignedTasks,
-    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived'>>>,
+    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'actionRequests'>>>,
     updateRequestAndNotify,
     archiveRequestMutation,
     markRequestsAsViewedBy

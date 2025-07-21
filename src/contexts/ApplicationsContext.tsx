@@ -6,14 +6,21 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
 import * as z from 'zod';
 
+const workflowActionSchema = z.object({
+  type: z.enum(['approval', 'acknowledgement']),
+  label: z.string().min(1, "O rótulo da ação é obrigatório."),
+});
+
 // Represents a single status in a workflow lifecycle
 export interface WorkflowStatusDefinition {
   id: string; // e.g., 'pending_approval'
   label: string; // e.g., 'Pendente de Aprovação'
+  action?: z.infer<typeof workflowActionSchema>;
 }
 export const workflowStatusSchema = z.object({
   id: z.string().min(1, "ID do status é obrigatório.").regex(/^[a-z0-9_]+$/, "ID deve conter apenas letras minúsculas, números e underscores."),
   label: z.string().min(1, "Label é obrigatório."),
+  action: workflowActionSchema.optional(),
 });
 
 
