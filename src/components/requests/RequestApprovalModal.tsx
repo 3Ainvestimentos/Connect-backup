@@ -21,6 +21,7 @@ import { AssigneeSelectionModal } from './AssigneeSelectionModal';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { cn } from '@/lib/utils';
 import { RecipientSelectionModal } from '../admin/RecipientSelectionModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -81,6 +82,11 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (!request?.actionRequests || !request.status) return [];
     return request.actionRequests[request.status] || [];
   }, [request]);
+
+  const hasPendingActions = useMemo(() => {
+    if (!currentStatusDefinition?.action) return false;
+    return actionRequestsForCurrentStatus.some(ar => ar.status === 'pending');
+  }, [actionRequestsForCurrentStatus, currentStatusDefinition]);
 
 
   React.useEffect(() => {
@@ -491,19 +497,34 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
             <div>
                 {isAssignee && nextStatus && (
                      <div className="flex flex-wrap gap-2">
-                        <Button 
-                            key={nextStatus.id}
-                            variant="secondary"
-                            onClick={() => handleStatusChange(nextStatus)} 
-                            disabled={isSubmitting}
-                        >
-                            {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <MoveRight className="mr-2 h-4 w-4" />
+                        <TooltipProvider>
+                          <Tooltip delayDuration={300}>
+                            <TooltipTrigger asChild>
+                              {/* O div wrapper é necessário para o tooltip funcionar em um botão desabilitado */}
+                              <div className="inline-block">
+                                <Button 
+                                    key={nextStatus.id}
+                                    variant="secondary"
+                                    onClick={() => handleStatusChange(nextStatus)} 
+                                    disabled={isSubmitting || hasPendingActions}
+                                    style={hasPendingActions ? { pointerEvents: 'none' } : {}}
+                                >
+                                    {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    ) : (
+                                        <MoveRight className="mr-2 h-4 w-4" />
+                                    )}
+                                    Mover para "{nextStatus.label}"
+                                </Button>
+                              </div>
+                            </TooltipTrigger>
+                            {hasPendingActions && (
+                              <TooltipContent>
+                                <p>Aguardando aprovações pendentes para avançar.</p>
+                              </TooltipContent>
                             )}
-                            Mover para "{nextStatus.label}"
-                        </Button>
+                          </Tooltip>
+                        </TooltipProvider>
                     </div>
                 )}
             </div>
