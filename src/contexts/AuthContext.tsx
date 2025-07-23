@@ -131,34 +131,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Provisory access check - REMOVED TO ALLOW ALL DOMAIN USERS
-      // if (!PROVISIONAL_ACCESS_LIST.includes(userEmail)) {
-      //   await firebaseSignOut(auth);
-      //   toast({
-      //       title: "Acesso Suspenso Temporariamente",
-      //       description: "O acesso à plataforma está temporariamente restrito. Por favor, contate o administrador.",
-      //       variant: "destructive",
-      //       duration: 10000,
-      //   });
-      //   setLoading(false);
-      //   return;
-      // }
-
-      // Find collaborator before logging to ensure we can log the event with the correct ID
       const collaborator = collaborators.find(c => c.email === userEmail);
+      if (!collaborator) {
+          await firebaseSignOut(auth);
+          toast({
+              title: "Usuário Não Autorizado",
+              description: "Seu e-mail não está na lista de colaboradores autorizados. Por favor, contate o administrador.",
+              variant: "destructive",
+              duration: 10000,
+          });
+          setLoading(false);
+          return;
+      }
 
       // Log the login event for auditing purposes
-      if (collaborator) {
-        await addDocumentToCollection('audit_logs', {
-            eventType: 'login',
-            userId: collaborator.id3a,
-            userName: collaborator.name,
-            timestamp: new Date().toISOString(),
-            details: {
-                message: `${collaborator.name} logged in.`,
-            }
-        });
-      }
+      await addDocumentToCollection('audit_logs', {
+          eventType: 'login',
+          userId: collaborator.id3a,
+          userName: collaborator.name,
+          timestamp: new Date().toISOString(),
+          details: {
+              message: `${collaborator.name} logged in.`,
+          }
+      });
       
       router.push('/dashboard');
 
