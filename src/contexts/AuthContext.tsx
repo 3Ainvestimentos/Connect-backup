@@ -14,14 +14,6 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
 const ALLOWED_DOMAINS = ['3ainvestimentos.com.br', '3ariva.com.br'];
 
-// Lista de usuários com acesso provisório
-const PROVISIONAL_ACCESS_LIST = [
-    'matheus@3ainvestimentos.com.br',
-    'pedro.rosa@3ainvestimentos.com.br',
-    'thiago@3ainvestimentos.com.br',
-    'ti@3ariva.com.br',
-    'joao.pompeu@3ainvestimentos.com.br',
-];
 
 
 const defaultPermissions: CollaboratorPermissions = {
@@ -114,6 +106,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             title: "Erro de Login",
             description: "Não foi possível verificar seu e-mail. Tente novamente.",
             variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+
+      // *** TEMPORARY ACCESS SUSPENSION LOGIC ***
+      // Only allow Super Admins to log in.
+      if (!SUPER_ADMIN_EMAILS.includes(userEmail)) {
+        await firebaseSignOut(auth);
+        toast({
+          title: "Acesso Temporariamente Suspenso",
+          description: "O acesso à plataforma está em manutenção. Apenas administradores podem entrar no momento. Tente novamente mais tarde.",
+          variant: "destructive",
+          duration: 10000,
         });
         setLoading(false);
         return;
