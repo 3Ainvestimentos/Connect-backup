@@ -68,9 +68,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else if (collaborator) {
                 setUser(user);
                  // Try to get credential silently, might not always work
-                const credential = GoogleAuthProvider.credentialFromResult(await getRedirectResult(auth).catch(() => null));
-                if (credential?.accessToken) {
-                    setAccessToken(credential.accessToken);
+                const result = await getRedirectResult(auth).catch(() => null);
+                if (result) {
+                    const credential = GoogleAuthProvider.credentialFromResult(result);
+                    if (credential?.accessToken) {
+                        setAccessToken(credential.accessToken);
+                    }
                 }
 
             } else if (collaborators.length === 0 && !loadingCollaborators) {
@@ -125,10 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      // The user will be redirected to the Google login page.
-      // The result is handled by onAuthStateChanged after the redirect.
       await signInWithRedirect(auth, googleProvider);
-
     } catch (error: unknown) {
       let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
@@ -147,7 +147,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       setLoading(false);
     }
-    // No finally setLoading(false) here, as the page will redirect.
   };
 
   const signOut = async () => {
@@ -170,7 +169,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
 
   return (
     <AuthContext.Provider value={value}>
