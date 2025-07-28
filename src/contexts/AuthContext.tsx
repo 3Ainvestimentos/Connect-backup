@@ -16,7 +16,6 @@ const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainve
 // Add Google Calendar & Drive scopes
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
-googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
 
 
 const defaultPermissions: CollaboratorPermissions = {
@@ -120,10 +119,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
-        if (hostname.includes('cloudworkstations.dev') || hostname.includes('localhost')) {
+        // For dynamic dev environments, don't use tenantId. Use it for prod and default firebase domain.
+        const isDevEnvironment = hostname.includes('cloudworkstations.dev') || hostname.includes('localhost');
+        if (isDevEnvironment) {
             auth.tenantId = null;
         }
       }
+      
+      googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
 
       const result = await signInWithPopup(auth, googleProvider);
       
