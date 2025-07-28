@@ -12,6 +12,30 @@ import type { CollaboratorPermissions } from './CollaboratorsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
+const ALLOWED_TEST_USERS = [
+  'alice.passos@3ainvestimentos.com.br',
+  'anajulia.couto@3ariva.com.br',
+  'atendimento91@3ainvestimentos.com.br',
+  'barbara.fiche@3ainvestimentos.com.br',
+  'barbara@3ainvestimentos.com.br',
+  'daphne.clementoni@3ainvestimentos.com.br',
+  'fernanda.adami@3ainvestimentos.com.br',
+  'gente@3ariva.com.br',
+  'leonardo@3ainvestimentos.com.br',
+  'joao.pompeu@3ainvestimentos.com.br',
+  'marcio.peixoto@3ariva.com.br',
+  'infra@3ariva.com.br',
+  'matheus@3ainvestimentos.com.br',
+  'suzana.didier@3ainvestimentos.com.br',
+  'ti@3ariva.com.br',
+  'wallison.nunes@3ainvestimentos.com.br',
+  'luanda.beatriz@3ainvestimentos.com.br',
+  'gustavo.goudim@3ainvestimentos.com.br',
+  'dalcion.franco@3ainvestimentos.com.br',
+  'stefania.otoni@3ainvestimentos.com.br',
+  'pablo.costa@3ainvestimentos.com.br',
+  'pedro.rosa@3ainvestimentos.com.br' // Also include super admins here
+];
 const ALLOWED_DOMAINS = ['3ainvestimentos.com.br', '3ariva.com.br'];
 
 
@@ -110,20 +134,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return;
       }
-
-      // *** TEMPORARY ACCESS SUSPENSION LOGIC ***
-      // Only allow Super Admins to log in.
-      if (!SUPER_ADMIN_EMAILS.includes(userEmail)) {
-        await firebaseSignOut(auth);
-        toast({
-          title: "Acesso Temporariamente Suspenso",
-          description: "O acesso à plataforma está em manutenção. Apenas administradores podem entrar no momento. Tente novamente mais tarde.",
-          variant: "destructive",
-          duration: 10000,
-        });
-        setLoading(false);
-        return;
-      }
       
       const domain = userEmail.split('@')[1];
       if (!ALLOWED_DOMAINS.includes(domain)) {
@@ -132,6 +142,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             title: "Acesso Negado",
             description: "Este e-mail não pertence a um domínio autorizado para acessar esta aplicação.",
             variant: "destructive"
+        });
+        setLoading(false);
+        return;
+      }
+      
+      // *** TEMPORARY ACCESS SUSPENSION LOGIC ***
+      // Only allow specified test users and Super Admins to log in.
+      if (!ALLOWED_TEST_USERS.includes(userEmail)) {
+        await firebaseSignOut(auth);
+        toast({
+          title: "Acesso em Fase de Testes",
+          description: "O acesso à plataforma está limitado a um grupo de testes. Caso acredite que isso seja um erro, contate o administrador.",
+          variant: "destructive",
+          duration: 10000,
         });
         setLoading(false);
         return;
