@@ -17,7 +17,6 @@ interface GapiClientState {
 }
 
 const GAPI_SCRIPT_ID = 'gapi-script';
-const GIS_SCRIPT_ID = 'gis-script';
 const DISCOVERY_DOCS = [
     "https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest",
     "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"

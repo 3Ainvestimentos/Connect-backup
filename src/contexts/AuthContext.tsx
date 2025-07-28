@@ -95,24 +95,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, collaborators, loadingCollaborators, loading]);
 
   const getAccessToken = async (): Promise<string | null> => {
-    if (!auth.currentUser) return null;
+    const currentUser = auth.currentUser;
+    if (!currentUser) return null;
 
-    const result = await auth.currentUser.getIdTokenResult(true);
-    const credential = GoogleAuthProvider.credentialFromResult({
-        user: auth.currentUser,
-        idToken: result.token,
-    });
-    
-    return credential?.accessToken || null;
+    try {
+        const idTokenResult = await currentUser.getIdTokenResult(false); // false = don't force refresh
+        const credential = GoogleAuthProvider.credentialFromResult({
+            user: currentUser,
+            idToken: idTokenResult.token,
+        });
+        return credential?.accessToken || null;
+    } catch(error) {
+        console.error("Error getting access token:", error);
+        return null;
+    }
   };
   
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
       googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
-
+      
       const result = await signInWithPopup(auth, googleProvider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
       
       const userEmail = result.user.email;
       if (!userEmail) {
