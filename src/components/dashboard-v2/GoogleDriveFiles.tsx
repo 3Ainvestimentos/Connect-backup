@@ -10,6 +10,12 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
 
+declare global {
+    interface Window {
+        gapi: any;
+    }
+}
+
 interface DriveFile {
   id: string;
   name: string;
@@ -26,7 +32,8 @@ export default function GoogleDriveFiles() {
 
   const listRecentFiles = useCallback(async () => {
     if (!user || !accessToken) {
-      setError("Token de acesso não encontrado. Por favor, tente atualizar a página.");
+      if (!user) setError("Usuário não autenticado.");
+      else if (!accessToken) setError("Token de acesso não encontrado. Por favor, atualize a página.");
       setIsLoading(false);
       return;
     }
@@ -49,7 +56,7 @@ export default function GoogleDriveFiles() {
       console.error("Erro ao buscar arquivos do Drive:", err);
       let errorMessage = "Não foi possível carregar os arquivos do Drive.";
       if (err.result?.error?.message) {
-        errorMessage = err.result.error.message;
+        errorMessage = `Erro da API: ${err.result.error.message}`;
       } else if(err.message) {
         errorMessage = err.message;
       }
@@ -60,7 +67,11 @@ export default function GoogleDriveFiles() {
   }, [user, accessToken]);
 
   useEffect(() => {
-    if(typeof window.gapi === 'undefined') return;
+    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+        setError("A biblioteca de cliente do Google não pôde ser carregada.");
+        setIsLoading(false);
+        return;
+    }
 
     window.gapi.load('client', () => {
         window.gapi.client.init({
@@ -72,6 +83,9 @@ export default function GoogleDriveFiles() {
             } else if (!user) {
               setIsLoading(false);
             }
+        }).catch((e: any) => {
+            setError("Falha ao inicializar o cliente GAPI.");
+            setIsLoading(false);
         });
     });
   }, [user, accessToken, listRecentFiles]);
@@ -81,7 +95,7 @@ export default function GoogleDriveFiles() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
+          <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -94,7 +108,7 @@ export default function GoogleDriveFiles() {
       return (
          <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
+                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
                 <AlertCircle className="h-8 w-8 mb-2" />
@@ -109,7 +123,7 @@ export default function GoogleDriveFiles() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
+        <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
       </CardHeader>
       <CardContent>
         {files.length > 0 ? (
