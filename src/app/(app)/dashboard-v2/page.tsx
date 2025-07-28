@@ -237,25 +237,24 @@ export default function DashboardV2Page() {
                         <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-4">
                         {quickLinks.map(link => (
                            <a 
                              href={link.link} 
                              key={link.id} 
                              target="_blank" 
                              rel="noopener noreferrer" 
-                             className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-muted"
+                             className="flex items-center justify-center p-4 rounded-lg transition-colors hover:bg-muted aspect-square flex-col gap-2"
                              title={link.name || 'Link Rápido'}
                            >
                               <Image
                                   src={link.imageUrl}
                                   alt={link.name || 'Quick Link'}
-                                  width={32}
-                                  height={32}
-                                  className="rounded-md object-contain"
+                                  width={48}
+                                  height={48}
+                                  className="object-contain"
                               />
-                              <span className="font-body text-sm font-medium text-foreground">{link.name}</span>
-                              <ExternalLink className="h-4 w-4 text-muted-foreground ml-auto" />
+                              {link.name && <span className="font-body text-xs font-medium text-center text-muted-foreground">{link.name}</span>}
                            </a>
                         ))}
                       </div>
