@@ -244,17 +244,15 @@ export default function DashboardV2Page() {
                              key={link.id} 
                              target="_blank" 
                              rel="noopener noreferrer" 
-                             className="flex items-center justify-center p-4 rounded-lg transition-colors hover:bg-muted aspect-square flex-col gap-2"
+                             className="relative flex items-center justify-center p-4 rounded-lg transition-colors hover:bg-muted aspect-square flex-col gap-2"
                              title={link.name || 'Link Rápido'}
                            >
                               <Image
                                   src={link.imageUrl}
                                   alt={link.name || 'Quick Link'}
-                                  width={48}
-                                  height={48}
-                                  className="object-contain"
+                                  layout="fill"
+                                  className="object-contain p-2"
                               />
-                              {link.name && <span className="font-body text-xs font-medium text-center text-muted-foreground">{link.name}</span>}
                            </a>
                         ))}
                       </div>
