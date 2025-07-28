@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
@@ -13,25 +12,12 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
-// Add Google Calendar & Drive scopes
-googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
-googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
-
-
-const defaultPermissions: CollaboratorPermissions = {
-    canManageWorkflows: false,
-    canManageRequests: false,
-    canManageContent: false,
-    canViewTasks: false,
-};
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean; 
   isSuperAdmin: boolean;
   permissions: CollaboratorPermissions;
-  getAccessToken: () => Promise<string | null>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -47,7 +33,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const app = getFirebaseApp(); 
   const auth = getAuth(app);
   
-  const [permissions, setPermissions] = useState<CollaboratorPermissions>(defaultPermissions);
+  const [permissions, setPermissions] = useState<CollaboratorPermissions>({
+    canManageWorkflows: false,
+    canManageRequests: false,
+    canManageContent: false,
+    canViewTasks: false,
+  });
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   
@@ -66,15 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.push('/login');
             } else {
                 setUser(user);
-                 await addDocumentToCollection('audit_logs', {
-                  eventType: 'login',
-                  userId: collaborator?.id3a || user.email,
-                  userName: collaborator?.name || user.displayName || 'Usuário',
-                  timestamp: new Date().toISOString(),
-                  details: {
-                      message: `${collaborator?.name || user.displayName} logged in.`,
-                  }
-              });
             }
         } else {
             setUser(null);
@@ -83,7 +65,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-}, [auth, router, collaborators]);
+  }, [auth, router, collaborators]);
+
+  // Handle redirect result
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result && result.user) {
+          const user = result.user;
+          const collaborator = collaborators.find(c => c.email === user.email);
+          if (collaborator) {
+             addDocumentToCollection('audit_logs', {
+                eventType: 'login',
+                userId: collaborator?.id3a || user.email,
+                userName: collaborator?.name || user.displayName || 'Usuário',
+                timestamp: new Date().toISOString(),
+                details: {
+                    message: `${collaborator?.name || user.displayName} logged in.`,
+                }
+            });
+          }
+        }
+      }).catch((error) => {
+          console.error("Firebase Redirect Error:", error);
+          toast({
+              title: "Erro de Login",
+              description: `Ocorreu um erro durante o redirecionamento do login: ${error.message}`,
+              variant: "destructive",
+          });
+      });
+  }, [auth, collaborators]);
 
 
   useEffect(() => {
@@ -92,7 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsSuperAdmin(isSuper);
 
           const currentUserCollab = collaborators.find(c => c.email === user.email);
-          const userPermissions = currentUserCollab?.permissions || defaultPermissions;
+          const userPermissions = currentUserCollab?.permissions || {};
           
           if (isSuper) {
               const allPermissions: CollaboratorPermissions = {
@@ -104,34 +115,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setPermissions(allPermissions);
               setIsAdmin(true);
           } else {
-              setPermissions({ ...defaultPermissions, ...userPermissions });
+              setPermissions(userPermissions);
               const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
               setIsAdmin(hasAnyPermission);
           }
           
-      } else if (!user && !loading) {
-          // Do nothing, let the onAuthStateChanged handle it
       }
-  }, [user, collaborators, loadingCollaborators, loading]);
+  }, [user, collaborators, loadingCollaborators]);
 
-  const getAccessToken = async (): Promise<string | null> => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return null;
-
-    try {
-        const idTokenResult = await currentUser.getIdTokenResult(true); // force refresh
-        const credential = GoogleAuthProvider.credential(idTokenResult.token);
-        return credential?.accessToken || null;
-    } catch(error) {
-        console.error("Error getting access token:", error);
-        return null;
-    }
-  };
   
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithRedirect(auth, googleProvider);
     } catch (error: unknown) {
       let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
@@ -168,7 +164,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin,
       isSuperAdmin,
       permissions,
-      getAccessToken,
       signInWithGoogle,
       signOut
   }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions]);

@@ -21,8 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
-import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
-import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
+import InternalCalendar from '@/components/dashboard-v2/InternalCalendar';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -225,11 +224,39 @@ export default function DashboardV2Page() {
                 </CardContent>
               </Card>
               
-              <GoogleDriveFiles />
+               {quickLinks.length > 0 && (
+                <Card className="shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex justify-center">
+                        <div className="flex justify-center flex-wrap gap-3">
+                          {quickLinks.map(link => (
+                              <a 
+                                 href={link.link} 
+                                 key={link.id} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer" 
+                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-video w-32"
+                                 title={link.name || 'Link Rápido'}
+                               >
+                                  <Image
+                                      src={link.imageUrl}
+                                      alt={link.name || 'Quick Link'}
+                                      layout="fill"
+                                      objectFit="contain"
+                                      className="p-2"
+                                  />
+                              </a>
+                          ))}
+                        </div>
+                    </CardContent>
+                </Card>
+              )}
           </div>
             
           <div className="lg:col-span-1 flex flex-col gap-6">
-             <GoogleCalendar />
+             <InternalCalendar />
           </div>
         </section>
       </div>
