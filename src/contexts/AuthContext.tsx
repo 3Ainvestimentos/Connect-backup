@@ -40,7 +40,7 @@ const ALLOWED_TEST_USERS = [
 const MAINTENANCE_MODE = false;
 
 // Add Google Calendar & Drive scopes
-googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+googleProvider.addScope('https://www.googleapis.com/auth/calendar.events.readonly');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
 googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
 

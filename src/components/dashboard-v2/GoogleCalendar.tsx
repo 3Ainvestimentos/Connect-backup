@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -11,19 +10,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CalendarDays, PlusCircle } from 'lucide-react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from '@/hooks/use-toast';
-import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isValid } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useGapiClient } from '@/hooks/useGapiClient';
 
-declare global {
-  interface Window {
-    gapi: any;
-    google: any;
-  }
-}
+// Define event types using gapi.client.calendar namespace if available
+type GapiEvent = gapi.client.calendar.Event;
 
 const eventSchema = z.object({
   summary: z.string().min(1, 'O título é obrigatório.'),
@@ -39,15 +35,14 @@ const eventSchema = z.object({
 });
 
 type EventFormValues = z.infer<typeof eventSchema>;
-type GapiEvent = gapi.client.calendar.Event;
-
 const TIME_ZONE = 'America/Sao_Paulo';
 
 export default function GoogleCalendar() {
   const { user, getAccessToken } = useAuth();
+  const { gapi, gis, isGapiReady } = useGapiClient();
+
   const [events, setEvents] = useState<GapiEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isClientLoaded, setIsClientLoaded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<GapiEvent | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -57,34 +52,8 @@ export default function GoogleCalendar() {
     resolver: zodResolver(eventSchema),
   });
 
-  const loadGapiClient = useCallback(() => {
-    const checkGapi = () => {
-      if (window.gapi) {
-        window.gapi.load('client', async () => {
-          try {
-            await window.gapi.client.init({
-              apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-              discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-            });
-            setIsClientLoaded(true);
-          } catch (err) {
-            console.error("Error initializing gapi client:", err);
-            toast({ title: 'Erro de API', description: 'Não foi possível carregar a API do Google Calendar.', variant: 'destructive' });
-          }
-        });
-      } else {
-        setTimeout(checkGapi, 100);
-      }
-    };
-    checkGapi();
-  }, []);
-
-  useEffect(() => {
-    loadGapiClient();
-  }, [loadGapiClient]);
-
   const fetchEvents = useCallback(async (month: Date) => {
-    if (!isClientLoaded || !user) return;
+    if (!isGapiReady || !user || !gapi || !gis) return;
     setLoading(true);
 
     try {
@@ -92,12 +61,12 @@ export default function GoogleCalendar() {
       if (!accessToken) {
           throw new Error("Não foi possível obter o token de acesso.");
       }
-      window.gapi.client.setToken({ access_token: accessToken });
+      gis.client.setToken({ access_token: accessToken });
 
       const timeMin = startOfMonth(month).toISOString();
       const timeMax = endOfMonth(month).toISOString();
       
-      const response = await window.gapi.client.calendar.events.list({
+      const response = await gapi.client.calendar.events.list({
         calendarId: 'primary',
         timeMin,
         timeMax,
@@ -107,19 +76,19 @@ export default function GoogleCalendar() {
       });
       
       setEvents(response.result.items || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching calendar events:', error);
-      toast({ title: 'Erro ao buscar eventos', description: 'Não foi possível carregar os eventos da sua agenda.', variant: 'destructive' });
+      toast({ title: 'Erro ao buscar eventos', description: error.message || 'Não foi possível carregar os eventos da sua agenda.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [isClientLoaded, user, getAccessToken]);
+  }, [isGapiReady, user, gapi, gis, getAccessToken]);
 
   useEffect(() => {
-    if (isClientLoaded && user) {
+    if (isGapiReady && user) {
         fetchEvents(currentMonth);
     }
-  }, [isClientLoaded, user, fetchEvents, currentMonth]);
+  }, [isGapiReady, user, fetchEvents, currentMonth]);
 
   const eventDates = useMemo(() => events.map(e => new Date(e.start?.dateTime || e.start?.date || '')), [events]);
 
@@ -156,20 +125,22 @@ export default function GoogleCalendar() {
   };
 
   const onSubmit = async (data: EventFormValues) => {
+    if (!gapi || !gis) return;
+
     try {
       const accessToken = await getAccessToken();
       if (!accessToken) throw new Error("Token de acesso inválido.");
-      window.gapi.client.setToken({ access_token: accessToken });
+      gis.client.setToken({ access_token: accessToken });
 
       if (selectedEvent) { // Editing
-        await window.gapi.client.calendar.events.update({
+        await gapi.client.calendar.events.update({
           calendarId: 'primary',
           eventId: selectedEvent.id!,
           resource: data,
         });
         toast({ title: 'Evento atualizado!' });
       } else { // Creating
-        await window.gapi.client.calendar.events.insert({
+        await gapi.client.calendar.events.insert({
           calendarId: 'primary',
           resource: data,
         });
