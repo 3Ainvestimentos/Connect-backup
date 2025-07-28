@@ -36,7 +36,8 @@ const ALLOWED_TEST_USERS = [
   'pablo.costa@3ainvestimentos.com.br',
   'pedro.rosa@3ainvestimentos.com.br'
 ];
-const ALLOWED_DOMAINS = ['3ainvestimentos.com.br', '3ariva.com.br'];
+// This flag can be controlled by an environment variable in a real app
+const MAINTENANCE_MODE = false;
 
 // Add Google Calendar & Drive scopes
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
@@ -148,8 +149,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      const isTestUser = ALLOWED_TEST_USERS.includes(userEmail);
       const isSuper = SUPER_ADMIN_EMAILS.includes(userEmail);
+      const isTestUser = ALLOWED_TEST_USERS.includes(userEmail);
+      
+      if (MAINTENANCE_MODE && !isSuper) {
+          await firebaseSignOut(auth);
+          toast({
+              title: "Acesso Temporariamente Suspenso",
+              description: "O acesso à plataforma está em manutenção. Apenas administradores podem entrar no momento.",
+              variant: "destructive"
+          });
+          setLoading(false);
+          return;
+      }
 
       if (!isTestUser && !isSuper) {
         await firebaseSignOut(auth);
@@ -164,12 +176,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const collaborator = collaborators.find(c => c.email === userEmail);
       
-      // Allow login for test users even if not in the main collaborator list.
-      // We will still log the event.
-      if (!isSuper && !collaborator) {
-         console.warn(`Usuário de teste '${userEmail}' logou, mas não foi encontrado na lista de colaboradores. Funções podem ser limitadas.`);
-      }
-
       await addDocumentToCollection('audit_logs', {
           eventType: 'login',
           userId: collaborator?.id3a || userEmail,
