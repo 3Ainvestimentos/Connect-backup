@@ -36,6 +36,8 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
     const { collaborators } = useCollaborators();
     const { workflowAreas } = useWorkflowAreas();
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
+    const [isApproverSelectionModalOpen, setIsApproverSelectionModalOpen] = useState(false);
+    const [activeStatusIndex, setActiveStatusIndex] = useState<number | null>(null);
 
     const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<FormValues>({
         resolver: zodResolver(workflowDefinitionSchema),
@@ -109,12 +111,18 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         }
     };
     
-    const getAccessDescription = (ids: string[]) => {
+    const getAccessDescription = (ids: string[] | undefined) => {
         if (!ids || ids.length === 0) return 'Nenhum destinatário selecionado';
         if (ids.includes('all')) return 'Acesso público para todos os colaboradores';
         if (ids.length === 1) return `Acesso restrito a 1 colaborador`;
         return `Acesso restrito a ${ids.length} colaboradores`;
     };
+
+    const getApproverDescription = (ids: string[] | undefined) => {
+        if (!ids || ids.length === 0) return 'Selecionar aprovadores...';
+        return `${ids.length} aprovador(es) pré-definido(s)`;
+    };
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -280,7 +288,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                 render={({ field }) => (
                                                     <Switch
                                                         checked={!!field.value}
-                                                        onCheckedChange={(checked) => field.onChange(checked ? { type: 'approval', label: '' } : undefined)}
+                                                        onCheckedChange={(checked) => field.onChange(checked ? { type: 'approval', label: '', approverIds: [] } : undefined)}
                                                         id={`action-switch-${index}`}
                                                     />
                                                 )}
@@ -309,6 +317,14 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                     <Label htmlFor={`statuses.${index}.action.label`}>Texto do Botão de Solicitação</Label>
                                                     <Input {...register(`statuses.${index}.action.label`)} placeholder="Ex: Solicitar Aprovação"/>
                                                     {errors.statuses?.[index]?.action?.label && <p className="text-sm text-destructive mt-1">{errors.statuses?.[index]?.action?.label?.message}</p>}
+                                                </div>
+                                                <div className="sm:col-span-2">
+                                                    <Label>Aprovadores Pré-definidos (Opcional)</Label>
+                                                    <Button type="button" variant="outline" className="w-full justify-start text-left mt-2" onClick={() => { setActiveStatusIndex(index); setIsApproverSelectionModalOpen(true); }}>
+                                                       <Users className="mr-2 h-4 w-4" />
+                                                       <span className="truncate">{getApproverDescription(watchedStatuses[index]?.action?.approverIds)}</span>
+                                                    </Button>
+                                                    <p className="text-xs text-muted-foreground mt-1">Se definido, a solicitação de ação será enviada automaticamente para estes usuários quando a tarefa entrar nesta etapa.</p>
                                                 </div>
                                             </div>
                                         )}
@@ -446,12 +462,27 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                     isOpen={isSelectionModalOpen}
                     onClose={() => setIsSelectionModalOpen(false)}
                     allCollaborators={collaborators}
-                    selectedIds={watchAllowedUserIds}
+                    selectedIds={watchAllowedUserIds || []}
                     onConfirm={(newIds) => {
                         setValue('allowedUserIds', newIds, { shouldValidate: true });
                         setIsSelectionModalOpen(false);
                     }}
                 />
+
+                <RecipientSelectionModal
+                    isOpen={isApproverSelectionModalOpen}
+                    onClose={() => setIsApproverSelectionModalOpen(false)}
+                    allCollaborators={collaborators}
+                    selectedIds={activeStatusIndex !== null ? watchedStatuses[activeStatusIndex]?.action?.approverIds || [] : []}
+                    onConfirm={(newIds) => {
+                        if (activeStatusIndex !== null) {
+                            setValue(`statuses.${activeStatusIndex}.action.approverIds`, newIds, { shouldValidate: true });
+                        }
+                        setIsApproverSelectionModalOpen(false);
+                        setActiveStatusIndex(null);
+                    }}
+                />
+
 
             </DialogContent>
         </Dialog>

@@ -9,6 +9,7 @@ import * as z from 'zod';
 const workflowActionSchema = z.object({
   type: z.enum(['approval', 'acknowledgement']),
   label: z.string().min(1, "O rótulo da ação é obrigatório."),
+  approverIds: z.array(z.string()).optional(), // Optional: pre-defined approvers
 });
 
 // Represents a single status in a workflow lifecycle

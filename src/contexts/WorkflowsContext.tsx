@@ -10,6 +10,7 @@ import { getFirestore, writeBatch, doc } from 'firebase/firestore';
 import { getFirebaseApp } from '@/lib/firebase';
 import { useCollaborators } from './CollaboratorsContext';
 import { useAuth } from './AuthContext';
+import { formatISO } from 'date-fns';
 
 // Define os possíveis status de um workflow
 export type WorkflowStatus = string; // Now a generic string, e.g., 'pending_approval', 'in_progress'
@@ -192,14 +193,45 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   });
   
   const updateRequestMutation = useMutation<void, Error, Partial<WorkflowRequest> & { id: string }>({
-    mutationFn: (updatedRequest) => {
-      const { id, ...data } = updatedRequest;
-      const payload = { ...data };
-      if (payload.status && payload.status !== 'pending') {
-          payload.viewedBy = [];
-      }
-      
-      return updateDocumentInCollection(COLLECTION_NAME, id, payload);
+    mutationFn: async (updatedRequest) => {
+        const { id, ...data } = updatedRequest;
+        let payload = { ...data };
+        if (payload.status && payload.status !== 'pending') {
+            payload = { ...payload, viewedBy: [] };
+        }
+        
+        // --- AUTO-REQUEST ACTION LOGIC ---
+        const originalRequest = queryClient.getQueryData<WorkflowRequest[]>([COLLECTION_NAME])?.find(r => r.id === id);
+        const definition = workflowDefinitions.find(def => def.name === originalRequest?.type);
+        const newStatusDef = definition?.statuses.find(s => s.id === payload.status);
+
+        if (newStatusDef?.action?.approverIds && newStatusDef.action.approverIds.length > 0) {
+            const now = new Date();
+            const adminUser = collaborators.find(c => c.email === user?.email);
+            const historyNote = `Ação de "${newStatusDef.action.label}" solicitada automaticamente para ${newStatusDef.action.approverIds.length} colaborador(es) pré-definido(s).`;
+            
+            const newActionRequests = newStatusDef.action.approverIds.map(approverId => {
+                const approver = collaborators.find(c => c.id3a === approverId);
+                return {
+                    userId: approverId,
+                    userName: approver?.name || 'Desconhecido',
+                    status: 'pending' as const,
+                    requestedAt: formatISO(now),
+                    respondedAt: '',
+                };
+            });
+
+            // Append to payload
+            payload.actionRequests = {
+                ...originalRequest?.actionRequests,
+                [newStatusDef.id]: newActionRequests
+            };
+            if (payload.history && adminUser) {
+              payload.history.push({ timestamp: formatISO(now), status: newStatusDef.id, userId: adminUser.id3a, userName: adminUser.name, notes: historyNote });
+            }
+        }
+        
+        return updateDocumentInCollection(COLLECTION_NAME, id, payload);
     },
     onSuccess: (data, variables) => {
         queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
@@ -210,7 +242,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         });
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
-  });
+});
   
   const archiveRequestMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => updateDocumentInCollection(COLLECTION_NAME, id, { isArchived: true }),
