@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -39,7 +40,7 @@ const TIME_ZONE = 'America/Sao_Paulo';
 
 export default function GoogleCalendar() {
   const { user, getAccessToken } = useAuth();
-  const { gapi, gis, isGapiReady } = useGapiClient();
+  const { gapi, isGapiReady } = useGapiClient();
 
   const [events, setEvents] = useState<GapiEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +54,7 @@ export default function GoogleCalendar() {
   });
 
   const fetchEvents = useCallback(async (month: Date) => {
-    if (!isGapiReady || !user || !gapi || !gis) return;
+    if (!isGapiReady || !user || !gapi) return;
     setLoading(true);
 
     try {
@@ -61,7 +62,7 @@ export default function GoogleCalendar() {
       if (!accessToken) {
           throw new Error("Não foi possível obter o token de acesso.");
       }
-      gis.client.setToken({ access_token: accessToken });
+      gapi.client.setToken({ access_token: accessToken });
 
       const timeMin = startOfMonth(month).toISOString();
       const timeMax = endOfMonth(month).toISOString();
@@ -82,7 +83,7 @@ export default function GoogleCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [isGapiReady, user, gapi, gis, getAccessToken]);
+  }, [isGapiReady, user, gapi, getAccessToken]);
 
   useEffect(() => {
     if (isGapiReady && user) {
@@ -125,12 +126,12 @@ export default function GoogleCalendar() {
   };
 
   const onSubmit = async (data: EventFormValues) => {
-    if (!gapi || !gis) return;
+    if (!gapi) return;
 
     try {
       const accessToken = await getAccessToken();
       if (!accessToken) throw new Error("Token de acesso inválido.");
-      gis.client.setToken({ access_token: accessToken });
+      gapi.client.setToken({ access_token: accessToken });
 
       if (selectedEvent) { // Editing
         await gapi.client.calendar.events.update({

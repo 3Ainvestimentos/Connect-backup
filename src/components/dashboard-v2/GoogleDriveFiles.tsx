@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -14,19 +15,19 @@ type GapiFile = gapi.client.drive.File;
 
 export default function GoogleDriveFiles() {
   const { user, getAccessToken } = useAuth();
-  const { gapi, gis, isGapiReady } = useGapiClient();
+  const { gapi, isGapiReady } = useGapiClient();
   const [files, setFiles] = useState<GapiFile[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch files from Google Drive
   const fetchFiles = useCallback(async () => {
-    if (!isGapiReady || !user || !gapi || !gis) return;
+    if (!isGapiReady || !user || !gapi) return;
     setLoading(true);
 
     try {
       const accessToken = await getAccessToken();
       if (!accessToken) throw new Error("Token de acesso inválido.");
-      gis.client.setToken({ access_token: accessToken });
+      gapi.client.setToken({ access_token: accessToken });
 
       const response = await gapi.client.drive.files.list({
         pageSize: 10,
@@ -41,7 +42,7 @@ export default function GoogleDriveFiles() {
     } finally {
       setLoading(false);
     }
-  }, [isGapiReady, user, getAccessToken, gapi, gis]);
+  }, [isGapiReady, user, getAccessToken, gapi]);
 
   useEffect(() => {
     if (isGapiReady && user) {

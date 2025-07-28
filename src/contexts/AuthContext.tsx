@@ -95,24 +95,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, collaborators, loadingCollaborators, loading]);
 
   const getAccessToken = async (): Promise<string | null> => {
-    if (auth.currentUser) {
-        const result = await auth.currentUser.getIdTokenResult(true);
-        // The type for credential from result is not directly available, but we can construct it.
-        const credential = GoogleAuthProvider.credentialFromResult({
-            user: auth.currentUser,
-            idToken: result.token,
-            // You might not get a new access token on every refresh, handle this case
-            accessToken: (result.claims.firebase as any)?.access_token || null
-        });
+    if (!auth.currentUser) return null;
 
-        const token = credential?.accessToken || null;
-        if (token && window.gapi) {
-          // Explicitly set the token for GAPI client to ensure it's up-to-date
-          window.gapi.client.setToken({ access_token: token });
-        }
-        return token;
-    }
-    return null;
+    const result = await auth.currentUser.getIdTokenResult(true);
+    const credential = GoogleAuthProvider.credentialFromResult({
+        user: auth.currentUser,
+        idToken: result.token,
+    });
+    
+    return credential?.accessToken || null;
   };
   
   const signInWithGoogle = async () => {
@@ -121,9 +112,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
 
       const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
       
       const userEmail = result.user.email;
-
       if (!userEmail) {
         await firebaseSignOut(auth);
         toast({
@@ -136,7 +127,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const collaborator = collaborators.find(c => c.email === userEmail);
-      
       if (!collaborator) {
         await firebaseSignOut(auth);
         toast({
