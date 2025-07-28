@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -19,13 +20,14 @@ interface CalendarEvent {
 }
 
 export default function GoogleCalendar() {
-  const { user, getAccessToken } = useAuth();
+  const { user, accessToken } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const listUpcomingEvents = useCallback(async () => {
-    if (!user || !window.gapi) {
+    if (!user || !accessToken) {
+      setError("Token de acesso não encontrado. Por favor, tente atualizar a página.");
       setIsLoading(false);
       return;
     }
@@ -34,11 +36,6 @@ export default function GoogleCalendar() {
     setError(null);
     
     try {
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
-        throw new Error("Não foi possível obter o token de acesso.");
-      }
-
       window.gapi.client.setToken({ access_token: accessToken });
       
       const response = await window.gapi.client.calendar.events.list({
@@ -64,24 +61,24 @@ export default function GoogleCalendar() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getAccessToken]);
+  }, [user, accessToken]);
 
   useEffect(() => {
-    if (window.gapi) {
-        window.gapi.load('client', () => {
-            window.gapi.client.init({
-                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-            }).then(() => {
-                if (user) {
-                    listUpcomingEvents();
-                }
-            });
+    if(typeof window.gapi === 'undefined') return;
+
+    window.gapi.load('client', () => {
+        window.gapi.client.init({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+        }).then(() => {
+            if (user && accessToken) {
+                listUpcomingEvents();
+            } else if (!user) {
+              setIsLoading(false);
+            }
         });
-    } else if (!user) {
-        setIsLoading(false);
-    }
-  }, [user, listUpcomingEvents]);
+    });
+  }, [user, accessToken, listUpcomingEvents]);
 
 
   if (isLoading) {

@@ -19,30 +19,22 @@ const scopes = [
 ];
 scopes.forEach(scope => googleProvider.addScope(scope));
 
-// Adiciona o script GAPI ao cabeçalho do documento para que esteja disponível globalmente
-const gapiScript = typeof window !== 'undefined' ? document.createElement('script') : null;
-if (gapiScript) {
-    gapiScript.src = 'https://apis.google.com/js/api.js';
-    gapiScript.async = true;
-    gapiScript.defer = true;
-    document.head.appendChild(gapiScript);
-}
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean; 
   isSuperAdmin: boolean;
   permissions: CollaboratorPermissions;
+  accessToken: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
-  getAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { collaborators, loading: loadingCollaborators } = useCollaborators();
@@ -71,6 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     variant: "destructive"
                 });
                 setUser(null);
+                setAccessToken(null);
                 router.push('/login');
             } else if (collaborator) {
                 setUser(user);
@@ -82,10 +75,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     variant: "destructive"
                 });
                 setUser(null);
+                setAccessToken(null);
                 router.push('/login');
             }
         } else {
             setUser(null);
+            setAccessToken(null);
         }
         setLoading(false);
     });
@@ -120,30 +115,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
   }, [user, collaborators, loadingCollaborators]);
 
-  const getAccessToken = useCallback(async (): Promise<string | null> => {
-    if (!auth.currentUser) return null;
-    try {
-        const idTokenResult = await auth.currentUser.getIdTokenResult(true); // Force refresh
-        return idTokenResult.token;
-    } catch(error) {
-        console.error("Erro ao obter o token de acesso:", error);
-        // Tenta reautenticar para obter a credencial
-        try {
-            const result = await signInWithPopup(auth, googleProvider);
-            const credentialFromResult = GoogleAuthProvider.credentialFromResult(result);
-            return credentialFromResult?.accessToken || null;
-        } catch (reauthError) {
-             console.error("Erro na tentativa de reautenticação:", reauthError);
-             return null;
-        }
-    }
-  }, [auth]);
   
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
        if (result && result.user) {
+          const credential = GoogleAuthProvider.credentialFromResult(result);
+          if (credential?.accessToken) {
+              setAccessToken(credential.accessToken);
+          }
+
           const user = result.user;
           router.push('/dashboard-v2');
           
@@ -184,6 +166,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      setAccessToken(null);
       router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
@@ -197,10 +180,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin,
       isSuperAdmin,
       permissions,
+      accessToken,
       signInWithGoogle,
       signOut,
-      getAccessToken,
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, signInWithGoogle, signOut, getAccessToken]);
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

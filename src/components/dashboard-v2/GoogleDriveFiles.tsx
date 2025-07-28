@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -18,13 +19,14 @@ interface DriveFile {
 }
 
 export default function GoogleDriveFiles() {
-  const { user, getAccessToken } = useAuth();
+  const { user, accessToken } = useAuth();
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const listRecentFiles = useCallback(async () => {
-    if (!user || !window.gapi) {
+    if (!user || !accessToken) {
+      setError("Token de acesso não encontrado. Por favor, tente atualizar a página.");
       setIsLoading(false);
       return;
     }
@@ -33,11 +35,6 @@ export default function GoogleDriveFiles() {
     setError(null);
 
     try {
-      const accessToken = await getAccessToken();
-       if (!accessToken) {
-        throw new Error("Não foi possível obter o token de acesso.");
-      }
-      
       window.gapi.client.setToken({ access_token: accessToken });
       
       const response = await window.gapi.client.drive.files.list({
@@ -60,24 +57,24 @@ export default function GoogleDriveFiles() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, getAccessToken]);
+  }, [user, accessToken]);
 
   useEffect(() => {
-    if (window.gapi) {
-        window.gapi.load('client', () => {
-            window.gapi.client.init({
-                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-            }).then(() => {
-                if (user) {
-                    listRecentFiles();
-                }
-            });
+    if(typeof window.gapi === 'undefined') return;
+
+    window.gapi.load('client', () => {
+        window.gapi.client.init({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+        }).then(() => {
+            if (user && accessToken) {
+                listRecentFiles();
+            } else if (!user) {
+              setIsLoading(false);
+            }
         });
-    } else if (!user) {
-      setIsLoading(false);
-    }
-  }, [user, listRecentFiles]);
+    });
+  }, [user, accessToken, listRecentFiles]);
 
 
   if (isLoading) {
