@@ -143,9 +143,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       const newDoc = await addDocumentToCollection(COLLECTION_NAME, requestWithDefaults);
 
       // --- NOTIFICATION LOGIC ---
-      // This logic will only run when a new request is created, but not when it's updated with file URLs
-      if (Object.keys(requestData.formData).length === 0) { // Check if it's the initial creation
-            // 1. Notify requester
+      if (Object.keys(requestData.formData).length === 0) { 
             await addMessage({
                 title: `Solicitação Recebida: ${requestData.type} #${requestWithDefaults.requestId}`,
                 content: `Sua solicitação '${requestData.type}' foi aberta com sucesso e está pendente de análise.`,
@@ -153,9 +151,8 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
                 recipientIds: [requestData.submittedBy.userId],
             });
 
-            // 2. Notify the workflow owner
             const owner = collaborators.find(c => c.email === definition.ownerEmail);
-            if (owner) {
+            if (owner && owner.id3a !== requestData.submittedBy.userId) {
                 await addMessage({
                     title: `Nova Solicitação: ${requestData.type} #${requestWithDefaults.requestId}`,
                     content: `Uma nova solicitação de '${requestData.type}' foi enviada por ${requestData.submittedBy.userName} e aguarda sua revisão.`,
@@ -164,8 +161,6 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
                 });
             }
 
-
-            // 3. Notify based on routing rules
             if (definition && definition.routingRules && requestData.formData) {
                 for (const rule of definition.routingRules) {
                 const formValue = requestData.formData[rule.field];
