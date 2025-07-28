@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase';
-import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
@@ -13,7 +13,6 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
-// UPDATED: Changed calendar scope to read/write
 const scopes = [
   'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/drive.readonly'
@@ -69,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else if (collaborator) {
                 setUser(user);
                  // Try to get credential silently, might not always work
-                const credential = GoogleAuthProvider.credentialFromResult(await auth.getRedirectResult().catch(() => null));
+                const credential = GoogleAuthProvider.credentialFromResult(await getRedirectResult(auth).catch(() => null));
                 if (credential?.accessToken) {
                     setAccessToken(credential.accessToken);
                 }
@@ -126,29 +125,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-       if (result && result.user) {
-          const credential = GoogleAuthProvider.credentialFromResult(result);
-          if (credential?.accessToken) {
-              setAccessToken(credential.accessToken);
-          }
+      // The user will be redirected to the Google login page.
+      // The result is handled by onAuthStateChanged after the redirect.
+      await signInWithRedirect(auth, googleProvider);
 
-          const user = result.user;
-          router.push('/dashboard-v2');
-          
-          const collaborator = collaborators.find(c => c.email === user.email);
-          if (collaborator) {
-             addDocumentToCollection('audit_logs', {
-                eventType: 'login',
-                userId: collaborator.id3a,
-                userName: collaborator.name,
-                timestamp: new Date().toISOString(),
-                details: {
-                    message: `${collaborator.name} logged in.`,
-                }
-            });
-          }
-        }
     } catch (error: unknown) {
       let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
@@ -165,9 +145,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             variant: "destructive",
             duration: 10000,
       });
-    } finally {
-        setLoading(false);
+      setLoading(false);
     }
+    // No finally setLoading(false) here, as the page will redirect.
   };
 
   const signOut = async () => {
