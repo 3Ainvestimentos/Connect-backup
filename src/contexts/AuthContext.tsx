@@ -172,18 +172,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
       }
 
-      if (!isTestUser && !isSuper) {
+      const collaborator = collaborators.find(c => c.email === userEmail);
+      
+      if (!collaborator && !isSuper) {
         await firebaseSignOut(auth);
         toast({
             title: "Acesso Negado",
-            description: "Este e-mail não está na lista de usuários autorizados para teste.",
+            description: "Este e-mail não está na lista de colaboradores autorizados.",
             variant: "destructive"
         });
         setLoading(false);
         return;
       }
-      
-      const collaborator = collaborators.find(c => c.email === userEmail);
       
       await addDocumentToCollection('audit_logs', {
           eventType: 'login',
@@ -197,12 +197,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       router.push('/dashboard');
 
-    } catch (error) {
-      console.error("Error signing in with Google: ", error);
+    } catch (error: unknown) {
+      let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
+      if (error instanceof Error && 'code' in error) {
+          const firebaseError = error as { code: string; message: string };
+          console.error("Firebase Login Error Code:", firebaseError.code);
+          console.error("Firebase Login Error Message:", firebaseError.message);
+          description = `Detalhe do erro: ${firebaseError.message} (${firebaseError.code})`;
+      } else {
+           console.error("Error signing in with Google: ", error);
+      }
       toast({
             title: "Erro de Login",
-            description: "Ocorreu um problema durante o login. Por favor, tente novamente.",
-            variant: "destructive"
+            description: description,
+            variant: "destructive",
+            duration: 10000,
       });
       setLoading(false);
     }
