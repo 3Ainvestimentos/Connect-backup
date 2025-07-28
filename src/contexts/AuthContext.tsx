@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
