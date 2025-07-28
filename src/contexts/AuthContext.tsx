@@ -97,6 +97,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const getAccessToken = async (): Promise<string | null> => {
     if (auth.currentUser) {
         const result = await auth.currentUser.getIdTokenResult(true);
+        // The type for credential from result is not directly available, but we can construct it.
         const credential = GoogleAuthProvider.credentialFromResult({
             user: auth.currentUser,
             idToken: result.token,
@@ -117,15 +118,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        // For dynamic dev environments, don't use tenantId. Use it for prod and default firebase domain.
-        const isDevEnvironment = hostname.includes('cloudworkstations.dev') || hostname.includes('localhost');
-        if (isDevEnvironment) {
-            auth.tenantId = null;
-        }
-      }
-      
       googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
 
       const result = await signInWithPopup(auth, googleProvider);
