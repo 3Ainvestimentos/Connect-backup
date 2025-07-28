@@ -43,7 +43,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             ...definition,
             fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') as any })),
             routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(',') as any })) : [],
-            statuses: definition.statuses?.length ? definition.statuses : [{ id: 'pending', label: 'Pendente' }],
+            statuses: definition.statuses?.length ? definition.statuses.map(s => ({...s, action: s.action || undefined })) : [{ id: 'pending', label: 'Pendente', action: undefined }],
             slaRules: definition.slaRules || [],
             allowedUserIds: definition.allowedUserIds || ['all'],
         } : {
@@ -56,7 +56,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             slaRules: [],
             fields: [],
             routingRules: [],
-            statuses: [{ id: 'pending', label: 'Pendente' }],
+            statuses: [{ id: 'pending', label: 'Pendente', action: undefined }],
             allowedUserIds: ['all'],
         },
     });
@@ -69,6 +69,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
 
     const watchedFields = watch('fields');
     const watchAllowedUserIds = watch('allowedUserIds');
+    const watchedStatuses = watch('statuses');
 
     const uniqueCollaborators = React.useMemo(() => {
         const seen = new Set();
@@ -255,23 +256,65 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                 {errors.statuses?.root && <p className="text-sm text-destructive mt-1">{errors.statuses.root.message}</p>}
                                 <p className="text-xs text-muted-foreground">Defina as etapas do seu processo em ordem. A primeira etapa será o status inicial.</p>
                                 {statuses.map((status, index) => (
-                                    <div key={status.id} className="flex items-center gap-2 p-3 border rounded-lg bg-background">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 flex-grow">
-                                            <div>
-                                                <Label htmlFor={`statuses.${index}.label`}>Nome da Etapa (Ex: Em Análise)</Label>
-                                                <Input id={`statuses.${index}.label`} {...register(`statuses.${index}.label`)} />
-                                                {errors.statuses?.[index]?.label && <p className="text-sm text-destructive mt-1">{errors.statuses[index]?.label?.message}</p>}
+                                    <div key={status.id} className="p-3 border rounded-lg bg-background space-y-3">
+                                        <div className="flex items-start gap-2">
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 flex-grow">
+                                                <div>
+                                                    <Label htmlFor={`statuses.${index}.label`}>Nome da Etapa (Ex: Em Análise)</Label>
+                                                    <Input id={`statuses.${index}.label`} {...register(`statuses.${index}.label`)} />
+                                                    {errors.statuses?.[index]?.label && <p className="text-sm text-destructive mt-1">{errors.statuses[index]?.label?.message}</p>}
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor={`statuses.${index}.id`}>ID (Ex: em_analise)</Label>
+                                                    <Input id={`statuses.${index}.id`} {...register(`statuses.${index}.id`)} />
+                                                    {errors.statuses?.[index]?.id && <p className="text-sm text-destructive mt-1">{errors.statuses[index]?.id?.message}</p>}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <Label htmlFor={`statuses.${index}.id`}>ID (Ex: em_analise)</Label>
-                                                <Input id={`statuses.${index}.id`} {...register(`statuses.${index}.id`)} />
-                                                {errors.statuses?.[index]?.id && <p className="text-sm text-destructive mt-1">{errors.statuses[index]?.id?.message}</p>}
-                                            </div>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeStatus(index)} className="mt-auto shrink-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                         </div>
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeStatus(index)} className="mt-auto shrink-0"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                        <Separator/>
+                                        <div className='flex items-center gap-2'>
+                                            <Controller
+                                                name={`statuses.${index}.action`}
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        checked={!!field.value}
+                                                        onCheckedChange={(checked) => field.onChange(checked ? { type: 'approval', label: '' } : undefined)}
+                                                        id={`action-switch-${index}`}
+                                                    />
+                                                )}
+                                            />
+                                            <Label htmlFor={`action-switch-${index}`}>Requer Ação?</Label>
+                                        </div>
+                                        {watchedStatuses[index]?.action && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8 pt-2">
+                                                 <div>
+                                                    <Label htmlFor={`statuses.${index}.action.type`}>Tipo de Ação</Label>
+                                                    <Controller
+                                                        name={`statuses.${index}.action.type`}
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="approval">Aprovação (Aprovar/Reprovar)</SelectItem>
+                                                                    <SelectItem value="acknowledgement">Ciência (Marcar como Ciente)</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        )}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Label htmlFor={`statuses.${index}.action.label`}>Texto do Botão de Solicitação</Label>
+                                                    <Input {...register(`statuses.${index}.action.label`)} placeholder="Ex: Solicitar Aprovação"/>
+                                                    {errors.statuses?.[index]?.action?.label && <p className="text-sm text-destructive mt-1">{errors.statuses?.[index]?.action?.label?.message}</p>}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
-                                <Button type="button" variant="outline" onClick={() => appendStatus({ id: `etapa_${statuses.length + 1}`, label: '' })}>
+                                <Button type="button" variant="outline" onClick={() => appendStatus({ id: `etapa_${statuses.length + 1}`, label: '', action: undefined })}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Etapa
                                 </Button>
                             </div>
@@ -414,3 +457,4 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         </Dialog>
     );
 }
+
