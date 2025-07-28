@@ -1,8 +1,6 @@
-
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useGapiClient } from '@/hooks/useGapiClient';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,14 +19,13 @@ interface CalendarEvent {
 }
 
 export default function GoogleCalendar() {
-  const { isClientReady, error: gapiError, getToken } = useGapiClient();
-  const { user } = useAuth();
+  const { user, getAccessToken } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const listUpcomingEvents = useCallback(async () => {
-    if (!isClientReady || !user) {
+    if (!user || !window.gapi) {
       setIsLoading(false);
       return;
     }
@@ -37,8 +34,12 @@ export default function GoogleCalendar() {
     setError(null);
     
     try {
-      const tokenResponse = await getToken();
-      window.gapi.client.setToken(tokenResponse);
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        throw new Error("Não foi possível obter o token de acesso.");
+      }
+
+      window.gapi.client.setToken({ access_token: accessToken });
       
       const response = await window.gapi.client.calendar.events.list({
         'calendarId': 'primary',
@@ -63,15 +64,24 @@ export default function GoogleCalendar() {
     } finally {
       setIsLoading(false);
     }
-  }, [isClientReady, getToken, user]);
+  }, [user, getAccessToken]);
 
   useEffect(() => {
-    if(isClientReady && user) {
-        listUpcomingEvents();
+    if (window.gapi) {
+        window.gapi.load('client', () => {
+            window.gapi.client.init({
+                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+            }).then(() => {
+                if (user) {
+                    listUpcomingEvents();
+                }
+            });
+        });
     } else if (!user) {
         setIsLoading(false);
     }
-  }, [isClientReady, user, listUpcomingEvents]);
+  }, [user, listUpcomingEvents]);
 
 
   if (isLoading) {
@@ -87,7 +97,7 @@ export default function GoogleCalendar() {
     );
   }
   
-  if (error || gapiError) {
+  if (error) {
       return (
          <Card>
             <CardHeader>
@@ -96,7 +106,7 @@ export default function GoogleCalendar() {
             <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar eventos</p>
-                <p className="text-xs">{error || gapiError}</p>
+                <p className="text-xs">{error}</p>
                 <Button variant="link" size="sm" onClick={listUpcomingEvents} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>

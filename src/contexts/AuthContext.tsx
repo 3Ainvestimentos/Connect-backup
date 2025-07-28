@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import type { User } from 'firebase/auth';
-import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
+import { getFirebaseApp, googleProvider } from '@/lib/firebase';
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
@@ -13,13 +13,20 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
-// Define os escopos de API que a aplicação precisa.
 const scopes = [
-  'https://www.googleapis.com/auth/calendar.events.readonly',
+  'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/drive.readonly'
 ];
 scopes.forEach(scope => googleProvider.addScope(scope));
 
+// Adiciona o script GAPI ao cabeçalho do documento para que esteja disponível globalmente
+const gapiScript = typeof window !== 'undefined' ? document.createElement('script') : null;
+if (gapiScript) {
+    gapiScript.src = 'https://apis.google.com/js/api.js';
+    gapiScript.async = true;
+    gapiScript.defer = true;
+    document.head.appendChild(gapiScript);
+}
 
 interface AuthContextType {
   user: User | null;
@@ -29,6 +36,7 @@ interface AuthContextType {
   permissions: CollaboratorPermissions;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  getAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -50,12 +58,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
             const collaborator = collaborators.find(c => c.email === user.email);
-            if (!collaborator && collaborators.length > 0) { // Check if collaborators are loaded
+            if (!collaborator && collaborators.length > 0) { 
                 await firebaseSignOut(auth);
                 toast({
                     title: "Acesso Negado",
@@ -67,7 +75,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else if (collaborator) {
                 setUser(user);
             } else if (collaborators.length === 0 && !loadingCollaborators) {
-                 // Case where collaborators list is empty, but not loading anymore. Deny access.
                  await firebaseSignOut(auth);
                  toast({
                     title: "Erro de Configuração",
@@ -112,6 +119,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
       }
   }, [user, collaborators, loadingCollaborators]);
+
+  const getAccessToken = useCallback(async (): Promise<string | null> => {
+    if (!auth.currentUser) return null;
+    try {
+        const idTokenResult = await auth.currentUser.getIdTokenResult(true); // Force refresh
+        return idTokenResult.token;
+    } catch(error) {
+        console.error("Erro ao obter o token de acesso:", error);
+        // Tenta reautenticar para obter a credencial
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            const credentialFromResult = GoogleAuthProvider.credentialFromResult(result);
+            return credentialFromResult?.accessToken || null;
+        } catch (reauthError) {
+             console.error("Erro na tentativa de reautenticação:", reauthError);
+             return null;
+        }
+    }
+  }, [auth]);
   
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -119,7 +145,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithPopup(auth, googleProvider);
        if (result && result.user) {
           const user = result.user;
-          // Defer collaborator check to onAuthStateChanged
           router.push('/dashboard-v2');
           
           const collaborator = collaborators.find(c => c.email === user.email);
@@ -173,8 +198,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isSuperAdmin,
       permissions,
       signInWithGoogle,
-      signOut
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, signInWithGoogle, signOut]);
+      signOut,
+      getAccessToken,
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, signInWithGoogle, signOut, getAccessToken]);
 
   return (
     <AuthContext.Provider value={value}>
