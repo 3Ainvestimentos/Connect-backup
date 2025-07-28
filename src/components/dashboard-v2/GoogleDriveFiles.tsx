@@ -77,7 +77,7 @@ export default function GoogleDriveFiles() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Arquivos Recentes</CardTitle>
+          <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -90,7 +90,7 @@ export default function GoogleDriveFiles() {
       return (
          <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Arquivos Recentes</CardTitle>
+                <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
                 <AlertCircle className="h-8 w-8 mb-2" />
@@ -105,7 +105,7 @@ export default function GoogleDriveFiles() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Arquivos Recentes</CardTitle>
+        <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
       </CardHeader>
       <CardContent>
         {files.length > 0 ? (
