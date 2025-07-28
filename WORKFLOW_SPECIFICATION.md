@@ -66,6 +66,7 @@ interface WorkflowStatusDefinition {
   action?: {     // (Opcional) Define uma ação que precisa ser tomada nesta etapa.
     type: 'approval' | 'acknowledgement'; // 'approval' (Aprovar/Reprovar) ou 'acknowledgement' (Ciente).
     label: string; // Texto do botão para solicitar a ação. Ex: "Solicitar Aprovação da Diretoria".
+    approverIds?: string[]; // (Opcional) Lista de IDs de colaboradores pré-definidos para a ação.
   }
 }
 ```
@@ -185,7 +186,8 @@ Este exemplo pode ser usado como um modelo para criar um arquivo `reembolso.json
       "label": "Aguardando Aprovação da Diretoria",
       "action": {
         "type": "approval",
-        "label": "Solicitar Aprovação da Diretoria"
+        "label": "Solicitar Aprovação da Diretoria",
+        "approverIds": ["diretor1@3a.com", "diretor2@3a.com"]
       }
     },
     {
