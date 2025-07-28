@@ -146,12 +146,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      const domain = userEmail.split('@')[1];
-      if (!ALLOWED_DOMAINS.includes(domain)) {
+      const isTestUser = ALLOWED_TEST_USERS.includes(userEmail);
+      const isSuper = SUPER_ADMIN_EMAILS.includes(userEmail);
+
+      if (!isTestUser && !isSuper) {
         await firebaseSignOut(auth);
         toast({
             title: "Acesso Negado",
-            description: "Este e-mail não pertence a um domínio autorizado para acessar esta aplicação.",
+            description: "Este e-mail não está na lista de usuários autorizados para teste.",
             variant: "destructive"
         });
         setLoading(false);
@@ -160,24 +162,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const collaborator = collaborators.find(c => c.email === userEmail);
       if (!collaborator) {
-          await firebaseSignOut(auth);
-          toast({
-              title: "Usuário Não Autorizado",
-              description: "Seu e-mail não está na lista de colaboradores autorizados. Por favor, contate o administrador.",
-              variant: "destructive",
-              duration: 10000,
-          });
-          setLoading(false);
-          return;
+          // Allow login for test users even if not in the main collaborator list, but log a warning.
+          console.warn(`Usuário de teste '${userEmail}' logou, mas não foi encontrado na lista de colaboradores. Funções podem ser limitadas.`);
       }
 
       await addDocumentToCollection('audit_logs', {
           eventType: 'login',
-          userId: collaborator.id3a,
-          userName: collaborator.name,
+          userId: collaborator?.id3a || userEmail,
+          userName: collaborator?.name || result.user.displayName || 'Usuário de Teste',
           timestamp: new Date().toISOString(),
           details: {
-              message: `${collaborator.name} logged in.`,
+              message: `${collaborator?.name || result.user.displayName} logged in.`,
           }
       });
       
