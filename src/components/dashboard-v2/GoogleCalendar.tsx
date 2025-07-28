@@ -18,6 +18,12 @@ import { toast } from '@/hooks/use-toast';
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+declare global {
+  interface Window {
+    gapi: any;
+  }
+}
+
 const eventSchema = z.object({
   summary: z.string().min(1, 'O título é obrigatório.'),
   description: z.string().optional(),
@@ -51,33 +57,25 @@ export default function GoogleCalendar() {
   });
 
   const loadGapiClient = useCallback(() => {
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
+    const checkGapi = () => {
+      if (window.gapi && window.gapi.load) {
         window.gapi.load('client', async () => {
-            try {
-                await window.gapi.client.init({
-                    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-                });
-                setIsClientLoaded(true);
-            } catch (err) {
-                console.error("Error initializing gapi client:", err);
-                toast({ title: 'Erro de API', description: 'Não foi possível carregar a API do Google Calendar.', variant: 'destructive' });
-            }
+          try {
+            await window.gapi.client.init({
+              apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+              discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+            });
+            setIsClientLoaded(true);
+          } catch (err) {
+            console.error("Error initializing gapi client:", err);
+            toast({ title: 'Erro de API', description: 'Não foi possível carregar a API do Google Calendar.', variant: 'destructive' });
+          }
         });
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      // Clean up the script when the component unmounts
-      const oldScript = document.querySelector('script[src="https://apis.google.com/js/api.js"]');
-      if (oldScript) {
-        document.body.removeChild(oldScript);
+      } else {
+        setTimeout(checkGapi, 100); // Check again shortly
       }
     };
+    checkGapi();
   }, []);
 
   useEffect(() => {

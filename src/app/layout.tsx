@@ -52,6 +52,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className={cn("font-sans antialiased", fontRoboto.variable, fontArchivo.variable)}>
+        <Script src="https://apis.google.com/js/api.js" strategy="afterInteractive" />
         <ThemeProvider>
           <ReactQueryProvider>
             <CollaboratorsProvider>
