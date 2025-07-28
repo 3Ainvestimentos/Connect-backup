@@ -60,7 +60,7 @@ export default function GoogleCalendar() {
       console.error("Erro ao buscar eventos do calendário:", err);
       let errorMessage = "Não foi possível carregar os eventos do calendário.";
       if (err.result?.error?.message) {
-        errorMessage = `Erro da API: ${err.result.error.message}`;
+        errorMessage = `Erro da API: ${err.result.error.message}. Tente atualizar a página para renovar a permissão.`;
       } else if (err.message) {
         errorMessage = err.message;
       }
@@ -76,22 +76,28 @@ export default function GoogleCalendar() {
         setIsLoading(false);
         return;
     }
+    
+    const initializeGapiClient = () => {
+      window.gapi.client.init({
+          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+      }).then(() => {
+          if (user && accessToken) {
+              listUpcomingEvents();
+          } else if (!user) {
+            setIsLoading(false);
+          }
+      }).catch((e: any) => {
+           setError("Falha ao inicializar o cliente GAPI.");
+           setIsLoading(false);
+      });
+    }
 
-    window.gapi.load('client', () => {
-        window.gapi.client.init({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-        }).then(() => {
-            if (user && accessToken) {
-                listUpcomingEvents();
-            } else if (!user) {
-              setIsLoading(false);
-            }
-        }).catch((e: any) => {
-             setError("Falha ao inicializar o cliente GAPI.");
-             setIsLoading(false);
-        });
-    });
+    if (window.gapi.client) {
+      initializeGapiClient();
+    } else {
+      window.gapi.load('client', initializeGapiClient);
+    }
   }, [user, accessToken, listUpcomingEvents]);
 
 
@@ -99,7 +105,7 @@ export default function GoogleCalendar() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><Calendar className="h-5 w-5" /> Google Calendar</CardTitle>
+          <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -112,7 +118,7 @@ export default function GoogleCalendar() {
       return (
          <Card>
             <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><Calendar className="h-5 w-5" /> Google Calendar</CardTitle>
+                <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
                 <AlertCircle className="h-8 w-8 mb-2" />
@@ -127,7 +133,7 @@ export default function GoogleCalendar() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><Calendar className="h-5 w-5" /> Google Calendar</CardTitle>
+        <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
       </CardHeader>
       <CardContent>
         {events.length > 0 ? (

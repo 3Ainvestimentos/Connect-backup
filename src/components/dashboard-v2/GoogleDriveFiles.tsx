@@ -56,7 +56,7 @@ export default function GoogleDriveFiles() {
       console.error("Erro ao buscar arquivos do Drive:", err);
       let errorMessage = "Não foi possível carregar os arquivos do Drive.";
       if (err.result?.error?.message) {
-        errorMessage = `Erro da API: ${err.result.error.message}`;
+        errorMessage = `Erro da API: ${err.result.error.message}. Tente atualizar a página para renovar a permissão.`;
       } else if(err.message) {
         errorMessage = err.message;
       }
@@ -72,8 +72,8 @@ export default function GoogleDriveFiles() {
         setIsLoading(false);
         return;
     }
-
-    window.gapi.load('client', () => {
+    
+    const initializeGapiClient = () => {
         window.gapi.client.init({
             apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
@@ -87,7 +87,13 @@ export default function GoogleDriveFiles() {
             setError("Falha ao inicializar o cliente GAPI.");
             setIsLoading(false);
         });
-    });
+    }
+
+    if (window.gapi.client) {
+        initializeGapiClient();
+    } else {
+        window.gapi.load('client', initializeGapiClient);
+    }
   }, [user, accessToken, listRecentFiles]);
 
 
@@ -95,7 +101,7 @@ export default function GoogleDriveFiles() {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
+          <CardTitle className="font-headline text-foreground text-xl">Google Drive</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
             {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
@@ -108,7 +114,7 @@ export default function GoogleDriveFiles() {
       return (
          <Card>
             <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
+                <CardTitle className="font-headline text-foreground text-xl">Google Drive</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
                 <AlertCircle className="h-8 w-8 mb-2" />
@@ -123,7 +129,7 @@ export default function GoogleDriveFiles() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2"><HardDrive className="h-5 w-5" /> Google Drive</CardTitle>
+        <CardTitle className="font-headline text-foreground text-xl">Google Drive</CardTitle>
       </CardHeader>
       <CardContent>
         {files.length > 0 ? (
