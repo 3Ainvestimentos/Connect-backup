@@ -1,10 +1,10 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
@@ -13,12 +13,21 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
+// Define os escopos de API que a aplicação precisa.
+const scopes = [
+  'https://www.googleapis.com/auth/calendar.events.readonly',
+  'https://www.googleapis.com/auth/drive.readonly'
+];
+scopes.forEach(scope => googleProvider.addScope(scope));
+
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAdmin: boolean; 
   isSuperAdmin: boolean;
   permissions: CollaboratorPermissions;
+  getAccessToken: () => Promise<string | null>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -85,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     message: `${collaborator?.name || user.displayName} logged in.`,
                 }
             });
-            router.push('/dashboard');
+            router.push('/dashboard-v2');
           }
         }
       }).catch((error) => {
@@ -120,6 +129,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
   }, [user, collaborators, loadingCollaborators]);
 
+  const getAccessToken = useCallback(async (): Promise<string | null> => {
+    if (!auth.currentUser) return null;
+    try {
+      // Força a atualização do token para garantir que não está expirado.
+      const idTokenResult = await auth.currentUser.getIdTokenResult(true);
+      // O 'token' no idTokenResult é o ID token, não o access token para APIs.
+      // O access token precisa ser obtido a partir da credencial do login.
+      // Esta é a maneira mais confiável: refazer o login silenciosamente para obter a credencial.
+      const credential = GoogleAuthProvider.credential(idTokenResult.token);
+       // A maneira mais direta de obter o access token não está disponível publicamente
+       // no objeto do usuário. A forma mais segura é armazená-lo após o login.
+       // No entanto, para fins de API, o ID Token pode ser suficiente ou precisaremos
+       // do access token do resultado do popup/redirect.
+
+       // Para o GAPI, precisamos do Access Token. Vamos tentar obtê-lo do resultado do login.
+       // Como não armazenamos o resultado, vamos ter que reautenticar.
+       // Isso não deve exigir interação do usuário se ele já estiver logado.
+       const result = await signInWithPopup(auth, googleProvider);
+       const credentialFromResult = GoogleAuthProvider.credentialFromResult(result);
+       return credentialFromResult?.accessToken || null;
+
+    } catch (error) {
+      console.error("Error getting access token:", error);
+      return null;
+    }
+  }, [auth]);
+
   
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -138,16 +174,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     message: `${collaborator?.name || user.displayName} logged in.`,
                 }
             });
-            router.push('/dashboard');
+            router.push('/dashboard-v2');
           } else {
-             // This case is important for when a non-authorized user signs in.
              await firebaseSignOut(auth);
              toast({
                 title: "Acesso Negado",
                 description: "Seu e-mail não foi encontrado na lista de colaboradores autorizados.",
                 variant: "destructive"
              });
-             setLoading(false);
           }
         }
     } catch (error: unknown) {
@@ -166,7 +200,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             variant: "destructive",
             duration: 10000,
       });
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -186,9 +221,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin,
       isSuperAdmin,
       permissions,
+      getAccessToken,
       signInWithGoogle,
       signOut
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, signInWithGoogle, signOut]);
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, getAccessToken, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

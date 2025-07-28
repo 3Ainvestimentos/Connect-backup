@@ -1,3 +1,4 @@
+
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -21,7 +22,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
-import InternalCalendar from '@/components/dashboard-v2/InternalCalendar';
+import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
+import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -29,7 +31,6 @@ export default function DashboardV2Page() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [greeting, setGreeting] = useState('');
 
-  // Get global data from contexts
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
   const { messages, markMessageAsRead, getMessageRecipients, markMessageAsDeleted } = useMessages();
@@ -56,7 +57,6 @@ export default function DashboardV2Page() {
     if (!greeting || !user?.displayName) return "Bem-vindo(a)!";
     return `${greeting}, ${user.displayName.split(' ')[0]}!`;
   }, [greeting, user]);
-
 
   const userMessages = useMemo(() => {
     if (!currentUserCollab) return [];
@@ -256,7 +256,8 @@ export default function DashboardV2Page() {
           </div>
             
           <div className="lg:col-span-1 flex flex-col gap-6">
-             <InternalCalendar />
+             <GoogleCalendar />
+             <GoogleDriveFiles />
           </div>
         </section>
       </div>
