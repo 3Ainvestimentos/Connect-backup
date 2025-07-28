@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
@@ -34,11 +34,12 @@ const ALLOWED_TEST_USERS = [
   'dalcion.franco@3ainvestimentos.com.br',
   'stefania.otoni@3ainvestimentos.com.br',
   'pablo.costa@3ainvestimentos.com.br',
-  'pedro.rosa@3ainvestimentos.com.br' // Also include super admins here
+  'pedro.rosa@3ainvestimentos.com.br'
 ];
 const ALLOWED_DOMAINS = ['3ainvestimentos.com.br', '3ariva.com.br'];
 
-
+// Add Google Calendar scopes
+googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
 
 const defaultPermissions: CollaboratorPermissions = {
     canManageWorkflows: false,
@@ -50,9 +51,10 @@ const defaultPermissions: CollaboratorPermissions = {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  isAdmin: boolean; // General flag: true if any permission is granted or is super admin
+  isAdmin: boolean; 
   isSuperAdmin: boolean;
   permissions: CollaboratorPermissions;
+  getAccessToken: () => Promise<string | null>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -62,10 +64,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
   const router = useRouter();
   const { collaborators, loading: loadingCollaborators } = useCollaborators();
   
-  const app = getFirebaseApp(); // Initialize Firebase
+  const app = getFirebaseApp(); 
   const auth = getAuth(app);
   
   const [permissions, setPermissions] = useState<CollaboratorPermissions>(defaultPermissions);
@@ -77,6 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       if (!user) {
         setLoading(false);
+        setAccessToken(null);
         setPermissions(defaultPermissions);
         setIsSuperAdmin(false);
         setIsAdmin(false);
@@ -95,7 +99,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           const userPermissions = currentUserCollab?.permissions || defaultPermissions;
           
           if (isSuper) {
-              // Super admin has all permissions
               const allPermissions: CollaboratorPermissions = {
                   canManageWorkflows: true,
                   canManageRequests: true,
@@ -106,22 +109,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setIsAdmin(true);
           } else {
               setPermissions({ ...defaultPermissions, ...userPermissions });
-              // User is an admin if they have at least one specific permission
               const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
               setIsAdmin(hasAnyPermission);
           }
           
-          setLoading(false); // Stop loading only after all checks are done
+          setLoading(false);
       } else if (!user && !loading) {
-          // If there's no user and auth is not loading anymore, we're done.
           setLoading(false);
       }
   }, [user, collaborators, loadingCollaborators, loading]);
 
+  const getAccessToken = async (): Promise<string | null> => {
+    if (user) {
+        const token = await user.getIdTokenResult();
+        // This is Firebase ID token, not OAuth access token.
+        // We need to handle OAuth token separately.
+        // For simplicity in this context, we rely on the user object being present
+        // and gapi will handle the token.
+        return accessToken;
+    }
+    return null;
+  };
+  
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        setAccessToken(credential.accessToken);
+      }
+      
       const userEmail = result.user.email;
 
       if (!userEmail) {
@@ -147,20 +165,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      // *** TEMPORARY ACCESS SUSPENSION LOGIC ***
-      // Only allow specified test users and Super Admins to log in.
-      if (!ALLOWED_TEST_USERS.includes(userEmail)) {
-        await firebaseSignOut(auth);
-        toast({
-          title: "Acesso em Fase de Testes",
-          description: "O acesso à plataforma está limitado a um grupo de testes. Caso acredite que isso seja um erro, contate o administrador.",
-          variant: "destructive",
-          duration: 10000,
-        });
-        setLoading(false);
-        return;
-      }
-
       const collaborator = collaborators.find(c => c.email === userEmail);
       if (!collaborator) {
           await firebaseSignOut(auth);
@@ -174,7 +178,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
       }
 
-      // Log the login event for auditing purposes
       await addDocumentToCollection('audit_logs', {
           eventType: 'login',
           userId: collaborator.id3a,
@@ -201,6 +204,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
+      setAccessToken(null);
       router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
@@ -214,9 +218,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin,
       isSuperAdmin,
       permissions,
+      getAccessToken,
       signInWithGoogle,
       signOut
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions]);
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, accessToken]);
 
   return (
     <AuthContext.Provider value={value}>

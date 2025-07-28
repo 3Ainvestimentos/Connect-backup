@@ -17,6 +17,8 @@ import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
 import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
 import { QuickLinksProvider } from '@/contexts/QuickLinksContext';
 import { Roboto, Archivo } from 'next/font/google';
+import Script from 'next/script';
+
 
 const fontRoboto = Roboto({
   subsets: ['latin'],
