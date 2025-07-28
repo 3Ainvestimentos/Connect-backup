@@ -43,16 +43,18 @@ export const formFieldSchema = z.object({
   options: z.union([z.string(), z.array(z.string())]).optional(),
 });
 
-export interface RoutingRule {
-  field: string; // id of the field to check
-  value: string; // value to match
-  notify: string[]; // array of emails to notify
-}
 export const routingRuleSchema = z.object({
   field: z.string().min(1, "Campo é obrigatório."),
   value: z.string().min(1, "Valor é obrigatório."),
-  notify: z.array(z.string().email("Um ou mais e-mails de notificação são inválidos.")).min(1, "Pelo menos um e-mail é obrigatório para notificação."),
+  notify: z.union([z.string(), z.array(z.string().email())])
+    .transform(val => {
+        if (Array.isArray(val)) return val;
+        return val.split(',').map(s => s.trim()).filter(Boolean);
+    })
+    .refine(emails => emails.length > 0, { message: "Pelo menos um e-mail é obrigatório para notificação." })
+    .refine(emails => emails.every(email => z.string().email().safeParse(email).success), { message: "Um ou mais e-mails de notificação são inválidos." }),
 });
+export type RoutingRule = z.infer<typeof routingRuleSchema>;
 
 export const slaRuleSchema = z.object({
   field: z.string().min(1, "O campo para a regra de SLA é obrigatório."),

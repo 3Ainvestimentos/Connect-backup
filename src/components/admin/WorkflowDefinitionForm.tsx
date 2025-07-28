@@ -44,7 +44,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         defaultValues: definition ? {
             ...definition,
             fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') as any })),
-            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(', ') as any })) : [],
+            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(', ') })) : [],
             statuses: definition.statuses?.length ? definition.statuses.map(s => ({...s, action: s.action || undefined })) : [{ id: 'pending', label: 'Pendente', action: undefined }],
             slaRules: definition.slaRules || [],
             allowedUserIds: definition.allowedUserIds || ['all'],
@@ -91,10 +91,6 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                 ...f,
                 options: f.type === 'select' ? (f.options as unknown as string)?.split(',').map(opt => opt.trim()).filter(Boolean) : [],
             })),
-            routingRules: data.routingRules.map(r => ({
-                ...r,
-                notify: (r.notify as unknown as string).split(',').map(s => s.trim()).filter(Boolean)
-            }))
         };
 
         try {
@@ -443,7 +439,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                         </div>
                                     </div>
                                 ))}
-                                <Button type="button" variant="outline" onClick={() => appendRule({ field: '', value: '', notify: '' as any })}>
+                                <Button type="button" variant="outline" onClick={() => appendRule({ field: '', value: '', notify: '' })}>
                                     <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Regra
                                 </Button>
                             </div>
@@ -488,4 +484,3 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         </Dialog>
     );
 }
-
