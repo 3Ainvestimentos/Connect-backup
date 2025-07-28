@@ -4,14 +4,14 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
 import type { CollaboratorPermissions } from './CollaboratorsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 
-const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
+const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
 // Add Google Calendar & Drive scopes
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
@@ -52,18 +52,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      if (!user) {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // Check if this is a redirect from Google login
+            const credential = GoogleAuthProvider.credentialFromError(null);
+            if (credential) {
+                // This case handles the redirect result.
+                // We don't need to do anything here because the onAuthStateChanged
+                // listener already gives us the signed-in user object.
+            }
+
+            const collaborator = collaborators.find(c => c.email === user.email);
+            if (!collaborator) {
+                await firebaseSignOut(auth);
+                toast({
+                    title: "Acesso Negado",
+                    description: "Este e-mail não está na lista de colaboradores autorizados.",
+                    variant: "destructive"
+                });
+                setUser(null);
+                router.push('/login');
+            } else {
+                setUser(user);
+                 await addDocumentToCollection('audit_logs', {
+                  eventType: 'login',
+                  userId: collaborator?.id3a || user.email,
+                  userName: collaborator?.name || user.displayName || 'Usuário',
+                  timestamp: new Date().toISOString(),
+                  details: {
+                      message: `${collaborator?.name || user.displayName} logged in.`,
+                  }
+              });
+            }
+        } else {
+            setUser(null);
+        }
         setLoading(false);
-        setPermissions(defaultPermissions);
-        setIsSuperAdmin(false);
-        setIsAdmin(false);
-      }
     });
 
     return () => unsubscribe();
-  }, [auth]);
+}, [auth, router, collaborators]);
+
 
   useEffect(() => {
       if (user && !loadingCollaborators) {
@@ -88,9 +117,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setIsAdmin(hasAnyPermission);
           }
           
-          setLoading(false);
       } else if (!user && !loading) {
-          setLoading(false);
+          // Do nothing, let the onAuthStateChanged handle it
       }
   }, [user, collaborators, loadingCollaborators, loading]);
 
@@ -99,11 +127,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!currentUser) return null;
 
     try {
-        const idTokenResult = await currentUser.getIdTokenResult(false); // false = don't force refresh
-        const credential = GoogleAuthProvider.credentialFromResult({
-            user: currentUser,
-            idToken: idTokenResult.token,
-        });
+        const idTokenResult = await currentUser.getIdTokenResult(true); // force refresh
+        const credential = GoogleAuthProvider.credential(idTokenResult.token);
         return credential?.accessToken || null;
     } catch(error) {
         console.error("Error getting access token:", error);
@@ -115,45 +140,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
-      
-      const result = await signInWithPopup(auth, googleProvider);
-      
-      const userEmail = result.user.email;
-      if (!userEmail) {
-        await firebaseSignOut(auth);
-        toast({
-            title: "Erro de Login",
-            description: "Não foi possível verificar seu e-mail. Tente novamente.",
-            variant: "destructive"
-        });
-        setLoading(false);
-        return;
-      }
-      
-      const collaborator = collaborators.find(c => c.email === userEmail);
-      if (!collaborator) {
-        await firebaseSignOut(auth);
-        toast({
-            title: "Acesso Negado",
-            description: "Este e-mail não está na lista de colaboradores autorizados.",
-            variant: "destructive"
-        });
-        setLoading(false);
-        return;
-      }
-      
-      await addDocumentToCollection('audit_logs', {
-          eventType: 'login',
-          userId: collaborator?.id3a || userEmail,
-          userName: collaborator?.name || result.user.displayName || 'Usuário',
-          timestamp: new Date().toISOString(),
-          details: {
-              message: `${collaborator?.name || result.user.displayName} logged in.`,
-          }
-      });
-      
-      router.push('/dashboard');
-
+      await signInWithRedirect(auth, googleProvider);
+      // The rest of the logic (redirecting, logging audit) is handled
+      // by the onAuthStateChanged listener to ensure it runs after the redirect.
     } catch (error: unknown) {
       let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
