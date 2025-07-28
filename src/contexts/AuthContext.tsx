@@ -12,6 +12,11 @@ import type { CollaboratorPermissions } from './CollaboratorsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
+
+// This flag can be controlled by an environment variable in a real app
+const MAINTENANCE_MODE = false;
+
+// List of users who can access the app during maintenance mode
 const ALLOWED_TEST_USERS = [
   'alice.passos@3ainvestimentos.com.br',
   'anajulia.couto@3ariva.com.br',
@@ -36,11 +41,10 @@ const ALLOWED_TEST_USERS = [
   'pablo.costa@3ainvestimentos.com.br',
   'pedro.rosa@3ainvestimentos.com.br'
 ];
-// This flag can be controlled by an environment variable in a real app
-const MAINTENANCE_MODE = false;
+
 
 // Add Google Calendar & Drive scopes
-googleProvider.addScope('https://www.googleapis.com/auth/calendar.events.readonly');
+googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
 googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
 
@@ -80,11 +84,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
-    // Dynamically set auth domain for development environments
     if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         if (hostname.includes('cloudworkstations.dev') || hostname.includes('localhost')) {
-            auth.tenantId = null; // Use default tenant for dev environments
+            auth.tenantId = null;
         }
     }
 
@@ -132,7 +135,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, collaborators, loadingCollaborators, loading]);
 
   const getAccessToken = async (): Promise<string | null> => {
-    // This function now explicitly returns the stored OAuth access token.
     return accessToken;
   };
   
@@ -159,13 +161,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const isSuper = SUPER_ADMIN_EMAILS.includes(userEmail);
-      const isTestUser = ALLOWED_TEST_USERS.includes(userEmail);
       
-      if (MAINTENANCE_MODE && !isSuper) {
+      if (MAINTENANCE_MODE && !isSuper && !ALLOWED_TEST_USERS.includes(userEmail)) {
           await firebaseSignOut(auth);
           toast({
               title: "Acesso Temporariamente Suspenso",
-              description: "O acesso à plataforma está em manutenção. Apenas administradores podem entrar no momento.",
+              description: "O acesso à plataforma está em manutenção.",
               variant: "destructive"
           });
           setLoading(false);
@@ -188,7 +189,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await addDocumentToCollection('audit_logs', {
           eventType: 'login',
           userId: collaborator?.id3a || userEmail,
-          userName: collaborator?.name || result.user.displayName || 'Usuário de Teste',
+          userName: collaborator?.name || result.user.displayName || 'Usuário Super Admin',
           timestamp: new Date().toISOString(),
           details: {
               message: `${collaborator?.name || result.user.displayName} logged in.`,
