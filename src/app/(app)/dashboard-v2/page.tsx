@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  MessageSquare, Link as LinkIcon, Trash2, ExternalLink
+  MessageSquare, Link as LinkIcon, Trash2
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -230,7 +230,6 @@ export default function DashboardV2Page() {
           </div>
             
           <div className="lg:col-span-1 flex flex-col gap-6">
-             <GoogleCalendar />
               {quickLinks.length > 0 && (
                 <Card className="shadow-sm">
                     <CardHeader>
@@ -244,7 +243,7 @@ export default function DashboardV2Page() {
                              key={link.id} 
                              target="_blank" 
                              rel="noopener noreferrer" 
-                             className="relative flex items-center justify-center p-4 rounded-lg transition-colors hover:bg-muted aspect-square flex-col gap-2"
+                             className="relative flex items-center justify-center p-4 rounded-lg transition-colors aspect-square flex-col gap-2"
                              title={link.name || 'Link Rápido'}
                            >
                               <Image
@@ -259,6 +258,7 @@ export default function DashboardV2Page() {
                     </CardContent>
                 </Card>
               )}
+             <GoogleCalendar />
           </div>
         </section>
       </div>
@@ -277,7 +277,7 @@ export default function DashboardV2Page() {
                     <Image src={selectedMessage.mediaUrl} alt="Mídia da mensagem" width={500} height={300} className="rounded-md object-cover w-full" />
                   </div>
                  )}
-                 {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>))}
+                 {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last-mb-0">{line || '\u00A0'}</p>))}
                  {selectedMessage.link && (
                     <div className="mt-4">
                        <Button variant="outline" asChild>

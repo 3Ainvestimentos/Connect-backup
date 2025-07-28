@@ -207,7 +207,7 @@ export default function GoogleCalendar() {
     <Card className="shadow-sm">
       <CardHeader>
         <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-          Agenda do Google
+          Google Calendar
         </CardTitle>
       </CardHeader>
       <CardContent>

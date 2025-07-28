@@ -103,7 +103,7 @@ export default function GoogleDriveFiles() {
     <Card className="shadow-sm">
       <CardHeader>
         <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-            <HardDrive className="h-5 w-5" /> Acesso Rápido ao Drive
+            <HardDrive className="h-5 w-5" /> Google Drive
         </CardTitle>
       </CardHeader>
       <CardContent className="min-h-[250px]">
