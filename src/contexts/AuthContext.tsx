@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
@@ -54,14 +54,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
-            // Check if this is a redirect from Google login
-            const credential = GoogleAuthProvider.credentialFromError(null);
-            if (credential) {
-                // This case handles the redirect result.
-                // We don't need to do anything here because the onAuthStateChanged
-                // listener already gives us the signed-in user object.
-            }
-
             const collaborator = collaborators.find(c => c.email === user.email);
             if (!collaborator) {
                 await firebaseSignOut(auth);
@@ -139,10 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
-      await signInWithRedirect(auth, googleProvider);
-      // The rest of the logic (redirecting, logging audit) is handled
-      // by the onAuthStateChanged listener to ensure it runs after the redirect.
+      await signInWithPopup(auth, googleProvider);
     } catch (error: unknown) {
       let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
