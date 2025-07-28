@@ -51,29 +51,37 @@ export default function GoogleCalendar() {
   });
 
   const loadGapiClient = useCallback(() => {
-    if (window.gapi) {
-      window.gapi.load('client', () => {
-        window.gapi.client.init({
-          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-        }).then(() => {
-          setIsClientLoaded(true);
-        }).catch(err => console.error("Error initializing gapi client:", err));
-      });
-    }
-  }, []);
-
-  useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://apis.google.com/js/api.js';
     script.async = true;
     script.defer = true;
-    script.onload = loadGapiClient;
+    script.onload = () => {
+        window.gapi.load('client', async () => {
+            try {
+                await window.gapi.client.init({
+                    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+                });
+                setIsClientLoaded(true);
+            } catch (err) {
+                console.error("Error initializing gapi client:", err);
+                toast({ title: 'Erro de API', description: 'Não foi possível carregar a API do Google Calendar.', variant: 'destructive' });
+            }
+        });
+    };
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      // Clean up the script when the component unmounts
+      const oldScript = document.querySelector('script[src="https://apis.google.com/js/api.js"]');
+      if (oldScript) {
+        document.body.removeChild(oldScript);
+      }
     };
+  }, []);
+
+  useEffect(() => {
+    loadGapiClient();
   }, [loadGapiClient]);
 
   const fetchEvents = useCallback(async (month: Date) => {
@@ -81,6 +89,12 @@ export default function GoogleCalendar() {
     setLoading(true);
 
     try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+          throw new Error("Não foi possível obter o token de acesso.");
+      }
+      window.gapi.client.setToken({ access_token: accessToken });
+
       const timeMin = startOfMonth(month).toISOString();
       const timeMax = endOfMonth(month).toISOString();
       
@@ -100,16 +114,13 @@ export default function GoogleCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [isClientLoaded, user]);
+  }, [isClientLoaded, user, getAccessToken]);
 
   useEffect(() => {
-    getAccessToken().then(token => {
-      if (window.gapi && window.gapi.client && token) {
-        window.gapi.client.setToken({ access_token: token! });
+    if (isClientLoaded && user) {
         fetchEvents(currentMonth);
-      }
-    });
-  }, [isClientLoaded, getAccessToken, fetchEvents, currentMonth]);
+    }
+  }, [isClientLoaded, user, fetchEvents, currentMonth]);
 
   const eventDates = useMemo(() => events.map(e => new Date(e.start?.dateTime || e.start?.date || '')), [events]);
 
@@ -117,9 +128,9 @@ export default function GoogleCalendar() {
     setSelectedEvent(null);
     setSelectedDate(date);
     const startDateTime = new Date(date);
-    startDateTime.setHours(9, 0, 0, 0); // Default to 9 AM
+    startDateTime.setHours(9, 0, 0, 0);
     const endDateTime = new Date(startDateTime);
-    endDateTime.setHours(10, 0, 0, 0); // Default to 1 hour duration
+    endDateTime.setHours(10, 0, 0, 0);
     
     form.reset({
       summary: '',
@@ -145,9 +156,12 @@ export default function GoogleCalendar() {
     setIsModalOpen(true);
   };
 
-
   const onSubmit = async (data: EventFormValues) => {
     try {
+      const accessToken = await getAccessToken();
+      if (!accessToken) throw new Error("Token de acesso inválido.");
+      window.gapi.client.setToken({ access_token: accessToken });
+
       if (selectedEvent) { // Editing
         await window.gapi.client.calendar.events.update({
           calendarId: 'primary',
@@ -172,7 +186,6 @@ export default function GoogleCalendar() {
 
   const handleMonthChange = (month: Date) => {
     setCurrentMonth(month);
-    fetchEvents(month);
   };
 
   const handleTimeChange = (field: 'start.dateTime' | 'end.dateTime', timeValue: string) => {
@@ -180,7 +193,7 @@ export default function GoogleCalendar() {
     if (!currentIsoDate || !timeValue) return;
 
     const [hours, minutes] = timeValue.split(':').map(Number);
-    const newDate = parseISO(currentIsoDate);
+    const newDate = new Date(currentIsoDate);
     
     if (isValid(newDate) && !isNaN(hours) && !isNaN(minutes)) {
         newDate.setHours(hours, minutes);
@@ -226,7 +239,7 @@ export default function GoogleCalendar() {
                     <div key={event.id} className="text-sm p-2 rounded-md bg-muted/50 cursor-pointer hover:bg-muted" onClick={() => openModalForEdit(event)}>
                         <p className="font-semibold">{event.summary}</p>
                         <p className="text-xs text-muted-foreground">
-                            {format(parseISO(event.start?.dateTime || ''), 'HH:mm')} - {format(parseISO(event.end?.dateTime || ''), 'HH:mm')}
+                            {event.start?.dateTime && isValid(parseISO(event.start.dateTime)) ? format(parseISO(event.start.dateTime), 'HH:mm') : ''} - {event.end?.dateTime && isValid(parseISO(event.end.dateTime)) ? format(parseISO(event.end.dateTime), 'HH:mm') : ''}
                         </p>
                     </div>
                 ))}
@@ -258,7 +271,7 @@ export default function GoogleCalendar() {
                     <Label>Início</Label>
                     <Input 
                       type="time" 
-                      defaultValue={startTime ? format(parseISO(startTime), 'HH:mm') : ''}
+                      defaultValue={startTime && isValid(parseISO(startTime)) ? format(parseISO(startTime), 'HH:mm') : ''}
                       onChange={e => handleTimeChange('start.dateTime', e.target.value)}
                     />
                 </div>
@@ -266,7 +279,7 @@ export default function GoogleCalendar() {
                     <Label>Fim</Label>
                     <Input 
                       type="time" 
-                      defaultValue={endTime ? format(parseISO(endTime), 'HH:mm') : ''}
+                      defaultValue={endTime && isValid(parseISO(endTime)) ? format(parseISO(endTime), 'HH:mm') : ''}
                       onChange={e => handleTimeChange('end.dateTime', e.target.value)}
                     />
                 </div>

@@ -120,15 +120,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, collaborators, loadingCollaborators, loading]);
 
   const getAccessToken = async (): Promise<string | null> => {
-    if (user) {
-        const token = await user.getIdTokenResult();
-        // This is Firebase ID token, not OAuth access token.
-        // We need to handle OAuth token separately.
-        // For simplicity in this context, we rely on the user object being present
-        // and gapi will handle the token.
-        return accessToken;
-    }
-    return null;
+    // This function now explicitly returns the stored OAuth access token.
+    return accessToken;
   };
   
   const signInWithGoogle = async () => {
