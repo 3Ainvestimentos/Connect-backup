@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
@@ -17,7 +16,6 @@ import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
 import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
 import { QuickLinksProvider } from '@/contexts/QuickLinksContext';
 import { Roboto, Archivo } from 'next/font/google';
-import Script from 'next/script';
 
 
 const fontRoboto = Roboto({
@@ -52,7 +50,6 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className={cn("font-sans antialiased", fontRoboto.variable, fontArchivo.variable)}>
-        <Script src="https://apis.google.com/js/api.js" strategy="afterInteractive" />
         <ThemeProvider>
           <ReactQueryProvider>
             <CollaboratorsProvider>

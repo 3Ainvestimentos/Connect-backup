@@ -1,4 +1,3 @@
-
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -22,8 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
-import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
-import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
+import InternalCalendar from '@/components/dashboard-v2/InternalCalendar';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -226,39 +224,39 @@ export default function DashboardV2Page() {
                 </CardContent>
               </Card>
               
-              <GoogleDriveFiles />
-          </div>
-            
-          <div className="lg:col-span-1 flex flex-col gap-6">
-              {quickLinks.length > 0 && (
+               {quickLinks.length > 0 && (
                 <Card className="shadow-sm">
                     <CardHeader>
                         <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        {quickLinks.map(link => (
-                           <a 
-                             href={link.link} 
-                             key={link.id} 
-                             target="_blank" 
-                             rel="noopener noreferrer" 
-                             className="relative flex items-center justify-center p-4 rounded-lg transition-colors aspect-square flex-col gap-2"
-                             title={link.name || 'Link Rápido'}
-                           >
-                              <Image
-                                  src={link.imageUrl}
-                                  alt={link.name || 'Quick Link'}
-                                  layout="fill"
-                                  className="object-contain p-2"
-                              />
-                           </a>
-                        ))}
-                      </div>
+                    <CardContent className="flex justify-center">
+                        <div className="flex justify-center flex-wrap gap-3">
+                          {quickLinks.map(link => (
+                              <a 
+                                 href={link.link} 
+                                 key={link.id} 
+                                 target="_blank" 
+                                 rel="noopener noreferrer" 
+                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-video w-32"
+                                 title={link.name || 'Link Rápido'}
+                               >
+                                  <Image
+                                      src={link.imageUrl}
+                                      alt={link.name || 'Quick Link'}
+                                      layout="fill"
+                                      objectFit="contain"
+                                      className="p-2"
+                                  />
+                              </a>
+                          ))}
+                        </div>
                     </CardContent>
                 </Card>
               )}
-             <GoogleCalendar />
+          </div>
+            
+          <div className="lg:col-span-1 flex flex-col gap-6">
+             <InternalCalendar />
           </div>
         </section>
       </div>
@@ -277,7 +275,7 @@ export default function DashboardV2Page() {
                     <Image src={selectedMessage.mediaUrl} alt="Mídia da mensagem" width={500} height={300} className="rounded-md object-cover w-full" />
                   </div>
                  )}
-                 {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last-mb-0">{line || '\u00A0'}</p>))}
+                 {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>))}
                  {selectedMessage.link && (
                     <div className="mt-4">
                        <Button variant="outline" asChild>
