@@ -29,6 +29,7 @@ export default function GoogleCalendar() {
 
   const listUpcomingEvents = useCallback(async () => {
     if (!isClientReady || !user) {
+      setIsLoading(false);
       return;
     }
     
@@ -37,10 +38,6 @@ export default function GoogleCalendar() {
     
     try {
       const tokenResponse = await getToken();
-      if (!tokenResponse) {
-        throw new Error('Não foi possível obter o token de acesso.');
-      }
-      
       window.gapi.client.setToken(tokenResponse);
       
       const response = await window.gapi.client.calendar.events.list({
@@ -99,7 +96,7 @@ export default function GoogleCalendar() {
             <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar eventos</p>
-                <p className="text-xs">{error || gapiError?.message}</p>
+                <p className="text-xs">{error || gapiError}</p>
                 <Button variant="link" size="sm" onClick={listUpcomingEvents} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>

@@ -28,6 +28,7 @@ export default function GoogleDriveFiles() {
 
   const listRecentFiles = useCallback(async () => {
     if (!isClientReady || !user) {
+      setIsLoading(false);
       return;
     }
 
@@ -36,10 +37,6 @@ export default function GoogleDriveFiles() {
 
     try {
       const tokenResponse = await getToken();
-      if (!tokenResponse) {
-          throw new Error('Não foi possível obter o token de acesso do Google.');
-      }
-      
       window.gapi.client.setToken(tokenResponse);
       
       const response = await window.gapi.client.drive.files.list({
@@ -95,7 +92,7 @@ export default function GoogleDriveFiles() {
             <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar arquivos</p>
-                <p className="text-xs">{error || gapiError?.message}</p>
+                <p className="text-xs">{error || gapiError}</p>
                 <Button variant="link" size="sm" onClick={listRecentFiles} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
