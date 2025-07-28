@@ -13,7 +13,6 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
 
-
 // Add Google Calendar & Drive scopes
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
@@ -43,7 +42,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accessToken, setAccessToken] = useState<string | null>(null);
   const router = useRouter();
   const { collaborators, loading: loadingCollaborators } = useCollaborators();
   
@@ -55,18 +53,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-        const hostname = window.location.hostname;
-        if (hostname.includes('cloudworkstations.dev') || hostname.includes('localhost')) {
-            auth.tenantId = null;
-        }
-    }
-
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (!user) {
         setLoading(false);
-        setAccessToken(null);
         setPermissions(defaultPermissions);
         setIsSuperAdmin(false);
         setIsAdmin(false);
@@ -107,8 +97,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const getAccessToken = async (): Promise<string | null> => {
     if (user) {
-        const token = await user.getIdToken(true);
-        setAccessToken(token);
+        const credential = GoogleAuthProvider.credentialFromResult(await auth.currentUser!.getIdTokenResult(true) as any);
+        const token = credential?.accessToken || null;
+        if (token && window.gapi) {
+          // Explicitly set the token for GAPI client
+          window.gapi.client.setToken({ access_token: token });
+        }
         return token;
     }
     return null;
@@ -117,11 +111,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        setAccessToken(credential.accessToken);
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        if (hostname.includes('cloudworkstations.dev') || hostname.includes('localhost')) {
+            auth.tenantId = null;
+        }
       }
+
+      const result = await signInWithPopup(auth, googleProvider);
       
       const userEmail = result.user.email;
 
@@ -136,10 +133,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
       
-      const isSuper = SUPER_ADMIN_EMAILS.includes(userEmail);
       const collaborator = collaborators.find(c => c.email === userEmail);
       
-      if (!collaborator && !isSuper) {
+      if (!collaborator) {
         await firebaseSignOut(auth);
         toast({
             title: "Acesso Negado",
@@ -153,7 +149,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await addDocumentToCollection('audit_logs', {
           eventType: 'login',
           userId: collaborator?.id3a || userEmail,
-          userName: collaborator?.name || result.user.displayName || 'Usuário Super Admin',
+          userName: collaborator?.name || result.user.displayName || 'Usuário',
           timestamp: new Date().toISOString(),
           details: {
               message: `${collaborator?.name || result.user.displayName} logged in.`,
@@ -185,7 +181,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
-      setAccessToken(null);
       router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
@@ -202,7 +197,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       getAccessToken,
       signInWithGoogle,
       signOut
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, accessToken]);
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions]);
 
   return (
     <AuthContext.Provider value={value}>
