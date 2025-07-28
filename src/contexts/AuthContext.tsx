@@ -13,35 +13,6 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
 
-// This flag can be controlled by an environment variable in a real app
-const MAINTENANCE_MODE = false;
-
-// List of users who can access the app during maintenance mode
-const ALLOWED_TEST_USERS = [
-  'alice.passos@3ainvestimentos.com.br',
-  'anajulia.couto@3ariva.com.br',
-  'atendimento91@3ainvestimentos.com.br',
-  'barbara.fiche@3ainvestimentos.com.br',
-  'barbara@3ainvestimentos.com.br',
-  'daphne.clementoni@3ainvestimentos.com.br',
-  'fernanda.adami@3ainvestimentos.com.br',
-  'gente@3ariva.com.br',
-  'leonardo@3ainvestimentos.com.br',
-  'joao.pompeu@3ainvestimentos.com.br',
-  'marcio.peixoto@3ariva.com.br',
-  'infra@3ariva.com.br',
-  'matheus@3ainvestimentos.com.br',
-  'suzana.didier@3ainvestimentos.com.br',
-  'ti@3ariva.com.br',
-  'wallison.nunes@3ainvestimentos.com.br',
-  'luanda.beatriz@3ainvestimentos.com.br',
-  'gustavo.goudim@3ainvestimentos.com.br',
-  'dalcion.franco@3ainvestimentos.com.br',
-  'stefania.otoni@3ainvestimentos.com.br',
-  'pablo.costa@3ainvestimentos.com.br',
-  'pedro.rosa@3ainvestimentos.com.br'
-];
-
 
 // Add Google Calendar & Drive scopes
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
@@ -135,7 +106,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, collaborators, loadingCollaborators, loading]);
 
   const getAccessToken = async (): Promise<string | null> => {
-    return accessToken;
+    if (user) {
+        const token = await user.getIdToken(true);
+        setAccessToken(token);
+        return token;
+    }
+    return null;
   };
   
   const signInWithGoogle = async () => {
@@ -161,18 +137,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const isSuper = SUPER_ADMIN_EMAILS.includes(userEmail);
-      
-      if (MAINTENANCE_MODE && !isSuper && !ALLOWED_TEST_USERS.includes(userEmail)) {
-          await firebaseSignOut(auth);
-          toast({
-              title: "Acesso Temporariamente Suspenso",
-              description: "O acesso à plataforma está em manutenção.",
-              variant: "destructive"
-          });
-          setLoading(false);
-          return;
-      }
-
       const collaborator = collaborators.find(c => c.email === userEmail);
       
       if (!collaborator && !isSuper) {
