@@ -21,6 +21,7 @@ import { ptBR } from 'date-fns/locale';
 declare global {
   interface Window {
     gapi: any;
+    google: any;
   }
 }
 
@@ -58,7 +59,7 @@ export default function GoogleCalendar() {
 
   const loadGapiClient = useCallback(() => {
     const checkGapi = () => {
-      if (window.gapi && window.gapi.load) {
+      if (window.gapi) {
         window.gapi.load('client', async () => {
           try {
             await window.gapi.client.init({
@@ -72,7 +73,7 @@ export default function GoogleCalendar() {
           }
         });
       } else {
-        setTimeout(checkGapi, 100); // Check again shortly
+        setTimeout(checkGapi, 100);
       }
     };
     checkGapi();
