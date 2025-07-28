@@ -1,14 +1,17 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Calendar, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { AlertCircle, Plus } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
+import { Calendar } from '../ui/calendar';
+import { ScrollArea } from '../ui/scroll-area';
+import { GoogleEventModal } from './GoogleEventModal';
 
 declare global {
     interface Window {
@@ -16,13 +19,18 @@ declare global {
     }
 }
 
-interface CalendarEvent {
+export interface CalendarEvent {
   id: string;
   summary: string;
+  description?: string;
   start: {
     dateTime: string;
     date: string;
   };
+  end: {
+      dateTime: string;
+      date: string;
+  }
 }
 
 export default function GoogleCalendar() {
@@ -30,8 +38,14 @@ export default function GoogleCalendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const listUpcomingEvents = useCallback(async () => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const listMonthEvents = useCallback(async (month: Date) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
       else if (!accessToken) setError("Token de acesso não encontrado. Por favor, atualize a página.");
@@ -45,12 +59,15 @@ export default function GoogleCalendar() {
     try {
       window.gapi.client.setToken({ access_token: accessToken });
       
+      const timeMin = startOfMonth(month).toISOString();
+      const timeMax = endOfMonth(month).toISOString();
+
       const response = await window.gapi.client.calendar.events.list({
         'calendarId': 'primary',
-        'timeMin': (new Date()).toISOString(),
+        'timeMin': timeMin,
+        'timeMax': timeMax,
         'showDeleted': false,
         'singleEvents': true,
-        'maxResults': 5,
         'orderBy': 'startTime'
       });
 
@@ -83,7 +100,7 @@ export default function GoogleCalendar() {
           discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
       }).then(() => {
           if (user && accessToken) {
-              listUpcomingEvents();
+              listMonthEvents(currentMonth);
           } else if (!user) {
             setIsLoading(false);
           }
@@ -98,68 +115,148 @@ export default function GoogleCalendar() {
     } else {
       window.gapi.load('client', initializeGapiClient);
     }
-  }, [user, accessToken, listUpcomingEvents]);
+  }, [user, accessToken, listMonthEvents, currentMonth]);
 
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleDayClick = (day: Date) => {
+    setSelectedDate(day);
+    setSelectedEvent(null);
+    setIsModalOpen(true);
+  };
   
-  if (error) {
-      return (
-         <Card>
-            <CardHeader>
-                <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center text-center text-destructive p-4">
-                <AlertCircle className="h-8 w-8 mb-2" />
-                <p className="font-semibold">Erro ao carregar eventos</p>
-                <p className="text-xs">{error}</p>
-                <Button variant="link" size="sm" onClick={listUpcomingEvents} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
-            </CardContent>
-        </Card>
-      );
-  }
+  const handleEventClick = (event: CalendarEvent) => {
+      setSelectedEvent(event);
+      setSelectedDate(null);
+      setIsModalOpen(true);
+  };
+
+  const handleCreateNew = () => {
+    setSelectedDate(new Date());
+    setSelectedEvent(null);
+    setIsModalOpen(true);
+  };
+
+  const handleMonthChange = (month: Date) => {
+      setCurrentMonth(month);
+  };
+
+  const handleSave = async (eventData: Partial<CalendarEvent>) => {
+    if (!accessToken) return;
+    window.gapi.client.setToken({ access_token: accessToken });
+
+    const calendarId = 'primary';
+    try {
+        if (eventData.id) { // Update existing event
+            await window.gapi.client.calendar.events.update({
+                calendarId,
+                eventId: eventData.id,
+                resource: eventData,
+            });
+        } else { // Create new event
+             await window.gapi.client.calendar.events.insert({
+                calendarId,
+                resource: eventData,
+            });
+        }
+        setIsModalOpen(false);
+        listMonthEvents(currentMonth); // Refresh events for the current month
+    } catch (error) {
+        console.error('Error saving event:', error);
+        setError('Não foi possível salvar o evento.');
+    }
+  };
+
+  const handleDelete = async (eventId: string) => {
+    if (!accessToken) return;
+    window.gapi.client.setToken({ access_token: accessToken });
+    try {
+        await window.gapi.client.calendar.events.delete({
+            calendarId: 'primary',
+            eventId: eventId,
+        });
+        setIsModalOpen(false);
+        listMonthEvents(currentMonth); // Refresh
+    } catch (error) {
+        console.error('Error deleting event:', error);
+        setError('Não foi possível deletar o evento.');
+    }
+  };
+
+  const eventDates = useMemo(() => events.map(e => new Date(e.start.dateTime || e.start.date)), [events]);
+
+  const eventsToday = useMemo(() => {
+    const today = new Date();
+    return events.filter(e => isSameDay(new Date(e.start.dateTime || e.start.date), today));
+  }, [events]);
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="shadow-sm flex flex-col h-full">
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
+        <Button size="sm" onClick={handleCreateNew}>
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Evento
+        </Button>
       </CardHeader>
-      <CardContent>
-        {events.length > 0 ? (
-          <ul className="space-y-3">
-            {events.map((event) => {
-              const startDate = new Date(event.start.dateTime || event.start.date);
-              return (
-                <li key={event.id} className="flex items-center gap-3 text-sm">
-                  <div className="text-center w-12 flex-shrink-0">
-                    <p className="font-bold text-lg text-primary">{format(startDate, 'dd')}</p>
-                    <p className="text-xs uppercase text-muted-foreground">{format(startDate, 'MMM', { locale: ptBR })}</p>
-                  </div>
-                  <div className="flex-grow border-l-2 border-border pl-3">
-                     <p className="font-semibold truncate">{event.summary}</p>
-                     <p className="text-xs text-muted-foreground">
-                        {event.start.dateTime ? format(startDate, 'HH:mm') : 'Dia todo'}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento próximo.</p>
-        )}
+      <CardContent className="flex-grow flex flex-col gap-4">
+        <Calendar
+            mode="single"
+            selected={selectedDate || undefined}
+            onSelect={(day) => day && handleDayClick(day)}
+            month={currentMonth}
+            onMonthChange={handleMonthChange}
+            className="rounded-md border"
+            modifiers={{ event: eventDates }}
+            modifiersClassNames={{
+              event: 'bg-primary/20 rounded-full',
+              today: 'bg-accent text-accent-foreground rounded-full',
+            }}
+            locale={ptBR}
+          />
+        <div className="flex-grow min-h-0">
+          <h3 className="text-sm font-semibold mb-2">Eventos de Hoje</h3>
+          <ScrollArea className="h-40">
+              {isLoading ? (
+                <div className="space-y-2 pr-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+              ) : error ? (
+                <div className="text-center text-destructive text-sm p-4">
+                  <AlertCircle className="mx-auto h-6 w-6 mb-1"/>
+                  <p>{error}</p>
+                </div>
+              ) : eventsToday.length > 0 ? (
+                <ul className="space-y-2 pr-4">
+                  {eventsToday.map((event) => {
+                    const startDate = new Date(event.start.dateTime || event.start.date);
+                    return (
+                        <li key={event.id} onClick={() => handleEventClick(event)} className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted cursor-pointer">
+                            <div className="font-semibold text-primary w-12 flex-shrink-0">
+                                {event.start.dateTime ? format(startDate, 'HH:mm') : 'Dia todo'}
+                            </div>
+                            <div className="flex-grow border-l-2 border-border pl-3 truncate">
+                                <p className="font-semibold truncate">{event.summary}</p>
+                            </div>
+                        </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para hoje.</p>
+              )}
+          </ScrollArea>
+        </div>
       </CardContent>
+      {isModalOpen && (
+        <GoogleEventModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            event={selectedEvent}
+            selectedDate={selectedDate}
+            onSave={handleSave}
+            onDelete={handleDelete}
+        />
+      )}
     </Card>
   );
 }

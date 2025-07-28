@@ -13,8 +13,9 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
+// UPDATED: Changed calendar scope to read/write
 const scopes = [
-  'https://www.googleapis.com/auth/calendar.readonly',
+  'https://www.googleapis.com/auth/calendar',
   'https://www.googleapis.com/auth/drive.readonly'
 ];
 scopes.forEach(scope => googleProvider.addScope(scope));
@@ -67,6 +68,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.push('/login');
             } else if (collaborator) {
                 setUser(user);
+                 // Try to get credential silently, might not always work
+                const credential = GoogleAuthProvider.credentialFromResult(await auth.getRedirectResult().catch(() => null));
+                if (credential?.accessToken) {
+                    setAccessToken(credential.accessToken);
+                }
+
             } else if (collaborators.length === 0 && !loadingCollaborators) {
                  await firebaseSignOut(auth);
                  toast({
