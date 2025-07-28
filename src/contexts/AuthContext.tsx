@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
       if (user && !loadingCollaborators) {
-          const isSuper = SUPER_ADMIN_EMAILS.includes(user.email || '');
+          const isSuper = !!user.email && SUPER_ADMIN_EMAILS.includes(user.email);
           setIsSuperAdmin(isSuper);
 
           const currentUserCollab = collaborators.find(c => c.email === user.email);
@@ -96,11 +96,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [user, collaborators, loadingCollaborators, loading]);
 
   const getAccessToken = async (): Promise<string | null> => {
-    if (user) {
-        const credential = GoogleAuthProvider.credentialFromResult(await auth.currentUser!.getIdTokenResult(true) as any);
+    if (auth.currentUser) {
+        const result = await auth.currentUser.getIdTokenResult(true);
+        const credential = GoogleAuthProvider.credentialFromResult({
+            user: auth.currentUser,
+            idToken: result.token,
+            // You might not get a new access token on every refresh, handle this case
+            accessToken: (result.claims.firebase as any)?.access_token || null
+        });
+
         const token = credential?.accessToken || null;
         if (token && window.gapi) {
-          // Explicitly set the token for GAPI client
+          // Explicitly set the token for GAPI client to ensure it's up-to-date
           window.gapi.client.setToken({ access_token: token });
         }
         return token;
