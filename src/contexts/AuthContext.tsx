@@ -1,9 +1,10 @@
+
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
@@ -67,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [auth, router, collaborators]);
 
-  // Handle redirect result
+  // Handle redirect result (useful if we ever switch back to redirect)
   useEffect(() => {
     getRedirectResult(auth)
       .then((result) => {
@@ -84,17 +85,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     message: `${collaborator?.name || user.displayName} logged in.`,
                 }
             });
+            router.push('/dashboard');
           }
         }
       }).catch((error) => {
           console.error("Firebase Redirect Error:", error);
-          toast({
-              title: "Erro de Login",
-              description: `Ocorreu um erro durante o redirecionamento do login: ${error.message}`,
-              variant: "destructive",
-          });
       });
-  }, [auth, collaborators]);
+  }, [auth, collaborators, router]);
 
 
   useEffect(() => {
@@ -127,7 +124,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+       if (result && result.user) {
+          const user = result.user;
+          const collaborator = collaborators.find(c => c.email === user.email);
+          if (collaborator) {
+             addDocumentToCollection('audit_logs', {
+                eventType: 'login',
+                userId: collaborator?.id3a || user.email,
+                userName: collaborator?.name || user.displayName || 'Usuário',
+                timestamp: new Date().toISOString(),
+                details: {
+                    message: `${collaborator?.name || user.displayName} logged in.`,
+                }
+            });
+            router.push('/dashboard');
+          } else {
+             // This case is important for when a non-authorized user signs in.
+             await firebaseSignOut(auth);
+             toast({
+                title: "Acesso Negado",
+                description: "Seu e-mail não foi encontrado na lista de colaboradores autorizados.",
+                variant: "destructive"
+             });
+             setLoading(false);
+          }
+        }
     } catch (error: unknown) {
       let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
@@ -166,7 +188,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       permissions,
       signInWithGoogle,
       signOut
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions]);
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>
