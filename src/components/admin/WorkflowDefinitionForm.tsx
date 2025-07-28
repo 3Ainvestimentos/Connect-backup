@@ -457,4 +457,3 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         </Dialog>
     );
 }
-
