@@ -15,7 +15,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from '@/hooks/use-toast';
-import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const eventSchema = z.object({
@@ -104,7 +104,7 @@ export default function GoogleCalendar() {
 
   useEffect(() => {
     getAccessToken().then(token => {
-      if (window.gapi && window.gapi.client) {
+      if (window.gapi && window.gapi.client && token) {
         window.gapi.client.setToken({ access_token: token! });
         fetchEvents(currentMonth);
       }
@@ -175,6 +175,22 @@ export default function GoogleCalendar() {
     fetchEvents(month);
   };
 
+  const handleTimeChange = (field: 'start.dateTime' | 'end.dateTime', timeValue: string) => {
+    const currentIsoDate = form.getValues(field);
+    if (!currentIsoDate || !timeValue) return;
+
+    const [hours, minutes] = timeValue.split(':').map(Number);
+    const newDate = parseISO(currentIsoDate);
+    
+    if (isValid(newDate) && !isNaN(hours) && !isNaN(minutes)) {
+        newDate.setHours(hours, minutes);
+        form.setValue(field, newDate.toISOString());
+    }
+  };
+
+  const startTime = form.watch('start.dateTime');
+  const endTime = form.watch('end.dateTime');
+
   return (
     <Card className="shadow-sm">
       <CardHeader>
@@ -224,7 +240,7 @@ export default function GoogleCalendar() {
           <DialogHeader>
             <DialogTitle>{selectedEvent ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
             <DialogDescription>
-              {selectedDate ? `Para o dia ${format(selectedDate, 'dd/MM/yyyy')}` : ''}
+              {selectedDate ? `Para o dia ${format(selectedDate, 'dd/MM/yyyy', {locale: ptBR})}` : ''}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -240,21 +256,19 @@ export default function GoogleCalendar() {
              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label>Início</Label>
-                    <Input type="time" defaultValue={format(parseISO(form.getValues('start.dateTime')), 'HH:mm')} onChange={e => {
-                        const [h,m] = e.target.value.split(':');
-                        const newDate = parseISO(form.getValues('start.dateTime'));
-                        newDate.setHours(parseInt(h), parseInt(m));
-                        form.setValue('start.dateTime', newDate.toISOString());
-                    }} />
+                    <Input 
+                      type="time" 
+                      defaultValue={startTime ? format(parseISO(startTime), 'HH:mm') : ''}
+                      onChange={e => handleTimeChange('start.dateTime', e.target.value)}
+                    />
                 </div>
                 <div className="space-y-2">
                     <Label>Fim</Label>
-                    <Input type="time" defaultValue={format(parseISO(form.getValues('end.dateTime')), 'HH:mm')} onChange={e => {
-                        const [h,m] = e.target.value.split(':');
-                        const newDate = parseISO(form.getValues('end.dateTime'));
-                        newDate.setHours(parseInt(h), parseInt(m));
-                        form.setValue('end.dateTime', newDate.toISOString());
-                    }}/>
+                    <Input 
+                      type="time" 
+                      defaultValue={endTime ? format(parseISO(endTime), 'HH:mm') : ''}
+                      onChange={e => handleTimeChange('end.dateTime', e.target.value)}
+                    />
                 </div>
             </div>
             <DialogFooter>
