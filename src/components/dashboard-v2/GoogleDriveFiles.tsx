@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { HardDrive, FileText, AlertCircle, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from '../ui/button';
 
 interface DriveFile {
   id: string;
@@ -19,8 +20,8 @@ interface DriveFile {
 }
 
 export default function GoogleDriveFiles() {
-  const { isClientReady, error: gapiError } = useGapiClient();
-  const { getAccessToken, user } = useAuth();
+  const { isClientReady, error: gapiError, getToken } = useGapiClient();
+  const { user } = useAuth();
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,35 +35,20 @@ export default function GoogleDriveFiles() {
     setError(null);
 
     try {
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
-        throw new Error('Não foi possível obter o token de acesso.');
+      const tokenResponse = await getToken();
+      if (!tokenResponse) {
+          throw new Error('Não foi possível obter o token de acesso do Google.');
       }
       
-      await new Promise<void>((resolve, reject) => {
-          window.gapi.load('client', async () => {
-             try {
-                await window.gapi.client.init({
-                    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-                });
-
-                window.gapi.client.setToken({ access_token: accessToken });
-
-                const response = await window.gapi.client.drive.files.list({
-                    'pageSize': 5,
-                    'fields': "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink)",
-                    'orderBy': 'modifiedTime desc'
-                });
-
-                setFiles(response.result.files || []);
-                resolve();
-            } catch (err) {
-                reject(err);
-            }
-        });
+      window.gapi.client.setToken(tokenResponse);
+      
+      const response = await window.gapi.client.drive.files.list({
+          'pageSize': 5,
+          'fields': "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink)",
+          'orderBy': 'modifiedTime desc'
       });
+
+      setFiles(response.result.files || []);
 
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
@@ -76,11 +62,13 @@ export default function GoogleDriveFiles() {
     } finally {
       setIsLoading(false);
     }
-  }, [isClientReady, getAccessToken, user]);
+  }, [isClientReady, getToken, user]);
 
   useEffect(() => {
      if(isClientReady && user) {
         listRecentFiles();
+    } else if (!user) {
+        setIsLoading(false);
     }
   }, [isClientReady, user, listRecentFiles]);
 
@@ -108,7 +96,7 @@ export default function GoogleDriveFiles() {
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar arquivos</p>
                 <p className="text-xs">{error || gapiError?.message}</p>
-                <button onClick={listRecentFiles} className="text-xs underline mt-2">Tentar novamente</button>
+                <Button variant="link" size="sm" onClick={listRecentFiles} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
       );

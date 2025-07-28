@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase'; // Import getFirebaseApp
-import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, getRedirectResult, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
@@ -27,7 +27,6 @@ interface AuthContextType {
   isAdmin: boolean; 
   isSuperAdmin: boolean;
   permissions: CollaboratorPermissions;
-  getAccessToken: () => Promise<string | null>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -56,7 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
             const collaborator = collaborators.find(c => c.email === user.email);
-            if (!collaborator) {
+            if (!collaborator && collaborators.length > 0) { // Check if collaborators are loaded
                 await firebaseSignOut(auth);
                 toast({
                     title: "Acesso Negado",
@@ -65,8 +64,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 });
                 setUser(null);
                 router.push('/login');
-            } else {
+            } else if (collaborator) {
                 setUser(user);
+            } else if (collaborators.length === 0 && !loadingCollaborators) {
+                 // Case where collaborators list is empty, but not loading anymore. Deny access.
+                 await firebaseSignOut(auth);
+                 toast({
+                    title: "Erro de Configuração",
+                    description: "Não foi possível carregar a lista de colaboradores. Acesso negado.",
+                    variant: "destructive"
+                });
+                setUser(null);
+                router.push('/login');
             }
         } else {
             setUser(null);
@@ -75,32 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth, router, collaborators]);
-
-  // Handle redirect result (useful if we ever switch back to redirect)
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result && result.user) {
-          const user = result.user;
-          const collaborator = collaborators.find(c => c.email === user.email);
-          if (collaborator) {
-             addDocumentToCollection('audit_logs', {
-                eventType: 'login',
-                userId: collaborator?.id3a || user.email,
-                userName: collaborator?.name || user.displayName || 'Usuário',
-                timestamp: new Date().toISOString(),
-                details: {
-                    message: `${collaborator?.name || user.displayName} logged in.`,
-                }
-            });
-            router.push('/dashboard-v2');
-          }
-        }
-      }).catch((error) => {
-          console.error("Firebase Redirect Error:", error);
-      });
-  }, [auth, collaborators, router]);
+  }, [auth, router, collaborators, loadingCollaborators]);
 
 
   useEffect(() => {
@@ -128,34 +112,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
       }
   }, [user, collaborators, loadingCollaborators]);
-
-  const getAccessToken = useCallback(async (): Promise<string | null> => {
-    if (!auth.currentUser) return null;
-    try {
-      // Força a atualização do token para garantir que não está expirado.
-      const idTokenResult = await auth.currentUser.getIdTokenResult(true);
-      // O 'token' no idTokenResult é o ID token, não o access token para APIs.
-      // O access token precisa ser obtido a partir da credencial do login.
-      // Esta é a maneira mais confiável: refazer o login silenciosamente para obter a credencial.
-      const credential = GoogleAuthProvider.credential(idTokenResult.token);
-       // A maneira mais direta de obter o access token não está disponível publicamente
-       // no objeto do usuário. A forma mais segura é armazená-lo após o login.
-       // No entanto, para fins de API, o ID Token pode ser suficiente ou precisaremos
-       // do access token do resultado do popup/redirect.
-
-       // Para o GAPI, precisamos do Access Token. Vamos tentar obtê-lo do resultado do login.
-       // Como não armazenamos o resultado, vamos ter que reautenticar.
-       // Isso não deve exigir interação do usuário se ele já estiver logado.
-       const result = await signInWithPopup(auth, googleProvider);
-       const credentialFromResult = GoogleAuthProvider.credentialFromResult(result);
-       return credentialFromResult?.accessToken || null;
-
-    } catch (error) {
-      console.error("Error getting access token:", error);
-      return null;
-    }
-  }, [auth]);
-
   
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -163,25 +119,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const result = await signInWithPopup(auth, googleProvider);
        if (result && result.user) {
           const user = result.user;
+          // Defer collaborator check to onAuthStateChanged
+          router.push('/dashboard-v2');
+          
           const collaborator = collaborators.find(c => c.email === user.email);
           if (collaborator) {
              addDocumentToCollection('audit_logs', {
                 eventType: 'login',
-                userId: collaborator?.id3a || user.email,
-                userName: collaborator?.name || user.displayName || 'Usuário',
+                userId: collaborator.id3a,
+                userName: collaborator.name,
                 timestamp: new Date().toISOString(),
                 details: {
-                    message: `${collaborator?.name || user.displayName} logged in.`,
+                    message: `${collaborator.name} logged in.`,
                 }
             });
-            router.push('/dashboard-v2');
-          } else {
-             await firebaseSignOut(auth);
-             toast({
-                title: "Acesso Negado",
-                description: "Seu e-mail não foi encontrado na lista de colaboradores autorizados.",
-                variant: "destructive"
-             });
           }
         }
     } catch (error: unknown) {
@@ -221,10 +172,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isAdmin,
       isSuperAdmin,
       permissions,
-      getAccessToken,
       signInWithGoogle,
       signOut
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, getAccessToken, signInWithGoogle, signOut]);
+  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

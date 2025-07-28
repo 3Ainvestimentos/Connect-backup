@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Calendar, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from '../ui/button';
 
 interface CalendarEvent {
   id: string;
@@ -20,8 +21,8 @@ interface CalendarEvent {
 }
 
 export default function GoogleCalendar() {
-  const { isClientReady, error: gapiError } = useGapiClient();
-  const { getAccessToken, user } = useAuth();
+  const { isClientReady, error: gapiError, getToken } = useGapiClient();
+  const { user } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,38 +36,23 @@ export default function GoogleCalendar() {
     setError(null);
     
     try {
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
+      const tokenResponse = await getToken();
+      if (!tokenResponse) {
         throw new Error('Não foi possível obter o token de acesso.');
       }
-
-      await new Promise<void>((resolve, reject) => {
-        window.gapi.load('client', async () => {
-          try {
-            await window.gapi.client.init({
-               apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-               clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-               discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-            });
-
-            window.gapi.client.setToken({ access_token: accessToken });
-
-            const response = await window.gapi.client.calendar.events.list({
-              'calendarId': 'primary',
-              'timeMin': (new Date()).toISOString(),
-              'showDeleted': false,
-              'singleEvents': true,
-              'maxResults': 5,
-              'orderBy': 'startTime'
-            });
-
-            setEvents(response.result.items || []);
-            resolve();
-          } catch(err) {
-            reject(err);
-          }
-        });
+      
+      window.gapi.client.setToken(tokenResponse);
+      
+      const response = await window.gapi.client.calendar.events.list({
+        'calendarId': 'primary',
+        'timeMin': (new Date()).toISOString(),
+        'showDeleted': false,
+        'singleEvents': true,
+        'maxResults': 5,
+        'orderBy': 'startTime'
       });
+
+      setEvents(response.result.items || []);
       
     } catch (err: any) {
       console.error("Erro ao buscar eventos do calendário:", err);
@@ -80,11 +66,13 @@ export default function GoogleCalendar() {
     } finally {
       setIsLoading(false);
     }
-  }, [isClientReady, getAccessToken, user]);
+  }, [isClientReady, getToken, user]);
 
   useEffect(() => {
     if(isClientReady && user) {
         listUpcomingEvents();
+    } else if (!user) {
+        setIsLoading(false);
     }
   }, [isClientReady, user, listUpcomingEvents]);
 
@@ -112,7 +100,7 @@ export default function GoogleCalendar() {
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar eventos</p>
                 <p className="text-xs">{error || gapiError?.message}</p>
-                <button onClick={listUpcomingEvents} className="text-xs underline mt-2">Tentar novamente</button>
+                <Button variant="link" size="sm" onClick={listUpcomingEvents} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
       );
