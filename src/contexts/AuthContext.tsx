@@ -4,12 +4,11 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase';
-import { getAuth, signInWithRedirect, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
 import type { CollaboratorPermissions } from './CollaboratorsContext';
-import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
@@ -67,15 +66,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 router.push('/login');
             } else if (collaborator) {
                 setUser(user);
-                 // Try to get credential silently, might not always work
-                const result = await getRedirectResult(auth).catch(() => null);
-                if (result) {
-                    const credential = GoogleAuthProvider.credentialFromResult(result);
-                    if (credential?.accessToken) {
-                        setAccessToken(credential.accessToken);
-                    }
-                }
-
             } else if (collaborators.length === 0 && !loadingCollaborators) {
                  await firebaseSignOut(auth);
                  toast({
@@ -128,14 +118,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      await signInWithRedirect(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential?.accessToken) {
+        setAccessToken(credential.accessToken);
+      }
+      const collaborator = collaborators.find(c => c.email === result.user.email);
+      if (collaborator) {
+        router.push('/dashboard');
+      } else {
+        await firebaseSignOut(auth);
+        toast({
+            title: "Acesso Negado",
+            description: "Seu e-mail não foi encontrado na lista de colaboradores.",
+            variant: "destructive"
+        });
+      }
     } catch (error: unknown) {
       let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
           const firebaseError = error as { code: string; message: string };
           console.error("Firebase Login Error Code:", firebaseError.code);
           console.error("Firebase Login Error Message:", firebaseError.message);
-          description = `Detalhe do erro: ${firebaseError.message} (${firebaseError.code})`;
+          if (firebaseError.code !== 'auth/popup-closed-by-user' && firebaseError.code !== 'auth/cancelled-popup-request') {
+            description = `Detalhe do erro: ${firebaseError.message} (${firebaseError.code})`;
+          } else {
+            description = "A janela de login foi fechada antes da conclusão.";
+          }
       } else {
            console.error("Error signing in with Google: ", error);
       }
@@ -145,7 +154,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             variant: "destructive",
             duration: 10000,
       });
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
 
