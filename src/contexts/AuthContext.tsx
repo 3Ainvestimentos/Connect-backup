@@ -38,8 +38,10 @@ const ALLOWED_TEST_USERS = [
 ];
 const ALLOWED_DOMAINS = ['3ainvestimentos.com.br', '3ariva.com.br'];
 
-// Add Google Calendar scopes
+// Add Google Calendar & Drive scopes
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
+googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
+
 
 const defaultPermissions: CollaboratorPermissions = {
     canManageWorkflows: false,
@@ -161,9 +163,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const collaborator = collaborators.find(c => c.email === userEmail);
-      if (!collaborator) {
-          // Allow login for test users even if not in the main collaborator list, but log a warning.
-          console.warn(`Usuário de teste '${userEmail}' logou, mas não foi encontrado na lista de colaboradores. Funções podem ser limitadas.`);
+      
+      // Allow login for test users even if not in the main collaborator list.
+      // We will still log the event.
+      if (!isSuper && !collaborator) {
+         console.warn(`Usuário de teste '${userEmail}' logou, mas não foi encontrado na lista de colaboradores. Funções podem ser limitadas.`);
       }
 
       await addDocumentToCollection('audit_logs', {

@@ -23,6 +23,7 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
+import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -179,16 +180,16 @@ export default function DashboardV2Page() {
           </section>
         )}
         
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 flex flex-col gap-3">
-              <Card className="shadow-sm flex flex-col flex-1">
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-6">
+              <Card className="shadow-sm flex flex-col">
                 <CardHeader>
                   <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
                     <span>Mensagens</span>
                     {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 relative">
+                <CardContent className="flex-1 min-h-[300px] relative">
                   {userMessages.length > 0 ? (
                       <div className="absolute inset-0">
                           <ScrollArea className="h-full">
@@ -224,40 +225,43 @@ export default function DashboardV2Page() {
                   )}
                 </CardContent>
               </Card>
-
+              
+              <GoogleDriveFiles />
+          </div>
+            
+          <div className="lg:col-span-1 flex flex-col gap-6">
+             <GoogleCalendar />
               {quickLinks.length > 0 && (
                 <Card className="shadow-sm">
                     <CardHeader>
                         <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
                     </CardHeader>
-                    <CardContent className="flex justify-center">
-                        <div className="flex justify-center flex-wrap gap-3">
-                          {quickLinks.map(link => (
-                              <a 
-                                 href={link.link} 
-                                 key={link.id} 
-                                 target="_blank" 
-                                 rel="noopener noreferrer" 
-                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-video w-32"
-                                 title={link.name || 'Link Rápido'}
-                               >
-                                  <Image
-                                      src={link.imageUrl}
-                                      alt={link.name || 'Quick Link'}
-                                      layout="fill"
-                                      objectFit="contain"
-                                      className="p-2"
-                                  />
-                              </a>
-                          ))}
-                        </div>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {quickLinks.map(link => (
+                           <a 
+                             href={link.link} 
+                             key={link.id} 
+                             target="_blank" 
+                             rel="noopener noreferrer" 
+                             className="flex items-center gap-3 p-2 rounded-lg transition-colors hover:bg-muted"
+                             title={link.name || 'Link Rápido'}
+                           >
+                              <Image
+                                  src={link.imageUrl}
+                                  alt={link.name || 'Quick Link'}
+                                  width={32}
+                                  height={32}
+                                  className="rounded-md object-contain"
+                              />
+                              <span className="font-body text-sm font-medium text-foreground">{link.name}</span>
+                              <ExternalLink className="h-4 w-4 text-muted-foreground ml-auto" />
+                           </a>
+                        ))}
+                      </div>
                     </CardContent>
                 </Card>
               )}
-          </div>
-            
-          <div className="lg:col-span-1">
-             <GoogleCalendar />
           </div>
         </section>
       </div>
@@ -341,3 +345,4 @@ export default function DashboardV2Page() {
     </>
   );
 }
+
