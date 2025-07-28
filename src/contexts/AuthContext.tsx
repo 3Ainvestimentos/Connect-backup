@@ -42,6 +42,8 @@ const MAINTENANCE_MODE = false;
 // Add Google Calendar & Drive scopes
 googleProvider.addScope('https://www.googleapis.com/auth/calendar.events');
 googleProvider.addScope('https://www.googleapis.com/auth/drive.readonly');
+// Force the login to use the 3A Investimentos domain
+googleProvider.setCustomParameters({ 'hd': '3ainvestimentos.com.br' });
 
 
 const defaultPermissions: CollaboratorPermissions = {
