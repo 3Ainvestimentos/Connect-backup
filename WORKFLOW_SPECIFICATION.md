@@ -1,3 +1,4 @@
+
 # Especificação do Sistema de Workflows do 3A RIVA Connect
 
 ## 1. Visão Geral
@@ -18,7 +19,9 @@ interface WorkflowDefinition {
   name: string;          // Nome único e descritivo do workflow. Ex: "Solicitação de Reembolso".
   description: string;   // Texto exibido no cabeçalho do formulário de solicitação.
   icon: string;          // Nome de um ícone da biblioteca `lucide-react`. Ex: "DollarSign".
+  areaId: string;        // (Obrigatório) ID da "Área de Workflow" onde este processo será agrupado.
   ownerEmail: string;    // (Obrigatório) E-mail do colaborador proprietário deste workflow.
+  allowedUserIds: string[]; // (Obrigatório) Array de IDs de colaboradores que podem iniciar este workflow. Use ["all"] para permitir a todos.
   fields: FormFieldDefinition[]; // Array de objetos que define os campos do formulário.
   statuses: WorkflowStatusDefinition[]; // Array de objetos que define as etapas do processo.
   defaultSlaDays?: number; // (Opcional) Prazo padrão em dias úteis para a conclusão da solicitação.
@@ -36,7 +39,7 @@ Cada objeto no array `fields` representa um campo que o usuário preencherá no 
 interface FormFieldDefinition {
   id: string;        // ID único (sem espaços, usar snake_case). Ex: "valor_reembolso".
   label: string;     // O rótulo que aparece para o usuário. Ex: "Valor do Reembolso (R$)".
-  type: 'text' | 'textarea' | 'select' | 'date' | 'date-range'; // O tipo de campo.
+  type: 'text' | 'textarea' | 'select' | 'date' | 'date-range' | 'file'; // O tipo de campo.
   required: boolean; // `true` se o campo for obrigatório, `false` caso contrário.
   placeholder?: string; // (Opcional) Texto de ajuda dentro do campo.
   options?: string[];   // (Obrigatório para `type: 'select'`) Um array de strings com as opções.
@@ -49,6 +52,7 @@ interface FormFieldDefinition {
 -   `select`: Para uma lista de opções predefinidas.
 -   `date`: Para selecionar uma única data.
 -   `date-range`: Para selecionar um período (data de início e fim).
+-   `file`: Para o usuário poder anexar um arquivo.
 
 ### 2.2. Etapas do Workflow (`WorkflowStatusDefinition`)
 
@@ -59,6 +63,10 @@ Cada objeto no array `statuses` representa uma etapa ou status do processo. A or
 interface WorkflowStatusDefinition {
   id: string;    // ID único (sem espaços, usar snake_case). Ex: "em_analise".
   label: string; // O nome da etapa exibido para os usuários. Ex: "Em Análise".
+  action?: {     // (Opcional) Define uma ação que precisa ser tomada nesta etapa.
+    type: 'approval' | 'acknowledgement'; // 'approval' (Aprovar/Reprovar) ou 'acknowledgement' (Ciente).
+    label: string; // Texto do botão para solicitar a ação. Ex: "Solicitar Aprovação da Diretoria".
+  }
 }
 ```
 
@@ -95,20 +103,21 @@ interface RoutingRule {
 ## 3. Páginas de Interação com o Workflow
 
 ### 3.1. Submissão (Usuário Final)
--   **Localização:** `Aplicações`
+-   **Localização:** `Solicitações`
 -   **Funcionalidade:** O usuário clica no card do workflow desejado. Um modal (`WorkflowSubmissionModal`) é aberto, renderizando dinamicamente o formulário com base nos `fields` da definição. Ao submeter, uma nova `WorkflowRequest` é criada no Firestore.
 
 ### 3.2. Acompanhamento (Usuário Final)
--   **Localização:** `Aplicações` > Seção "Minhas Solicitações"
+-   **Localização:** `Solicitações` > Seção "Minhas Solicitações"
 -   **Funcionalidade:** Uma tabela (`MyRequests`) lista todas as solicitações feitas pelo usuário logado, exibindo o tipo, a data e o status atual.
 
 ### 3.3. Gerenciamento (Gestores)
--   **Localização:** `Menu do Avatar` > `Paineis de controle` > `Solicitações` (página `/requests`)
--   **Funcionalidade:** Uma caixa de entrada (`ManageRequests`) mostra todas as solicitações. Gestores podem:
+-   **Localização:** `Menu do Avatar` > `Caixa de Entrada` (página `/requests`)
+-   **Funcionalidade:** Uma caixa de entrada (`ManageRequests`) mostra todas as solicitações pendentes para os workflows que o usuário logado possui. Gestores podem:
     -   Filtrar por status ou responsável.
     -   Abrir detalhes de uma solicitação em um modal (`RequestApprovalModal`).
     -   Atribuir um responsável.
-    -   Mudar o status da solicitação (ex: de "Pendente" para "Aprovado").
+    -   Mudar o status da solicitação.
+    -   Solicitar aprovação/ciência de outros colaboradores, se a etapa estiver configurada para tal.
     -   Adicionar comentários no histórico de auditoria.
 
 ---
@@ -122,7 +131,9 @@ Este exemplo pode ser usado como um modelo para criar um arquivo `reembolso.json
   "name": "Solicitação de Reembolso",
   "description": "Utilize este formulário para solicitar o reembolso de despesas relacionadas ao trabalho. Anexe o comprovante na seção apropriada.",
   "icon": "DollarSign",
+  "areaId": "JHRMLJcWlD83r3q3pZk2",
   "ownerEmail": "responsavel.financeiro@3a.com",
+  "allowedUserIds": ["all"],
   "defaultSlaDays": 5,
   "fields": [
     {
@@ -151,16 +162,31 @@ Este exemplo pode ser usado como um modelo para criar um arquivo `reembolso.json
       "type": "textarea",
       "required": true,
       "placeholder": "Descreva o motivo da despesa."
+    },
+    {
+      "id": "comprovante",
+      "label": "Anexar Comprovante",
+      "type": "file",
+      "required": true,
+      "placeholder": ""
     }
   ],
   "statuses": [
     {
-      "id": "pendente",
-      "label": "Pendente"
+      "id": "pendente_analise_imediata",
+      "label": "Pendente de Análise Imediata"
     },
     {
       "id": "em_analise_financeiro",
       "label": "Em Análise (Financeiro)"
+    },
+    {
+      "id": "aguardando_aprovacao_diretoria",
+      "label": "Aguardando Aprovação da Diretoria",
+      "action": {
+        "type": "approval",
+        "label": "Solicitar Aprovação da Diretoria"
+      }
     },
     {
       "id": "aprovado",
