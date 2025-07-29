@@ -148,13 +148,16 @@ export default function GoogleDriveFiles() {
         setFolderHistory([]);
       } else {
         // Single folder or default to 'root'
-        const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : null;
-        const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || 'root' : 'root';
-        const rootFolder = { id: folderId, name: 'Início' };
+        const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
+        const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
+        
+        const rootFolderName = singleLink ? 'Início' : 'Início';
+        const rootFolder = { id: folderId, name: rootFolderName };
+        
         setInitialFolders([]);
         setCurrentFolder(rootFolder);
         setFolderHistory([rootFolder]);
-        listFiles(folderId);
+        if(folderId) listFiles(folderId);
       }
       setIsLoading(false);
     }
@@ -268,14 +271,14 @@ export default function GoogleDriveFiles() {
 
               return (
                   <li key={item.id} className="flex items-center gap-3 text-sm">
-                      {isDriveFile ? (
-                        <img src={item.iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
-                      ) : (
+                      {isFolder ? (
                         <Folder className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
+                      ) : (
+                        <img src={(item as DriveFile).iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
                       )}
                       <div className="flex-grow truncate">
                           {isFolder ? (
-                              <button onClick={() => handleFolderClick(item as DriveFile)} className="font-semibold hover:underline text-left flex items-center gap-1">
+                              <button onClick={() => handleFolderClick(item)} className="font-semibold hover:underline text-left flex items-center gap-1">
                                   {item.name}
                               </button>
                           ) : (
