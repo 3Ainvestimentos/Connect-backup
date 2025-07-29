@@ -33,6 +33,7 @@ const IframeCard = ({ title, src, contentClassName }: { title: string; src: stri
                 src={src}
                 className="w-full h-full border-0"
                 title={title}
+                allow="fullscreen"
             ></iframe>
         </CardContent>
     </Card>
@@ -238,7 +239,7 @@ export default function DashboardV3Page() {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <IframeCard title="Google Calendar" src={`https://calendar.google.com/calendar/embed?src=${user?.email}&ctz=America/Sao_Paulo&mode=AGENDA`} contentClassName="p-4" />
-                <IframeCard title="Google Drive" src={`https://drive.google.com/drive/u/0/folders/1OcUJkbDdYiNS4olLoYloF_fmiVQUy1LJ?authuser=${user?.email}`} contentClassName="p-0" />
+                <IframeCard title="Google Drive" src={`https://drive.google.com/drive/u/0/my-drive?authuser=${user?.email}`} contentClassName="p-0" />
             </div>
 
             {quickLinks.length > 0 && (
@@ -352,5 +353,6 @@ export default function DashboardV3Page() {
     </>
   );
 }
+
 
 
