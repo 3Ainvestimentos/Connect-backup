@@ -44,7 +44,7 @@ export function GoogleEventDetailsModal({ isOpen, onClose, event }: GoogleEventD
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl flex items-start gap-3">
-             <Calendar className="h-6 w-6 mt-1 text-primary" />
+             <Calendar className="h-6 w-6 mt-1 text-muted-foreground" />
              <span>{event.summary}</span>
           </DialogTitle>
           <DialogDescription>Detalhes do evento do Google Calendar.</DialogDescription>
@@ -70,7 +70,7 @@ export function GoogleEventDetailsModal({ isOpen, onClose, event }: GoogleEventD
                 {event.hangoutLink && (
                      <div className="flex items-center gap-3 text-sm">
                         <Video className="h-5 w-5 text-muted-foreground"/>
-                        <a href={event.hangoutLink} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                        <a href={event.hangoutLink} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                             Entrar na videoconferência
                             <ExternalLink className="h-3 w-3" />
                         </a>
