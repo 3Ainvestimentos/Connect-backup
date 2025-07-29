@@ -178,9 +178,8 @@ export default function DashboardV2Page() {
           </section>
         )}
         
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 flex flex-col gap-6">
-              <Card className="shadow-sm flex flex-col">
+        <section className="flex flex-col gap-6">
+            <Card className="shadow-sm flex flex-col w-full">
                 <CardHeader>
                   <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
                     <span>Mensagens</span>
@@ -222,10 +221,15 @@ export default function DashboardV2Page() {
                       </div>
                   )}
                 </CardContent>
-              </Card>
-              
-               {quickLinks.length > 0 && (
-                <Card className="shadow-sm">
+            </Card>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <GoogleCalendar />
+                <GoogleDriveFiles />
+            </div>
+
+            {quickLinks.length > 0 && (
+                <Card className="shadow-sm w-full">
                     <CardHeader>
                         <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
                     </CardHeader>
@@ -252,13 +256,7 @@ export default function DashboardV2Page() {
                         </div>
                     </CardContent>
                 </Card>
-              )}
-          </div>
-            
-          <div className="lg:col-span-1 flex flex-col gap-6">
-             <GoogleCalendar />
-             <GoogleDriveFiles />
-          </div>
+            )}
         </section>
       </div>
 
