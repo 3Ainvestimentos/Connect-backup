@@ -135,25 +135,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     } catch (error: unknown) {
-      let description = "Ocorreu um problema durante o login. Por favor, tente novamente.";
       if (error instanceof Error && 'code' in error) {
           const firebaseError = error as { code: string; message: string };
-          console.error("Firebase Login Error Code:", firebaseError.code);
-          console.error("Firebase Login Error Message:", firebaseError.message);
+          // Do not log "popup closed by user" as an error, it's a normal action.
           if (firebaseError.code !== 'auth/popup-closed-by-user' && firebaseError.code !== 'auth/cancelled-popup-request') {
-            description = `Detalhe do erro: ${firebaseError.message} (${firebaseError.code})`;
-          } else {
-            description = "A janela de login foi fechada antes da conclusão.";
+            console.error("Firebase Login Error:", firebaseError);
+            toast({
+              title: "Erro de Login",
+              description: `Detalhe do erro: ${firebaseError.message}`,
+              variant: "destructive",
+              duration: 10000,
+            });
           }
       } else {
            console.error("Error signing in with Google: ", error);
+           toast({
+                title: "Erro de Login",
+                description: "Ocorreu um problema desconhecido durante o login.",
+                variant: "destructive",
+                duration: 10000,
+           });
       }
-      toast({
-            title: "Erro de Login",
-            description: description,
-            variant: "destructive",
-            duration: 10000,
-      });
     } finally {
         setLoading(false);
     }
