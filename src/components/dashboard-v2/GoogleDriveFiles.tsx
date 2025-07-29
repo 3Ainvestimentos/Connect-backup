@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -129,7 +130,7 @@ export default function GoogleDriveFiles() {
                       variant="link" 
                       onClick={() => handleBreadcrumbClick(folder.id, index)} 
                       className={cn(
-                          "p-1 h-auto text-[hsl(170,60%,50%)] hover:text-[hsl(170,60%,40%)]",
+                          "p-1 h-auto text-muted-foreground hover:text-foreground",
                           index === folderHistory.length - 1 ? "font-semibold text-foreground hover:text-foreground/80" : ""
                       )}
                   >
