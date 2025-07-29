@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -68,13 +69,13 @@ export function GoogleEventDetailsModal({ isOpen, onClose, event }: GoogleEventD
                 )}
                 
                 {event.hangoutLink && (
-                     <div className="flex items-center gap-3 text-sm">
-                        <Video className="h-5 w-5 text-muted-foreground"/>
-                        <a href={event.hangoutLink} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+                     <Button asChild variant="outline" className="w-full">
+                        <a href={event.hangoutLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                            <Video className="h-4 w-4 text-muted-foreground"/>
                             Entrar na videoconferência
                             <ExternalLink className="h-3 w-3" />
                         </a>
-                    </div>
+                    </Button>
                 )}
                 
                 {event.description && (
