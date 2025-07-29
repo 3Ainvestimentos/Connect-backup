@@ -1,8 +1,7 @@
-
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,7 +10,7 @@ import {
   MessageSquare, Link as LinkIcon, Trash2
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
@@ -170,7 +169,7 @@ export default function DashboardV2Page() {
           <section>
             <PageHeader
               title={pageTitle}
-              description={<Link href="/news" className="hover:underline">Veja os últimos anúncios e destaques.</Link>}
+              description="Veja os últimos anúncios e destaques da empresa."
             />
             <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>
               {renderHighlights()}
@@ -181,10 +180,13 @@ export default function DashboardV2Page() {
         <section className="flex flex-col gap-6">
             <Card className="shadow-sm flex flex-col w-full">
                 <CardHeader>
-                  <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
-                    <span>Mensagens</span>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="font-headline text-foreground text-xl">Mensagens</CardTitle>
+                      <CardDescription>Comunicados e alertas importantes direcionados a você.</CardDescription>
+                    </div>
                     {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
-                  </CardTitle>
+                  </div>
                 </CardHeader>
                 <CardContent className="flex-1 min-h-[300px] relative">
                   {userMessages.length > 0 ? (
@@ -232,6 +234,7 @@ export default function DashboardV2Page() {
                 <Card className="shadow-sm w-full">
                     <CardHeader>
                         <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                        <CardDescription>Acesse rapidamente sistemas e recursos externos.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex justify-center">
                         <div className="flex justify-center flex-wrap gap-3">

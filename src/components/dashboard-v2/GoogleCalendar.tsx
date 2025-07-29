@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CalendarDays, Clock } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isSameDay, parseISO } from 'date-fns';
@@ -143,6 +143,7 @@ export default function GoogleCalendar() {
         <Card className="shadow-sm flex flex-col h-full">
         <CardHeader>
             <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
+            <CardDescription>Visualize seus próximos compromissos e eventos.</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col gap-4">
             <div className="flex justify-center">
