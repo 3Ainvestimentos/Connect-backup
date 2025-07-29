@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -154,8 +155,8 @@ export default function GoogleCalendar() {
                     className="rounded-md border"
                     modifiers={{ event: eventDates }}
                     modifiersClassNames={{
-                        event: 'bg-muted/80 rounded-full',
-                        today: 'bg-muted-foreground/40 text-foreground rounded-full',
+                        event: 'bg-muted rounded-full',
+                        today: 'bg-muted-foreground/40 text-foreground rounded-full font-bold',
                     }}
                     locale={ptBR}
                 />
