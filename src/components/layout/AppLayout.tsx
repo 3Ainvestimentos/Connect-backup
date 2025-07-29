@@ -56,7 +56,6 @@ const navItems = [
   { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
   { href: '/dashboard-v2', label: 'Dashboard v2', icon: LayoutDashboard, external: false },
-  { href: '/dashboard-v3', label: 'Dashboard v3 (Teste)', icon: TestTube2, external: false },
 ];
 
 function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
