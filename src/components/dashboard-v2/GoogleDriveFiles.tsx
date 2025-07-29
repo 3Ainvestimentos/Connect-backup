@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -39,8 +38,8 @@ export default function GoogleDriveFiles() {
   const [items, setItems] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentFolder, setCurrentFolder] = useState<FolderInfo>({ id: ROOT_FOLDER_ID, name: 'Google Drive' });
-  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([{ id: ROOT_FOLDER_ID, name: 'Google Drive' }]);
+  const [currentFolder, setCurrentFolder] = useState<FolderInfo>({ id: ROOT_FOLDER_ID, name: 'Início' });
+  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([{ id: ROOT_FOLDER_ID, name: 'Início' }]);
 
   const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
@@ -130,8 +129,8 @@ export default function GoogleDriveFiles() {
                       variant="link" 
                       onClick={() => handleBreadcrumbClick(folder.id, index)} 
                       className={cn(
-                          "p-1 h-auto",
-                          index === folderHistory.length - 1 ? "font-semibold text-foreground" : ""
+                          "p-1 h-auto text-[hsl(170,60%,50%)] hover:text-[hsl(170,60%,40%)]",
+                          index === folderHistory.length - 1 ? "font-semibold text-foreground hover:text-foreground/80" : ""
                       )}
                   >
                       {folder.name}
