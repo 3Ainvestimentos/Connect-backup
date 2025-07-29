@@ -23,12 +23,12 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 
-const IframeCard = ({ title, src }: { title: string; src: string }) => (
+const IframeCard = ({ title, src, contentClassName }: { title: string; src: string; contentClassName?: string }) => (
     <Card className="shadow-sm flex flex-col h-[600px] w-full">
         <CardHeader>
             <CardTitle className="font-headline text-foreground text-xl">{title}</CardTitle>
         </CardHeader>
-        <CardContent className="flex-grow p-0">
+        <CardContent className={cn("flex-grow", contentClassName)}>
             <iframe
                 src={src}
                 className="w-full h-full border-0"
@@ -237,8 +237,8 @@ export default function DashboardV3Page() {
             </Card>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <IframeCard title="Google Calendar" src={`https://calendar.google.com/calendar/embed?src=${user?.email}&ctz=America/Sao_Paulo&mode=AGENDA`} />
-                <IframeCard title="Google Drive" src="https://drive.google.com/embeddedfolderview?id=1OcUJkbDdYiNS4olLoYloF_fmiVQUy1LJ#list" />
+                <IframeCard title="Google Calendar" src={`https://calendar.google.com/calendar/embed?src=${user?.email}&ctz=America/Sao_Paulo&mode=AGENDA`} contentClassName="p-4" />
+                <IframeCard title="Google Drive" src={`https://drive.google.com/drive/u/0/folders/1OcUJkbDdYiNS4olLoYloF_fmiVQUy1LJ?authuser=${user?.email}`} contentClassName="p-0" />
             </div>
 
             {quickLinks.length > 0 && (
@@ -352,4 +352,5 @@ export default function DashboardV3Page() {
     </>
   );
 }
+
 
