@@ -1,10 +1,11 @@
+
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { HardDrive, AlertCircle, ExternalLink, Folder, ChevronRight, Home } from 'lucide-react';
+import { HardDrive, AlertCircle, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
@@ -25,11 +26,6 @@ interface DriveFile {
   mimeType: string;
 }
 
-interface Breadcrumb {
-  id: string;
-  name: string;
-}
-
 const ROOT_FOLDER_ID = '1e2iiKdm2hPrGZqHYD1x9Gdk2I8iBDHxo';
 
 export default function GoogleDriveFiles() {
@@ -37,11 +33,8 @@ export default function GoogleDriveFiles() {
   const [files, setFiles] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [currentFolderId, setCurrentFolderId] = useState<string>(ROOT_FOLDER_ID);
-  const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([{ id: ROOT_FOLDER_ID, name: 'Início' }]);
 
-  const listFiles = useCallback(async (folderId: string) => {
+  const listFiles = useCallback(async () => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
       else if (!accessToken) setError("Token de acesso não encontrado. Por favor, atualize a página.");
@@ -56,13 +49,19 @@ export default function GoogleDriveFiles() {
       window.gapi.client.setToken({ access_token: accessToken });
       
       const response = await window.gapi.client.drive.files.list({
-          q: `'${folderId}' in parents and trashed = false`,
-          pageSize: 50, // Increased page size
+          // This query recursively finds all files that have the root folder as an ancestor.
+          q: `'${ROOT_FOLDER_ID}' in parents and trashed = false`,
+          pageSize: 100,
           fields: "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink, mimeType)",
-          orderBy: 'folder,modifiedTime desc'
+          orderBy: 'modifiedTime desc'
       });
 
-      setFiles(response.result.files || []);
+      // Filter out folders to show only files.
+      const documentsOnly = response.result.files?.filter(
+        (file: DriveFile) => file.mimeType !== 'application/vnd.google-apps.folder'
+      ) || [];
+
+      setFiles(documentsOnly);
 
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
@@ -91,7 +90,7 @@ export default function GoogleDriveFiles() {
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
         }).then(() => {
             if (user && accessToken) {
-                listFiles(currentFolderId);
+                listFiles();
             } else if (!user) {
               setIsLoading(false);
             }
@@ -106,24 +105,8 @@ export default function GoogleDriveFiles() {
     } else {
         window.gapi.load('client', initializeGapiClient);
     }
-  }, [user, accessToken]);
-
-  const handleFolderClick = (folder: DriveFile) => {
-      setCurrentFolderId(folder.id);
-      setBreadcrumbs(prev => [...prev, { id: folder.id, name: folder.name }]);
-      listFiles(folder.id);
-  }
-
-  const handleBreadcrumbClick = (folderId: string, index: number) => {
-      setCurrentFolderId(folderId);
-      setBreadcrumbs(prev => prev.slice(0, index + 1));
-      listFiles(folderId);
-  }
+  }, [user, accessToken, listFiles]);
   
-  const folders = useMemo(() => files.filter(f => f.mimeType === 'application/vnd.google-apps.folder'), [files]);
-  const regularFiles = useMemo(() => files.filter(f => f.mimeType !== 'application/vnd.google-apps.folder'), [files]);
-
-
   if (isLoading && files.length === 0) {
     return (
       <Card>
@@ -148,7 +131,7 @@ export default function GoogleDriveFiles() {
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar arquivos</p>
                 <p className="text-xs">{error}</p>
-                <Button variant="link" size="sm" onClick={() => listFiles(currentFolderId)} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
+                <Button variant="link" size="sm" onClick={() => listFiles()} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
       );
@@ -157,43 +140,16 @@ export default function GoogleDriveFiles() {
   return (
     <Card className="flex flex-col h-full">
       <CardHeader>
-        <CardTitle className="font-headline text-foreground text-xl">Google Drive</CardTitle>
-         <div className="text-sm text-muted-foreground flex items-center gap-1 flex-wrap">
-              {breadcrumbs.map((crumb, index) => (
-                  <React.Fragment key={crumb.id}>
-                      <Button 
-                        variant="link" 
-                        className={cn("p-0 h-auto font-normal", index === breadcrumbs.length -1 && "text-foreground font-semibold")}
-                        onClick={() => handleBreadcrumbClick(crumb.id, index)}
-                        disabled={isLoading}
-                      >
-                         {crumb.name}
-                      </Button>
-                      {index < breadcrumbs.length - 1 && <ChevronRight className="h-4 w-4" />}
-                  </React.Fragment>
-              ))}
-          </div>
+        <CardTitle className="font-headline text-foreground text-xl">Arquivos Recentes no Drive</CardTitle>
+         <CardDescription>
+            Documentos da pasta compartilhada, ordenados pelos mais recentes.
+          </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow min-h-0">
-        <div className="h-full relative">
-            <div className={cn("absolute inset-0 transition-opacity", isLoading ? "opacity-40" : "opacity-100")}>
+        <div className={cn("h-full relative transition-opacity", isLoading ? "opacity-40" : "opacity-100")}>
             {files.length > 0 ? (
             <ul className="space-y-3">
-                {folders.map((file) => (
-                <li key={file.id} className="flex items-center gap-3 text-sm">
-                    <img src={file.iconLink} alt="folder icon" className="w-5 h-5 flex-shrink-0" />
-                    <div className="flex-grow truncate">
-                    <button onClick={() => handleFolderClick(file)} disabled={isLoading} className="font-semibold hover:underline text-left flex items-center gap-1">
-                        <Folder className="h-4 w-4 text-muted-foreground mr-1" />
-                        {file.name}
-                    </button>
-                    <p className="text-xs text-muted-foreground">
-                        Modificado {formatDistanceToNow(new Date(file.modifiedTime), { addSuffix: true, locale: ptBR })}
-                    </p>
-                    </div>
-                </li>
-                ))}
-                {regularFiles.map((file) => (
+                {files.map((file) => (
                     <li key={file.id} className="flex items-center gap-3 text-sm">
                         <img src={file.iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
                         <div className="flex-grow truncate">
@@ -209,9 +165,8 @@ export default function GoogleDriveFiles() {
                 ))}
             </ul>
             ) : (
-            <p className="text-center text-muted-foreground text-sm py-4">Nenhum arquivo ou pasta encontrado.</p>
+            <p className="text-center text-muted-foreground text-sm py-4">Nenhum arquivo encontrado.</p>
             )}
-            </div>
         </div>
       </CardContent>
     </Card>
