@@ -30,7 +30,7 @@ export default function GoogleDriveFiles() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const listRecentFiles = useCallback(async () => {
+  const listFilesFromSharedFolder = useCallback(async () => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
       else if (!accessToken) setError("Token de acesso não encontrado. Por favor, atualize a página.");
@@ -43,11 +43,14 @@ export default function GoogleDriveFiles() {
 
     try {
       window.gapi.client.setToken({ access_token: accessToken });
+
+      const FOLDER_ID = '1OcUJkbDdYiNS4olLoYloF_fmiVQUy1LJ';
       
       const response = await window.gapi.client.drive.files.list({
-          'pageSize': 5,
-          'fields': "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink)",
-          'orderBy': 'modifiedTime desc'
+          q: `'${FOLDER_ID}' in parents and trashed = false`,
+          pageSize: 15,
+          fields: "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink)",
+          orderBy: 'folder,modifiedTime desc'
       });
 
       setFiles(response.result.files || []);
@@ -79,7 +82,7 @@ export default function GoogleDriveFiles() {
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
         }).then(() => {
             if (user && accessToken) {
-                listRecentFiles();
+                listFilesFromSharedFolder();
             } else if (!user) {
               setIsLoading(false);
             }
@@ -94,7 +97,7 @@ export default function GoogleDriveFiles() {
     } else {
         window.gapi.load('client', initializeGapiClient);
     }
-  }, [user, accessToken, listRecentFiles]);
+  }, [user, accessToken, listFilesFromSharedFolder]);
 
 
   if (isLoading) {
@@ -120,7 +123,7 @@ export default function GoogleDriveFiles() {
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar arquivos</p>
                 <p className="text-xs">{error}</p>
-                <Button variant="link" size="sm" onClick={listRecentFiles} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
+                <Button variant="link" size="sm" onClick={listFilesFromSharedFolder} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
       );
@@ -149,7 +152,7 @@ export default function GoogleDriveFiles() {
             ))}
           </ul>
         ) : (
-          <p className="text-center text-muted-foreground text-sm py-4">Nenhum arquivo recente encontrado.</p>
+          <p className="text-center text-muted-foreground text-sm py-4">Nenhum arquivo encontrado na pasta.</p>
         )}
       </CardContent>
     </Card>
