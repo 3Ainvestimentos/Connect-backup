@@ -10,6 +10,7 @@ import { Calendar, Clock, AlignLeft, Video, MapPin, Users, User, Check, HelpCirc
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface GoogleEventDetailsModalProps {
   isOpen: boolean;
