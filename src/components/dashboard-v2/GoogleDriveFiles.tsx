@@ -5,7 +5,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { HardDrive, AlertCircle, ExternalLink, Folder, ChevronRight, File as FileIcon } from 'lucide-react';
+import { HardDrive, AlertCircle, ExternalLink, FolderOpen, ChevronRight, File as FileIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
@@ -151,12 +151,12 @@ export default function GoogleDriveFiles() {
         const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
         const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
         
-        const rootFolderName = singleLink ? 'Início' : 'Início';
+        const rootFolderName = 'Início';
         const rootFolder = { id: folderId, name: rootFolderName };
         
         setInitialFolders([]);
         setCurrentFolder(rootFolder);
-        setFolderHistory([rootFolder]);
+        setFolderHistory([]);
         if(folderId) listFiles(folderId);
       }
       setIsLoading(false);
@@ -202,7 +202,7 @@ export default function GoogleDriveFiles() {
                   "p-1 h-auto text-muted-foreground hover:text-foreground",
                   history.length === 0 && "font-semibold text-foreground hover:text-foreground/80"
               )}
-              disabled={initialFolders.length <= 1}
+              disabled={initialFolders.length <= 1 && folderHistory.length === 0}
           >
               {rootName}
           </Button>
@@ -272,7 +272,7 @@ export default function GoogleDriveFiles() {
               return (
                   <li key={item.id} className="flex items-center gap-3 text-sm">
                       {isFolder ? (
-                        <Folder className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
+                        <FolderOpen className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
                       ) : (
                         <img src={(item as DriveFile).iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
                       )}
