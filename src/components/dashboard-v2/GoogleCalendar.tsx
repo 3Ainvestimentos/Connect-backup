@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
@@ -10,6 +9,9 @@ import { format, startOfMonth, endOfMonth, isSameDay, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale';
 import { Calendar } from '../ui/calendar';
 import { ScrollArea } from '../ui/scroll-area';
+import { GoogleEventDetailsModal } from './GoogleEventDetailsModal';
+import { cn } from '@/lib/utils';
+
 
 declare global {
     interface Window {
@@ -28,7 +30,10 @@ export interface CalendarEvent {
   end: {
       dateTime: string;
       date: string;
-  }
+  };
+  attendees?: { email: string, displayName?: string, responseStatus: string }[];
+  hangoutLink?: string;
+  location?: string;
 }
 
 export default function GoogleCalendar() {
@@ -38,6 +43,8 @@ export default function GoogleCalendar() {
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
 
   const listMonthEvents = useCallback(async (month: Date) => {
     if (!user || !accessToken) {
@@ -131,64 +138,78 @@ export default function GoogleCalendar() {
 
 
   return (
-    <Card className="shadow-sm flex flex-col h-full">
-      <CardHeader>
-        <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow flex flex-col gap-4">
-        <div className="flex justify-center">
-            <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={handleDayClick}
-                month={currentMonth}
-                onMonthChange={handleMonthChange}
-                className="rounded-md border"
-                modifiers={{ event: eventDates }}
-                modifiersClassNames={{
-                    event: 'bg-muted-foreground/20 rounded-full',
-                    today: 'bg-muted-foreground/40 text-foreground rounded-full',
-                }}
-                locale={ptBR}
-            />
-        </div>
-        <div className="flex-grow min-h-0">
-          <h3 className="text-sm font-semibold mb-2">
-            Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
-          </h3>
-          <ScrollArea className="h-40">
-              {isLoading ? (
-                <div className="space-y-2 pr-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                </div>
-              ) : error ? (
-                <div className="text-center text-destructive text-sm p-4">
-                  <AlertCircle className="mx-auto h-6 w-6 mb-1"/>
-                  <p>{error}</p>
-                </div>
-              ) : eventsForSelectedDay.length > 0 ? (
-                <ul className="space-y-2 pr-4">
-                  {eventsForSelectedDay.map((event) => {
-                    const startDate = new Date(event.start.dateTime || event.start.date);
-                    return (
-                        <li key={event.id} className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted cursor-pointer">
-                            <div className="font-semibold text-primary w-12 flex-shrink-0">
-                                {event.start.dateTime ? format(startDate, 'HH:mm') : 'Dia todo'}
-                            </div>
-                            <div className="flex-grow border-l-2 border-border pl-3 truncate">
-                                <p className="font-semibold truncate">{event.summary}</p>
-                            </div>
-                        </li>
-                    );
-                  })}
-                </ul>
-              ) : (
-                <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para este dia.</p>
-              )}
-          </ScrollArea>
-        </div>
-      </CardContent>
-    </Card>
+    <>
+        <Card className="shadow-sm flex flex-col h-full">
+        <CardHeader>
+            <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow flex flex-col gap-4">
+            <div className="flex justify-center">
+                <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDayClick}
+                    month={currentMonth}
+                    onMonthChange={handleMonthChange}
+                    className="rounded-md border"
+                    modifiers={{ event: eventDates }}
+                    modifiersClassNames={{
+                        event: 'bg-muted/80 rounded-full',
+                        today: 'bg-muted-foreground/40 text-foreground rounded-full',
+                    }}
+                    locale={ptBR}
+                />
+            </div>
+            <div className="flex-grow min-h-0">
+            <h3 className="text-sm font-semibold mb-2">
+                Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
+            </h3>
+            <ScrollArea className="h-40">
+                {isLoading ? (
+                    <div className="space-y-2 pr-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                ) : error ? (
+                    <div className="text-center text-destructive text-sm p-4">
+                    <AlertCircle className="mx-auto h-6 w-6 mb-1"/>
+                    <p>{error}</p>
+                    </div>
+                ) : eventsForSelectedDay.length > 0 ? (
+                    <ul className="space-y-2 pr-4">
+                    {eventsForSelectedDay.map((event) => {
+                        const startDate = new Date(event.start.dateTime || event.start.date);
+                        const endDate = new Date(event.end.dateTime || event.end.date);
+                        const isAllDay = !event.start.dateTime;
+                        
+                        const timeFormat = isAllDay 
+                          ? 'Dia todo'
+                          : `${format(startDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
+
+                        return (
+                            <li key={event.id} className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted cursor-pointer" onClick={() => setSelectedEvent(event)}>
+                                <div className={cn("font-semibold text-foreground w-24 flex-shrink-0 text-center", isAllDay && 'text-muted-foreground')}>
+                                    {timeFormat}
+                                </div>
+                                <div className="flex-grow border-l-2 border-border pl-3 truncate">
+                                    <p className="font-semibold truncate">{event.summary}</p>
+                                </div>
+                            </li>
+                        );
+                    })}
+                    </ul>
+                ) : (
+                    <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para este dia.</p>
+                )}
+            </ScrollArea>
+            </div>
+        </CardContent>
+        </Card>
+        <GoogleEventDetailsModal
+            isOpen={!!selectedEvent}
+            onClose={() => setSelectedEvent(null)}
+            event={selectedEvent}
+        />
+    </>
   );
 }
