@@ -59,15 +59,6 @@ export default function LoginPage() {
           )}
           Entrar com Google
         </Button>
-
-        {/* Test Video */}
-        <video
-            controls
-            className="mt-4 w-full"
-            src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Tela%20de%20login%2Fbanner-inicial-3a-invest.mp4?alt=media&token=10744d7f-79e4-44f0-aba3-395bfd2cbbb6"
-        >
-        </video>
-
       </div>
 
       {/* Footer Text */}
