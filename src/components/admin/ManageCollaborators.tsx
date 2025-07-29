@@ -11,13 +11,14 @@ import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
 import Papa from 'papaparse';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Badge } from '../ui/badge';
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -31,6 +32,7 @@ const collaboratorSchema = z.object({
     segment: z.string().min(1, "Segmento é obrigatório"),
     leader: z.string().min(1, "Líder é obrigatório"),
     city: z.string().min(1, "Cidade é obrigatória"),
+    googleDriveLink: z.string().url("URL inválida.").optional().or(z.literal(''))
 });
 
 type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
@@ -111,6 +113,7 @@ export function ManageCollaborators() {
                 segment: '',
                 leader: '',
                 city: '',
+                googleDriveLink: '',
             });
         }
         setIsFormOpen(true);
@@ -184,6 +187,7 @@ export function ManageCollaborators() {
                         segment: row.segment?.trim(),
                         leader: row.leader?.trim(),
                         city: row.city?.trim(),
+                        googleDriveLink: row.googleDriveLink?.trim() || '',
                     }))
                     .filter(c => c.id3a && c.name && c.email); // Basic validation
 
@@ -272,26 +276,29 @@ export function ManageCollaborators() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <SortableHeader tkey="id3a" label="ID 3A RIVA" />
                                     <SortableHeader tkey="name" label="Colaborador" />
                                     <SortableHeader tkey="area" label="Área" />
                                     <SortableHeader tkey="position" label="Cargo" />
-                                    <SortableHeader tkey="axis" label="Eixo" />
-                                    <SortableHeader tkey="segment" label="Segmento" />
-                                    <SortableHeader tkey="city" label="Cidade" />
+                                    <SortableHeader tkey="googleDriveLink" label="Google Drive" />
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredAndSortedCollaborators.map(item => (
                                     <TableRow key={item.id}>
-                                        <TableCell>{item.id3a}</TableCell>
                                         <TableCell className="font-medium">{item.name}<br/><span className="text-xs text-muted-foreground">{item.email}</span></TableCell>
                                         <TableCell>{item.area}</TableCell>
                                         <TableCell>{item.position}</TableCell>
-                                        <TableCell>{item.axis}</TableCell>
-                                        <TableCell>{item.segment}</TableCell>
-                                        <TableCell>{item.city}</TableCell>
+                                        <TableCell>
+                                            {item.googleDriveLink ? (
+                                                <Badge variant="secondary" className="flex items-center w-fit gap-1.5">
+                                                    <LinkIcon className="h-3 w-3" />
+                                                    Configurado
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline">Padrão</Badge>
+                                            )}
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <Button variant="ghost" size="icon" onClick={() => handleFormDialogOpen(item)} className="hover:bg-muted">
                                                 <Edit className="h-4 w-4" />
@@ -346,6 +353,11 @@ export function ManageCollaborators() {
                             <Label htmlFor="photoURL">URL da Foto (opcional)</Label>
                             <Input id="photoURL" {...register('photoURL')} placeholder="https://..." disabled={isFormSubmitting}/>
                             {errors.photoURL && <p className="text-sm text-destructive mt-1">{errors.photoURL.message}</p>}
+                        </div>
+                         <div>
+                            <Label htmlFor="googleDriveLink">Link do Google Drive (opcional)</Label>
+                            <Input id="googleDriveLink" {...register('googleDriveLink')} placeholder="https://drive.google.com/drive/folders/..." disabled={isFormSubmitting}/>
+                            {errors.googleDriveLink && <p className="text-sm text-destructive mt-1">{errors.googleDriveLink.message}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -418,9 +430,9 @@ export function ManageCollaborators() {
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                             <li>Crie uma planilha (no Excel, Google Sheets, etc.).</li>
                             <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">id3a,name,email,axis,area,position,segment,leader,city,photoURL</code>
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">id3a,name,email,axis,area,position,segment,leader,city,photoURL,googleDriveLink</code>
                             </li>
-                             <li>A coluna `photoURL` é opcional, as outras são obrigatórias.</li>
+                             <li>As colunas `photoURL` e `googleDriveLink` são opcionais, as outras são obrigatórias.</li>
                             <li>Preencha as linhas com os dados de cada colaborador.</li>
                             <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
                             <li>Clique no botão abaixo para selecionar e enviar o arquivo.</li>
@@ -453,7 +465,3 @@ export function ManageCollaborators() {
         </>
     );
 }
-
-    
-
-    

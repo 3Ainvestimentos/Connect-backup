@@ -25,6 +25,7 @@ export interface Collaborator {
   leader: string;    // Líder
   city: string;      // Cidade
   permissions: CollaboratorPermissions;
+  googleDriveLink?: string; // Link para a pasta pessoal do Google Drive
 }
 
 interface CollaboratorsContextType {
@@ -121,5 +122,3 @@ export const useCollaborators = (): CollaboratorsContextType => {
   }
   return context;
 };
-
-    

@@ -11,6 +11,7 @@ import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
 declare global {
     interface Window {
@@ -32,15 +33,41 @@ interface FolderInfo {
     name: string;
 }
 
-const ROOT_FOLDER_ID = '1OcUJkbDdYiNS4olLoYloF_fmiVQUy1LJ';
+const extractFolderIdFromUrl = (url: string): string | null => {
+    const regex = /folders\/([a-zA-Z0-9-_]+)/;
+    const match = url.match(regex);
+    return match ? match[1] : null;
+};
+
 
 export default function GoogleDriveFiles() {
   const { user, accessToken } = useAuth();
+  const { collaborators } = useCollaborators();
   const [items, setItems] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentFolder, setCurrentFolder] = useState<FolderInfo>({ id: ROOT_FOLDER_ID, name: 'Início' });
-  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([{ id: ROOT_FOLDER_ID, name: 'Início' }]);
+
+  const currentUserCollab = useMemo(() => {
+    if (!user) return null;
+    return collaborators.find(c => c.email === user.email);
+  }, [user, collaborators]);
+
+  const rootFolderId = useMemo(() => {
+      if (currentUserCollab?.googleDriveLink) {
+          return extractFolderIdFromUrl(currentUserCollab.googleDriveLink) || 'root';
+      }
+      return 'root';
+  }, [currentUserCollab]);
+
+
+  const [currentFolder, setCurrentFolder] = useState<FolderInfo>({ id: rootFolderId, name: 'Início' });
+  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([{ id: rootFolderId, name: 'Início' }]);
+  
+  useEffect(() => {
+    setCurrentFolder({ id: rootFolderId, name: 'Início' });
+    setFolderHistory([{ id: rootFolderId, name: 'Início' }]);
+  }, [rootFolderId]);
+
 
   const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
