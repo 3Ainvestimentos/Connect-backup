@@ -268,7 +268,11 @@ export default function GoogleDriveFiles() {
 
               return (
                   <li key={item.id} className="flex items-center gap-3 text-sm">
-                      <img src={isDriveFile ? item.iconLink : "https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_1.ico"} alt="file icon" className="w-5 h-5 flex-shrink-0" />
+                      {isDriveFile ? (
+                        <img src={item.iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
+                      ) : (
+                        <Folder className="w-5 h-5 flex-shrink-0 text-muted-foreground" />
+                      )}
                       <div className="flex-grow truncate">
                           {isFolder ? (
                               <button onClick={() => handleFolderClick(item as DriveFile)} className="font-semibold hover:underline text-left flex items-center gap-1">
