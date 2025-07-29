@@ -5,11 +5,12 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { HardDrive, AlertCircle, ExternalLink } from 'lucide-react';
+import { HardDrive, AlertCircle, ExternalLink, Folder, ChevronRight } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 
 declare global {
     interface Window {
@@ -26,15 +27,22 @@ interface DriveFile {
   mimeType: string;
 }
 
-const ROOT_FOLDER_ID = '1e2iiKdm2hPrGZqHYD1x9Gdk2I8iBDHxo';
+interface FolderInfo {
+    id: string;
+    name: string;
+}
+
+const ROOT_FOLDER_ID = '1OcUJkbDdYiNS4olLoYloF_fmiVQUy1LJ';
 
 export default function GoogleDriveFiles() {
   const { user, accessToken } = useAuth();
-  const [files, setFiles] = useState<DriveFile[]>([]);
+  const [items, setItems] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentFolder, setCurrentFolder] = useState<FolderInfo>({ id: ROOT_FOLDER_ID, name: 'Google Drive' });
+  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([{ id: ROOT_FOLDER_ID, name: 'Google Drive' }]);
 
-  const listFiles = useCallback(async () => {
+  const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
       else if (!accessToken) setError("Token de acesso não encontrado. Por favor, atualize a página.");
@@ -49,19 +57,13 @@ export default function GoogleDriveFiles() {
       window.gapi.client.setToken({ access_token: accessToken });
       
       const response = await window.gapi.client.drive.files.list({
-          // This query recursively finds all files that have the root folder as an ancestor.
-          q: `'${ROOT_FOLDER_ID}' in parents and trashed = false`,
+          q: `'${folderId}' in parents and trashed = false`,
           pageSize: 100,
           fields: "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink, mimeType)",
-          orderBy: 'modifiedTime desc'
+          orderBy: 'folder,modifiedTime desc' // Sort by folders first, then by date
       });
 
-      // Filter out folders to show only files.
-      const documentsOnly = response.result.files?.filter(
-        (file: DriveFile) => file.mimeType !== 'application/vnd.google-apps.folder'
-      ) || [];
-
-      setFiles(documentsOnly);
+      setItems(response.result.files || []);
 
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
@@ -90,7 +92,7 @@ export default function GoogleDriveFiles() {
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
         }).then(() => {
             if (user && accessToken) {
-                listFiles();
+                listFiles(currentFolder.id);
             } else if (!user) {
               setIsLoading(false);
             }
@@ -105,9 +107,42 @@ export default function GoogleDriveFiles() {
     } else {
         window.gapi.load('client', initializeGapiClient);
     }
-  }, [user, accessToken, listFiles]);
+  }, [user, accessToken, listFiles, currentFolder.id]);
+
+  const handleFolderClick = (folder: DriveFile) => {
+    const newFolder = { id: folder.id, name: folder.name };
+    setCurrentFolder(newFolder);
+    setFolderHistory(prev => [...prev, newFolder]);
+    listFiles(folder.id);
+  };
   
-  if (isLoading && files.length === 0) {
+  const handleBreadcrumbClick = (folderId: string, index: number) => {
+      setCurrentFolder({ id: folderId, name: folderHistory[index].name });
+      setFolderHistory(prev => prev.slice(0, index + 1));
+      listFiles(folderId);
+  }
+
+  const renderBreadcrumbs = () => (
+      <div className="flex items-center text-sm text-muted-foreground flex-wrap">
+          {folderHistory.map((folder, index) => (
+              <React.Fragment key={folder.id}>
+                  <Button 
+                      variant="link" 
+                      onClick={() => handleBreadcrumbClick(folder.id, index)} 
+                      className={cn(
+                          "p-1 h-auto",
+                          index === folderHistory.length - 1 ? "font-semibold text-foreground" : ""
+                      )}
+                  >
+                      {folder.name}
+                  </Button>
+                  {index < folderHistory.length - 1 && <ChevronRight className="h-4 w-4" />}
+              </React.Fragment>
+          ))}
+      </div>
+  );
+  
+  if (isLoading && items.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -131,7 +166,7 @@ export default function GoogleDriveFiles() {
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar arquivos</p>
                 <p className="text-xs">{error}</p>
-                <Button variant="link" size="sm" onClick={() => listFiles()} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
+                <Button variant="link" size="sm" onClick={() => listFiles(currentFolder.id)} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
       );
@@ -140,33 +175,45 @@ export default function GoogleDriveFiles() {
   return (
     <Card className="flex flex-col h-full">
       <CardHeader>
-        <CardTitle className="font-headline text-foreground text-xl">Arquivos Recentes no Drive</CardTitle>
-         <CardDescription>
-            Documentos da pasta compartilhada, ordenados pelos mais recentes.
-          </CardDescription>
+        <CardTitle className="font-headline text-foreground text-xl">Google Drive</CardTitle>
+        <CardDescription>
+            Navegue pelas pastas ou abra os arquivos diretamente.
+        </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow min-h-0">
-        <div className={cn("h-full relative transition-opacity", isLoading ? "opacity-40" : "opacity-100")}>
-            {files.length > 0 ? (
-            <ul className="space-y-3">
-                {files.map((file) => (
-                    <li key={file.id} className="flex items-center gap-3 text-sm">
-                        <img src={file.iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
-                        <div className="flex-grow truncate">
-                        <a href={file.webViewLink} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline flex items-center gap-1">
-                            {file.name}
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                        </a>
-                        <p className="text-xs text-muted-foreground">
-                            Modificado {formatDistanceToNow(new Date(file.modifiedTime), { addSuffix: true, locale: ptBR })}
-                        </p>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-            ) : (
-            <p className="text-center text-muted-foreground text-sm py-4">Nenhum arquivo encontrado.</p>
-            )}
+      <CardContent className="flex-grow min-h-0 flex flex-col gap-2">
+         {renderBreadcrumbs()}
+         <div className="flex-grow min-h-0">
+            <ScrollArea className={cn("h-full relative transition-opacity pr-3", isLoading ? "opacity-40" : "opacity-100")}>
+                {items.length > 0 ? (
+                <ul className="space-y-3">
+                    {items.map((item) => {
+                        const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
+                        return (
+                            <li key={item.id} className="flex items-center gap-3 text-sm">
+                                <img src={item.iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
+                                <div className="flex-grow truncate">
+                                    {isFolder ? (
+                                        <button onClick={() => handleFolderClick(item)} className="font-semibold hover:underline text-left flex items-center gap-1">
+                                            {item.name}
+                                        </button>
+                                    ) : (
+                                        <a href={item.webViewLink} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline flex items-center gap-1">
+                                            {item.name}
+                                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                                        </a>
+                                    )}
+                                    <p className="text-xs text-muted-foreground">
+                                        Modificado {formatDistanceToNow(new Date(item.modifiedTime), { addSuffix: true, locale: ptBR })}
+                                    </p>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+                ) : (
+                <p className="text-center text-muted-foreground text-sm py-4">Nenhum item encontrado nesta pasta.</p>
+                )}
+            </ScrollArea>
         </div>
       </CardContent>
     </Card>
