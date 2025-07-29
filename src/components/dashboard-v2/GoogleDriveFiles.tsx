@@ -5,7 +5,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { HardDrive, AlertCircle, ExternalLink, Folder, ChevronRight } from 'lucide-react';
+import { HardDrive, AlertCircle, ExternalLink, Folder, ChevronRight, File as FileIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
@@ -46,29 +46,16 @@ export default function GoogleDriveFiles() {
   const [items, setItems] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialFolders, setInitialFolders] = useState<FolderInfo[]>([]);
 
   const currentUserCollab = useMemo(() => {
     if (!user) return null;
     return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
 
-  const rootFolderId = useMemo(() => {
-      if (currentUserCollab?.googleDriveLink) {
-          return extractFolderIdFromUrl(currentUserCollab.googleDriveLink) || 'root';
-      }
-      return 'root';
-  }, [currentUserCollab]);
-
-
-  const [currentFolder, setCurrentFolder] = useState<FolderInfo>({ id: rootFolderId, name: 'Início' });
-  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([{ id: rootFolderId, name: 'Início' }]);
+  const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
+  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([]);
   
-  useEffect(() => {
-    setCurrentFolder({ id: rootFolderId, name: 'Início' });
-    setFolderHistory([{ id: rootFolderId, name: 'Início' }]);
-  }, [rootFolderId]);
-
-
   const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
@@ -87,7 +74,7 @@ export default function GoogleDriveFiles() {
           q: `'${folderId}' in parents and trashed = false`,
           pageSize: 100,
           fields: "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink, mimeType)",
-          orderBy: 'folder,modifiedTime desc' // Sort by folders first, then by date
+          orderBy: 'folder,modifiedTime desc'
       });
 
       setItems(response.result.files || []);
@@ -96,7 +83,7 @@ export default function GoogleDriveFiles() {
       console.error("Erro ao buscar arquivos do Drive:", err);
       let errorMessage = "Não foi possível carregar os arquivos do Drive.";
       if (err.result?.error?.message) {
-        errorMessage = `Erro da API: ${err.result.error.message}. Tente atualizar a página para renovar a permissão.`;
+        errorMessage = `Erro da API: ${err.result.error.message}. Tente atualizar a página.`;
       } else if(err.message) {
         errorMessage = err.message;
       }
@@ -106,6 +93,22 @@ export default function GoogleDriveFiles() {
     }
   }, [user, accessToken]);
 
+
+  const fetchFolderDetails = useCallback(async (folderId: string): Promise<FolderInfo> => {
+    try {
+      window.gapi.client.setToken({ access_token: accessToken });
+      const response = await window.gapi.client.drive.files.get({
+        fileId: folderId,
+        fields: 'id, name',
+      });
+      return response.result;
+    } catch (error) {
+      console.error(`Failed to fetch details for folder ${folderId}`, error);
+      return { id: folderId, name: `Pasta (${folderId.slice(0,5)}...)` }; // Fallback name
+    }
+  }, [accessToken]);
+
+
   useEffect(() => {
     if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
         setError("A biblioteca de cliente do Google não pôde ser carregada.");
@@ -113,30 +116,58 @@ export default function GoogleDriveFiles() {
         return;
     }
     
-    const initializeGapiClient = () => {
-        window.gapi.client.init({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-        }).then(() => {
-            if (user && accessToken) {
-                listFiles(currentFolder.id);
-            } else if (!user) {
-              setIsLoading(false);
-            }
-        }).catch((e: any) => {
-            setError("Falha ao inicializar o cliente GAPI.");
-            setIsLoading(false);
-        });
-    }
+    const initializeAndFetch = async () => {
+      if (!user || !accessToken) {
+        if (!user) setIsLoading(false);
+        return;
+      }
+      
+      setIsLoading(true);
 
-    if (window.gapi.client) {
-        initializeGapiClient();
-    } else {
-        window.gapi.load('client', initializeGapiClient);
-    }
-  }, [user, accessToken, listFiles, currentFolder.id]);
+      if (!window.gapi.client || !window.gapi.client.drive) {
+          await new Promise<void>((resolve, reject) => {
+              window.gapi.load('client', () => {
+                  window.gapi.client.init({
+                      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+                  }).then(() => resolve()).catch((e:any) => reject(e));
+              });
+          });
+      }
 
-  const handleFolderClick = (folder: DriveFile) => {
+      const driveLinks = currentUserCollab?.googleDriveLinks;
+
+      if (driveLinks && driveLinks.length > 1) {
+        // Multiple folders: fetch their names and show them as the initial view
+        const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
+        const folderPromises = folderIds.map(id => fetchFolderDetails(id));
+        const fetchedFolders = await Promise.all(folderPromises);
+        setInitialFolders(fetchedFolders);
+        setItems([]); // Clear file list
+        setCurrentFolder(null); // No single current folder
+        setFolderHistory([]);
+      } else {
+        // Single folder or default to 'root'
+        const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : null;
+        const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || 'root' : 'root';
+        const rootFolder = { id: folderId, name: 'Início' };
+        setInitialFolders([]);
+        setCurrentFolder(rootFolder);
+        setFolderHistory([rootFolder]);
+        listFiles(folderId);
+      }
+      setIsLoading(false);
+    }
+    
+    initializeAndFetch().catch(e => {
+        setError("Falha ao inicializar o cliente GAPI.");
+        setIsLoading(false);
+    });
+
+  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
+
+
+  const handleFolderClick = (folder: DriveFile | FolderInfo) => {
     const newFolder = { id: folder.id, name: folder.name };
     setCurrentFolder(newFolder);
     setFolderHistory(prev => [...prev, newFolder]);
@@ -144,32 +175,55 @@ export default function GoogleDriveFiles() {
   };
   
   const handleBreadcrumbClick = (folderId: string, index: number) => {
-      setCurrentFolder({ id: folderId, name: folderHistory[index].name });
-      setFolderHistory(prev => prev.slice(0, index + 1));
-      listFiles(folderId);
+    if(index === -1) { // Clicked on initial multi-folder view
+        setCurrentFolder(null);
+        setFolderHistory([]);
+        setItems([]);
+        return;
+    }
+    setCurrentFolder({ id: folderId, name: folderHistory[index].name });
+    setFolderHistory(prev => prev.slice(0, index + 1));
+    listFiles(folderId);
   }
 
-  const renderBreadcrumbs = () => (
+  const renderBreadcrumbs = () => {
+    const history = folderHistory.length > 0 ? folderHistory : (currentFolder ? [currentFolder] : []);
+    const rootName = initialFolders.length > 1 ? "Pastas" : "Início";
+    
+    return (
       <div className="flex items-center text-sm text-muted-foreground flex-wrap">
-          {folderHistory.map((folder, index) => (
+          <Button 
+              variant="link" 
+              onClick={() => handleBreadcrumbClick('', -1)}
+              className={cn(
+                  "p-1 h-auto text-muted-foreground hover:text-foreground",
+                  history.length === 0 && "font-semibold text-foreground hover:text-foreground/80"
+              )}
+              disabled={initialFolders.length <= 1}
+          >
+              {rootName}
+          </Button>
+
+          {history.map((folder, index) => (
               <React.Fragment key={folder.id}>
+                  <ChevronRight className="h-4 w-4" />
                   <Button 
                       variant="link" 
                       onClick={() => handleBreadcrumbClick(folder.id, index)} 
                       className={cn(
                           "p-1 h-auto text-muted-foreground hover:text-foreground",
-                          index === folderHistory.length - 1 ? "font-semibold text-foreground hover:text-foreground/80" : ""
+                          index === history.length - 1 ? "font-semibold text-foreground hover:text-foreground/80" : ""
                       )}
                   >
                       {folder.name}
                   </Button>
-                  {index < folderHistory.length - 1 && <ChevronRight className="h-4 w-4" />}
               </React.Fragment>
           ))}
       </div>
-  );
+    );
+  }
   
-  if (isLoading && items.length === 0) {
+  if (isLoading) {
     return (
       <Card>
         <CardHeader>
@@ -193,53 +247,64 @@ export default function GoogleDriveFiles() {
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar arquivos</p>
                 <p className="text-xs">{error}</p>
-                <Button variant="link" size="sm" onClick={() => listFiles(currentFolder.id)} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
+                <Button variant="link" size="sm" onClick={() => listFiles(currentFolder?.id || 'root')} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
       );
   }
+  
+  const renderContent = () => {
+    const list = currentFolder ? items : initialFolders;
+
+    if (list.length === 0) {
+      return <p className="text-center text-muted-foreground text-sm py-4">Nenhum item encontrado.</p>
+    }
+
+    return (
+       <ul className="space-y-3">
+          {list.map((item: DriveFile | FolderInfo) => {
+              const isDriveFile = 'mimeType' in item;
+              const isFolder = isDriveFile ? item.mimeType === 'application/vnd.google-apps.folder' : true;
+
+              return (
+                  <li key={item.id} className="flex items-center gap-3 text-sm">
+                      <img src={isDriveFile ? item.iconLink : "https://ssl.gstatic.com/docs/doclist/images/infinite_arrow_favicon_1.ico"} alt="file icon" className="w-5 h-5 flex-shrink-0" />
+                      <div className="flex-grow truncate">
+                          {isFolder ? (
+                              <button onClick={() => handleFolderClick(item as DriveFile)} className="font-semibold hover:underline text-left flex items-center gap-1">
+                                  {item.name}
+                              </button>
+                          ) : (
+                              <a href={(item as DriveFile).webViewLink} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline flex items-center gap-1">
+                                  {item.name}
+                                  <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                              </a>
+                          )}
+                          {isDriveFile && <p className="text-xs text-muted-foreground">
+                              Modificado {formatDistanceToNow(new Date((item as DriveFile).modifiedTime), { addSuffix: true, locale: ptBR })}
+                          </p>}
+                      </div>
+                  </li>
+              );
+          })}
+      </ul>
+    );
+  }
+
 
   return (
     <Card className="flex flex-col h-full">
       <CardHeader>
         <CardTitle className="font-headline text-foreground text-xl">Google Drive</CardTitle>
         <CardDescription>
-            Navegue pelas pastas ou abra os arquivos diretamente.
+            Navegue pelas suas pastas ou abra os arquivos diretamente.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow min-h-0 flex flex-col gap-2">
          {renderBreadcrumbs()}
          <div className="flex-grow min-h-0">
             <ScrollArea className={cn("h-full relative transition-opacity pr-3", isLoading ? "opacity-40" : "opacity-100")}>
-                {items.length > 0 ? (
-                <ul className="space-y-3">
-                    {items.map((item) => {
-                        const isFolder = item.mimeType === 'application/vnd.google-apps.folder';
-                        return (
-                            <li key={item.id} className="flex items-center gap-3 text-sm">
-                                <img src={item.iconLink} alt="file icon" className="w-5 h-5 flex-shrink-0" />
-                                <div className="flex-grow truncate">
-                                    {isFolder ? (
-                                        <button onClick={() => handleFolderClick(item)} className="font-semibold hover:underline text-left flex items-center gap-1">
-                                            {item.name}
-                                        </button>
-                                    ) : (
-                                        <a href={item.webViewLink} target="_blank" rel="noopener noreferrer" className="font-semibold hover:underline flex items-center gap-1">
-                                            {item.name}
-                                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                                        </a>
-                                    )}
-                                    <p className="text-xs text-muted-foreground">
-                                        Modificado {formatDistanceToNow(new Date(item.modifiedTime), { addSuffix: true, locale: ptBR })}
-                                    </p>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
-                ) : (
-                <p className="text-center text-muted-foreground text-sm py-4">Nenhum item encontrado nesta pasta.</p>
-                )}
+                {renderContent()}
             </ScrollArea>
         </div>
       </CardContent>
