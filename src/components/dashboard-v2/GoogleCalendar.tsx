@@ -5,13 +5,11 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Plus } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
+import { AlertCircle, CalendarDays, Clock } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Button } from '../ui/button';
 import { Calendar } from '../ui/calendar';
 import { ScrollArea } from '../ui/scroll-area';
-import { GoogleEventModal } from './GoogleEventModal';
 
 declare global {
     interface Window {
@@ -38,11 +36,7 @@ export default function GoogleCalendar() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
   const listMonthEvents = useCallback(async (month: Date) => {
@@ -117,103 +111,51 @@ export default function GoogleCalendar() {
     }
   }, [user, accessToken, listMonthEvents, currentMonth]);
 
-  const handleDayClick = (day: Date) => {
-    setSelectedDate(day);
-    setSelectedEvent(null);
-    setIsModalOpen(true);
-  };
-  
-  const handleEventClick = (event: CalendarEvent) => {
-      setSelectedEvent(event);
-      setSelectedDate(null);
-      setIsModalOpen(true);
-  };
-
-  const handleCreateNew = () => {
-    setSelectedDate(new Date());
-    setSelectedEvent(null);
-    setIsModalOpen(true);
+  const handleDayClick = (day: Date | undefined) => {
+    if(day) {
+        setSelectedDate(day);
+    }
   };
 
   const handleMonthChange = (month: Date) => {
       setCurrentMonth(month);
+      listMonthEvents(month);
   };
-
-  const handleSave = async (eventData: Partial<CalendarEvent>) => {
-    if (!accessToken) return;
-    window.gapi.client.setToken({ access_token: accessToken });
-
-    const calendarId = 'primary';
-    try {
-        if (eventData.id) { // Update existing event
-            await window.gapi.client.calendar.events.update({
-                calendarId,
-                eventId: eventData.id,
-                resource: eventData,
-            });
-        } else { // Create new event
-             await window.gapi.client.calendar.events.insert({
-                calendarId,
-                resource: eventData,
-            });
-        }
-        setIsModalOpen(false);
-        listMonthEvents(currentMonth); // Refresh events for the current month
-    } catch (error) {
-        console.error('Error saving event:', error);
-        setError('Não foi possível salvar o evento.');
-    }
-  };
-
-  const handleDelete = async (eventId: string) => {
-    if (!accessToken) return;
-    window.gapi.client.setToken({ access_token: accessToken });
-    try {
-        await window.gapi.client.calendar.events.delete({
-            calendarId: 'primary',
-            eventId: eventId,
-        });
-        setIsModalOpen(false);
-        listMonthEvents(currentMonth); // Refresh
-    } catch (error) {
-        console.error('Error deleting event:', error);
-        setError('Não foi possível deletar o evento.');
-    }
-  };
-
+  
   const eventDates = useMemo(() => events.map(e => new Date(e.start.dateTime || e.start.date)), [events]);
+  
+  const eventsForSelectedDay = useMemo(() => {
+    if (!selectedDate) return [];
+    return events.filter(e => isSameDay(new Date(e.start.dateTime || e.start.date), selectedDate));
+  }, [events, selectedDate]);
 
-  const eventsToday = useMemo(() => {
-    const today = new Date();
-    return events.filter(e => isSameDay(new Date(e.start.dateTime || e.start.date), today));
-  }, [events]);
 
   return (
     <Card className="shadow-sm flex flex-col h-full">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
-        <Button size="sm" onClick={handleCreateNew}>
-            <Plus className="mr-2 h-4 w-4" />
-            Novo Evento
-        </Button>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col gap-4">
-        <Calendar
-            mode="single"
-            selected={selectedDate || undefined}
-            onSelect={(day) => day && handleDayClick(day)}
-            month={currentMonth}
-            onMonthChange={handleMonthChange}
-            className="rounded-md border"
-            modifiers={{ event: eventDates }}
-            modifiersClassNames={{
-              event: 'bg-primary/20 rounded-full',
-              today: 'bg-accent text-accent-foreground rounded-full',
-            }}
-            locale={ptBR}
-          />
+        <div className="flex justify-center">
+            <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={handleDayClick}
+                month={currentMonth}
+                onMonthChange={handleMonthChange}
+                className="rounded-md border"
+                modifiers={{ event: eventDates }}
+                modifiersClassNames={{
+                    event: 'bg-muted-foreground/20 rounded-full',
+                    today: 'bg-muted-foreground/40 text-foreground rounded-full',
+                }}
+                locale={ptBR}
+            />
+        </div>
         <div className="flex-grow min-h-0">
-          <h3 className="text-sm font-semibold mb-2">Eventos de Hoje</h3>
+          <h3 className="text-sm font-semibold mb-2">
+            Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
+          </h3>
           <ScrollArea className="h-40">
               {isLoading ? (
                 <div className="space-y-2 pr-4">
@@ -225,12 +167,12 @@ export default function GoogleCalendar() {
                   <AlertCircle className="mx-auto h-6 w-6 mb-1"/>
                   <p>{error}</p>
                 </div>
-              ) : eventsToday.length > 0 ? (
+              ) : eventsForSelectedDay.length > 0 ? (
                 <ul className="space-y-2 pr-4">
-                  {eventsToday.map((event) => {
+                  {eventsForSelectedDay.map((event) => {
                     const startDate = new Date(event.start.dateTime || event.start.date);
                     return (
-                        <li key={event.id} onClick={() => handleEventClick(event)} className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted cursor-pointer">
+                        <li key={event.id} className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted cursor-pointer">
                             <div className="font-semibold text-primary w-12 flex-shrink-0">
                                 {event.start.dateTime ? format(startDate, 'HH:mm') : 'Dia todo'}
                             </div>
@@ -242,21 +184,11 @@ export default function GoogleCalendar() {
                   })}
                 </ul>
               ) : (
-                <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para hoje.</p>
+                <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para este dia.</p>
               )}
           </ScrollArea>
         </div>
       </CardContent>
-      {isModalOpen && (
-        <GoogleEventModal
-            isOpen={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
-            event={selectedEvent}
-            selectedDate={selectedDate}
-            onSave={handleSave}
-            onDelete={handleDelete}
-        />
-      )}
     </Card>
   );
 }
