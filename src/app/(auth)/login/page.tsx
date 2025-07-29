@@ -28,7 +28,7 @@ export default function LoginPage() {
         muted
         playsInline
         className="absolute top-0 left-0 w-full h-full object-cover z-0"
-        src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Tela%20de%20login%2Fbanner-inicial-3a-invest.mp4?alt=media&token=10744d7f-79e4-44f0-aba3-395bfd2cbbb6"
+        src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Tela%20de%20login%2Fbanner-inicial-3a-invest.mp4?alt=media&token=3a0b4f47-fe59-4aa7-b7db-4390dc59d8da"
       />
       
       {/* Overlay */}
