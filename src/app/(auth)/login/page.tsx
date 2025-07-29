@@ -21,16 +21,14 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen w-screen overflow-hidden relative">
-        <div className="absolute top-0 left-0 w-full h-full -z-10">
-            <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-                src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Tela%20de%20login%2Fbanner-inicial-3a-invest.mp4?alt=media&token=10744d7f-79e4-44f0-aba3-395bfd2cbbb6"
-            />
-        </div>
+        <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Tela%20de%20login%2Fbanner-inicial-3a-invest.mp4?alt=media&token=10744d7f-79e4-44f0-aba3-395bfd2cbbb6"
+        />
         <div className="absolute inset-0 bg-black/50" />
 
         <div className="relative z-10 flex h-full flex-col items-center justify-center p-4">
