@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -56,6 +56,7 @@ const navItems = [
   { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
   { href: '/dashboard-v2', label: 'Dashboard v2', icon: LayoutDashboard, external: false },
+  { href: '/dashboard-v3', label: 'Dashboard v3 (Teste)', icon: TestTube2, external: false },
 ];
 
 function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
