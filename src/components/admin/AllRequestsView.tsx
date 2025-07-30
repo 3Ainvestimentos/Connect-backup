@@ -188,9 +188,14 @@ export function AllRequestsView() {
                                 />
                             </div>
                             <Button 
-                                variant={showArchived ? "secondary" : "outline"}
+                                variant="outline"
                                 onClick={() => setShowArchived(!showArchived)}
-                                className={cn(showArchived && "bg-admin-primary/20 text-admin-primary border-admin-primary/30 hover:bg-admin-primary/30")}
+                                className={cn(
+                                    "transition-colors",
+                                    showArchived 
+                                    ? "bg-red-100 text-red-800 border-red-200 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/60"
+                                    : "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-800 dark:hover:bg-yellow-900/60"
+                                )}
                             >
                                 <Archive className="mr-2 h-4 w-4"/>
                                 {showArchived ? "Ocultar Arquivadas" : "Mostrar Arquivadas"}
