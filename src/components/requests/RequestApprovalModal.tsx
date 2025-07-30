@@ -41,6 +41,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
+  const [assigneeButtonText, setAssigneeButtonText] = useState('Atribuir');
 
   const definition = useMemo(() => {
     if (!request) return null;
@@ -92,6 +93,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   React.useEffect(() => {
     if (request) {
       setComment('');
+      setAssigneeButtonText('Atribuir');
       if (request.assignee) {
         const currentAssignee = collaborators.find(c => c.id3a === request.assignee?.id);
         setAssignee(currentAssignee || null);
@@ -201,6 +203,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
 
     setIsSubmitting(true);
+    setAssigneeButtonText('Atribuindo...');
     const now = new Date();
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
@@ -224,8 +227,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       await updateRequestAndNotify(requestUpdate, requesterNotification, assigneeNotification);
       toast({ title: "Sucesso!", description: `Solicitação atribuída a ${assignee.name}.` });
       setComment('');
+      setAssigneeButtonText('Atribuído');
     } catch (error) {
        toast({ title: "Erro", description: "Não foi possível atribuir o responsável.", variant: "destructive" });
+       setAssigneeButtonText('Atribuir');
     } finally {
       setIsSubmitting(false);
       setActionType(null);
@@ -403,11 +408,11 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         </Button>
                          <Button 
                             onClick={handleAssigneeChange} 
-                            disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
+                            disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id || assigneeButtonText === 'Atribuído'}
                             className="bg-admin-primary hover:bg-admin-primary/90"
                         >
                             {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Atribuir
+                            {assigneeButtonText}
                         </Button>
                     </div>
                 </div>
@@ -541,6 +546,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           currentAssigneeId={assignee?.id}
           onConfirm={(selected) => {
               setAssignee(selected);
+              setAssigneeButtonText('Atribuir');
               setIsAssigneeModalOpen(false);
           }}
       />
