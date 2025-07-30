@@ -236,7 +236,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg font-body">
+      <DialogContent className="sm:max-w-xl font-body">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{workflowDefinition.name}</DialogTitle>
           <DialogDescription>{workflowDefinition.description}</DialogDescription>
@@ -254,7 +254,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="button" variant="secondary" disabled={isSubmitting} onClick={handleSubmit(onSubmit)}>
+            <Button type="button" disabled={isSubmitting} onClick={handleSubmit(onSubmit)} className="bg-[hsl(170,60%,50%)] hover:bg-[hsl(170,60%,45%)] text-white">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Enviar Solicitação
             </Button>
