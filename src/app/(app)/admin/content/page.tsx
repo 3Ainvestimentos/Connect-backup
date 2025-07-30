@@ -9,7 +9,6 @@ import { ManageDocuments } from '@/components/admin/ManageDocuments';
 import { ManageLabs } from '@/components/admin/ManageLabs';
 import AdminGuard from '@/components/auth/AdminGuard';
 import { ManageMessages } from '@/components/admin/ManageMessages';
-import { ManageEvents } from '@/components/admin/ManageEvents';
 import { ManageQuickLinks } from '@/components/admin/ManageQuickLinks';
 
 export default function AdminContentPage() {
@@ -23,12 +22,11 @@ export default function AdminContentPage() {
                     description="Gerencie as informações dinâmicas da intranet."
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="labs">Labs</TabsTrigger>
                         <TabsTrigger value="messages">Mensagens</TabsTrigger>
-                        <TabsTrigger value="events">Eventos</TabsTrigger>
                         <TabsTrigger value="quicklinks">Links Rápidos</TabsTrigger>
                     </TabsList>
                     <TabsContent value="news">
@@ -42,9 +40,6 @@ export default function AdminContentPage() {
                     </TabsContent>
                     <TabsContent value="messages">
                         <ManageMessages />
-                    </TabsContent>
-                    <TabsContent value="events">
-                        <ManageEvents />
                     </TabsContent>
                      <TabsContent value="quicklinks">
                         <ManageQuickLinks />

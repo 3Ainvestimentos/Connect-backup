@@ -1,48 +1,37 @@
-
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Clock, 
-  Megaphone, MessageSquare, CalendarDays, MapPin, Link as LinkIcon, Trash2, ExternalLink
+  MessageSquare, Link as LinkIcon, Trash2
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useNews, type NewsItemType } from '@/contexts/NewsContext';
-import { useEvents } from '@/contexts/EventsContext';
 import { useMessages, type MessageType } from '@/contexts/MessagesContext';
 import { useQuickLinks } from '@/contexts/QuickLinksContext';
-import { getIcon } from '@/lib/icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import { isSameMonth, parseISO } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
-import { ptBR } from 'date-fns/locale';
+import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
+import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
 
-
-export default function DashboardPage() {
-  const [displayedMonth, setDisplayedMonth] = useState<Date>(new Date());
+export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
   const [selectedNews, setSelectedNews] = useState<NewsItemType | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [greeting, setGreeting] = useState('');
 
-  // Get global data from contexts
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
-  const { events, getEventRecipients } = useEvents();
   const { messages, markMessageAsRead, getMessageRecipients, markMessageAsDeleted } = useMessages();
   const { newsItems } = useNews();
   const { getVisibleLinksForUser } = useQuickLinks();
@@ -68,13 +57,11 @@ export default function DashboardPage() {
     return `${greeting}, ${user.displayName.split(' ')[0]}!`;
   }, [greeting, user]);
 
-
   const userMessages = useMemo(() => {
     if (!currentUserCollab) return [];
     const sortedMessages = [...messages].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       
     return sortedMessages.filter(msg => {
-        // Don't show messages the user has soft-deleted
         if (msg.deletedBy && msg.deletedBy.includes(currentUserCollab.id3a)) {
             return false;
         }
@@ -83,32 +70,9 @@ export default function DashboardPage() {
     });
   }, [messages, currentUserCollab, collaborators, getMessageRecipients]);
   
-  const userEvents = useMemo(() => {
-      if (!currentUserCollab) return [];
-      
-      return events.filter(event => {
-          const recipients = getEventRecipients(event, collaborators);
-          return recipients.some(r => r.id3a === currentUserCollab.id3a);
-      });
-  }, [events, currentUserCollab, collaborators, getEventRecipients]);
-
   const quickLinks = useMemo(() => {
     return getVisibleLinksForUser(currentUserCollab, collaborators);
   }, [currentUserCollab, collaborators, getVisibleLinksForUser]);
-
-  const eventsForMonth = useMemo(() => {
-    if (!displayedMonth) return [];
-    const timeZone = 'America/Sao_Paulo';
-    return userEvents
-      .filter(event => {
-        const eventDateInSaoPaulo = toZonedTime(parseISO(event.date), timeZone);
-        const displayedMonthInSaoPaulo = toZonedTime(displayedMonth, timeZone);
-        return isSameMonth(eventDateInSaoPaulo, displayedMonthInSaoPaulo);
-      })
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [userEvents, displayedMonth]);
-  
-  const eventDates = useMemo(() => userEvents.map(e => toZonedTime(parseISO(e.date), 'UTC')), [userEvents]);
 
   const unreadCount = useMemo(() => {
     if (!currentUserCollab) return 0;
@@ -125,9 +89,7 @@ export default function DashboardPage() {
 
   const handleViewMessage = (messageToView: MessageType) => {
     if (!currentUserCollab) return;
-    // Mark as read in global state via context
     markMessageAsRead(messageToView.id, currentUserCollab.id3a);
-    // Open the dialog to show the full message
     setSelectedMessage(messageToView);
   };
 
@@ -143,7 +105,7 @@ export default function DashboardPage() {
             contentTitle: item.title,
             contentType: 'news'
         }
-    }).catch(console.error); // Log silently
+    }).catch(console.error);
   };
 
   const handleViewNews = (item: NewsItemType) => {
@@ -167,38 +129,19 @@ export default function DashboardPage() {
 
   const renderHighlights = () => {
       switch (activeHighlights.length) {
-          case 1:
-              return <HighlightCard item={activeHighlights[0]} />;
-          case 2:
-              return (
-                  <>
-                      <HighlightCard item={activeHighlights[0]} />
-                      <HighlightCard item={activeHighlights[1]} />
-                  </>
-              );
-          case 3:
-              return (
-                  <>
-                      <HighlightCard item={activeHighlights[0]} />
-                      <HighlightCard item={activeHighlights[1]} className="md:row-span-2" />
-                      <HighlightCard item={activeHighlights[2]} />
-                  </>
-              );
-          default:
-              return null;
+          case 1: return <HighlightCard item={activeHighlights[0]} />;
+          case 2: return (<> <HighlightCard item={activeHighlights[0]} /> <HighlightCard item={activeHighlights[1]} /> </>);
+          case 3: return (<> <HighlightCard item={activeHighlights[0]} /> <HighlightCard item={activeHighlights[1]} className="md:row-span-2" /> <HighlightCard item={activeHighlights[2]} /> </>);
+          default: return null;
       }
   };
   
   const getGridClass = () => {
     switch (activeHighlights.length) {
-      case 1:
-        return "grid-cols-1";
-      case 2:
-        return "grid-cols-1 md:grid-cols-2";
-      case 3:
-        return "grid-cols-1 md:grid-cols-2 md:grid-rows-2";
-      default:
-        return "grid-cols-1";
+      case 1: return "grid-cols-1";
+      case 2: return "grid-cols-1 md:grid-cols-2";
+      case 3: return "grid-cols-1 md:grid-cols-2 md:grid-rows-2";
+      default: return "grid-cols-1";
     }
   }
 
@@ -226,7 +169,7 @@ export default function DashboardPage() {
           <section>
             <PageHeader
               title={pageTitle}
-              description={<Link href="/news" className="hover:underline">Veja os últimos anúncios e destaques.</Link>}
+              description="Veja os últimos anúncios e destaques da empresa."
             />
             <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>
               {renderHighlights()}
@@ -234,17 +177,18 @@ export default function DashboardPage() {
           </section>
         )}
         
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {/* Main Content Column */}
-          <div className="lg:col-span-2 flex flex-col gap-3">
-              <Card className="shadow-sm flex flex-col flex-1">
+        <section className="flex flex-col gap-6">
+            <Card className="shadow-sm flex flex-col w-full">
                 <CardHeader>
-                  <CardTitle className="font-headline text-foreground text-xl flex items-center justify-between">
-                    <span>Mensagens</span>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="font-headline text-foreground text-xl">Mensagens</CardTitle>
+                      <CardDescription>Comunicados e alertas importantes direcionados a você.</CardDescription>
+                    </div>
                     {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
-                  </CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="flex-1 min-h-0 relative">
+                <CardContent className="flex-1 min-h-[300px] relative">
                   {userMessages.length > 0 ? (
                       <div className="absolute inset-0">
                           <ScrollArea className="h-full">
@@ -279,13 +223,18 @@ export default function DashboardPage() {
                       </div>
                   )}
                 </CardContent>
-              </Card>
+            </Card>
 
-              {/* Quick Links Card */}
-              {quickLinks.length > 0 && (
-                <Card className="shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <GoogleCalendar />
+                <GoogleDriveFiles />
+            </div>
+
+            {quickLinks.length > 0 && (
+                <Card className="shadow-sm w-full">
                     <CardHeader>
                         <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                        <CardDescription>Acesse rapidamente sistemas e recursos externos.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex justify-center">
                         <div className="flex justify-center flex-wrap gap-3">
@@ -310,74 +259,7 @@ export default function DashboardPage() {
                         </div>
                     </CardContent>
                 </Card>
-              )}
-          </div>
-            
-          {/* Sidebar Column */}
-          <div className="lg:col-span-1">
-             {/* Events Card */}
-              <Card className="shadow-sm">
-                <CardHeader>
-                  <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                    Eventos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="grid md:grid-cols-2 lg:grid-cols-1 gap-6">
-                    <div className="md:col-span-2 lg:col-span-1 flex items-start justify-center">
-                        <Calendar
-                            mode="single"
-                            selected={undefined}
-                            onSelect={undefined}
-                            className="rounded-md border no-day-hover"
-                            month={displayedMonth}
-                            onMonthChange={setDisplayedMonth}
-                            modifiers={{ event: eventDates }}
-                            modifiersClassNames={{
-                              event: 'bg-muted rounded-full',
-                              today: 'bg-muted-foreground/40 text-foreground rounded-full',
-                            }}
-                            locale={ptBR}
-                        />
-                    </div>
-                    <div className="md:col-span-2 lg:col-span-1 relative min-h-[200px]">
-                      <ScrollArea className="h-full pr-4 absolute inset-0">
-                          <div className="space-y-4">
-                          {eventsForMonth.map((event, index) => {
-                            const Icon = getIcon(event.icon) as LucideIcon;
-                            return (
-                              <div key={index} className="flex items-start gap-4 p-3 bg-muted/40 rounded-lg">
-                                <div className="flex-shrink-0 bg-secondary text-secondary-foreground rounded-lg flex items-center justify-center h-10 w-10">
-                                    <Icon className="h-5 w-5" />
-                                </div>
-                                <div className="flex-grow">
-                                    <p className="font-semibold font-body text-sm text-foreground">{event.title}</p>
-                                    <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
-                                      <CalendarDays className="h-3 w-3 mr-1.5" />
-                                      {new Date(event.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
-                                      <Clock className="h-3 w-3 mr-1.5" />
-                                      {event.time}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground font-body flex items-center mt-1">
-                                      <MapPin className="h-3 w-3 mr-1.5" />
-                                      {event.location}
-                                    </p>
-                                </div>
-                              </div>
-                           )})}
-                           {eventsForMonth.length === 0 && (
-                            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                                <CalendarDays className="h-8 w-8 mb-2"/>
-                                <p className="font-body text-sm">Nenhum evento para o mês selecionado.</p>
-                            </div>
-                           )}
-                          </div>
-                      </ScrollArea>
-                    </div>
-                </CardContent>
-              </Card>
-          </div>
+            )}
         </section>
       </div>
 
@@ -460,6 +342,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-
-

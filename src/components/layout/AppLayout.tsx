@@ -54,7 +54,6 @@ const navItems = [
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
   { href: '/store', label: 'Store', icon: ShoppingCart, external: true, permission: null },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false, permission: null },
-  { href: '/dashboard-v2', label: 'Dashboard v2', icon: LayoutDashboard, external: false, permission: null },
 ];
 
 function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {

@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { ApplicationsProvider } from '@/contexts/ApplicationsContext';
 import { DocumentsProvider } from '@/contexts/DocumentsContext';
 import { NewsProvider } from '@/contexts/NewsContext';
-import { EventsProvider } from '@/contexts/EventsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
 import { CollaboratorsProvider } from '@/contexts/CollaboratorsContext';
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
@@ -58,7 +57,6 @@ export default function RootLayout({
                   <ApplicationsProvider>
                     <DocumentsProvider>
                       <NewsProvider>
-                        <EventsProvider>
                           <MessagesProvider>
                             <LabsProvider>
                               <WorkflowsProvider>
@@ -69,7 +67,6 @@ export default function RootLayout({
                             </LabsProvider>
                             <Toaster />
                           </MessagesProvider>
-                        </EventsProvider>
                       </NewsProvider>
                     </DocumentsProvider>
                   </ApplicationsProvider>
