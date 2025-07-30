@@ -40,10 +40,17 @@ export function MaintenanceMode() {
   const onSubmit = async (data: MaintenanceFormValues) => {
     try {
       await updateSystemSettings(data);
-      toast({
-        title: 'Configurações Salvas!',
-        description: 'O modo de manutenção foi atualizado com sucesso.',
-      });
+      if (data.maintenanceMode) {
+        toast({
+          title: "Modo de Manutenção Ativado!",
+          description: "O acesso à plataforma agora está restrito a Super Administradores.",
+        });
+      } else {
+        toast({
+          title: "Modo de Manutenção Desativado.",
+          description: "O acesso à plataforma foi restaurado para todos os colaboradores.",
+        });
+      }
     } catch (error) {
       toast({
         title: 'Erro ao Salvar',
