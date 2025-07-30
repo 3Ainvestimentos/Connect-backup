@@ -44,6 +44,7 @@ import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
+import { useApplications } from '@/contexts/ApplicationsContext';
 
 
 const navItems = [
@@ -194,7 +195,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading, signOut, permissions } = useAuth();
   const { collaborators } = useCollaborators();
   const { theme, setTheme } = useTheme();
-  const { requests, hasNewAssignedTasks, loading: workflowsLoading } = useWorkflows();
+  const { requests, loading: workflowsLoading } = useWorkflows();
+  const { workflowDefinitions } = useApplications();
   const router = useRouter();
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
@@ -208,18 +210,39 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const currentUserCollab = collaborators.find(c => c.email === user.email);
     if (!currentUserCollab) return false;
 
-    return requests.some(req => 
-      req.ownerEmail === user.email && !req.assignee && !req.viewedBy.includes(currentUserCollab.id3a)
-    );
-  }, [user, requests, workflowsLoading, permissions.canManageRequests, collaborators]);
+    return requests.some(req => {
+        if (req.ownerEmail !== user.email) return false;
+
+        const definition = workflowDefinitions.find(d => d.name === req.type);
+        if (!definition) return false;
+
+        // Case 1: New request, unassigned, and not viewed by the owner.
+        const isNewAndUnseen = !req.assignee && !req.viewedBy.includes(currentUserCollab.id3a);
+        
+        // Case 2: Request is in its final status and not yet viewed by the owner.
+        const finalStatusId = definition.statuses[definition.statuses.length - 1]?.id;
+        const isFinishedAndUnseen = req.status === finalStatusId && !req.viewedBy.includes(currentUserCollab.id3a);
+
+        return isNewAndUnseen || isFinishedAndUnseen;
+    });
+  }, [user, requests, workflowsLoading, permissions.canManageRequests, collaborators, workflowDefinitions]);
   
   const hasPendingTasks = useMemo(() => {
     if (!user || workflowsLoading || !requests.length) return false;
     const currentUserCollab = collaborators.find(c => c.email === user.email);
     if (!currentUserCollab) return false;
     
-    // Check for main assigned tasks
-    const hasMainTask = requests.some(req => !req.isArchived && req.assignee?.id === currentUserCollab.id3a);
+    // Check for main assigned tasks that are NOT in a final state
+    const hasMainTask = requests.some(req => {
+      if (req.isArchived || req.assignee?.id !== currentUserCollab.id3a) {
+        return false;
+      }
+      const definition = workflowDefinitions.find(d => d.name === req.type);
+      if (!definition) return false;
+      const finalStatusId = definition.statuses[definition.statuses.length - 1]?.id;
+      return req.status !== finalStatusId;
+    });
+
     if(hasMainTask) return true;
 
     // Check for pending action requests
@@ -232,7 +255,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     });
 
     return hasActionRequest;
-  }, [user, requests, workflowsLoading, collaborators]);
+  }, [user, requests, workflowsLoading, collaborators, workflowDefinitions]);
 
 
   // Page view logging
