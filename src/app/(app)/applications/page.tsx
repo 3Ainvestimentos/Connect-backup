@@ -99,7 +99,7 @@ export default function ApplicationsPage() {
             title="Solicitações" 
             description="Inicie processos e acesse as ferramentas da empresa."
           />
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
+          <div className="flex flex-wrap justify-center gap-4">
             {sortedGroupKeys.map((area) => {
               const group = groupedWorkflows[area];
               const representativeIcon = getAreaIcon(area);
@@ -114,7 +114,7 @@ export default function ApplicationsPage() {
               return (
                 <Card 
                   key={area}
-                  className="h-32 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="h-32 w-48 flex items-center justify-center hover:bg-muted/50 transition-colors cursor-pointer"
                   onClick={() => handleAppClick(group)}
                   onKeyDown={(e) => e.key === 'Enter' && handleAppClick(group)}
                   tabIndex={0}
