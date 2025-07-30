@@ -7,10 +7,13 @@ import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFrom
 import * as z from 'zod';
 
 const workflowActionSchema = z.object({
-  type: z.enum(['approval', 'acknowledgement']),
+  type: z.enum(['approval', 'acknowledgement', 'execution']),
   label: z.string().min(1, "O rótulo da ação é obrigatório."),
   approverIds: z.array(z.string()).optional(), // Optional: pre-defined approvers
+  commentRequired: z.boolean().optional(),
+  attachmentRequired: z.boolean().optional(),
 });
+
 
 // Represents a single status in a workflow lifecycle
 export interface WorkflowStatusDefinition {

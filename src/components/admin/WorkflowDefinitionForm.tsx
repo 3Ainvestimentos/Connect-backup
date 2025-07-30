@@ -284,7 +284,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                 render={({ field }) => (
                                                     <Switch
                                                         checked={!!field.value}
-                                                        onCheckedChange={(checked) => field.onChange(checked ? { type: 'approval', label: '', approverIds: [] } : undefined)}
+                                                        onCheckedChange={(checked) => field.onChange(checked ? { type: 'approval', label: '' } : undefined)}
                                                         id={`action-switch-${index}`}
                                                     />
                                                 )}
@@ -292,28 +292,45 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                             <Label htmlFor={`action-switch-${index}`}>Requer Ação?</Label>
                                         </div>
                                         {watchedStatuses[index]?.action && (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-8 pt-2">
-                                                 <div>
-                                                    <Label htmlFor={`statuses.${index}.action.type`}>Tipo de Ação</Label>
-                                                    <Controller
-                                                        name={`statuses.${index}.action.type`}
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                                                <SelectContent>
-                                                                    <SelectItem value="approval">Aprovação (Aprovar/Reprovar)</SelectItem>
-                                                                    <SelectItem value="acknowledgement">Ciência (Marcar como Ciente)</SelectItem>
-                                                                </SelectContent>
-                                                            </Select>
-                                                        )}
-                                                    />
+                                            <div className="space-y-4 pl-8 pt-2">
+                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <Label htmlFor={`statuses.${index}.action.type`}>Tipo de Ação</Label>
+                                                        <Controller
+                                                            name={`statuses.${index}.action.type`}
+                                                            control={control}
+                                                            render={({ field }) => (
+                                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="approval">Aprovação (Aprovar/Reprovar)</SelectItem>
+                                                                        <SelectItem value="acknowledgement">Ciência (Marcar como Ciente)</SelectItem>
+                                                                        <SelectItem value="execution">Execução (Comentário/Anexo)</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            )}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <Label htmlFor={`statuses.${index}.action.label`}>Texto do Botão de Solicitação</Label>
+                                                        <Input {...register(`statuses.${index}.action.label`)} placeholder="Ex: Solicitar Aprovação"/>
+                                                        {errors.statuses?.[index]?.action?.label && <p className="text-sm text-destructive mt-1">{errors.statuses?.[index]?.action?.label?.message}</p>}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <Label htmlFor={`statuses.${index}.action.label`}>Texto do Botão de Solicitação</Label>
-                                                    <Input {...register(`statuses.${index}.action.label`)} placeholder="Ex: Solicitar Aprovação"/>
-                                                    {errors.statuses?.[index]?.action?.label && <p className="text-sm text-destructive mt-1">{errors.statuses?.[index]?.action?.label?.message}</p>}
-                                                </div>
+
+                                                {watchedStatuses[index]?.action?.type === 'execution' && (
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                                                         <div className="flex items-center gap-2">
+                                                            <Controller name={`statuses.${index}.action.commentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.commentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
+                                                            <Label htmlFor={`statuses.${index}.action.commentRequired`}>Comentário obrigatório?</Label>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Controller name={`statuses.${index}.action.attachmentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.attachmentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
+                                                            <Label htmlFor={`statuses.${index}.action.attachmentRequired`}>Anexo obrigatório?</Label>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                
                                                 <div className="sm:col-span-2">
                                                     <Label>Aprovadores Pré-definidos (Opcional)</Label>
                                                     <Button type="button" variant="outline" className="w-full justify-start text-left mt-2" onClick={() => { setActiveStatusIndex(index); setIsApproverSelectionModalOpen(true); }}>
