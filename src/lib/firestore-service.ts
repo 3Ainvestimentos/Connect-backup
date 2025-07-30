@@ -1,7 +1,7 @@
 
 import { getFirebaseApp } from './firebase'; // Import the initialized app function
-import { getFirestore, writeBatch } from "firebase/firestore";
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+import { getFirestore, writeBatch, onSnapshot } from "firebase/firestore";
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction, query, where, Query } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { cleanDataForFirestore } from './data-sanitizer';
 
@@ -33,23 +33,37 @@ export const uploadFile = async (file: File, userId: string, requestId: string, 
     }
 };
 
-
 /**
- * Fetches all documents from a specified collection.
- * @param collectionName The name of the collection to fetch.
- * @returns A promise that resolves to an array of documents with their IDs.
+ * Attaches a real-time listener to a Firestore collection.
+ * This function is designed to be used with react-query's useQuery hook.
+ *
+ * @param collectionName The name of the collection to listen to.
+ * @param onData A callback function that will be called with the new data whenever it changes.
+ * @returns An unsubscribe function to detach the listener.
  */
-export const getCollection = async <T>(collectionName: string): Promise<WithId<T>[]> => {
+export const listenToCollection = <T>(
+    collectionName: string,
+    onData: (data: WithId<T>[]) => void,
+    onError: (error: Error) => void
+): (() => void) => {
     try {
-        const collectionRef = collection(db, collectionName);
-        const querySnapshot = await getDocs(collectionRef);
-        return querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return { id: doc.id, ...data } as WithId<T>;
+        const q = query(collection(db, collectionName));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const data: WithId<T>[] = [];
+            querySnapshot.forEach((doc) => {
+                data.push({ id: doc.id, ...doc.data() } as WithId<T>);
+            });
+            onData(data);
+        }, (error) => {
+            console.error(`Error listening to collection ${collectionName}:`, error);
+            onError(new Error(`Não foi possível ouvir os dados de ${collectionName}.`));
         });
+
+        return unsubscribe; // Return the unsubscribe function
     } catch (error) {
-        console.error(`Error fetching collection ${collectionName}:`, error);
-        throw new Error(`Não foi possível carregar os dados de ${collectionName}.`);
+        console.error(`Error setting up listener for ${collectionName}:`, error);
+        onError(new Error(`Falha ao configurar o ouvinte para ${collectionName}.`));
+        return () => {}; // Return a no-op function if setup fails
     }
 };
 
@@ -130,7 +144,7 @@ export const setDocumentInCollection = async <T extends object>(collectionName: 
     try {
         const cleanedData = cleanDataForFirestore(data);
         const docRef = doc(db, collectionName, id);
-        await setDoc(docRef, cleanedData);
+        await setDoc(docRef, cleanedData, { merge: true }); // Use merge: true to avoid overwriting fields not in data
     } catch (error) {
         console.error(`Error setting document ${id} in ${collectionName}:`, error);
         if (error instanceof Error) {

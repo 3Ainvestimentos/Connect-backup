@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getNextSequentialId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getNextSequentialId, listenToCollection } from '@/lib/firestore-service';
 import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
 import { getFirestore, writeBatch, doc } from 'firebase/firestore';
@@ -84,13 +84,30 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: requests = [], isFetching } = useQuery<WorkflowRequest[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<WorkflowRequest>(COLLECTION_NAME),
-    // Ordenar por data de submissão mais recente
+    queryFn: async () => [],
+    staleTime: Infinity,
     select: (data) => data.map(r => ({
         ...r,
         viewedBy: r.viewedBy || []
     })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()),
   });
+
+  React.useEffect(() => {
+    const unsubscribe = listenToCollection<WorkflowRequest>(
+      COLLECTION_NAME,
+      (newData) => {
+        const sortedData = newData.map(r => ({
+          ...r,
+          viewedBy: r.viewedBy || []
+        })).sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+        queryClient.setQueryData([COLLECTION_NAME], sortedData);
+      },
+      (error) => {
+        console.error("Failed to listen to workflows collection:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, [queryClient]);
 
   const hasNewAssignedTasks = useMemo(() => {
     if (!user) return false;
@@ -183,7 +200,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       return { ...newDoc, requestId };
     },
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Invalidation not needed due to listener
     },
   });
   
@@ -229,25 +246,14 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         return updateDocumentInCollection(COLLECTION_NAME, id, payload);
     },
     onSuccess: (data, variables) => {
-        queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
-            if (!oldData) return [];
-            return oldData.map(req => 
-                req.id === variables.id ? { ...req, ...variables } : req
-            );
-        });
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+       // Listener handles update
     },
 });
   
   const archiveRequestMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => updateDocumentInCollection(COLLECTION_NAME, id, { isArchived: true }),
     onSuccess: (data, id) => {
-        queryClient.setQueryData<WorkflowRequest[]>([COLLECTION_NAME], (oldData) => {
-            if (!oldData) return [];
-            // Optimistically update the item to be archived
-            return oldData.map(req => req.id === id ? { ...req, isArchived: true } : req);
-        });
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Listener handles update
     }
   });
 
@@ -264,22 +270,16 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
     if (pendingUnseenRequests.length === 0) return;
 
-    const locallyUpdatedRequests = requests.map(req => {
-        if (pendingUnseenRequests.some(pr => pr.id === req.id)) {
-            batch.update(doc(db, COLLECTION_NAME, req.id), { viewedBy: [...req.viewedBy, adminId3a] });
-            return { ...req, viewedBy: [...req.viewedBy, adminId3a] };
-        }
-        return req;
+    pendingUnseenRequests.forEach(req => {
+        batch.update(doc(db, COLLECTION_NAME, req.id), { viewedBy: [...req.viewedBy, adminId3a] });
     });
-
-    queryClient.setQueryData([COLLECTION_NAME], locallyUpdatedRequests);
 
     try {
         await batch.commit();
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Listener will handle the updates in the UI
     } catch (error) {
         console.error("Failed to mark requests as viewed:", error);
-        queryClient.setQueryData([COLLECTION_NAME], requests);
+        // If the batch fails, React Query will not have been updated, so no rollback needed.
     }
   }, [requests, queryClient]);
 

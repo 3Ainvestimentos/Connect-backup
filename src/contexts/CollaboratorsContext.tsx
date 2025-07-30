@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection, listenToCollection } from '@/lib/firestore-service';
 
 export interface CollaboratorPermissions {
   canManageWorkflows: boolean;
@@ -60,48 +60,59 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
 
   const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
+    queryFn: async () => [],
+    staleTime: Infinity,
     select: (data) => data.map(c => ({
         ...c,
         permissions: { ...defaultPermissions, ...c.permissions }
     }))
   });
+  
+  React.useEffect(() => {
+    const unsubscribe = listenToCollection<Collaborator>(
+      COLLECTION_NAME,
+      (newData) => {
+        queryClient.setQueryData([COLLECTION_NAME], newData);
+      },
+      (error) => {
+        console.error("Failed to listen to collaborators collection:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, [queryClient]);
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, collaboratorData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Invalidation not strictly needed due to listener
     },
   });
 
   const addMultipleCollaboratorsMutation = useMutation<void, Error, Omit<Collaborator, 'id'>[]>({
     mutationFn: (collaboratorsData: Omit<Collaborator, 'id'>[]) => addMultipleDocumentsToCollection(COLLECTION_NAME, collaboratorsData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Invalidation not strictly needed due to listener
     },
   });
 
   const updateCollaboratorMutation = useMutation<void, Error, Collaborator>({
     mutationFn: (updatedCollaborator: Collaborator) => updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle update
     },
   });
 
   const updateCollaboratorPermissionsMutation = useMutation<void, Error, { id: string; permissions: CollaboratorPermissions }>({
     mutationFn: ({ id, permissions }) => updateDocumentInCollection(COLLECTION_NAME, id, { permissions }),
     onSuccess: (_, variables) => {
-        queryClient.setQueryData([COLLECTION_NAME], (oldData: Collaborator[] | undefined) => 
-            oldData ? oldData.map(c => c.id === variables.id ? { ...c, permissions: variables.permissions } : c) : []
-        );
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, variables.id] });
+        // Listener will handle update
     },
   });
 
   const deleteCollaboratorMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle update
     },
   });
 

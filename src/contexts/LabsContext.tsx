@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 
 export interface LabType {
   id: string;
@@ -30,8 +30,23 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: labs = [], isFetching } = useQuery<LabType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<LabType>(COLLECTION_NAME),
+    queryFn: async () => [],
+    staleTime: Infinity,
   });
+
+  React.useEffect(() => {
+    const unsubscribe = listenToCollection<LabType>(
+      COLLECTION_NAME,
+      (newData) => {
+        queryClient.setQueryData([COLLECTION_NAME], newData);
+      },
+      (error) => {
+        console.error("Failed to listen to labs collection:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, [queryClient]);
+
 
   const addLabMutation = useMutation<WithId<Omit<LabType, 'id'>>, Error, Omit<LabType, 'id'>>({
     mutationFn: (labData: Omit<LabType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, labData),

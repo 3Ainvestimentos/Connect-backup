@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import type { Collaborator } from './CollaboratorsContext';
 
@@ -43,11 +43,28 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: quickLinks = [], isFetching } = useQuery<QuickLinkType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<QuickLinkType>(COLLECTION_NAME),
+    queryFn: async () => [],
+    staleTime: Infinity,
     select: (data) => data
       .map(link => ({ ...link, recipientIds: link.recipientIds || ['all'], order: link.order ?? 0 }))
       .sort((a, b) => a.order - b.order),
   });
+
+  React.useEffect(() => {
+    const unsubscribe = listenToCollection<QuickLinkType>(
+      COLLECTION_NAME,
+      (newData) => {
+        const sortedData = newData
+          .map(link => ({ ...link, recipientIds: link.recipientIds || ['all'], order: link.order ?? 0 }))
+          .sort((a, b) => a.order - b.order);
+        queryClient.setQueryData([COLLECTION_NAME], sortedData);
+      },
+      (error) => {
+        console.error("Failed to listen to quick links collection:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, [queryClient]);
 
   const getVisibleLinksForUser = useCallback((user: Collaborator | null, allCollaborators: Collaborator[]): QuickLinkType[] => {
     if (!user) return [];
@@ -77,7 +94,7 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
       return addDocumentToCollection(COLLECTION_NAME, dataWithOrder);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle update
     },
   });
 
@@ -87,14 +104,14 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle update
     },
   });
 
   const deleteQuickLinkMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle update
     },
   });
 

@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 
 export interface DocumentType {
   id: string;
@@ -32,8 +32,23 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: documents = [], isFetching } = useQuery<DocumentType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<DocumentType>(COLLECTION_NAME),
+    queryFn: async () => [], // The listener will populate the data
+    staleTime: Infinity,
   });
+
+  React.useEffect(() => {
+    const unsubscribe = listenToCollection<DocumentType>(
+      COLLECTION_NAME,
+      (newData) => {
+        queryClient.setQueryData([COLLECTION_NAME], newData);
+      },
+      (error) => {
+        console.error("Failed to listen to documents collection:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, [queryClient]);
+
 
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({
     mutationFn: (docData: Omit<DocumentType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, docData),

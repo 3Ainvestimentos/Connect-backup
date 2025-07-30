@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 
 export interface NewsItemType {
   id: string;
@@ -36,13 +36,27 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: newsItems = [], isFetching } = useQuery<NewsItemType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME),
+    queryFn: async () => [],
+    staleTime: Infinity,
   });
+
+  React.useEffect(() => {
+    const unsubscribe = listenToCollection<NewsItemType>(
+      COLLECTION_NAME,
+      (newData) => {
+        queryClient.setQueryData([COLLECTION_NAME], newData);
+      },
+      (error) => {
+        console.error("Failed to listen to news collection:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, [queryClient]);
 
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
     mutationFn: (itemData) => addDocumentToCollection(COLLECTION_NAME, itemData),
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Invalidation is not strictly needed due to the listener
     },
   });
 
@@ -52,14 +66,14 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Listener will handle invalidation
     }
   });
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle invalidation
     },
   });
 

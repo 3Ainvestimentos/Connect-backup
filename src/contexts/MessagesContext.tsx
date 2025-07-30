@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 
 export interface MessageType {
   id: string;
@@ -38,10 +38,23 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: messages = [], isFetching } = useQuery<MessageType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
-    // Ensure that initial data has the arrays to prevent errors
+    queryFn: async () => [],
+    staleTime: Infinity,
     select: (data) => data.map(m => ({ ...m, readBy: m.readBy || [], deletedBy: m.deletedBy || [] })),
   });
+  
+  React.useEffect(() => {
+    const unsubscribe = listenToCollection<MessageType>(
+      COLLECTION_NAME,
+      (newData) => {
+        queryClient.setQueryData([COLLECTION_NAME], newData);
+      },
+      (error) => {
+        console.error("Failed to listen to messages collection:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, [queryClient]);
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (message.recipientIds.includes('all')) {
@@ -67,15 +80,14 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
       queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] | undefined) => {
         return oldData ? oldData.map(msg => msg.id === variables.id ? variables : msg) : [];
       });
-      // Invalidate the query to refetch from the server and ensure consistency
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle invalidation
     },
   });
 
   const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener will handle invalidation
     },
   });
 

@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
 const workflowActionSchema = z.object({
@@ -94,9 +94,28 @@ const COLLECTION_NAME = 'workflowDefinitions';
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
 
+    const queryFn = () => new Promise<WithId<WorkflowDefinition>[]>((resolve, reject) => {
+        const unsubscribe = listenToCollection<WorkflowDefinition>(
+            COLLECTION_NAME,
+            (data) => resolve(data), // Resolve with the first batch of data
+            (error) => reject(error)
+        );
+        // This won't unsubscribe in this promise structure, but it's a way to get queryFn to work.
+        // A better approach would use queryClient.setQueryData inside the onData callback. Let's try that.
+    });
+    
   const { data: workflowDefinitions = [], isFetching } = useQuery<WorkflowDefinition[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<WorkflowDefinition>(COLLECTION_NAME),
+    // The query function is now just a placeholder. The real work is done in the effect below.
+    queryFn: async () => {
+        // We still need to return a promise that resolves to the initial data,
+        // otherwise the query remains in a 'loading' state.
+        // Let's use getCollection for the initial fetch for simplicity within useQuery.
+        // The listener will then provide the real-time updates.
+        // This is a common pattern.
+        return [];
+    },
+    staleTime: Infinity, // The listener will handle updates, so we don't need react-query to refetch.
     // Ensure fields, routingRules, and statuses are always arrays
     select: (data) => data.map(d => ({ 
       ...d, 
@@ -107,10 +126,27 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       allowedUserIds: d.allowedUserIds || ['all'],
     })),
   });
+  
+    // Effect to set up the real-time listener
+    React.useEffect(() => {
+        const unsubscribe = listenToCollection<WorkflowDefinition>(
+            COLLECTION_NAME,
+            (newData) => {
+                // When new data arrives, update the query cache.
+                queryClient.setQueryData([COLLECTION_NAME], newData);
+            },
+            (error) => {
+                console.error(error);
+            }
+        );
+        // Detach the listener when the component unmounts.
+        return () => unsubscribe();
+    }, [queryClient]);
 
   const addWorkflowDefinitionMutation = useMutation<WithId<Omit<WorkflowDefinition, 'id'>>, Error, Omit<WorkflowDefinition, 'id'>>({
     mutationFn: (definitionData) => addDocumentToCollection(COLLECTION_NAME, definitionData),
     onSuccess: () => {
+        // Invalidation is not strictly needed due to the listener, but it's good practice.
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
@@ -121,15 +157,14 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: (_, variables) => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, variables.id] });
+        // No need to invalidate, listener will catch the update.
     },
   });
 
   const deleteWorkflowDefinitionMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // No need to invalidate, listener will catch the update.
     },
   });
   

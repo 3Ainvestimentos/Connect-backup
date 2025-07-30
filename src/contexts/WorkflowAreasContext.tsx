@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { getCollection, addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
 export const workflowAreaSchema = z.object({
@@ -29,10 +29,24 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
 
     const { data: workflowAreas = [], isFetching } = useQuery<WorkflowArea[]>({
         queryKey: [COLLECTION_NAME],
-        queryFn: () => getCollection<WorkflowArea>(COLLECTION_NAME),
-        // Sort the data alphabetically by name after fetching
+        queryFn: async () => [],
+        staleTime: Infinity,
         select: (data) => data.sort((a, b) => a.name.localeCompare(b.name)),
     });
+
+    React.useEffect(() => {
+        const unsubscribe = listenToCollection<WorkflowArea>(
+            COLLECTION_NAME,
+            (newData) => {
+                const sortedData = newData.sort((a, b) => a.name.localeCompare(b.name));
+                queryClient.setQueryData([COLLECTION_NAME], sortedData);
+            },
+            (error) => {
+                console.error("Failed to listen to workflow areas collection:", error);
+            }
+        );
+        return () => unsubscribe();
+    }, [queryClient]);
 
     const addWorkflowAreaMutation = useMutation<WithId<Omit<WorkflowArea, 'id'>>, Error, Omit<WorkflowArea, 'id'>>({
         mutationFn: (areaData) => addDocumentToCollection(COLLECTION_NAME, areaData),
