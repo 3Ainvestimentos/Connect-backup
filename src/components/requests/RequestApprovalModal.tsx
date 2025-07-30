@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { format, formatISO, parseISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useWorkflows, WorkflowRequest, WorkflowHistoryLog } from '@/contexts/WorkflowsContext';
@@ -41,7 +41,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
-  const [assigneeButtonText, setAssigneeButtonText] = useState('Atribuir');
 
   const definition = useMemo(() => {
     if (!request) return null;
@@ -90,10 +89,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }, [actionRequestsForCurrentStatus, currentStatusDefinition]);
 
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (request) {
       setComment('');
-      setAssigneeButtonText('Atribuir');
       if (request.assignee) {
         const currentAssignee = collaborators.find(c => c.id3a === request.assignee?.id);
         setAssignee(currentAssignee || null);
@@ -101,7 +99,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         setAssignee(null);
       }
     }
-  }, [request, collaborators]);
+  }, [request, collaborators, isOpen]);
 
   if (!request) return null;
 
@@ -203,14 +201,15 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
 
     setIsSubmitting(true);
-    setAssigneeButtonText('Atribuindo...');
     const now = new Date();
+    const historyNote = `Solicitação atribuída a ${assignee.name}.` + (comment ? ` Comentário: ${comment}` : '');
+
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
       status: request.status,
       userId: adminUser.id3a,
       userName: adminUser.name,
-      notes: comment ? `Solicitação atribuída a ${assignee.name}. Comentário: ${comment}` : `Solicitação atribuída a ${assignee.name}.`,
+      notes: historyNote,
     };
 
     const requestUpdate = {
@@ -227,10 +226,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       await updateRequestAndNotify(requestUpdate, requesterNotification, assigneeNotification);
       toast({ title: "Sucesso!", description: `Solicitação atribuída a ${assignee.name}.` });
       setComment('');
-      setAssigneeButtonText('Atribuído');
     } catch (error) {
        toast({ title: "Erro", description: "Não foi possível atribuir o responsável.", variant: "destructive" });
-       setAssigneeButtonText('Atribuir');
     } finally {
       setIsSubmitting(false);
       setActionType(null);
@@ -408,11 +405,11 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         </Button>
                          <Button 
                             onClick={handleAssigneeChange} 
-                            disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id || assigneeButtonText === 'Atribuído'}
+                            disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
                             className="bg-admin-primary hover:bg-admin-primary/90"
                         >
                             {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {assigneeButtonText}
+                            Atribuir
                         </Button>
                     </div>
                 </div>
@@ -546,7 +543,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           currentAssigneeId={assignee?.id}
           onConfirm={(selected) => {
               setAssignee(selected);
-              setAssigneeButtonText('Atribuir');
               setIsAssigneeModalOpen(false);
           }}
       />
