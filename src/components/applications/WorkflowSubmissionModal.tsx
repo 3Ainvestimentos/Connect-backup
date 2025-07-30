@@ -235,9 +235,9 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           <DialogTitle className="font-headline text-2xl">{workflowDefinition.name}</DialogTitle>
           <DialogDescription>{workflowDefinition.description}</DialogDescription>
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="space-y-4 pr-6 pb-6">
+        <div className="max-h-[60vh] overflow-hidden -mr-6">
+          <ScrollArea className="h-full pr-6">
+            <div className="space-y-4 pb-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   {workflowDefinition.fields.map(field => renderField(field))}
               </form>
