@@ -68,7 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                  setAccessToken(null);
                  // No need to redirect, login page will show maintenance message.
                  // We don't show a toast here to avoid bothering users who just opened the page.
-            } else if (!collaborator && collaborators.length > 0) { 
+            } else if (!collaborator && collaborators.length > 0 && !isSuper) { 
                 await firebaseSignOut(auth);
                 toast({
                     title: "Acesso Negado",
@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser(null);
                 setAccessToken(null);
                 router.push('/login');
-            } else if (collaborator) {
+            } else if (collaborator || isSuper) {
                 setUser(user);
             } else if (collaborators.length === 0 && !loadingCollaborators) {
                  await firebaseSignOut(auth);
@@ -135,19 +135,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
 
-    const isSuper = (auth.currentUser?.email && SUPER_ADMIN_EMAILS.includes(auth.currentUser.email)) ?? false;
-
-    if (settings.maintenanceMode && !isSuper) {
-      toast({
-        title: "Manutenção em Andamento",
-        description: settings.maintenanceMessage,
-        variant: "default",
-        duration: 10000,
-      });
-      setLoading(false);
-      return;
-    }
-
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
@@ -156,9 +143,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const email = result.user.email;
-      const collaborator = collaborators.find(c => c.email === email);
       const isSuperAdminLogin = !!email && SUPER_ADMIN_EMAILS.includes(email);
 
+      // Check for maintenance mode *after* getting user's email
       if (settings.maintenanceMode && !isSuperAdminLogin) {
          await firebaseSignOut(auth);
          toast({
@@ -167,8 +154,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             variant: "default",
             duration: 10000,
          });
+         setLoading(false); // Stop loading before returning
          return;
       }
+      
+      const collaborator = collaborators.find(c => c.email === email);
 
       if (collaborator || isSuperAdminLogin) {
         router.push('/dashboard');

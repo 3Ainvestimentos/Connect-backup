@@ -66,7 +66,7 @@ export default function LoginPage() {
 
         <Button
           onClick={signInWithGoogle}
-          disabled={loading || maintenanceMode}
+          disabled={loading}
           size="lg"
           variant="outline"
           className="w-full max-w-xs font-semibold font-body text-foreground/80 rounded-full hover:bg-card hover:text-foreground/80"
