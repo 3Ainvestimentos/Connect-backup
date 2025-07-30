@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Construction } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const maintenanceSchema = z.object({
   maintenanceMode: z.boolean(),
@@ -83,6 +84,7 @@ export function MaintenanceMode() {
               checked={maintenanceModeOn}
               onCheckedChange={(checked) => reset({ ...watch(), maintenanceMode: checked })}
               disabled={isSubmitting}
+              className="data-[state=checked]:bg-[hsl(170,60%,50%)]"
             />
           </div>
 
