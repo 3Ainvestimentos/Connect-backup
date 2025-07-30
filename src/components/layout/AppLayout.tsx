@@ -129,7 +129,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
               hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
             )}>
               <Mailbox className="mr-2 h-4 w-4" />
-              <span>Caixa de Entrada</span>
+              <span>Gestão de Solicitações</span>
             </Link>
           </DropdownMenuItem>
           {permissions.canViewTasks && (
@@ -139,7 +139,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                     hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
                   )}>
                       <ListTodo className="mr-2 h-4 w-4" />
-                      <span>Minhas Tarefas</span>
+                      <span>Minhas Tarefas/Ações</span>
                   </Link>
               </DropdownMenuItem>
           )}

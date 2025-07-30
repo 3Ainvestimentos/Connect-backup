@@ -147,7 +147,7 @@ export default function MyTasksPage() {
         return (
              <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
-                    title="Minhas Tarefas"
+                    title="Minhas Tarefas/Ações"
                     description="Gerencie as solicitações e ações pendentes atribuídas a você."
                 />
                 {renderSkeleton()}
@@ -160,7 +160,7 @@ export default function MyTasksPage() {
         <>
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
-                    title="Minhas Tarefas"
+                    title="Minhas Tarefas/Ações"
                     description="Gerencie as solicitações e ações pendentes atribuídas a você."
                 />
                 

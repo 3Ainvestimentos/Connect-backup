@@ -11,7 +11,7 @@ export default function RequestsPage() {
         <AdminGuard>
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader 
-                    title="Caixa de Entrada"
+                    title="Gestão de Solicitações"
                     description="Gerencie as solicitações pendentes dos colaboradores."
                 />
                 <ManageRequests />
