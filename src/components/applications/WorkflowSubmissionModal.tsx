@@ -41,7 +41,6 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
   const { control, handleSubmit, reset, formState: { errors } } = useForm<DynamicFormData>();
 
   useEffect(() => {
-    // Reset form when definition changes or modal opens/closes
     if (open) {
       const defaultValues: DynamicFormData = {};
       workflowDefinition.fields.forEach(field => {
@@ -72,20 +71,18 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         const now = new Date();
         const initialStatus = workflowDefinition.statuses?.[0]?.id || 'pending';
         
-        // 1. Create the initial request to get an ID
         const initialRequestPayload = {
             type: workflowDefinition.name,
             status: initialStatus,
             submittedBy: { userId: currentUserCollab.id3a, userName: currentUserCollab.name, userEmail: currentUserCollab.email },
             submittedAt: formatISO(now),
             lastUpdatedAt: formatISO(now),
-            formData: {}, // To be populated later
+            formData: {}, 
             history: [{ timestamp: formatISO(now), status: initialStatus, userId: currentUserCollab.id3a, userName: currentUserCollab.name, notes: 'Solicitação criada.' }],
         };
 
         const newRequest = await addRequest(initialRequestPayload);
 
-        // 2. Upload files if any
         const fileUploadPromises = Object.entries(fileFields).map(([fieldId, file]) => {
             if (file) {
                 return uploadFile(file, currentUserCollab.id3a, newRequest.id, file.name);
@@ -95,7 +92,6 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
 
         const uploadedFileUrls = await Promise.all(fileUploadPromises);
         
-        // 3. Prepare the final form data
         const formDataForFirestore = { ...data };
         let fileUrlIndex = 0;
         for (const fieldId in fileFields) {
@@ -113,7 +109,6 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             }
         });
 
-        // 4. Update the request with the complete form data
         await updateRequestAndNotify({
             id: newRequest.id,
             formData: formDataForFirestore
@@ -235,16 +230,18 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl font-body">
+      <DialogContent className="max-w-2xl font-body">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{workflowDefinition.name}</DialogTitle>
           <DialogDescription>{workflowDefinition.description}</DialogDescription>
         </DialogHeader>
-        <div className="max-h-[60vh] overflow-hidden">
-          <ScrollArea className="h-full pr-4">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
-                {workflowDefinition.fields.map(field => renderField(field))}
-            </form>
+        <div className="max-h-[60vh] overflow-hidden -mr-6">
+          <ScrollArea className="h-full pr-6">
+            <div className="pt-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  {workflowDefinition.fields.map(field => renderField(field))}
+              </form>
+            </div>
           </ScrollArea>
         </div>
          <DialogFooter>
