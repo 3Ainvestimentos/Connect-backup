@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2 } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -98,34 +98,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
             <UserCircle className="mr-2 h-4 w-4" />
             <span>Meu Perfil</span>
         </DropdownMenuItem>
-        {permissions.canViewTasks && (
-            <DropdownMenuItem asChild>
-                <Link href="/me/tasks" className={cn(
-                  "cursor-pointer font-body",
-                  hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-                )}>
-                    <ListTodo className="mr-2 h-4 w-4" />
-                    <span>Minhas Tarefas</span>
-                </Link>
-            </DropdownMenuItem>
-        )}
-        <DropdownMenuItem asChild>
-           <Link href="/requests" className={cn(
-              "cursor-pointer font-body",
-              hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-            )}>
-              <Mailbox className="mr-2 h-4 w-4" />
-              <span>Caixa de Entrada</span>
-            </Link>
-        </DropdownMenuItem>
-        {permissions.canViewBI && (
-            <DropdownMenuItem asChild>
-                <Link href="/bi" className="cursor-pointer font-body">
-                    <BarChart className="mr-2 h-4 w-4" />
-                    <span>Business Intelligence</span>
-                </Link>
-            </DropdownMenuItem>
-        )}
+        
         <DropdownMenuSub>
             <DropdownMenuSubTrigger>
                 {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
@@ -148,13 +121,48 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
             </DropdownMenuPortal>
         </DropdownMenuSub>
         
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Ferramentas</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+           <Link href="/requests" className={cn(
+              "cursor-pointer font-body",
+              hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+            )}>
+              <Mailbox className="mr-2 h-4 w-4" />
+              <span>Caixa de Entrada</span>
+            </Link>
+          </DropdownMenuItem>
+          {permissions.canViewTasks && (
+              <DropdownMenuItem asChild>
+                  <Link href="/me/tasks" className={cn(
+                    "cursor-pointer font-body",
+                    hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+                  )}>
+                      <ListTodo className="mr-2 h-4 w-4" />
+                      <span>Minhas Tarefas</span>
+                  </Link>
+              </DropdownMenuItem>
+          )}
+          {permissions.canViewBI && (
+              <DropdownMenuItem asChild>
+                  <Link href="/bi" className="cursor-pointer font-body">
+                      <BarChart className="mr-2 h-4 w-4" />
+                      <span>Business Intelligence</span>
+                  </Link>
+              </DropdownMenuItem>
+          )}
+        </DropdownMenuGroup>
+        
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Painéis de controle</DropdownMenuLabel>
-                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
+                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
+                {permissions.canViewCRM && <DropdownMenuItem asChild><Link href="/admin/crm" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Briefcase className="mr-2 h-4 w-4" /><span>CRM Interno</span></Link></DropdownMenuItem>}
+                {permissions.canViewStrategicPanel && <DropdownMenuItem asChild><Link href="/admin/strategic-panel" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Target className="mr-2 h-4 w-4" /><span>Painel Estratégico</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                     <DropdownMenuItem asChild>

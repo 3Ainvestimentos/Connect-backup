@@ -47,6 +47,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     canManageContent: false,
     canViewTasks: false,
     canViewBI: false,
+    canViewCRM: false,
+    canViewStrategicPanel: false,
   });
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -104,6 +106,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   canManageContent: true,
                   canViewTasks: true,
                   canViewBI: true,
+                  canViewCRM: true,
+                  canViewStrategicPanel: true,
               };
               setPermissions(allPermissions);
               setIsAdmin(true);

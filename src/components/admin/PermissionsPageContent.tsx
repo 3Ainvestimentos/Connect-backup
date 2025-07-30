@@ -19,6 +19,8 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canManageRequests', label: 'Solicitações' },
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
     { key: 'canViewBI', label: 'Business Intelligence' },
+    { key: 'canViewCRM', label: 'CRM Interno' },
+    { key: 'canViewStrategicPanel', label: 'Painel Estratégico' },
 ];
 
 function PermissionsTable() {
@@ -69,6 +71,8 @@ function PermissionsTable() {
                            <Skeleton className="h-3 w-64" />
                         </div>
                          <div className="flex gap-4">
+                            <Skeleton className="h-6 w-11" />
+                            <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />

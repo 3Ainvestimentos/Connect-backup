@@ -11,6 +11,8 @@ export interface CollaboratorPermissions {
   canManageContent: boolean;
   canViewTasks: boolean;
   canViewBI: boolean;
+  canViewCRM: boolean;
+  canViewStrategicPanel: boolean;
 }
 
 export interface Collaborator {
@@ -49,6 +51,8 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageContent: false,
   canViewTasks: false,
   canViewBI: false,
+  canViewCRM: false,
+  canViewStrategicPanel: false,
 };
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
