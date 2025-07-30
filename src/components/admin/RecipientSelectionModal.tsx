@@ -31,8 +31,7 @@ export function RecipientSelectionModal({
     selectedIds,
     onConfirm,
 }: RecipientSelectionModalProps) {
-    const [localSelectedIds, setLocalSelectedIds] = useState<Set<string>>(new Set());
-    const [isAllSelected, setIsAllSelected] = useState(false);
+    const [localSelectedIds, setLocalSelectedIds] = useState<Set<string>>(new Set(selectedIds));
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -40,15 +39,9 @@ export function RecipientSelectionModal({
 
     useEffect(() => {
         if (isOpen) {
-            const initialIsAll = selectedIds.includes('all');
-            setIsAllSelected(initialIsAll);
-            if (initialIsAll) {
-                setLocalSelectedIds(new Set(allCollaborators.map(c => c.id3a)));
-            } else {
-                setLocalSelectedIds(new Set(selectedIds));
-            }
+            setLocalSelectedIds(new Set(selectedIds));
         }
-    }, [isOpen, selectedIds, allCollaborators]);
+    }, [isOpen, selectedIds]);
     
 
     const filteredAndSortedCollaborators = useMemo(() => {
@@ -104,7 +97,6 @@ export function RecipientSelectionModal({
                 return newSet;
             });
         }
-        setIsAllSelected(false);
     };
 
     const handleSelectOne = (id: string, checked: boolean) => {
@@ -117,11 +109,10 @@ export function RecipientSelectionModal({
             }
             return newSet;
         });
-        setIsAllSelected(false);
     };
     
     const handleConfirm = () => {
-        if (isAllSelected || localSelectedIds.size === allCollaborators.length) {
+        if (localSelectedIds.size === allCollaborators.length) {
             onConfirm(['all']);
         } else {
             onConfirm(Array.from(localSelectedIds));
@@ -136,7 +127,7 @@ export function RecipientSelectionModal({
     const SortableHeader = ({ tkey, label }: { tkey: SortKey, label: string }) => (
         <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
             {label}
-            {sortKey === tkey && (sortDirection === 'asc' ? <ChevronUp className="inline h-4 w-4" /> : <ChevronDown className="inline h-4 w-4" />)}
+            {sortKey === tkey && (sortDirection === 'asc' ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
         </TableHead>
     );
 
