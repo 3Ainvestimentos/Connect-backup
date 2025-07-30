@@ -10,7 +10,7 @@ import {
   MessageSquare, Link as LinkIcon, Trash2
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
