@@ -11,8 +11,8 @@ export interface CollaboratorPermissions {
   canManageContent: boolean;
   canViewTasks: boolean;
   canViewBI: boolean;
-  canViewCRM: boolean;
-  canViewStrategicPanel: boolean;
+  canViewCRM?: boolean;
+  canViewStrategicPanel?: boolean;
 }
 
 export interface Collaborator {
