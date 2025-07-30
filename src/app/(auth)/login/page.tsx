@@ -3,8 +3,9 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, Construction } from 'lucide-react';
 import Image from 'next/image';
+import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px" {...props}>
@@ -17,7 +18,11 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function LoginPage() {
-  const { signInWithGoogle, loading } = useAuth();
+  const { signInWithGoogle, loading: authLoading } = useAuth();
+  const { settings, loading: settingsLoading } = useSystemSettings();
+
+  const loading = authLoading || settingsLoading;
+  const maintenanceMode = settings.maintenanceMode;
 
   return (
     <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
@@ -44,10 +49,17 @@ export default function LoginPage() {
           priority
           className="mb-8"
         />
+        {maintenanceMode && (
+          <div className="mb-4 w-full p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700 text-center">
+             <Construction className="mx-auto h-6 w-6 text-amber-600 mb-2"/>
+             <p className="font-semibold text-sm">Plataforma em Manutenção</p>
+             <p className="text-xs">{settings.maintenanceMessage}</p>
+          </div>
+        )}
 
         <Button
           onClick={signInWithGoogle}
-          disabled={loading}
+          disabled={loading || maintenanceMode}
           size="lg"
           variant="outline"
           className="w-full max-w-xs font-semibold font-body text-foreground/80 rounded-full hover:bg-card hover:text-foreground/80"

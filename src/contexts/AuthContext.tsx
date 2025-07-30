@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
 import type { CollaboratorPermissions } from './CollaboratorsContext';
+import { useSystemSettings } from './SystemSettingsContext';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
@@ -37,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { collaborators, loading: loadingCollaborators } = useCollaborators();
+  const { settings, loading: loadingSettings } = useSystemSettings();
   
   const app = getFirebaseApp(); 
   const auth = getAuth(app);
@@ -57,7 +59,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
             const collaborator = collaborators.find(c => c.email === user.email);
-            if (!collaborator && collaborators.length > 0) { 
+            const isSuper = !!user.email && SUPER_ADMIN_EMAILS.includes(user.email);
+            
+            // Maintenance mode check
+            if (settings.maintenanceMode && !isSuper) {
+                 await firebaseSignOut(auth);
+                 setUser(null);
+                 setAccessToken(null);
+                 // No need to redirect, login page will show maintenance message.
+                 // We don't show a toast here to avoid bothering users who just opened the page.
+            } else if (!collaborator && collaborators.length > 0) { 
                 await firebaseSignOut(auth);
                 toast({
                     title: "Acesso Negado",
@@ -88,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth, router, collaborators, loadingCollaborators]);
+  }, [auth, router, collaborators, loadingCollaborators, settings.maintenanceMode]);
 
 
   useEffect(() => {
@@ -123,14 +134,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const signInWithGoogle = async () => {
     setLoading(true);
+
+    const isSuper = (auth.currentUser?.email && SUPER_ADMIN_EMAILS.includes(auth.currentUser.email)) ?? false;
+
+    if (settings.maintenanceMode && !isSuper) {
+      toast({
+        title: "Manutenção em Andamento",
+        description: settings.maintenanceMessage,
+        variant: "default",
+        duration: 10000,
+      });
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
       if (credential?.accessToken) {
         setAccessToken(credential.accessToken);
       }
-      const collaborator = collaborators.find(c => c.email === result.user.email);
-      if (collaborator) {
+      
+      const email = result.user.email;
+      const collaborator = collaborators.find(c => c.email === email);
+      const isSuperAdminLogin = !!email && SUPER_ADMIN_EMAILS.includes(email);
+
+      if (settings.maintenanceMode && !isSuperAdminLogin) {
+         await firebaseSignOut(auth);
+         toast({
+            title: "Manutenção em Andamento",
+            description: settings.maintenanceMessage,
+            variant: "default",
+            duration: 10000,
+         });
+         return;
+      }
+
+      if (collaborator || isSuperAdminLogin) {
         router.push('/dashboard');
       } else {
         await firebaseSignOut(auth);
@@ -180,14 +220,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = useMemo(() => ({
       user,
-      loading: loading || loadingCollaborators,
+      loading: loading || loadingCollaborators || loadingSettings,
       isAdmin,
       isSuperAdmin,
       permissions,
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, loadingCollaborators, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
+  }), [user, loading, loadingCollaborators, loadingSettings, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

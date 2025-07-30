@@ -14,6 +14,7 @@ import { LabsProvider } from '@/contexts/LabsContext';
 import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
 import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
 import { QuickLinksProvider } from '@/contexts/QuickLinksContext';
+import { SystemSettingsProvider } from '@/contexts/SystemSettingsContext';
 import { Roboto, Archivo } from 'next/font/google';
 
 
@@ -52,26 +53,28 @@ export default function RootLayout({
         <ThemeProvider>
           <ReactQueryProvider>
             <CollaboratorsProvider>
-              <AuthProvider>
-                <WorkflowAreasProvider>
-                  <ApplicationsProvider>
-                    <DocumentsProvider>
-                      <NewsProvider>
-                          <MessagesProvider>
-                            <LabsProvider>
-                              <WorkflowsProvider>
-                                <QuickLinksProvider>
-                                  {children}
-                                </QuickLinksProvider>
-                              </WorkflowsProvider>
-                            </LabsProvider>
-                            <Toaster />
-                          </MessagesProvider>
-                      </NewsProvider>
-                    </DocumentsProvider>
-                  </ApplicationsProvider>
-                </WorkflowAreasProvider>
-              </AuthProvider>
+                <SystemSettingsProvider>
+                  <AuthProvider>
+                    <WorkflowAreasProvider>
+                      <ApplicationsProvider>
+                        <DocumentsProvider>
+                          <NewsProvider>
+                              <MessagesProvider>
+                                <LabsProvider>
+                                  <WorkflowsProvider>
+                                    <QuickLinksProvider>
+                                      {children}
+                                    </QuickLinksProvider>
+                                  </WorkflowsProvider>
+                                </LabsProvider>
+                                <Toaster />
+                              </MessagesProvider>
+                          </NewsProvider>
+                        </DocumentsProvider>
+                      </ApplicationsProvider>
+                    </WorkflowAreasProvider>
+                  </AuthProvider>
+                </SystemSettingsProvider>
             </CollaboratorsProvider>
           </ReactQueryProvider>
         </ThemeProvider>
