@@ -10,9 +10,11 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 
 type SortKey = keyof Collaborator | '';
 type SortDirection = 'asc' | 'desc';
+type ViewFilter = 'all' | 'selected' | 'unselected';
 
 interface RecipientSelectionModalProps {
     isOpen: boolean;
@@ -34,21 +36,30 @@ export function RecipientSelectionModal({
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+    const [viewFilter, setViewFilter] = useState<ViewFilter>('all');
 
     useEffect(() => {
         if (isOpen) {
-            if(selectedIds.includes('all')){
-                setIsAllSelected(true);
-                setLocalSelectedIds(new Set(allCollaborators.map(c => c.id3a)))
+            const initialIsAll = selectedIds.includes('all');
+            setIsAllSelected(initialIsAll);
+            if (initialIsAll) {
+                setLocalSelectedIds(new Set(allCollaborators.map(c => c.id3a)));
             } else {
-                setIsAllSelected(false);
                 setLocalSelectedIds(new Set(selectedIds));
             }
         }
     }, [isOpen, selectedIds, allCollaborators]);
+    
 
     const filteredAndSortedCollaborators = useMemo(() => {
         let items = [...allCollaborators];
+        
+        if (viewFilter === 'selected') {
+            items = items.filter(c => localSelectedIds.has(c.id3a));
+        } else if (viewFilter === 'unselected') {
+            items = items.filter(c => !localSelectedIds.has(c.id3a));
+        }
+
         if (searchTerm) {
             items = items.filter(c =>
                 c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,6 +68,7 @@ export function RecipientSelectionModal({
                 c.position.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
+
         if (sortKey) {
             items.sort((a, b) => {
                 const valA = a[sortKey];
@@ -69,7 +81,7 @@ export function RecipientSelectionModal({
             });
         }
         return items;
-    }, [allCollaborators, searchTerm, sortKey, sortDirection]);
+    }, [allCollaborators, searchTerm, sortKey, sortDirection, viewFilter, localSelectedIds]);
     
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -80,17 +92,22 @@ export function RecipientSelectionModal({
         }
     };
 
-    const handleSelectAll = (checked: boolean) => {
-        setIsAllSelected(checked);
+    const handleSelectAllInView = (checked: boolean) => {
         if (checked) {
-            setLocalSelectedIds(new Set(allCollaborators.map(c => c.id3a)));
+            const idsToAdd = filteredAndSortedCollaborators.map(c => c.id3a);
+            setLocalSelectedIds(prev => new Set([...prev, ...idsToAdd]));
         } else {
-            setLocalSelectedIds(new Set());
+            const idsToRemove = new Set(filteredAndSortedCollaborators.map(c => c.id3a));
+            setLocalSelectedIds(prev => {
+                const newSet = new Set(prev);
+                idsToRemove.forEach(id => newSet.delete(id));
+                return newSet;
+            });
         }
+        setIsAllSelected(false);
     };
 
     const handleSelectOne = (id: string, checked: boolean) => {
-        setIsAllSelected(false);
         setLocalSelectedIds(prev => {
             const newSet = new Set(prev);
             if (checked) {
@@ -100,6 +117,7 @@ export function RecipientSelectionModal({
             }
             return newSet;
         });
+        setIsAllSelected(false);
     };
     
     const handleConfirm = () => {
@@ -109,6 +127,11 @@ export function RecipientSelectionModal({
             onConfirm(Array.from(localSelectedIds));
         }
     };
+    
+    const isAllInViewSelected = useMemo(() => {
+        if (filteredAndSortedCollaborators.length === 0) return false;
+        return filteredAndSortedCollaborators.every(c => localSelectedIds.has(c.id3a));
+    }, [filteredAndSortedCollaborators, localSelectedIds]);
     
     const SortableHeader = ({ tkey, label }: { tkey: SortKey, label: string }) => (
         <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
@@ -123,17 +146,30 @@ export function RecipientSelectionModal({
                 <DialogHeader>
                     <DialogTitle>Selecionar Destinatários</DialogTitle>
                 </DialogHeader>
-
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Pesquisar por nome, email, área..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                    />
+                
+                <div className='flex flex-col sm:flex-row gap-2'>
+                    <div className="relative flex-grow">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            placeholder="Pesquisar por nome, email, área..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <Select value={viewFilter} onValueChange={(v) => setViewFilter(v as ViewFilter)}>
+                        <SelectTrigger className='w-full sm:w-[180px]'>
+                            <SelectValue placeholder="Filtrar visão..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos</SelectItem>
+                            <SelectItem value="selected">Selecionados</SelectItem>
+                            <SelectItem value="unselected">Não Selecionados</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
+
 
                 <div className="flex-grow min-h-0 border rounded-lg">
                     <ScrollArea className="h-full">
@@ -142,9 +178,9 @@ export function RecipientSelectionModal({
                                 <TableRow>
                                     <TableHead className="w-[50px]">
                                         <Checkbox
-                                            checked={isAllSelected}
-                                            onCheckedChange={handleSelectAll}
-                                            aria-label="Selecionar todos"
+                                            checked={isAllInViewSelected}
+                                            onCheckedChange={handleSelectAllInView}
+                                            aria-label="Selecionar todos os visíveis"
                                         />
                                     </TableHead>
                                     <SortableHeader tkey="name" label="Nome" />
@@ -158,7 +194,7 @@ export function RecipientSelectionModal({
                                     <TableRow key={c.id}>
                                         <TableCell>
                                             <Checkbox
-                                                checked={isAllSelected || localSelectedIds.has(c.id3a)}
+                                                checked={localSelectedIds.has(c.id3a)}
                                                 onCheckedChange={(checked) => handleSelectOne(c.id3a, !!checked)}
                                                 aria-label={`Selecionar ${c.name}`}
                                             />
@@ -177,7 +213,7 @@ export function RecipientSelectionModal({
                 <DialogFooter>
                     <div className="w-full flex justify-between items-center">
                         <p className="text-sm text-muted-foreground">
-                            {isAllSelected ? allCollaborators.length : localSelectedIds.size} de {allCollaborators.length} selecionados
+                            {localSelectedIds.size} de {allCollaborators.length} selecionados
                         </p>
                         <div>
                             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
