@@ -289,7 +289,11 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     
     const originalRequest = requests.find(r => r.id === requestUpdate.id);
     if (!originalRequest) return;
+    
+    const definition = workflowDefinitions.find(def => def.name === originalRequest.type);
+    const isFinalStatus = definition ? definition.statuses[definition.statuses.length - 1]?.id === requestUpdate.status : false;
 
+    // Always notify the requester (submittedBy)
     if (notificationMessage && originalRequest.submittedBy.userId) {
         await addMessage({
             title: `Atualização: ${originalRequest.type} #${originalRequest.requestId}`,
@@ -299,7 +303,8 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         });
     }
 
-    if (notifyAssigneeMessage && requestUpdate.assignee?.id) {
+    // Only notify the assignee if it's NOT the final status
+    if (notifyAssigneeMessage && requestUpdate.assignee?.id && !isFinalStatus) {
        await addMessage({
             title: `Nova Tarefa Atribuída: ${originalRequest.type} #${originalRequest.requestId}`,
             content: notifyAssigneeMessage,
