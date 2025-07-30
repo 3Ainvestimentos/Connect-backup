@@ -11,12 +11,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ListChecks, User, Search, Filter, FileDown, ChevronUp, ChevronDown, Archive } from 'lucide-react';
+import { ListChecks, User, Search, FileDown, ChevronUp, ChevronDown, Archive, Eye } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import Papa from 'papaparse';
 import { cn } from '@/lib/utils';
+import { RequestApprovalModal } from '../requests/RequestApprovalModal';
 
 type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | 'isArchived' | '';
 type SortDirection = 'asc' | 'desc';
@@ -29,6 +30,7 @@ export function AllRequestsView() {
     const [sortKey, setSortKey] = useState<SortKey>('submittedAt');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [showArchived, setShowArchived] = useState(false);
+    const [viewingRequest, setViewingRequest] = useState<WorkflowRequest | null>(null);
 
     const filteredAndSortedRequests = useMemo(() => {
         let items = [...requests];
@@ -162,116 +164,129 @@ export function AllRequestsView() {
     );
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                        <CardTitle className="flex items-center gap-2">
-                           <ListChecks className="h-6 w-6" />
-                           Visão Geral de Solicitações
-                        </CardTitle>
-                        <CardDescription>
-                            {filteredAndSortedRequests.length} solicitação(ões) encontrada(s) em todo o sistema.
-                        </CardDescription>
-                    </div>
-                    <div className="flex w-full sm:w-auto gap-2">
-                        <div className="relative flex-grow">
-                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                             <Input 
-                                placeholder="Buscar em todas as solicitações..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 w-full"
-                            />
+        <>
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="flex items-center gap-2">
+                               <ListChecks className="h-6 w-6" />
+                               Histórico Geral de Solicitações
+                            </CardTitle>
+                            <CardDescription>
+                                {filteredAndSortedRequests.length} solicitação(ões) encontrada(s) em todo o sistema.
+                            </CardDescription>
                         </div>
-                        <Button variant={showArchived ? "secondary" : "outline"} onClick={() => setShowArchived(!showArchived)}>
-                            <Archive className="mr-2 h-4 w-4"/>
-                            {showArchived ? "Ocultar Arquivadas" : "Mostrar Arquivadas"}
-                        </Button>
-                        <Button variant="secondary" onClick={handleExportCSV} disabled={filteredAndSortedRequests.length === 0}>
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Exportar
-                        </Button>
+                        <div className="flex w-full sm:w-auto gap-2">
+                            <div className="relative flex-grow">
+                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                 <Input 
+                                    placeholder="Buscar em todas as solicitações..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 w-full"
+                                />
+                            </div>
+                            <Button 
+                                variant={showArchived ? "secondary" : "outline"}
+                                onClick={() => setShowArchived(!showArchived)}
+                                className={cn(showArchived && "bg-admin-primary/20 text-admin-primary border-admin-primary/30 hover:bg-admin-primary/30")}
+                            >
+                                <Archive className="mr-2 h-4 w-4"/>
+                                {showArchived ? "Ocultar Arquivadas" : "Mostrar Arquivadas"}
+                            </Button>
+                            <Button variant="outline" onClick={handleExportCSV} disabled={filteredAndSortedRequests.length === 0}>
+                                <FileDown className="mr-2 h-4 w-4" />
+                                Exportar
+                            </Button>
+                        </div>
                     </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                {loading ? renderSkeleton() : (
-                     <div className="border rounded-lg overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <SortableHeader tkey="isArchived" label="Arq." className="w-[50px]"/>
-                                    <SortableHeader tkey="requestId" label="#" />
-                                    <SortableHeader tkey="type" label="Tipo" />
-                                    <SortableHeader tkey="status" label="Status" />
-                                    <SortableHeader tkey="submittedBy" label="Solicitante" />
-                                    <SortableHeader tkey="assignee" label="Responsável" />
-                                    <SortableHeader tkey="ownerEmail" label="Proprietário" />
-                                    <SortableHeader tkey="submittedAt" label="Data" />
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredAndSortedRequests.map((req) => {
-                                    const isUnassignedForTooLong = !req.assignee && differenceInHours(new Date(), parseISO(req.submittedAt)) > 24;
-                                    const hasOverdueActionRequest = (req.actionRequests?.[req.status] || []).some(ar =>
-                                        ar.status === 'pending' && differenceInHours(new Date(), parseISO(ar.requestedAt)) > 24
-                                    );
-                                    const needsAttention = isUnassignedForTooLong || hasOverdueActionRequest;
-
-                                    return (
-                                    <TableRow key={req.id} className={cn(
-                                        req.isArchived && "bg-muted/30 text-muted-foreground",
-                                        needsAttention && "bg-muted/60 hover:bg-muted/80"
-                                    )}>
-                                        <TableCell>
-                                            {req.isArchived && <Archive className="h-4 w-4" title="Arquivado"/>}
-                                        </TableCell>
-                                        <TableCell className="font-mono text-xs">{req.requestId}</TableCell>
-                                        <TableCell className="font-medium">{req.type}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="secondary" className="font-semibold">
-                                                {getStatusLabel(req)}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{req.submittedBy.userName}</TableCell>
-                                        <TableCell>
-                                            {req.assignee ? (
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-6 w-6">
-                                                        <AvatarFallback className="text-xs">
-                                                            {req.assignee.name.charAt(0)}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <span className="text-sm">{req.assignee.name}</span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm font-semibold text-destructive">Não atribuído</span>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                             <div className="flex items-center gap-2">
-                                                <User className="h-4 w-4"/>
-                                                <span className="text-sm">{getOwnerName(req.ownerEmail)}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
+                </CardHeader>
+                <CardContent>
+                    {loading ? renderSkeleton() : (
+                         <div className="border rounded-lg overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <SortableHeader tkey="requestId" label="#" />
+                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Solicitante</TableHead>
+                                        <TableHead>Responsável</TableHead>
+                                        <TableHead>Proprietário</TableHead>
+                                        <SortableHeader tkey="submittedAt" label="Data" />
+                                        <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
-                                )})}
-                            </TableBody>
-                        </Table>
-                     </div>
-                )}
-                {!loading && filteredAndSortedRequests.length === 0 && (
-                    <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
-                        <ListChecks className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma solicitação encontrada</h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                            Não há solicitações que correspondam à sua busca.
-                        </p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredAndSortedRequests.map((req) => {
+                                        const isUnassignedForTooLong = !req.assignee && differenceInHours(new Date(), parseISO(req.submittedAt)) > 24;
+                                        const hasOverdueActionRequest = (req.actionRequests?.[req.status] || []).some(ar =>
+                                            ar.status === 'pending' && differenceInHours(new Date(), parseISO(ar.requestedAt)) > 24
+                                        );
+                                        const needsAttention = !req.isArchived && (isUnassignedForTooLong || hasOverdueActionRequest);
+
+                                        return (
+                                        <TableRow key={req.id} className={cn(
+                                            req.isArchived && "bg-muted/30 text-muted-foreground",
+                                            needsAttention && "bg-amber-400/10"
+                                        )}>
+                                            <TableCell className="font-mono text-xs">{req.requestId}</TableCell>
+                                            <TableCell className="font-medium">{req.type}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="secondary" className="font-semibold">
+                                                    {getStatusLabel(req)}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>{req.submittedBy.userName}</TableCell>
+                                            <TableCell>
+                                                {req.assignee ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Avatar className="h-6 w-6">
+                                                            <AvatarFallback className="text-xs">
+                                                                {req.assignee.name.charAt(0)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="text-sm">{req.assignee.name}</span>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-sm font-semibold text-destructive">Não atribuído</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                 <div className="flex items-center gap-2">
+                                                    <User className="h-4 w-4"/>
+                                                    <span className="text-sm">{getOwnerName(req.ownerEmail)}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="ghost" size="icon" onClick={() => setViewingRequest(req)}>
+                                                    <Eye className="h-5 w-5 text-muted-foreground"/>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )})}
+                                </TableBody>
+                            </Table>
+                         </div>
+                    )}
+                    {!loading && filteredAndSortedRequests.length === 0 && (
+                        <div className="text-center py-10 px-6 border-2 border-dashed rounded-lg">
+                            <ListChecks className="mx-auto h-12 w-12 text-muted-foreground" />
+                            <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma solicitação encontrada</h3>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                Não há solicitações que correspondam à sua busca.
+                            </p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+            <RequestApprovalModal
+                isOpen={!!viewingRequest}
+                onClose={() => setViewingRequest(null)}
+                request={viewingRequest}
+            />
+        </>
     );
 }

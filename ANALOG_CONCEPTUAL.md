@@ -1,4 +1,5 @@
 
+
 # Análise Conceitual da Aplicação: 3A RIVA Connect
 
 ## 1. Resumo da Aplicação
@@ -49,7 +50,7 @@ A aplicação consolida diversas funcionalidades essenciais para o dia a dia cor
         -   O formulário dinâmico (campos, tipos, obrigatoriedade).
         -   As etapas do processo (status), incluindo a capacidade de definir uma **ação de aprovação/ciência** para uma etapa específica.
         -   Regras de SLA (prazos de conclusão) e de roteamento (notificações).
-    -   **Aba "Visão Geral":** Uma tabela completa com todas as solicitações já feitas no sistema, permitindo uma visão global e auditoria de todos os processos. A tabela agora destaca visualmente as solicitações que estão sem responsável ou com aprovações pendentes há mais de 24 horas.
+    -   **Aba "Histórico Geral":** Uma tabela completa com todas as solicitações já feitas no sistema, permitindo uma visão global e auditoria de todos os processos. A tabela agora destaca visualmente as solicitações que estão sem responsável ou com aprovações pendentes há mais de 24 horas.
 -   **Administração do Sistema (`/admin/admin` - Super Admin):** Área restrita para a gestão de usuários e segurança.
     -   **Gerenciar Colaboradores:** Ferramenta para adicionar, editar ou remover colaboradores da base de dados do sistema.
     -   **Gerenciar Permissões:** Painel para conceder ou revogar permissões de acesso aos diferentes painéis de controle.
@@ -165,7 +166,7 @@ Esta é uma visão estruturada das páginas e funcionalidades disponíveis para 
             │   ├── Aba "Definições"
             │   │   ├── Gerenciar Áreas de Workflow
             │   │   └── Gerenciar Definições de Workflow (criar/editar/importar)
-            │   └── Aba "Visão Geral"
+            │   └── Aba "Histórico Geral"
             │       └── Tabela com Todas as Solicitações do Sistema
             │
             ├── /admin (Administração do Sistema - Super Admin)
