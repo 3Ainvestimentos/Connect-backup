@@ -319,14 +319,24 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                 </div>
 
                                                 {watchedStatuses[index]?.action?.type === 'execution' && (
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
-                                                         <div className="flex items-center gap-2">
-                                                            <Controller name={`statuses.${index}.action.commentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.commentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
-                                                            <Label htmlFor={`statuses.${index}.action.commentRequired`}>Comentário obrigatório?</Label>
+                                                    <div className="space-y-4">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+                                                            <div className="flex items-center gap-2">
+                                                                <Controller name={`statuses.${index}.action.commentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.commentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
+                                                                <Label htmlFor={`statuses.${index}.action.commentRequired`}>Comentário obrigatório?</Label>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <Controller name={`statuses.${index}.action.attachmentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.attachmentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
+                                                                <Label htmlFor={`statuses.${index}.action.attachmentRequired`}>Anexo obrigatório?</Label>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-2">
-                                                            <Controller name={`statuses.${index}.action.attachmentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.attachmentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
-                                                            <Label htmlFor={`statuses.${index}.action.attachmentRequired`}>Anexo obrigatório?</Label>
+                                                        <div>
+                                                            <Label htmlFor={`statuses.${index}.action.commentPlaceholder`}>Placeholder para Comentário</Label>
+                                                            <Input {...register(`statuses.${index}.action.commentPlaceholder`)} placeholder="Ex: Descreva o motivo da aprovação..." />
+                                                        </div>
+                                                        <div>
+                                                            <Label htmlFor={`statuses.${index}.action.attachmentPlaceholder`}>Placeholder para Anexo</Label>
+                                                            <Input {...register(`statuses.${index}.action.attachmentPlaceholder`)} placeholder="Ex: Anexe o comprovante em PDF." />
                                                         </div>
                                                     </div>
                                                 )}

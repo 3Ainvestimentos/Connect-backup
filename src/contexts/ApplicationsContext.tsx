@@ -12,6 +12,8 @@ const workflowActionSchema = z.object({
   approverIds: z.array(z.string()).optional(), // Optional: pre-defined approvers
   commentRequired: z.boolean().optional(),
   attachmentRequired: z.boolean().optional(),
+  commentPlaceholder: z.string().optional(),
+  attachmentPlaceholder: z.string().optional(),
 });
 
 
