@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -6,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, AlertTriangle, Construction } from 'lucide-react';
 import Image from 'next/image';
 import { useSystemSettings } from '@/contexts/SystemSettingsContext';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px" {...props}>
@@ -20,9 +22,14 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function LoginPage() {
   const { signInWithGoogle, loading: authLoading } = useAuth();
   const { settings, loading: settingsLoading } = useSystemSettings();
+  const { theme } = useTheme();
 
   const loading = authLoading || settingsLoading;
   const maintenanceMode = settings.maintenanceMode;
+
+  const logoUrl = theme === 'dark' 
+    ? "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Flogo_oficial_branca.png?alt=media&token=329d139b-cca1-4aed-95c7-a699fa32f0bb" 
+    : "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Flogo%20oficial%20preta.png?alt=media&token=ce88dc80-01cd-4295-b443-951e6c0210aa";
 
   return (
     <main className="relative flex h-screen w-screen items-center justify-center overflow-hidden bg-black">
@@ -42,7 +49,7 @@ export default function LoginPage() {
       {/* Login Card */}
       <div className="relative z-20 flex w-full max-w-sm flex-col items-center justify-center rounded-lg bg-card p-8 shadow-2xl">
         <Image
-          src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Flogo%20oficial%20preta.png?alt=media&token=ce88dc80-01cd-4295-b443-951e6c0210aa"
+          src={logoUrl}
           alt="3A RIVA Investimentos Logo"
           width={250}
           height={60}
