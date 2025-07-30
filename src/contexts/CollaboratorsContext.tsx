@@ -10,6 +10,7 @@ export interface CollaboratorPermissions {
   canManageRequests: boolean;
   canManageContent: boolean;
   canViewTasks: boolean;
+  canViewBI: boolean;
 }
 
 export interface Collaborator {
@@ -26,6 +27,7 @@ export interface Collaborator {
   city: string;      // Cidade
   permissions: CollaboratorPermissions;
   googleDriveLinks?: string[]; // Array de links para pastas do Google Drive
+  biLink?: string; // Link para o painel de BI específico do usuário
 }
 
 interface CollaboratorsContextType {
@@ -46,6 +48,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageRequests: false,
   canManageContent: false,
   canViewTasks: false,
+  canViewBI: false,
 };
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {

@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -33,7 +33,8 @@ const collaboratorSchema = z.object({
     segment: z.string().min(1, "Segmento é obrigatório"),
     leader: z.string().min(1, "Líder é obrigatório"),
     city: z.string().min(1, "Cidade é obrigatória"),
-    googleDriveLinks: z.union([z.string(), z.array(z.string().url("URL inválida."))]).optional()
+    googleDriveLinks: z.union([z.string(), z.array(z.string().url("URL inválida."))]).optional(),
+    biLink: z.string().url("URL do BI inválida").optional().or(z.literal('')),
 });
 
 type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
@@ -103,6 +104,7 @@ export function ManageCollaborators() {
             reset({
               ...collaborator,
               googleDriveLinks: collaborator.googleDriveLinks ? collaborator.googleDriveLinks.join('\n') : '',
+              biLink: collaborator.biLink || '',
             });
         } else {
             reset({
@@ -118,6 +120,7 @@ export function ManageCollaborators() {
                 leader: '',
                 city: '',
                 googleDriveLinks: [],
+                biLink: '',
             });
         }
         setIsFormOpen(true);
@@ -199,6 +202,7 @@ export function ManageCollaborators() {
                         leader: row.leader?.trim(),
                         city: row.city?.trim(),
                         googleDriveLinks: row.googleDriveLinks?.split(',').map(l => l.trim()).filter(Boolean) || [],
+                        biLink: row.biLink?.trim() || '',
                     }))
                     .filter(c => c.id3a && c.name && c.email); // Basic validation
 
@@ -291,6 +295,7 @@ export function ManageCollaborators() {
                                     <SortableHeader tkey="area" label="Área" />
                                     <SortableHeader tkey="position" label="Cargo" />
                                     <SortableHeader tkey="googleDriveLinks" label="Google Drive" />
+                                    <SortableHeader tkey="biLink" label="BI Link" />
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -308,6 +313,16 @@ export function ManageCollaborators() {
                                                 </Badge>
                                             ) : (
                                                 <Badge variant="outline">Padrão</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {item.biLink ? (
+                                                <Badge variant="secondary" className="flex items-center w-fit gap-1.5">
+                                                    <BarChart className="h-3 w-3" />
+                                                    Link Configurado
+                                                </Badge>
+                                            ) : (
+                                                 <Badge variant="outline">Nenhum</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -370,6 +385,11 @@ export function ManageCollaborators() {
                              <Textarea id="googleDriveLinks" {...register('googleDriveLinks')} placeholder="https://drive.google.com/drive/folders/...\nhttps://drive.google.com/drive/folders/..." disabled={isFormSubmitting} rows={3}/>
                             <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar a pasta "Meu Drive" padrão.</p>
                             {errors.googleDriveLinks && <p className="text-sm text-destructive mt-1">{errors.googleDriveLinks.message}</p>}
+                        </div>
+                         <div>
+                            <Label htmlFor="biLink">Link do Power BI (opcional)</Label>
+                            <Input id="biLink" {...register('biLink')} placeholder="https://app.powerbi.com/..." disabled={isFormSubmitting}/>
+                            {errors.biLink && <p className="text-sm text-destructive mt-1">{errors.biLink.message}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -442,9 +462,9 @@ export function ManageCollaborators() {
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                             <li>Crie uma planilha (no Excel, Google Sheets, etc.).</li>
                             <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">id3a,name,email,axis,area,position,segment,leader,city,photoURL,googleDriveLinks</code>
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">id3a,name,email,axis,area,position,segment,leader,city,photoURL,googleDriveLinks,biLink</code>
                             </li>
-                             <li>As colunas `photoURL` e `googleDriveLinks` são opcionais. Para múltiplos links, separe-os por vírgula no campo.</li>
+                             <li>As colunas `photoURL`, `googleDriveLinks` e `biLink` são opcionais. Para múltiplos links do Drive, separe-os por vírgula no campo.</li>
                             <li>Preencha as linhas com os dados de cada colaborador.</li>
                             <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
                             <li>Clique no botão abaixo para selecionar e enviar o arquivo.</li>

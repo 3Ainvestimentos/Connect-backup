@@ -18,6 +18,7 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canManageWorkflows', label: 'Workflows' },
     { key: 'canManageRequests', label: 'Solicitações' },
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
+    { key: 'canViewBI', label: 'Business Intelligence' },
 ];
 
 function PermissionsTable() {

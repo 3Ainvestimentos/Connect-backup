@@ -47,15 +47,14 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 
 
 const navItems = [
-  { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false },
-  { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false },
-  { href: '/applications', label: 'Solicitações', icon: Workflow, external: false },
-  { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false },
-  { href: '/labs', label: 'Labs', icon: FlaskConical, external: false },
-  { href: '/store', label: 'Store', icon: ShoppingCart, external: true },
-  { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false },
-  { href: '/chatbot', label: 'Bob', icon: Bot, external: false },
-  { href: '/dashboard-v2', label: 'Dashboard v2', icon: LayoutDashboard, external: false },
+  { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false, permission: null },
+  { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false, permission: null },
+  { href: '/applications', label: 'Solicitações', icon: Workflow, external: false, permission: null },
+  { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false, permission: null },
+  { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
+  { href: '/store', label: 'Store', icon: ShoppingCart, external: true, permission: null },
+  { href: '/chatbot', label: 'Bob', icon: Bot, external: false, permission: null },
+  { href: '/dashboard-v2', label: 'Dashboard v2', icon: LayoutDashboard, external: false, permission: null },
 ];
 
 function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
@@ -119,6 +118,14 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
               <span>Caixa de Entrada</span>
             </Link>
         </DropdownMenuItem>
+        {permissions.canViewBI && (
+            <DropdownMenuItem asChild>
+                <Link href="/bi" className="cursor-pointer font-body">
+                    <BarChart className="mr-2 h-4 w-4" />
+                    <span>Business Intelligence</span>
+                </Link>
+            </DropdownMenuItem>
+        )}
         <DropdownMenuSub>
             <DropdownMenuSubTrigger>
                 {theme === 'light' && <Sun className="mr-2 h-4 w-4" />}
@@ -301,6 +308,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {
+                  if (item.href === '/bi' && !permissions.canViewBI) return null;
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
