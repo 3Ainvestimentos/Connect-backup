@@ -2,16 +2,16 @@
 "use client";
 import React, { useState, useRef, useMemo } from 'react';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import type { Collaborator } from '@/contexts/CollaboratorsContext';
+import type { Collaborator, BILink } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart, GripVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -20,33 +20,40 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '../ui/badge';
 import { Textarea } from '../ui/textarea';
+import { Separator } from '../ui/separator';
 
-const biLinkSchema = z.string().transform((value, ctx) => {
-    if (!value) return value; // Allow empty string
+const biLinkSchema = z.object({
+    name: z.string().min(1, "O nome da aba é obrigatório."),
+    url: z.string().transform((value, ctx) => {
+        if (!value) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A URL ou o código de incorporação do iframe é obrigatório.",
+            });
+            return z.NEVER;
+        };
 
-    // Check if it's already a valid URL
-    if (z.string().url().safeParse(value).success) {
-        return value;
-    }
+        if (z.string().url().safeParse(value).success) {
+            return value;
+        }
 
-    // Check if it's an iframe snippet and extract the src
-    if (value.trim().startsWith('<iframe')) {
-        const srcMatch = value.match(/src="([^"]+)"/);
-        if (srcMatch && srcMatch[1]) {
-            const url = srcMatch[1];
-            if (z.string().url().safeParse(url).success) {
-                return url;
+        if (value.trim().startsWith('<iframe')) {
+            const srcMatch = value.match(/src="([^"]+)"/);
+            if (srcMatch && srcMatch[1]) {
+                const url = srcMatch[1];
+                if (z.string().url().safeParse(url).success) {
+                    return url;
+                }
             }
         }
-    }
 
-    ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "URL do BI inválida. Cole a URL ou o código de incorporação do iframe.",
-    });
-    return z.NEVER;
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "URL inválida. Cole a URL completa ou o código de incorporação do iframe.",
+        });
+        return z.NEVER;
+    })
 });
-
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -61,7 +68,7 @@ const collaboratorSchema = z.object({
     leader: z.string().min(1, "Líder é obrigatório"),
     city: z.string().min(1, "Cidade é obrigatória"),
     googleDriveLinks: z.union([z.string(), z.array(z.string().url("URL inválida."))]).optional(),
-    biLink: biLinkSchema.optional(),
+    biLinks: z.array(biLinkSchema).optional(),
 });
 
 type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
@@ -70,7 +77,6 @@ type CsvRow = { [key: string]: string };
 
 type SortKey = keyof Collaborator | '';
 type SortDirection = 'asc' | 'desc';
-
 
 export function ManageCollaborators() {
     const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators } = useCollaborators();
@@ -84,10 +90,14 @@ export function ManageCollaborators() {
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
+    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
     });
 
+    const { fields: biLinksFields, append, remove } = useFieldArray({
+        control,
+        name: "biLinks",
+    });
 
     const filteredAndSortedCollaborators = useMemo(() => {
         let items = [...collaborators];
@@ -131,7 +141,7 @@ export function ManageCollaborators() {
             reset({
               ...collaborator,
               googleDriveLinks: collaborator.googleDriveLinks ? collaborator.googleDriveLinks.join('\n') : '',
-              biLink: collaborator.biLink || '',
+              biLinks: collaborator.biLinks || [],
             });
         } else {
             reset({
@@ -147,7 +157,7 @@ export function ManageCollaborators() {
                 leader: '',
                 city: '',
                 googleDriveLinks: [],
-                biLink: '',
+                biLinks: [],
             });
         }
         setIsFormOpen(true);
@@ -229,7 +239,7 @@ export function ManageCollaborators() {
                         leader: row.leader?.trim(),
                         city: row.city?.trim(),
                         googleDriveLinks: row.googleDriveLinks?.split(',').map(l => l.trim()).filter(Boolean) || [],
-                        biLink: row.biLink?.trim() || '',
+                        biLinks: [], // biLinks are not imported via CSV for simplicity
                     }))
                     .filter(c => c.id3a && c.name && c.email); // Basic validation
 
@@ -321,8 +331,8 @@ export function ManageCollaborators() {
                                     <SortableHeader tkey="name" label="Colaborador" />
                                     <SortableHeader tkey="area" label="Área" />
                                     <SortableHeader tkey="position" label="Cargo" />
-                                    <SortableHeader tkey="googleDriveLinks" label="Google Drive" />
-                                    <SortableHeader tkey="biLink" label="BI Link" />
+                                    <TableHead>Google Drive</TableHead>
+                                    <TableHead>Links de BI</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -343,10 +353,10 @@ export function ManageCollaborators() {
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            {item.biLink ? (
+                                            {item.biLinks && item.biLinks.length > 0 ? (
                                                 <Badge variant="secondary" className="flex items-center w-fit gap-1.5">
                                                     <BarChart className="h-3 w-3" />
-                                                    Link Configurado
+                                                    {item.biLinks.length} link(s)
                                                 </Badge>
                                             ) : (
                                                  <Badge variant="outline">Nenhum</Badge>
@@ -407,17 +417,6 @@ export function ManageCollaborators() {
                             <Input id="photoURL" {...register('photoURL')} placeholder="https://..." disabled={isFormSubmitting}/>
                             {errors.photoURL && <p className="text-sm text-destructive mt-1">{errors.photoURL.message}</p>}
                         </div>
-                         <div>
-                            <Label htmlFor="googleDriveLinks">Links do Google Drive (um por linha)</Label>
-                             <Textarea id="googleDriveLinks" {...register('googleDriveLinks')} placeholder="https://drive.google.com/drive/folders/...\nhttps://drive.google.com/drive/folders/..." disabled={isFormSubmitting} rows={3}/>
-                            <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar a pasta "Meu Drive" padrão.</p>
-                            {errors.googleDriveLinks && <p className="text-sm text-destructive mt-1">{errors.googleDriveLinks.message}</p>}
-                        </div>
-                         <div>
-                            <Label htmlFor="biLink">Link do Power BI (opcional)</Label>
-                            <Input id="biLink" {...register('biLink')} placeholder="Cole a URL ou o código de incorporação do iframe aqui..." disabled={isFormSubmitting}/>
-                            {errors.biLink && <p className="text-sm text-destructive mt-1">{errors.biLink.message}</p>}
-                        </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <Label htmlFor="axis">Eixo</Label>
@@ -454,6 +453,40 @@ export function ManageCollaborators() {
                                 {errors.city && <p className="text-sm text-destructive mt-1">{errors.city.message}</p>}
                             </div>
                         </div>
+                        <Separator/>
+                         <div>
+                            <Label htmlFor="googleDriveLinks">Links do Google Drive (um por linha)</Label>
+                             <Textarea id="googleDriveLinks" {...register('googleDriveLinks')} placeholder="https://drive.google.com/drive/folders/...\nhttps://drive.google.com/drive/folders/..." disabled={isFormSubmitting} rows={3}/>
+                            <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar a pasta "Meu Drive" padrão.</p>
+                            {errors.googleDriveLinks && <p className="text-sm text-destructive mt-1">{errors.googleDriveLinks.message}</p>}
+                        </div>
+                        <Separator/>
+                        <div>
+                            <Label>Links do Power BI (opcional)</Label>
+                            <div className="space-y-3 mt-2">
+                                {biLinksFields.map((field, index) => (
+                                    <div key={field.id} className="p-3 border rounded-lg space-y-2 relative bg-background">
+                                         <div className="flex items-end gap-2">
+                                            <div className="flex-grow space-y-1.5">
+                                                <Label htmlFor={`biLinks.${index}.name`}>Nome da Aba</Label>
+                                                <Input id={`biLinks.${index}.name`} {...register(`biLinks.${index}.name`)} placeholder="Ex: Painel de Vendas" />
+                                                {errors.biLinks?.[index]?.name && <p className="text-xs text-destructive mt-1">{errors.biLinks[index]?.name?.message}</p>}
+                                            </div>
+                                             <div className="flex-grow space-y-1.5">
+                                                <Label htmlFor={`biLinks.${index}.url`}>URL ou Iframe do Painel</Label>
+                                                <Input id={`biLinks.${index}.url`} {...register(`biLinks.${index}.url`)} placeholder="Cole a URL ou o código de incorporação" />
+                                                {errors.biLinks?.[index]?.url && <p className="text-xs text-destructive mt-1">{errors.biLinks[index]?.url?.message}</p>}
+                                            </div>
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="shrink-0"><Trash2 className="h-4 w-4"/></Button>
+                                         </div>
+                                    </div>
+                                ))}
+                            </div>
+                             <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', url: '' })} className="mt-2">
+                                <PlusCircle className="mr-2 h-4 w-4"/>
+                                Adicionar Link de BI
+                            </Button>
+                        </div>
                         <DialogFooter className="mt-6">
                             <DialogClose asChild><Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button></DialogClose>
                             <Button type="submit" disabled={isFormSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
@@ -489,9 +522,9 @@ export function ManageCollaborators() {
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                             <li>Crie uma planilha (no Excel, Google Sheets, etc.).</li>
                             <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">id3a,name,email,axis,area,position,segment,leader,city,photoURL,googleDriveLinks,biLink</code>
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">id3a,name,email,axis,area,position,segment,leader,city,photoURL,googleDriveLinks</code>
                             </li>
-                             <li>As colunas `photoURL`, `googleDriveLinks` e `biLink` são opcionais. Para múltiplos links do Drive, separe-os por vírgula no campo.</li>
+                             <li>As colunas `photoURL` e `googleDriveLinks` são opcionais. Para múltiplos links do Drive, separe-os por vírgula no campo.</li>
                             <li>Preencha as linhas com os dados de cada colaborador.</li>
                             <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
                             <li>Clique no botão abaixo para selecionar e enviar o arquivo.</li>
@@ -524,5 +557,3 @@ export function ManageCollaborators() {
         </>
     );
 }
-
-    

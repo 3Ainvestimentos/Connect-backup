@@ -15,6 +15,11 @@ export interface CollaboratorPermissions {
   canViewStrategicPanel?: boolean;
 }
 
+export interface BILink {
+  name: string;
+  url: string;
+}
+
 export interface Collaborator {
   id: string;
   id3a: string;      // ID interno da 3A RIVA
@@ -29,7 +34,7 @@ export interface Collaborator {
   city: string;      // Cidade
   permissions: CollaboratorPermissions;
   googleDriveLinks?: string[]; // Array de links para pastas do Google Drive
-  biLink?: string; // Link para o painel de BI específico do usuário
+  biLinks?: BILink[]; // Link para o painel de BI específico do usuário
 }
 
 interface CollaboratorsContextType {
