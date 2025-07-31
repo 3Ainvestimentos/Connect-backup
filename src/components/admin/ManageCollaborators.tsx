@@ -21,6 +21,33 @@ import { ptBR } from 'date-fns/locale';
 import { Badge } from '../ui/badge';
 import { Textarea } from '../ui/textarea';
 
+const biLinkSchema = z.string().transform((value, ctx) => {
+    if (!value) return value; // Allow empty string
+
+    // Check if it's already a valid URL
+    if (z.string().url().safeParse(value).success) {
+        return value;
+    }
+
+    // Check if it's an iframe snippet and extract the src
+    if (value.trim().startsWith('<iframe')) {
+        const srcMatch = value.match(/src="([^"]+)"/);
+        if (srcMatch && srcMatch[1]) {
+            const url = srcMatch[1];
+            if (z.string().url().safeParse(url).success) {
+                return url;
+            }
+        }
+    }
+
+    ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "URL do BI inválida. Cole a URL ou o código de incorporação do iframe.",
+    });
+    return z.NEVER;
+});
+
+
 const collaboratorSchema = z.object({
     id: z.string().optional(),
     id3a: z.string().min(1, "ID 3A RIVA é obrigatório"),
@@ -34,7 +61,7 @@ const collaboratorSchema = z.object({
     leader: z.string().min(1, "Líder é obrigatório"),
     city: z.string().min(1, "Cidade é obrigatória"),
     googleDriveLinks: z.union([z.string(), z.array(z.string().url("URL inválida."))]).optional(),
-    biLink: z.string().url("URL do BI inválida").optional().or(z.literal('')),
+    biLink: biLinkSchema.optional(),
 });
 
 type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
@@ -388,7 +415,7 @@ export function ManageCollaborators() {
                         </div>
                          <div>
                             <Label htmlFor="biLink">Link do Power BI (opcional)</Label>
-                            <Input id="biLink" {...register('biLink')} placeholder="https://app.powerbi.com/..." disabled={isFormSubmitting}/>
+                            <Input id="biLink" {...register('biLink')} placeholder="Cole a URL ou o código de incorporação do iframe aqui..." disabled={isFormSubmitting}/>
                             {errors.biLink && <p className="text-sm text-destructive mt-1">{errors.biLink.message}</p>}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -497,3 +524,5 @@ export function ManageCollaborators() {
         </>
     );
 }
+
+    
