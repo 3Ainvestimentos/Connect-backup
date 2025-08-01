@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -20,7 +19,6 @@ import { useApplications, WorkflowStatusDefinition } from '@/contexts/Applicatio
 import { AssigneeSelectionModal } from './AssigneeSelectionModal';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { cn } from '@/lib/utils';
-import { RecipientSelectionModal } from '../admin/RecipientSelectionModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Input } from '../ui/input';
 import { uploadFile } from '@/lib/firestore-service';
@@ -73,7 +71,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const currentUserActionRequest = useMemo(() => {
     if (!adminUser) return null;
-    return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a && ar.status === 'pending');
+    return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a && ar.status === 'pending') || null;
   }, [actionRequestsForCurrentStatus, adminUser]);
 
   const canTakeAction = isOwner || isAssignee;
@@ -435,7 +433,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
 
-              {isOwner && (
+              {isOwner && !currentUserActionRequest && (
                 <div>
                     <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
                      <div className="flex items-center gap-2">
@@ -511,6 +509,46 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
+              {currentUserActionRequest && (
+                  <div className="p-4 border-2 border-primary/50 bg-primary/5 rounded-lg space-y-4">
+                      <h3 className="font-semibold text-lg">Sua Ação Pendente</h3>
+                      {currentUserActionRequest.type === 'approval' && (
+                          <div className="flex flex-wrap gap-2">
+                              <Button variant="destructive" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
+                                 {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
+                                  Reprovar
+                              </Button>
+                              <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
+                                  {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
+                                  Aprovar
+                              </Button>
+                          </div>
+                      )}
+                      {currentUserActionRequest.type === 'execution' && (
+                          <div className="w-full space-y-4">
+                             <div className="space-y-2">
+                                  <Label htmlFor="execution_comment">Comentário {currentStatusDefinition?.action?.commentRequired && '*'}</Label>
+                                  <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={currentStatusDefinition?.action?.commentPlaceholder || ''} />
+                             </div>
+                             <div className="space-y-2">
+                                  <Label htmlFor="execution_attachment">Anexo {currentStatusDefinition?.action?.attachmentRequired && '*'}</Label>
+                                  <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={currentStatusDefinition?.action?.attachmentPlaceholder || ''}/>
+                             </div>
+                             <Button className="w-full" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
+                                  {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                  Confirmar Execução
+                             </Button>
+                          </div>
+                      )}
+                      {currentUserActionRequest.type === 'acknowledgement' && (
+                           <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
+                              {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                              Marcar como Ciente
+                          </Button>
+                      )}
+                  </div>
+              )}
+              
               {(canTakeAction && !currentUserActionRequest) && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário</Label>
@@ -541,42 +579,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow">
-                 {currentUserActionRequest?.type === 'approval' && (
-                    <div className="flex flex-wrap gap-2">
-                        <Button variant="destructive" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
-                           {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
-                            Reprovar
-                        </Button>
-                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
-                            {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
-                            Aprovar
-                        </Button>
-                    </div>
-                )}
-                 {currentUserActionRequest?.type === 'execution' && (
-                    <div className="w-full space-y-4 pt-4 border-t">
-                       <h3 className="font-semibold">Executar Ação</h3>
-                       <div className="space-y-2">
-                            <Label htmlFor="execution_comment">Comentário {currentStatusDefinition?.action?.commentRequired && '*'}</Label>
-                            <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={currentStatusDefinition?.action?.commentPlaceholder || ''} />
-                       </div>
-                       <div className="space-y-2">
-                            <Label htmlFor="execution_attachment">Anexo {currentStatusDefinition?.action?.attachmentRequired && '*'}</Label>
-                            <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={currentStatusDefinition?.action?.attachmentPlaceholder || ''}/>
-                       </div>
-                       <Button className="w-full" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
-                            {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                            Confirmar Execução
-                       </Button>
-                    </div>
-                )}
-                 {currentUserActionRequest?.type === 'acknowledgement' && (
-                     <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
-                        {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Marcar como Ciente
-                    </Button>
-                )}
-                
                 {(isAssignee && !currentUserActionRequest && nextStatus) && (
                      <TooltipProvider>
                       <Tooltip delayDuration={300}>
@@ -606,7 +608,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                       </Tooltip>
                     </TooltipProvider>
                 )}
-
             </div>
             <div className="flex gap-2 self-end">
                 <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
