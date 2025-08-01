@@ -207,45 +207,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
-    const currentUserCollab = collaborators.find(c => c.email === user.email);
-    if (!currentUserCollab) return false;
-
+    // Rule 1: Notify owner if a new request is unassigned.
     return requests.some(req => {
-        if (req.ownerEmail !== user.email) return false;
-
-        const definition = workflowDefinitions.find(d => d.name === req.type);
-        if (!definition) return false;
-
-        // Case 1: New request, unassigned, and not viewed by the owner.
-        const isNewAndUnseen = !req.assignee && !req.viewedBy.includes(currentUserCollab.id3a);
-        
-        // Case 2: Request is in its final status and not yet viewed by the owner.
-        const finalStatusId = definition.statuses[definition.statuses.length - 1]?.id;
-        const isFinishedAndUnseen = req.status === finalStatusId && !req.viewedBy.includes(currentUserCollab.id3a);
-
-        return isNewAndUnseen || isFinishedAndUnseen;
+        if (req.ownerEmail !== user.email) return false; // Not the owner
+        return !req.assignee; // Is it unassigned?
     });
-  }, [user, requests, workflowsLoading, permissions.canManageRequests, collaborators, workflowDefinitions]);
+  }, [user, requests, workflowsLoading, permissions.canManageRequests]);
   
   const hasPendingTasks = useMemo(() => {
     if (!user || workflowsLoading || !requests.length) return false;
     const currentUserCollab = collaborators.find(c => c.email === user.email);
     if (!currentUserCollab) return false;
     
-    // Check for main assigned tasks that are NOT in a final state
-    const hasMainTask = requests.some(req => {
+    // Rule 2: Notify assigned responsible if the task is in the initial status.
+    const hasNewTask = requests.some(req => {
       if (req.isArchived || req.assignee?.id !== currentUserCollab.id3a) {
         return false;
       }
       const definition = workflowDefinitions.find(d => d.name === req.type);
-      if (!definition) return false;
-      const finalStatusId = definition.statuses[definition.statuses.length - 1]?.id;
-      return req.status !== finalStatusId;
+      if (!definition || !definition.statuses || definition.statuses.length === 0) {
+        return false; // Cannot determine initial status
+      }
+      const initialStatusId = definition.statuses[0].id;
+      return req.status === initialStatusId;
     });
 
-    if(hasMainTask) return true;
+    if(hasNewTask) return true;
 
-    // Check for pending action requests
+    // Also check for pending explicit action requests (approvals/acknowledgements)
     const hasActionRequest = requests.some(req => {
       if (req.isArchived) return false;
       const actionRequestsForStatus = req.actionRequests?.[req.status] || [];
