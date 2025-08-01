@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -322,9 +321,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
-      <div className="flex h-[calc(100vh-var(--header-height))]"> 
+      <div className="relative flex min-h-[calc(100vh-var(--header-height))]"> 
         {!isChatbotPage && (
-          <Sidebar collapsible={"icon"} variant="sidebar"> 
+          <Sidebar collapsible="icon" variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {
@@ -393,7 +392,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 // Main AppLayout component that wraps SidebarProvider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider open={false} onOpenChange={() => {}}> 
+    <SidebarProvider defaultOpen={false} onOpenChange={() => {}}> 
       <AppLayout>{children}</AppLayout>
     </SidebarProvider>
   )
