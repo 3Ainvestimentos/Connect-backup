@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -486,7 +487,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
               
               {actionRequestsForCurrentStatus.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Status das Ações Solicitadas</h3>
+                  <h3 className="font-semibold text-lg mb-2">Histórico de Ações Solicitadas</h3>
                   <div className="p-4 bg-muted/50 rounded-md text-sm space-y-2">
                       {actionRequestsForCurrentStatus.map((ar) => {
                         const isCurrentUserAction = ar.userId === adminUser?.id3a;
@@ -527,7 +528,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                             <Label htmlFor="execution_attachment">Anexo {actionDef?.attachmentRequired && '*'}</Label>
                                             <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={actionDef?.attachmentPlaceholder || ''}/>
                                         </div>
-                                        <Button className="w-full" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
+                                        <Button className="w-full bg-[hsl(170,60%,50%)] hover:bg-[hsl(170,60%,45%)]" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
                                             {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                                             Confirmar Execução
                                         </Button>
@@ -607,7 +608,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                           <div className="inline-block">
                             <Button 
                                 key={nextStatus?.id || 'no-next-status'}
-                                variant="secondary"
+                                className="bg-[hsl(170,60%,50%)] hover:bg-[hsl(170,60%,45%)] text-white"
                                 onClick={() => nextStatus && handleStatusChange(nextStatus)} 
                                 disabled={isSubmitting || hasPendingActions || !nextStatus}
                                 style={hasPendingActions ? { pointerEvents: 'none' } : {}}
@@ -649,4 +650,3 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
-
