@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -329,7 +328,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage && !isBobV2Page} showDashboardButton={isChatbotPage || isBobV2Page} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
-          <Sidebar collapsible={isBobV2Page ? "offcanvas" : "icon"} variant="sidebar"> 
+          <Sidebar collapsible={isBobV2Page ? "none" : "icon"} variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {

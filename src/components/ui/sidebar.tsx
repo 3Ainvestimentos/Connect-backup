@@ -182,13 +182,14 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state: sidebarState, openMobile, setOpenMobile } = useSidebar() // Renamed state to sidebarState to avoid conflict
+    const { isMobile, state: sidebarState, openMobile, setOpenMobile, open } = useSidebar() // Renamed state to sidebarState to avoid conflict
 
     if (collapsible === "none") {
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
+            "hidden md:flex h-full flex-col bg-sidebar text-sidebar-foreground",
+            open ? "w-[var(--sidebar-width)]" : "w-[var(--sidebar-width-icon)]",
             className
           )}
           ref={ref}
@@ -210,6 +211,7 @@ const Sidebar = React.forwardRef<
             sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "w-[var(--sidebar-width-icon)]",
             collapsible === "offcanvas" && sidebarState === "expanded" ? "w-[var(--sidebar-width)]" : "",
             collapsible === "offcanvas" && sidebarState === "collapsed" ? "w-0" : "",
+            collapsible === "none" ? (open ? "w-[var(--sidebar-width)]" : "w-[var(--sidebar-width-icon)]") : "",
             variant === "floating" || variant === "inset" ?
               (sidebarState === "collapsed" ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]" : "w-[--sidebar-width]") :
               (sidebarState === "collapsed" ? "w-0" : "w-[var(--sidebar-width)]")
