@@ -570,7 +570,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {(canTakeAction || !!currentUserActionRequest) && !currentUserActionRequest?.type && (
+              {(canTakeAction && !currentUserActionRequest) && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário</Label>
                     <div className="flex items-center gap-2 mt-1">
@@ -599,40 +599,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           </ScrollArea>
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
-            <div>
-                {isAssignee && nextStatus && (
-                     <div className="flex flex-wrap gap-2">
-                        <TooltipProvider>
-                          <Tooltip delayDuration={300}>
-                            <TooltipTrigger asChild>
-                              {/* O div wrapper é necessário para o tooltip funcionar em um botão desabilitado */}
-                              <div className="inline-block">
-                                <Button 
-                                    key={nextStatus.id}
-                                    variant="secondary"
-                                    onClick={() => handleStatusChange(nextStatus)} 
-                                    disabled={isSubmitting || hasPendingActions}
-                                    style={hasPendingActions ? { pointerEvents: 'none' } : {}}
-                                >
-                                    {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <MoveRight className="mr-2 h-4 w-4" />
-                                    )}
-                                    Mover para "{nextStatus.label}"
-                                </Button>
-                              </div>
-                            </TooltipTrigger>
-                            {hasPendingActions && (
-                              <TooltipContent>
-                                <p>Aguardando ações pendentes para avançar.</p>
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                )}
-                {currentUserActionRequest?.type === 'approval' && (
+            <div className="flex-grow">
+                 {currentUserActionRequest?.type === 'approval' && (
                     <div className="flex flex-wrap gap-2">
                         <Button variant="destructive" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
                            {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
@@ -667,6 +635,37 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         Marcar como Ciente
                     </Button>
                 )}
+                
+                {(isAssignee && !currentUserActionRequest && nextStatus) && (
+                     <TooltipProvider>
+                      <Tooltip delayDuration={300}>
+                        <TooltipTrigger asChild>
+                          <div className="inline-block">
+                            <Button 
+                                key={nextStatus.id}
+                                variant="secondary"
+                                onClick={() => handleStatusChange(nextStatus)} 
+                                disabled={isSubmitting || hasPendingActions}
+                                style={hasPendingActions ? { pointerEvents: 'none' } : {}}
+                            >
+                                {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <MoveRight className="mr-2 h-4 w-4" />
+                                )}
+                                Mover para "{nextStatus.label}"
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        {hasPendingActions && (
+                          <TooltipContent>
+                            <p>Aguardando ações pendentes para avançar.</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </TooltipProvider>
+                )}
+
             </div>
             <div className="flex gap-2 self-end">
                 <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
@@ -688,7 +687,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         isOpen={isActionSelectionModalOpen}
         onClose={() => setIsActionSelectionModalOpen(false)}
         allCollaborators={collaborators}
-        selectedIds={[]}
+        selectedIds={currentStatusDefinition?.action?.approverIds || []}
         onConfirm={handleRequestAction}
       />
     </>
