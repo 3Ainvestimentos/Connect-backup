@@ -286,6 +286,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                         checked={!!field.value}
                                                         onCheckedChange={(checked) => field.onChange(checked ? { type: 'approval', label: '' } : undefined)}
                                                         id={`action-switch-${index}`}
+                                                        className="data-[state=checked]:bg-[hsl(170,60%,50%)]"
                                                     />
                                                 )}
                                             />
@@ -322,11 +323,11 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                                     <div className="space-y-4">
                                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
                                                             <div className="flex items-center gap-2">
-                                                                <Controller name={`statuses.${index}.action.commentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.commentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
+                                                                <Controller name={`statuses.${index}.action.commentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.commentRequired`} checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-[hsl(170,60%,50%)]"/>)} />
                                                                 <Label htmlFor={`statuses.${index}.action.commentRequired`}>Comentário obrigatório?</Label>
                                                             </div>
                                                             <div className="flex items-center gap-2">
-                                                                <Controller name={`statuses.${index}.action.attachmentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.attachmentRequired`} checked={field.value} onCheckedChange={field.onChange} />)} />
+                                                                <Controller name={`statuses.${index}.action.attachmentRequired`} control={control} render={({ field }) => (<Switch id={`statuses.${index}.action.attachmentRequired`} checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-[hsl(170,60%,50%)]"/>)} />
                                                                 <Label htmlFor={`statuses.${index}.action.attachmentRequired`}>Anexo obrigatório?</Label>
                                                             </div>
                                                         </div>
@@ -419,7 +420,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                         <div className="flex justify-between items-center pt-2">
                                             <div className="flex items-center gap-2">
                                                 <Controller name={`fields.${index}.required`} control={control} render={({ field: controllerField }) => (
-                                                    <Switch id={`fields.${index}.required`} checked={controllerField.value} onCheckedChange={controllerField.onChange} />
+                                                    <Switch id={`fields.${index}.required`} checked={controllerField.value} onCheckedChange={controllerField.onChange} className="data-[state=checked]:bg-[hsl(170,60%,50%)]"/>
                                                 )} />
                                                 <Label htmlFor={`fields.${index}.required`}>Obrigatório</Label>
                                             </div>

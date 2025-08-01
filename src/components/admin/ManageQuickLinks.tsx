@@ -204,7 +204,7 @@ export function ManageQuickLinks() {
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                            <Switch id="isUserSpecific" checked={watchIsUserSpecific} onCheckedChange={(checked) => form.setValue('isUserSpecific', checked)} />
+                            <Switch id="isUserSpecific" checked={watchIsUserSpecific} onCheckedChange={(checked) => form.setValue('isUserSpecific', checked)} className="data-[state=checked]:bg-[hsl(170,60%,50%)]" />
                             <Label htmlFor="isUserSpecific">Link dinâmico por usuário</Label>
                         </div>
 
