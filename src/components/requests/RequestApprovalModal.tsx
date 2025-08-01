@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink, ShieldQuestion, CheckCircle, Hourglass } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink, ShieldQuestion, CheckCircle, Hourglass, XCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
@@ -39,8 +39,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [isActionSelectionModalOpen, setIsActionSelectionModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | null>(null);
+  const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | 'actionResponse' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
+  const [actionResponse, setActionResponse] = useState<'approved' | 'rejected' | null>(null);
+
 
   const definition = useMemo(() => {
     if (!request) return null;
@@ -61,8 +63,19 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (!adminUser || !request?.assignee) return false;
     return adminUser.id3a === request.assignee.id;
   }, [adminUser, request]);
+  
+  const actionRequestsForCurrentStatus = useMemo(() => {
+    if (!request?.actionRequests || !request.status) return [];
+    return request.actionRequests[request.status] || [];
+  }, [request]);
 
-  const canTakeAction = isOwner || isAssignee;
+  const currentUserActionRequest = useMemo(() => {
+    if (!adminUser) return null;
+    return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a && ar.status === 'pending');
+  }, [actionRequestsForCurrentStatus, adminUser]);
+
+  const canTakeAction = isOwner || isAssignee || !!currentUserActionRequest;
+
 
   const currentStatusDefinition = useMemo(() => {
     if (!definition || !request) return null;
@@ -78,10 +91,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return definition.statuses[currentIndex + 1];
   }, [definition, request]);
 
-  const actionRequestsForCurrentStatus = useMemo(() => {
-    if (!request?.actionRequests || !request.status) return [];
-    return request.actionRequests[request.status] || [];
-  }, [request]);
 
   const hasPendingActions = useMemo(() => {
     if (!currentStatusDefinition?.action) return false;
@@ -103,6 +112,45 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   if (!request) return null;
 
+  const handleActionResponse = async (response: 'approved' | 'rejected') => {
+    setActionType('actionResponse');
+    setActionResponse(response);
+    if (!user || !adminUser || !currentUserActionRequest) return;
+
+    setIsSubmitting(true);
+    const now = new Date();
+    const actionLabel = response === 'approved' ? 'aprovada' : 'rejeitada';
+    const historyNote = `Ação foi ${actionLabel}.` + (comment ? ` Comentário: ${comment}` : '');
+    
+    const updatedActionRequests = actionRequestsForCurrentStatus.map(ar => 
+        ar.userId === adminUser.id3a ? { ...ar, status: response, respondedAt: formatISO(now) } : ar
+    );
+
+    const requestUpdate = {
+        id: request.id,
+        lastUpdatedAt: formatISO(now),
+        actionRequests: {
+            ...request.actionRequests,
+            [request.status]: updatedActionRequests,
+        },
+        history: [...request.history, { timestamp: formatISO(now), status: request.status, userId: adminUser.id3a, userName: adminUser.name, notes: historyNote }],
+    };
+
+    const notificationMessage = `A ação na tarefa '${request.type}' #${request.requestId} foi ${actionLabel} por ${adminUser.name}.`;
+
+    try {
+        await updateRequestAndNotify(requestUpdate, undefined, notificationMessage);
+        toast({ title: "Sucesso!", description: `Ação registrada como '${response}'.` });
+        setComment('');
+    } catch (error) {
+        toast({ title: "Erro", description: "Não foi possível registrar sua ação.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
+        setActionType(null);
+        setActionResponse(null);
+    }
+  };
+
   const handleRequestAction = async (approverIds: string[]) => {
     setActionType('requestAction');
     setIsActionSelectionModalOpen(false);
@@ -118,7 +166,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       return {
         userId: id,
         userName: approver?.name || 'Usuário Desconhecido',
-        status: 'pending',
+        status: 'pending' as const,
         requestedAt: formatISO(now),
         respondedAt: '',
       };
@@ -328,7 +376,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         case 'pending': return <Hourglass className="h-4 w-4 text-yellow-500" />;
         case 'approved': return <CheckCircle className="h-4 w-4 text-green-500" />;
         case 'acknowledged': return <CheckCircle className="h-4 w-4 text-blue-500" />;
-        case 'rejected': return <X className="h-4 w-4 text-red-500" />;
+        case 'rejected': return <XCircle className="h-4 w-4 text-red-500" />;
         default: return <ShieldQuestion className="h-4 w-4 text-muted-foreground" />;
     }
   }
@@ -467,7 +515,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {canTakeAction && (
+              {(canTakeAction || !!currentUserActionRequest) && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário</Label>
                     <div className="flex items-center gap-2 mt-1">
@@ -527,6 +575,18 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             )}
                           </Tooltip>
                         </TooltipProvider>
+                    </div>
+                )}
+                {currentUserActionRequest && (
+                    <div className="flex flex-wrap gap-2">
+                        <Button variant="destructive" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
+                           {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
+                            Reprovar
+                        </Button>
+                        <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
+                            {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
+                            Aprovar
+                        </Button>
                     </div>
                 )}
             </div>
