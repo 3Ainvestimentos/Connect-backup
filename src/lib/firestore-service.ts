@@ -68,6 +68,27 @@ export const listenToCollection = <T>(
 };
 
 /**
+ * Fetches all documents from a specified collection.
+ * @param collectionName The name of the collection.
+ * @returns A promise that resolves to an array of documents with their IDs.
+ */
+export const getCollection = async <T>(collectionName: string): Promise<WithId<T>[]> => {
+    try {
+        const collectionRef = collection(db, collectionName);
+        const snapshot = await getDocs(collectionRef);
+        const data: WithId<T>[] = [];
+        snapshot.forEach((doc) => {
+            data.push({ id: doc.id, ...doc.data() } as WithId<T>);
+        });
+        return data;
+    } catch (error) {
+        console.error(`Error fetching collection ${collectionName}:`, error);
+        throw new Error(`Não foi possível carregar a coleção de ${collectionName}.`);
+    }
+};
+
+
+/**
  * Fetches a single document by its ID from a specified collection.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to fetch.

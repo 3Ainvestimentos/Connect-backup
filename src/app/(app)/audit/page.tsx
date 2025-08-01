@@ -3,8 +3,8 @@
 
 import React, { useMemo } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
-import { useQuery } from '@tanstack/react-query';
-import { getCollection, WithId } from '@/lib/firestore-service';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown } from 'lucide-react';
@@ -26,12 +26,29 @@ type AuditLogEvent = WithId<{
 
 
 export default function AuditPage() {
-    const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
+    const queryClient = useQueryClient();
+    
+    React.useEffect(() => {
+        const unsubscribe = listenToCollection<AuditLogEvent>(
+            'audit_logs',
+            (newData) => {
+                queryClient.setQueryData(['audit_logs'], newData);
+            },
+            (error) => {
+                console.error("Failed to listen to audit logs:", error);
+            }
+        );
+        return () => unsubscribe();
+    }, [queryClient]);
+    
+    const { data: events = [], isLoading: isLoadingEvents } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
         select: (data) => data.filter(e => e.eventType === 'login'),
     });
     const { collaborators, loading: loadingCollaborators } = useCollaborators();
+
+    const isLoading = isLoadingEvents || loadingCollaborators;
 
     const cumulativeLogins = useMemo(() => {
         if (isLoading || events.length === 0) return [];
@@ -93,7 +110,7 @@ export default function AuditPage() {
     }, [events, isLoading]);
     
     const uniqueLoginsThisMonth = useMemo(() => {
-        if (isLoading || loadingCollaborators || events.length === 0 || collaborators.length === 0) {
+        if (isLoading || collaborators.length === 0) {
             return { uniqueCount: 0, totalCount: 0, percentage: 0 };
         }
 
@@ -113,7 +130,7 @@ export default function AuditPage() {
             totalCount: collaborators.length,
             percentage: (uniqueUserIds.size / collaborators.length) * 100,
         };
-    }, [events, collaborators, isLoading, loadingCollaborators]);
+    }, [events, collaborators, isLoading]);
 
     const handleExport = () => {
         const dataForCsv = events.map(event => ({
@@ -135,7 +152,7 @@ export default function AuditPage() {
         document.body.removeChild(link);
     };
 
-    if (isLoading || loadingCollaborators) {
+    if (isLoading) {
         return (
             <div className="space-y-6">
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

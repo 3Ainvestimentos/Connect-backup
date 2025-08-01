@@ -5,8 +5,8 @@ import React, { useMemo } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useQuery } from '@tanstack/react-query';
-import { getCollection, WithId } from '@/lib/firestore-service';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint, FileDown, Route } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,21 @@ const EVENT_TYPE_CONFIG: { [key in AuditLogEvent['eventType']]?: { label: string
 
 
 export default function ContentInteractionPage() {
+    const queryClient = useQueryClient();
+
+    React.useEffect(() => {
+        const unsubscribe = listenToCollection<AuditLogEvent>(
+            'audit_logs',
+            (newData) => {
+                queryClient.setQueryData(['audit_logs'], newData);
+            },
+            (error) => {
+                console.error("Failed to listen to audit logs:", error);
+            }
+        );
+        return () => unsubscribe();
+    }, [queryClient]);
+    
     const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
