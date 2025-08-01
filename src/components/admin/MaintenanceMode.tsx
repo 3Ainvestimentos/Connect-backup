@@ -25,9 +25,12 @@ type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 export function MaintenanceMode() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting, isDirty } } = useForm<MaintenanceFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<MaintenanceFormValues>({
     resolver: zodResolver(maintenanceSchema),
-    defaultValues: settings,
+    defaultValues: {
+      maintenanceMode: false,
+      maintenanceMessage: '',
+    },
   });
 
   // When settings are loaded from the context, reset the form with those values
@@ -37,24 +40,45 @@ export function MaintenanceMode() {
     }
   }, [settings, loading, reset]);
 
+  const handleSwitchToggle = async (checked: boolean) => {
+      setValue('maintenanceMode', checked, { shouldDirty: true });
+      try {
+        await updateSystemSettings({ maintenanceMode: checked });
+         if (checked) {
+            toast({
+              title: "Modo de Manutenção Ativado!",
+              description: "O acesso à plataforma agora está restrito a Super Administradores.",
+            });
+          } else {
+            toast({
+              title: "Modo de Manutenção Desativado.",
+              description: "O acesso à plataforma foi restaurado para todos os colaboradores.",
+            });
+          }
+      } catch (error) {
+           toast({
+            title: 'Erro ao Ativar/Desativar',
+            description: 'Não foi possível alterar o modo de manutenção.',
+            variant: 'destructive',
+          });
+          // Revert visual state on failure
+          setValue('maintenanceMode', !checked, { shouldDirty: true }); 
+      }
+  };
+
   const onSubmit = async (data: MaintenanceFormValues) => {
     try {
-      await updateSystemSettings(data);
-      if (data.maintenanceMode) {
-        toast({
-          title: "Modo de Manutenção Ativado!",
-          description: "O acesso à plataforma agora está restrito a Super Administradores.",
-        });
-      } else {
-        toast({
-          title: "Modo de Manutenção Desativado.",
-          description: "O acesso à plataforma foi restaurado para todos os colaboradores.",
-        });
-      }
+      // Only update the message, as the switch is handled separately
+      await updateSystemSettings({ maintenanceMessage: data.maintenanceMessage });
+      toast({
+        title: "Mensagem de Manutenção Salva",
+        description: "A mensagem foi atualizada com sucesso.",
+      });
+      reset({ ...data }); // Resets dirty state for the form
     } catch (error) {
       toast({
-        title: 'Erro ao Salvar',
-        description: 'Não foi possível salvar as configurações de manutenção.',
+        title: 'Erro ao Salvar Mensagem',
+        description: 'Não foi possível salvar a mensagem de manutenção.',
         variant: 'destructive',
       });
     }
@@ -73,26 +97,30 @@ export function MaintenanceMode() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="flex items-center space-x-4 rounded-lg border p-4">
-            <div className="flex-1 space-y-1">
-              <Label htmlFor="maintenance-mode-switch" className="text-base">
-                Ativar Modo de Manutenção
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                {maintenanceModeOn 
-                  ? "Acesso restrito apenas para Super Administradores."
-                  : "Acesso liberado para todos os colaboradores."
-                }
-              </p>
+          <div className={cn(
+            "rounded-lg border p-4 transition-colors duration-300",
+            maintenanceModeOn ? 'bg-red-500/10 border-red-500/20' : 'bg-green-500/10 border-green-500/20'
+          )}>
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 space-y-1">
+                <Label htmlFor="maintenance-mode-switch" className="text-base font-bold">
+                  {maintenanceModeOn ? "MANUTENÇÃO ATIVA" : "MANUTENÇÃO INATIVA"}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {maintenanceModeOn 
+                    ? "Acesso restrito apenas para Super Administradores."
+                    : "Acesso liberado para todos os colaboradores."
+                  }
+                </p>
+              </div>
+              <Switch
+                id="maintenance-mode-switch"
+                checked={maintenanceModeOn}
+                onCheckedChange={handleSwitchToggle}
+                disabled={isSubmitting || loading}
+                className="data-[state=checked]:bg-[hsl(0,72%,51%)] data-[state=unchecked]:bg-[hsl(142,71%,45%)]"
+              />
             </div>
-            <Switch
-              id="maintenance-mode-switch"
-              {...register('maintenanceMode')}
-              checked={maintenanceModeOn}
-              onCheckedChange={(checked) => reset({ ...watch(), maintenanceMode: checked })}
-              disabled={isSubmitting}
-              className="data-[state=checked]:bg-[hsl(170,60%,50%)]"
-            />
           </div>
 
           <div className="space-y-2">
@@ -101,7 +129,7 @@ export function MaintenanceMode() {
               id="maintenanceMessage"
               {...register('maintenanceMessage')}
               rows={4}
-              placeholder="Digite a mensagem que será exibida na tela de login..."
+              placeholder="Digite a mensagem que será exibida na tela de login durante a manutenção..."
               disabled={isSubmitting}
             />
              {errors.maintenanceMessage && <p className="text-sm text-destructive mt-1">{errors.maintenanceMessage.message}</p>}
@@ -110,7 +138,7 @@ export function MaintenanceMode() {
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Alterações
+              Salvar Mensagem
             </Button>
           </div>
         </form>
