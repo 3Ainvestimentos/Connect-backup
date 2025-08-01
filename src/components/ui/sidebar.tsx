@@ -213,7 +213,7 @@ const Sidebar = React.forwardRef<
             collapsible === "offcanvas" && sidebarState === "collapsed" ? "w-0" : "",
             variant === "floating" || variant === "inset" ?
               (sidebarState === "collapsed" ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]" : "w-[--sidebar-width]") :
-              (sidebarState === "collapsed" ? "w-[--sidebar-width-icon]" : "w-[--sidebar-width]")
+              (sidebarState === "collapsed" ? "w-0" : "w-[var(--sidebar-width)]")
         )}
       />
     );
@@ -355,7 +355,7 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        "relative flex-1 flex-col bg-background", // Removed min-h-svh as parent div controls height
+        "relative flex-1 flex flex-col bg-background", // Removed min-h-svh as parent div controls height
         // The margin logic is effectively handled by the sibling placeholder div for the sidebar
         className
       )}
@@ -794,5 +794,3 @@ export {
   SidebarTrigger,
   useSidebar,
 }
-
-    

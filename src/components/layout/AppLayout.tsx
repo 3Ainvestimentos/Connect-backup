@@ -202,6 +202,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
   const isChatbotPage = pathname === '/chatbot';
+  const isBobV2Page = pathname === '/bob-v2';
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
@@ -325,10 +326,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
+      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage && !isBobV2Page} showDashboardButton={isChatbotPage || isBobV2Page} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
-          <Sidebar collapsible="icon" variant="sidebar"> 
+          <Sidebar collapsible={isBobV2Page ? "offcanvas" : "icon"} variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {
@@ -397,7 +398,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 // Main AppLayout component that wraps SidebarProvider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={false}> 
+    <SidebarProvider defaultOpen={true}> 
       <AppLayout>{children}</AppLayout>
     </SidebarProvider>
   )
