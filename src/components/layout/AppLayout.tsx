@@ -321,7 +321,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
-      <div className="relative flex min-h-[calc(100vh-var(--header-height))]"> 
+      <div className="flex h-[calc(100vh-var(--header-height))]"> 
+        <SidebarInset className={cn(!isChatbotPage && "md:ml-[var(--sidebar-width-icon)]")}>
+          {children}
+        </SidebarInset>
+        
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
@@ -377,10 +381,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarFooter>
           </Sidebar>
         )}
-        
-        <SidebarInset>
-          {children}
-        </SidebarInset>
       </div>
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
@@ -392,7 +392,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 // Main AppLayout component that wraps SidebarProvider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={false} onOpenChange={() => {}}> 
+    <SidebarProvider defaultOpen={false}> 
       <AppLayout>{children}</AppLayout>
     </SidebarProvider>
   )

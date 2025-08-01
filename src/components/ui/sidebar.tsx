@@ -214,7 +214,7 @@ const Sidebar = React.forwardRef<
       <div
           ref={ref}
           className={cn(
-            "group hidden md:flex flex-shrink-0 flex-col bg-sidebar text-sidebar-foreground duration-200 transition-[width] ease-linear fixed z-50", 
+            "group hidden md:flex flex-shrink-0 flex-col bg-sidebar text-sidebar-foreground duration-200 transition-[width] ease-linear fixed z-50 h-full", 
             "top-[var(--header-height)] h-[calc(100vh-var(--header-height))]",
             "group-data-[state=expanded]/sidebar-wrapper:w-[var(--sidebar-width)]",
             "group-data-[state=collapsed]/sidebar-wrapper:w-[var(--sidebar-width-icon)]",
@@ -296,8 +296,6 @@ const SidebarInset = React.forwardRef<
       ref={ref}
       className={cn(
         "relative flex-1 flex flex-col bg-background transition-[margin-left] duration-200 ease-linear",
-        "group-data-[state=expanded]/sidebar-wrapper:ml-[var(--sidebar-width)]",
-        "group-data-[state=collapsed]/sidebar-wrapper:ml-[var(--sidebar-width-icon)]",
         className
       )}
       {...props}
