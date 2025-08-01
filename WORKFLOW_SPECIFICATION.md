@@ -123,7 +123,24 @@ interface RoutingRule {
 
 ---
 
-## 4. Exemplo Completo de JSON para um Workflow
+## 4. Armazenamento de Anexos
+
+Todos os arquivos anexados às solicitações de workflow através de um campo do tipo `file` ou durante uma etapa de "Execução" são armazenados de forma segura no **Firebase Cloud Storage**.
+
+A estrutura de pastas segue o padrão:
+
+`workflow-attachments/{userId}/{requestId}/{fileName}`
+
+-   **`workflow-attachments`**: A pasta raiz para todos os anexos de workflows.
+-   **`{userId}`**: O ID do colaborador (ID 3A RIVA) que realizou o upload do arquivo.
+-   **`{requestId}`**: O ID da solicitação de workflow à qual o arquivo pertence.
+-   **`{fileName}`**: O nome original do arquivo que foi enviado.
+
+Essa estrutura garante que os arquivos sejam organizados logicamente e vinculados tanto ao usuário quanto à solicitação específica, facilitando a auditoria e o gerenciamento diretamente pelo console do Firebase, se necessário.
+
+---
+
+## 5. Exemplo Completo de JSON para um Workflow
 
 Este exemplo pode ser usado como um modelo para criar um arquivo `reembolso.json` e importá-lo na plataforma.
 
