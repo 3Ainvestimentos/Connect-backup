@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink, ShieldQuestion, CheckCircle, Hourglass, XCircle, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink, ShieldQuestion, CheckCircle, Hourglass, XCircle, ThumbsUp, ThumbsDown, Paperclip, UploadCloud } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
@@ -22,6 +22,8 @@ import { Avatar, AvatarFallback } from '../ui/avatar';
 import { cn } from '@/lib/utils';
 import { RecipientSelectionModal } from '../admin/RecipientSelectionModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Input } from '../ui/input';
+import { uploadFile } from '@/lib/firestore-service';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -35,13 +37,14 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const { updateRequestAndNotify } = useWorkflows();
   const { workflowDefinitions } = useApplications();
   const [comment, setComment] = useState('');
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [assignee, setAssignee] = useState<Collaborator | null>(null);
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
   const [isActionSelectionModalOpen, setIsActionSelectionModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | 'actionResponse' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
-  const [actionResponse, setActionResponse] = useState<'approved' | 'rejected' | null>(null);
+  const [actionResponse, setActionResponse] = useState<'approved' | 'rejected' | 'executed' | null>(null);
 
 
   const definition = useMemo(() => {
@@ -101,6 +104,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   useEffect(() => {
     if (request) {
       setComment('');
+      setAttachment(null);
       if (request.assignee) {
         const currentAssignee = collaborators.find(c => c.id3a === request.assignee?.id);
         setAssignee(currentAssignee || null);
@@ -112,18 +116,62 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   if (!request) return null;
 
-  const handleActionResponse = async (response: 'approved' | 'rejected') => {
+  const handleActionResponse = async (response: 'approved' | 'rejected' | 'acknowledged' | 'executed') => {
     setActionType('actionResponse');
     setActionResponse(response);
     if (!user || !adminUser || !currentUserActionRequest) return;
+    
+    const actionDef = currentStatusDefinition?.action;
+    
+    // Validation for execution type
+    if (response === 'executed' && actionDef?.type === 'execution') {
+      if (actionDef.commentRequired && !comment.trim()) {
+        toast({ title: "Erro", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
+        return;
+      }
+      if (actionDef.attachmentRequired && !attachment) {
+        toast({ title: "Erro", description: "O anexo é obrigatório para esta ação.", variant: "destructive" });
+        return;
+      }
+    }
 
     setIsSubmitting(true);
     const now = new Date();
-    const actionLabel = response === 'approved' ? 'aprovada' : 'rejeitada';
-    const historyNote = `Ação foi ${actionLabel}.` + (comment ? ` Comentário: ${comment}` : '');
+    const actionLabels = {
+      approved: 'aprovada',
+      rejected: 'rejeitada',
+      acknowledged: 'registrada como ciente',
+      executed: 'executada'
+    }
+    const actionLabel = actionLabels[response] || 'processada';
+
+    let historyNote = `Ação foi ${actionLabel}.`;
+    let attachmentUrl = '';
+    
+    if (response === 'executed') {
+        if (attachment) {
+            try {
+                attachmentUrl = await uploadFile(attachment, adminUser.id3a, request.id, `execution_${Date.now()}_${attachment.name}`);
+                historyNote += ` Anexo: ${attachment.name}.`;
+            } catch (e) {
+                toast({ title: "Erro de Upload", description: "Não foi possível enviar o anexo.", variant: "destructive"});
+                setIsSubmitting(false);
+                return;
+            }
+        }
+        if (comment) {
+            historyNote += ` Comentário: ${comment}`;
+        }
+    }
     
     const updatedActionRequests = actionRequestsForCurrentStatus.map(ar => 
-        ar.userId === adminUser.id3a ? { ...ar, status: response, respondedAt: formatISO(now) } : ar
+        ar.userId === adminUser.id3a ? { 
+          ...ar, 
+          status: response, 
+          respondedAt: formatISO(now),
+          comment: comment || '',
+          attachmentUrl: attachmentUrl || '',
+        } : ar
     );
 
     const requestUpdate = {
@@ -142,6 +190,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         await updateRequestAndNotify(requestUpdate, undefined, notificationMessage);
         toast({ title: "Sucesso!", description: `Ação registrada como '${response}'.` });
         setComment('');
+        setAttachment(null);
     } catch (error) {
         toast({ title: "Erro", description: "Não foi possível registrar sua ação.", variant: "destructive" });
     } finally {
@@ -246,6 +295,12 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (!user || !adminUser || !assignee) {
       toast({ title: "Erro", description: "Usuário administrador ou colaborador selecionado não encontrado.", variant: "destructive" });
       return;
+    }
+    
+    if (assignee.id3a === request.assignee?.id) {
+        toast({ title: "Atenção", description: "Este colaborador já é o responsável." });
+        setActionType(null);
+        return;
     }
 
     setIsSubmitting(true);
@@ -570,14 +625,14 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             </TooltipTrigger>
                             {hasPendingActions && (
                               <TooltipContent>
-                                <p>Aguardando aprovações pendentes para avançar.</p>
+                                <p>Aguardando ações pendentes para avançar.</p>
                               </TooltipContent>
                             )}
                           </Tooltip>
                         </TooltipProvider>
                     </div>
                 )}
-                {currentUserActionRequest && (
+                {currentUserActionRequest && currentUserActionRequest.type === 'approval' && (
                     <div className="flex flex-wrap gap-2">
                         <Button variant="destructive" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
                            {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
@@ -588,6 +643,29 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             Aprovar
                         </Button>
                     </div>
+                )}
+                 {currentUserActionRequest && currentUserActionRequest.type === 'execution' && (
+                    <div className="w-full space-y-4 pt-4 border-t">
+                       <h3 className="font-semibold">Executar Ação</h3>
+                       <div className="space-y-2">
+                            <Label htmlFor="execution_comment">Comentário {currentStatusDefinition?.action?.commentRequired && '*'}</Label>
+                            <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={currentStatusDefinition?.action?.commentPlaceholder || ''} />
+                       </div>
+                       <div className="space-y-2">
+                            <Label htmlFor="execution_attachment">Anexo {currentStatusDefinition?.action?.attachmentRequired && '*'}</Label>
+                            <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={currentStatusDefinition?.action?.attachmentPlaceholder || ''}/>
+                       </div>
+                       <Button className="w-full" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
+                            {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                            Confirmar Execução
+                       </Button>
+                    </div>
+                )}
+                 {currentUserActionRequest && currentUserActionRequest.type === 'acknowledgement' && (
+                     <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
+                        {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                        Marcar como Ciente
+                    </Button>
                 )}
             </div>
             <div className="flex gap-2 self-end">
