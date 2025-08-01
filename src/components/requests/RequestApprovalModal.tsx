@@ -44,7 +44,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | 'actionResponse' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
-  const [actionResponse, setActionResponse] = useState<'approved' | 'rejected' | 'executed' | null>(null);
+  const [actionResponse, setActionResponse] = useState<'approved' | 'rejected' | 'acknowledged' | 'executed' | null>(null);
 
 
   const definition = useMemo(() => {
@@ -77,7 +77,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a && ar.status === 'pending');
   }, [actionRequestsForCurrentStatus, adminUser]);
 
-  const canTakeAction = isOwner || isAssignee || !!currentUserActionRequest;
+  const canTakeAction = isOwner || isAssignee;
 
 
   const currentStatusDefinition = useMemo(() => {
@@ -570,7 +570,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {(canTakeAction || !!currentUserActionRequest) && (
+              {(canTakeAction || !!currentUserActionRequest) && !currentUserActionRequest?.type && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário</Label>
                     <div className="flex items-center gap-2 mt-1">
@@ -632,7 +632,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         </TooltipProvider>
                     </div>
                 )}
-                {currentUserActionRequest && currentUserActionRequest.type === 'approval' && (
+                {currentUserActionRequest?.type === 'approval' && (
                     <div className="flex flex-wrap gap-2">
                         <Button variant="destructive" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
                            {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
@@ -644,7 +644,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         </Button>
                     </div>
                 )}
-                 {currentUserActionRequest && currentUserActionRequest.type === 'execution' && (
+                 {currentUserActionRequest?.type === 'execution' && (
                     <div className="w-full space-y-4 pt-4 border-t">
                        <h3 className="font-semibold">Executar Ação</h3>
                        <div className="space-y-2">
@@ -661,7 +661,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                        </Button>
                     </div>
                 )}
-                 {currentUserActionRequest && currentUserActionRequest.type === 'acknowledgement' && (
+                 {currentUserActionRequest?.type === 'acknowledgement' && (
                      <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
                         {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                         Marcar como Ciente
