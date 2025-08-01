@@ -40,7 +40,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [attachment, setAttachment] = useState<File | null>(null);
   const [assignee, setAssignee] = useState<Collaborator | null>(null);
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
-  const [isActionSelectionModalOpen, setIsActionSelectionModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | 'actionResponse' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
@@ -200,50 +199,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   };
 
-  const handleRequestAction = async (approverIds: string[]) => {
-    setActionType('requestAction');
-    setIsActionSelectionModalOpen(false);
-    if (!user || !adminUser || !currentStatusDefinition?.action) return;
-    if (approverIds.length === 0) return;
-
-    setIsSubmitting(true);
-    const now = new Date();
-    const historyNote = `Solicitação de "${currentStatusDefinition.action.label}" enviada para ${approverIds.length} colaborador(es).`;
-
-    const newActionRequests = approverIds.map(id => {
-      const approver = collaborators.find(c => c.id3a === id);
-      return {
-        userId: id,
-        userName: approver?.name || 'Usuário Desconhecido',
-        status: 'pending' as const,
-        requestedAt: formatISO(now),
-        respondedAt: '',
-      };
-    });
-
-    const requestUpdate = {
-      id: request.id,
-      lastUpdatedAt: formatISO(now),
-      actionRequests: {
-        ...request.actionRequests,
-        [request.status]: [...(request.actionRequests?.[request.status] || []), ...newActionRequests],
-      },
-      history: [...request.history, { timestamp: formatISO(now), status: request.status, userId: adminUser.id3a, userName: adminUser.name, notes: historyNote }],
-    };
-
-    const notificationMessage = `Uma ação de '${currentStatusDefinition.action.label}' foi solicitada na sua tarefa '${request.type}' #${request.requestId}.`;
-    
-    try {
-      await updateRequestAndNotify(requestUpdate, undefined, notificationMessage);
-      toast({ title: "Sucesso!", description: "Solicitação de ação enviada." });
-    } catch(error) {
-       toast({ title: "Erro", description: "Não foi possível solicitar a ação.", variant: "destructive" });
-    } finally {
-      setIsSubmitting(false);
-      setActionType(null);
-    }
-  };
-  
   const handleStatusChange = async (newStatus: WorkflowStatusDefinition) => {
     setActionType('statusChange');
     setTargetStatus(newStatus);
@@ -517,20 +472,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                     </div>
                 </div>
               )}
-            
-              {currentStatusDefinition?.action && isAssignee && (
-                <div>
-                    <h3 className="font-semibold text-lg mb-2">Ações da Etapa</h3>
-                    <Button
-                        variant="outline"
-                        onClick={() => setIsActionSelectionModalOpen(true)}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting && actionType === 'requestAction' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldQuestion className="mr-2 h-4 w-4" />}
-                        {currentStatusDefinition.action.label}
-                    </Button>
-                </div>
-              )}
               
               {actionRequestsForCurrentStatus.length > 0 && (
                 <div>
@@ -682,13 +623,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
               setAssignee(selected);
               setIsAssigneeModalOpen(false);
           }}
-      />
-      <RecipientSelectionModal
-        isOpen={isActionSelectionModalOpen}
-        onClose={() => setIsActionSelectionModalOpen(false)}
-        allCollaborators={collaborators}
-        selectedIds={currentStatusDefinition?.action?.approverIds || []}
-        onConfirm={handleRequestAction}
       />
     </>
   );

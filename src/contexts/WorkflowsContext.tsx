@@ -28,9 +28,11 @@ export interface WorkflowHistoryLog {
 export interface ActionRequest {
   userId: string;
   userName: string;
-  status: 'pending' | 'approved' | 'rejected' | 'acknowledged';
+  status: 'pending' | 'approved' | 'rejected' | 'acknowledged' | 'executed';
   requestedAt: string; // ISO String
   respondedAt?: string; // ISO String
+  comment?: string;
+  attachmentUrl?: string;
 }
 
 // Define a estrutura principal de uma solicitação de workflow
