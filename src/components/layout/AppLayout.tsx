@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -206,10 +207,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
-    // Rule 1: Notify owner if a new request is unassigned.
     return requests.some(req => {
-        if (req.ownerEmail !== user.email) return false; // Not the owner
-        return !req.assignee; // Is it unassigned?
+        if (req.ownerEmail !== user.email) return false;
+        return !req.assignee;
     });
   }, [user, requests, workflowsLoading, permissions.canManageRequests]);
   
@@ -218,14 +218,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     const currentUserCollab = collaborators.find(c => c.email === user.email);
     if (!currentUserCollab) return false;
     
-    // Rule 2: Notify assigned responsible if the task is in the initial status.
     const hasNewTask = requests.some(req => {
       if (req.isArchived || req.assignee?.id !== currentUserCollab.id3a) {
         return false;
       }
       const definition = workflowDefinitions.find(d => d.name === req.type);
       if (!definition || !definition.statuses || definition.statuses.length === 0) {
-        return false; // Cannot determine initial status
+        return false;
       }
       const initialStatusId = definition.statuses[0].id;
       return req.status === initialStatusId;
@@ -233,7 +232,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
     if(hasNewTask) return true;
 
-    // Also check for pending explicit action requests (approvals/acknowledgements)
     const hasActionRequest = requests.some(req => {
       if (req.isArchived) return false;
       const actionRequestsForStatus = req.actionRequests?.[req.status] || [];
@@ -395,7 +393,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 // Main AppLayout component that wraps SidebarProvider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={false}> 
+    <SidebarProvider open={false} onOpenChange={() => {}}> 
       <AppLayout>{children}</AppLayout>
     </SidebarProvider>
   )
