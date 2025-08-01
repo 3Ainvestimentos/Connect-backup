@@ -324,7 +324,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
-      <div className="flex flex-1 w-full"> 
+      <div className="flex h-[calc(100vh-var(--header-height))]"> 
         {!isChatbotPage && (
           <Sidebar collapsible={"icon"} variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
