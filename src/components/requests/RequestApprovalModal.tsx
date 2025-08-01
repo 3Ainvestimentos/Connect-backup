@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -490,10 +489,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                   <Badge variant="secondary" className="capitalize">{ar.status}</Badge>
                               </div>
 
-                              {canTakeAction && (
+                              {canTakeAction && currentStatusDefinition?.action && (
                                 <div className="mt-4 pt-4 border-t border-primary/20">
-                                  <h4 className="font-semibold mb-2">Sua Ação Pendente:</h4>
-                                  {currentUserActionRequest?.type === 'approval' && (
+                                  {currentStatusDefinition.action.type === 'approval' && (
                                     <div className="flex flex-wrap gap-2">
                                         <Button variant="destructive" size="sm" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
                                           {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
@@ -505,7 +503,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                         </Button>
                                     </div>
                                   )}
-                                  {currentUserActionRequest?.type === 'execution' && (
+                                  {currentStatusDefinition.action.type === 'execution' && (
                                     <div className="w-full space-y-4">
                                         <div className="space-y-2">
                                             <Label htmlFor="execution_comment">Comentário {currentStatusDefinition?.action?.commentRequired && '*'}</Label>
@@ -521,7 +519,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                         </Button>
                                     </div>
                                   )}
-                                  {currentUserActionRequest?.type === 'acknowledgement' && (
+                                  {currentStatusDefinition.action.type === 'acknowledgement' && (
                                     <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
                                         {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                                         Marcar como Ciente
