@@ -54,7 +54,6 @@ const navItems = [
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
   { href: '/store', label: 'Store', icon: ShoppingCart, external: true, permission: null },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false, permission: null },
-  { href: '/bob-v2', label: 'Bob v2', icon: TestTube2, external: false, permission: null },
 ];
 
 function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
@@ -328,7 +327,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage && !isBobV2Page} showDashboardButton={isChatbotPage || isBobV2Page} />
       <div className="flex flex-1 w-full"> 
         {!isChatbotPage && (
-          <Sidebar collapsible={isBobV2Page ? "none" : "icon"} variant="sidebar"> 
+          <Sidebar collapsible={"icon"} variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {
@@ -397,7 +396,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 // Main AppLayout component that wraps SidebarProvider
 export default function AppLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider defaultOpen={true}> 
+    <SidebarProvider defaultOpen={false}> 
       <AppLayout>{children}</AppLayout>
     </SidebarProvider>
   )
