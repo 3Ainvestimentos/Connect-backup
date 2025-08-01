@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -433,7 +434,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
 
-              {isOwner && !currentUserActionRequest && (
+              {isOwner && (
                 <div>
                     <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
                      <div className="flex items-center gap-2">
@@ -475,18 +476,66 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                 <div>
                   <h3 className="font-semibold text-lg mb-2">Status das Ações Solicitadas</h3>
                   <div className="p-4 bg-muted/50 rounded-md text-sm space-y-2">
-                      {actionRequestsForCurrentStatus.map((ar) => (
-                          <div key={ar.userId} className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                  {getActionRequestIcon(ar.status)}
-                                  <span>{ar.userName}</span>
+                      {actionRequestsForCurrentStatus.map((ar) => {
+                        const isCurrentUserAction = ar.userId === adminUser?.id3a;
+                        const canTakeAction = isCurrentUserAction && ar.status === 'pending';
+                        
+                        return (
+                          <div key={ar.userId} className={cn("p-2 border rounded-md", canTakeAction && "border-primary/50 bg-primary/5")}>
+                              <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                      {getActionRequestIcon(ar.status)}
+                                      <span>{ar.userName}</span>
+                                  </div>
+                                  <Badge variant="secondary" className="capitalize">{ar.status}</Badge>
                               </div>
-                              <Badge variant="secondary" className="capitalize">{ar.status}</Badge>
+
+                              {canTakeAction && (
+                                <div className="mt-4 pt-4 border-t border-primary/20">
+                                  <h4 className="font-semibold mb-2">Sua Ação Pendente:</h4>
+                                  {currentUserActionRequest?.type === 'approval' && (
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button variant="destructive" size="sm" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
+                                          {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
+                                            Reprovar
+                                        </Button>
+                                        <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
+                                            {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
+                                            Aprovar
+                                        </Button>
+                                    </div>
+                                  )}
+                                  {currentUserActionRequest?.type === 'execution' && (
+                                    <div className="w-full space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="execution_comment">Comentário {currentStatusDefinition?.action?.commentRequired && '*'}</Label>
+                                            <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={currentStatusDefinition?.action?.commentPlaceholder || ''} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="execution_attachment">Anexo {currentStatusDefinition?.action?.attachmentRequired && '*'}</Label>
+                                            <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={currentStatusDefinition?.action?.attachmentPlaceholder || ''}/>
+                                        </div>
+                                        <Button className="w-full" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
+                                            {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                            Confirmar Execução
+                                        </Button>
+                                    </div>
+                                  )}
+                                  {currentUserActionRequest?.type === 'acknowledgement' && (
+                                    <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
+                                        {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                        Marcar como Ciente
+                                    </Button>
+                                  )}
+                                </div>
+                              )}
                           </div>
-                      ))}
+                        )
+                      })}
                   </div>
                 </div>
               )}
+
 
                <div>
                   <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
@@ -509,47 +558,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {currentUserActionRequest && (
-                  <div className="p-4 border-2 border-primary/50 bg-primary/5 rounded-lg space-y-4">
-                      <h3 className="font-semibold text-lg">Sua Ação Pendente</h3>
-                      {currentUserActionRequest.type === 'approval' && (
-                          <div className="flex flex-wrap gap-2">
-                              <Button variant="destructive" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
-                                 {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
-                                  Reprovar
-                              </Button>
-                              <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
-                                  {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
-                                  Aprovar
-                              </Button>
-                          </div>
-                      )}
-                      {currentUserActionRequest.type === 'execution' && (
-                          <div className="w-full space-y-4">
-                             <div className="space-y-2">
-                                  <Label htmlFor="execution_comment">Comentário {currentStatusDefinition?.action?.commentRequired && '*'}</Label>
-                                  <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={currentStatusDefinition?.action?.commentPlaceholder || ''} />
-                             </div>
-                             <div className="space-y-2">
-                                  <Label htmlFor="execution_attachment">Anexo {currentStatusDefinition?.action?.attachmentRequired && '*'}</Label>
-                                  <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={currentStatusDefinition?.action?.attachmentPlaceholder || ''}/>
-                             </div>
-                             <Button className="w-full" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
-                                  {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                  Confirmar Execução
-                             </Button>
-                          </div>
-                      )}
-                      {currentUserActionRequest.type === 'acknowledgement' && (
-                           <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
-                              {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                              Marcar como Ciente
-                          </Button>
-                      )}
-                  </div>
-              )}
-              
-              {(canTakeAction && !currentUserActionRequest) && (
+              {(isAssignee && !currentUserActionRequest) && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário</Label>
                     <div className="flex items-center gap-2 mt-1">
