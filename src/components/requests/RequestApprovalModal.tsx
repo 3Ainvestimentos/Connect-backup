@@ -29,6 +29,24 @@ interface RequestApprovalModalProps {
   request: WorkflowRequest | null;
 }
 
+const actionStatusTranslations: { [key: string]: string } = {
+  pending: 'Pendente',
+  approved: 'Aprovado',
+  rejected: 'Rejeitado',
+  acknowledged: 'Ciente',
+  executed: 'Executado',
+};
+
+const actionStatusPastTense: { [key: string]: string } = {
+  approved: 'aprovada',
+  rejected: 'rejeitada',
+  acknowledged: 'registrada como ciente',
+  executed: 'executada',
+};
+
+const getTranslatedStatus = (status: string) => actionStatusTranslations[status] || status;
+
+
 export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprovalModalProps) {
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
@@ -71,7 +89,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const currentUserActionRequest = useMemo(() => {
     if (!adminUser) return null;
-    return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a && ar.status === 'pending') || null;
+    return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a) || null;
   }, [actionRequestsForCurrentStatus, adminUser]);
 
   const canTakeAction = isOwner || isAssignee;
@@ -134,13 +152,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
     setIsSubmitting(true);
     const now = new Date();
-    const actionLabels = {
-      approved: 'aprovada',
-      rejected: 'rejeitada',
-      acknowledged: 'registrada como ciente',
-      executed: 'executada'
-    }
-    const actionLabel = actionLabels[response] || 'processada';
+    const actionLabel = actionStatusPastTense[response] || 'processada';
 
     let historyNote = `Ação foi ${actionLabel}.`;
     let attachmentUrl = '';
@@ -185,7 +197,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
     try {
         await updateRequestAndNotify(requestUpdate, undefined, notificationMessage);
-        toast({ title: "Sucesso!", description: `Ação registrada como '${response}'.` });
+        toast({ title: "Sucesso!", description: `Ação registrada como "${getTranslatedStatus(response)}".` });
         setComment('');
         setAttachment(null);
     } catch (error) {
@@ -385,6 +397,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         case 'approved': return <CheckCircle className="h-4 w-4 text-green-500" />;
         case 'acknowledged': return <CheckCircle className="h-4 w-4 text-blue-500" />;
         case 'rejected': return <XCircle className="h-4 w-4 text-red-500" />;
+        case 'executed': return <CheckCircle className="h-4 w-4 text-purple-500" />;
         default: return <ShieldQuestion className="h-4 w-4 text-muted-foreground" />;
     }
   }
@@ -477,21 +490,22 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   <div className="p-4 bg-muted/50 rounded-md text-sm space-y-2">
                       {actionRequestsForCurrentStatus.map((ar) => {
                         const isCurrentUserAction = ar.userId === adminUser?.id3a;
-                        const canTakeAction = isCurrentUserAction && ar.status === 'pending';
-                        
+                        const isPending = ar.status === 'pending';
+                        const actionDef = currentStatusDefinition?.action;
+
                         return (
-                          <div key={ar.userId} className={cn("p-2 border rounded-md", canTakeAction && "border-primary/50 bg-primary/5")}>
+                          <div key={ar.userId} className={cn("p-2 border rounded-md", isCurrentUserAction && isPending && "border-primary/50 bg-primary/5")}>
                               <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                       {getActionRequestIcon(ar.status)}
                                       <span>{ar.userName}</span>
                                   </div>
-                                  <Badge variant="secondary" className="capitalize">{ar.status}</Badge>
+                                  <Badge variant="secondary" className="capitalize">{getTranslatedStatus(ar.status)}</Badge>
                               </div>
 
-                              {canTakeAction && currentStatusDefinition?.action && (
+                              {isCurrentUserAction && isPending && actionDef && (
                                 <div className="mt-4 pt-4 border-t border-primary/20">
-                                  {currentStatusDefinition.action.type === 'approval' && (
+                                  {actionDef.type === 'approval' && (
                                     <div className="flex flex-wrap gap-2">
                                         <Button variant="destructive" size="sm" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
                                           {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
@@ -503,15 +517,15 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                         </Button>
                                     </div>
                                   )}
-                                  {currentStatusDefinition.action.type === 'execution' && (
+                                  {actionDef.type === 'execution' && (
                                     <div className="w-full space-y-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="execution_comment">Comentário {currentStatusDefinition?.action?.commentRequired && '*'}</Label>
-                                            <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={currentStatusDefinition?.action?.commentPlaceholder || ''} />
+                                            <Label htmlFor="execution_comment">Comentário {actionDef?.commentRequired && '*'}</Label>
+                                            <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={actionDef?.commentPlaceholder || ''} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="execution_attachment">Anexo {currentStatusDefinition?.action?.attachmentRequired && '*'}</Label>
-                                            <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={currentStatusDefinition?.action?.attachmentPlaceholder || ''}/>
+                                            <Label htmlFor="execution_attachment">Anexo {actionDef?.attachmentRequired && '*'}</Label>
+                                            <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={actionDef?.attachmentPlaceholder || ''}/>
                                         </div>
                                         <Button className="w-full" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
                                             {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
@@ -519,7 +533,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                         </Button>
                                     </div>
                                   )}
-                                  {currentStatusDefinition.action.type === 'acknowledgement' && (
+                                  {actionDef.type === 'acknowledgement' && (
                                     <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
                                         {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                                         Marcar como Ciente
@@ -586,24 +600,24 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow">
-                {(isAssignee && !currentUserActionRequest && nextStatus) && (
+                {(isAssignee && !currentUserActionRequest) && (
                      <TooltipProvider>
                       <Tooltip delayDuration={300}>
                         <TooltipTrigger asChild>
                           <div className="inline-block">
                             <Button 
-                                key={nextStatus.id}
+                                key={nextStatus?.id || 'no-next-status'}
                                 variant="secondary"
-                                onClick={() => handleStatusChange(nextStatus)} 
-                                disabled={isSubmitting || hasPendingActions}
+                                onClick={() => nextStatus && handleStatusChange(nextStatus)} 
+                                disabled={isSubmitting || hasPendingActions || !nextStatus}
                                 style={hasPendingActions ? { pointerEvents: 'none' } : {}}
                             >
-                                {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
+                                {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus?.id) ? (
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 ) : (
                                     <MoveRight className="mr-2 h-4 w-4" />
                                 )}
-                                Mover para "{nextStatus.label}"
+                                Mover para "{nextStatus?.label || 'Etapa Final'}"
                             </Button>
                           </div>
                         </TooltipTrigger>
@@ -635,3 +649,4 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
