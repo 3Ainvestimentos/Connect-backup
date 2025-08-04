@@ -14,6 +14,7 @@ export interface NewsItemType {
   category: string;
   date: string;
   imageUrl: string;
+  videoUrl?: string; // Optional video URL
   dataAiHint?: string;
   isHighlight: boolean;
   link?: string;

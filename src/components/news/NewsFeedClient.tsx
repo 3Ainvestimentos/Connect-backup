@@ -61,14 +61,27 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
               tabIndex={0}
               aria-label={`Ver notícia: ${item.title}`}
             >
-              <div className="relative w-full h-48">
-                <Image
-                  src={item.imageUrl}
-                  alt={item.title}
-                  layout="fill"
-                  objectFit="cover"
-                  data-ai-hint={item.dataAiHint || "news article"}
-                />
+              <div className="relative w-full h-48 bg-black">
+                 {item.videoUrl ? (
+                    <video
+                        src={item.videoUrl}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className="w-full h-full object-cover"
+                    >
+                        Your browser does not support the video tag.
+                    </video>
+                ) : (
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.title}
+                      layout="fill"
+                      objectFit="cover"
+                      data-ai-hint={item.dataAiHint || "news article"}
+                    />
+                )}
               </div>
               <CardHeader className="pb-2">
                 <CardTitle className="font-headline text-lg leading-tight">{item.title}</CardTitle>
@@ -99,14 +112,18 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
           {selectedNews && (
             <>
               <DialogHeader>
-                <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4">
-                    <Image
-                        src={selectedNews.imageUrl}
-                        alt={selectedNews.title}
-                        layout="fill"
-                        objectFit="cover"
-                        data-ai-hint={selectedNews.dataAiHint || "news article"}
-                    />
+                 <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black">
+                    {selectedNews.videoUrl ? (
+                         <video src={selectedNews.videoUrl} controls autoPlay className="w-full h-full object-contain" />
+                    ) : (
+                        <Image
+                            src={selectedNews.imageUrl}
+                            alt={selectedNews.title}
+                            layout="fill"
+                            objectFit="cover"
+                            data-ai-hint={selectedNews.dataAiHint || "news article"}
+                        />
+                    )}
                 </div>
                 <DialogTitle className="font-headline text-2xl text-left">{selectedNews.title}</DialogTitle>
                 <div className="text-left !mt-2">

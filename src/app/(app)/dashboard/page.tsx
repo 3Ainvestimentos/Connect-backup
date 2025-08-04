@@ -1,3 +1,4 @@
+
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -147,14 +148,27 @@ export default function DashboardV2Page() {
 
   const HighlightCard = ({ item, className = "" }: { item: NewsItemType, className?: string }) => (
     <div 
-        className={cn("relative rounded-lg overflow-hidden group block cursor-pointer", className)}
+        className={cn("relative rounded-lg overflow-hidden group block cursor-pointer bg-black", className)}
         onClick={() => handleViewNews(item)}
         onKeyDown={(e) => e.key === 'Enter' && handleViewNews(item)}
         tabIndex={0}
         role="button"
         aria-label={`Ver notícia: ${item.title}`}
     >
-        <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={item.dataAiHint} />
+        {item.videoUrl ? (
+             <video
+                src={item.videoUrl}
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            >
+                Your browser does not support the video tag.
+            </video>
+        ) : (
+             <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={item.dataAiHint} />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
             <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
             <p className="text-sm text-gray-200 font-body">{item.snippet}</p>
@@ -306,14 +320,18 @@ export default function DashboardV2Page() {
           {selectedNews && (
             <>
               <DialogHeader>
-                <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4">
-                    <Image
-                        src={selectedNews.imageUrl}
-                        alt={selectedNews.title}
-                        layout="fill"
-                        objectFit="cover"
-                        data-ai-hint={selectedNews.dataAiHint || "news article"}
-                    />
+                <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black">
+                    {selectedNews.videoUrl ? (
+                         <video src={selectedNews.videoUrl} controls autoPlay className="w-full h-full object-contain" />
+                    ) : (
+                        <Image
+                            src={selectedNews.imageUrl}
+                            alt={selectedNews.title}
+                            layout="fill"
+                            objectFit="cover"
+                            data-ai-hint={selectedNews.dataAiHint || "news article"}
+                        />
+                    )}
                 </div>
                 <DialogTitle className="font-headline text-2xl text-left">{selectedNews.title}</DialogTitle>
                 <div className="text-left !mt-2">

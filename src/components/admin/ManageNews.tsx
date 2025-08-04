@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -26,6 +27,7 @@ const newsSchema = z.object({
     category: z.string().min(1, "Categoria é obrigatória"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
     imageUrl: z.string().url("URL da imagem inválida").or(z.literal("")),
+    videoUrl: z.string().url("URL do vídeo inválida").optional().or(z.literal('')),
     dataAiHint: z.string().optional(),
     link: z.string().optional(),
     isHighlight: z.boolean().optional(),
@@ -52,6 +54,7 @@ export function ManageNews() {
             const formattedNews = {
               ...newsItem,
               date: new Date(newsItem.date).toISOString().split('T')[0],
+              videoUrl: newsItem.videoUrl || '',
             };
             reset(formattedNews);
         } else {
@@ -63,6 +66,7 @@ export function ManageNews() {
                 category: '',
                 date: new Date().toISOString().split('T')[0],
                 imageUrl: 'https://placehold.co/300x200.png',
+                videoUrl: '',
                 dataAiHint: '',
                 link: '',
                 isHighlight: false,
@@ -113,11 +117,11 @@ export function ManageNews() {
 
         try {
             if (editingNews) {
-                await updateNewsItem({ ...editingNews, ...data });
+                await updateNewsItem({ ...editingNews, ...data, videoUrl: data.videoUrl || undefined });
                 toast({ title: "Notícia atualizada com sucesso." });
             } else {
                 const { id, ...dataWithoutId } = data;
-                await addNewsItem(dataWithoutId);
+                await addNewsItem({ ...dataWithoutId, videoUrl: data.videoUrl || undefined });
                 toast({ title: "Notícia adicionada com sucesso." });
             }
             setIsDialogOpen(false);
@@ -224,7 +228,14 @@ export function ManageNews() {
                             <div>
                                 <Label htmlFor="imageUrl">URL da Imagem</Label>
                                 <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png" disabled={isFormSubmitting}/>
+                                <p className="text-xs text-muted-foreground mt-1">Este campo é usado como fallback se nenhuma URL de vídeo for fornecida.</p>
                                 {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
+                            </div>
+                            <div>
+                                <Label htmlFor="videoUrl">URL do Vídeo (Opcional)</Label>
+                                <Input id="videoUrl" {...register('videoUrl')} placeholder="https://storage.googleapis.com/.../video.mp4" disabled={isFormSubmitting}/>
+                                <p className="text-xs text-muted-foreground mt-1">Se preenchido, o vídeo será exibido em vez da imagem.</p>
+                                {errors.videoUrl && <p className="text-sm text-destructive mt-1">{errors.videoUrl.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="link">URL do Link (opcional)</Label>
