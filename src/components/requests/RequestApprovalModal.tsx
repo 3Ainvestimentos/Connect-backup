@@ -39,10 +39,10 @@ const actionStatusTranslations: { [key: string]: string } = {
 };
 
 const actionStatusPastTense: { [key: string]: string } = {
-  approved: 'aprovada',
-  rejected: 'rejeitada',
-  acknowledged: 'registrada como ciente',
-  executed: 'executada',
+  approved: 'Aprovada',
+  rejected: 'Rejeitada',
+  acknowledged: 'Registrada como ciente',
+  executed: 'Executada',
 };
 
 const getTranslatedStatus = (status: string) => actionStatusTranslations[status] || status;
@@ -137,41 +137,43 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     setActionResponse(response);
     if (!user || !adminUser || !currentUserActionRequest) return;
     
+    setIsSubmitting(true);
+    
     const actionDef = currentStatusDefinition?.action;
     
     // Validation for execution type
     if (response === 'executed' && actionDef?.type === 'execution') {
-      if (actionDef.commentRequired && !comment.trim()) {
-        toast({ title: "Erro", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
-        return;
-      }
-      if (actionDef.attachmentRequired && !attachment) {
-        toast({ title: "Erro", description: "O anexo é obrigatório para esta ação.", variant: "destructive" });
-        return;
-      }
+        if (actionDef.commentRequired && !comment.trim()) {
+            toast({ title: "Erro de Validação", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
+            setIsSubmitting(false);
+            return;
+        }
+        if (actionDef.attachmentRequired && !attachment) {
+            toast({ title: "Erro de Validação", description: "O anexo é obrigatório para esta ação.", variant: "destructive" });
+            setIsSubmitting(false);
+            return;
+        }
     }
-
-    setIsSubmitting(true);
+    
     const now = new Date();
-    const actionLabel = actionStatusPastTense[response] || 'processada';
-
+    const actionLabel = actionStatusPastTense[response] || 'Processada';
     let historyNote = `Ação foi ${actionLabel}.`;
     let attachmentUrl = '';
+
+    // Handle file upload FIRST if it's an execution step
+    if (response === 'executed' && attachment) {
+        try {
+            attachmentUrl = await uploadFile(attachment, adminUser.id3a, request.id, `execution_${Date.now()}_${attachment.name}`);
+            historyNote += ` Anexo: ${attachment.name}.`;
+        } catch (e) {
+            toast({ title: "Erro de Upload", description: "Não foi possível enviar o anexo. A ação foi cancelada.", variant: "destructive"});
+            setIsSubmitting(false);
+            return;
+        }
+    }
     
-    if (response === 'executed') {
-        if (attachment) {
-            try {
-                attachmentUrl = await uploadFile(attachment, adminUser.id3a, request.id, `execution_${Date.now()}_${attachment.name}`);
-                historyNote += ` Anexo: ${attachment.name}.`;
-            } catch (e) {
-                toast({ title: "Erro de Upload", description: "Não foi possível enviar o anexo.", variant: "destructive"});
-                setIsSubmitting(false);
-                return;
-            }
-        }
-        if (comment) {
-            historyNote += ` Comentário: ${comment}`;
-        }
+    if (comment.trim()) {
+        historyNote += ` Comentário: ${comment}`;
     }
     
     const updatedActionRequests = actionRequestsForCurrentStatus.map(ar => 
@@ -194,7 +196,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         history: [...request.history, { timestamp: formatISO(now), status: request.status, userId: adminUser.id3a, userName: adminUser.name, notes: historyNote }],
     };
 
-    const notificationMessage = `A ação na tarefa '${request.type}' #${request.requestId} foi ${actionLabel} por ${adminUser.name}.`;
+    const notificationMessage = `A ação na tarefa '${request.type}' #${request.requestId} foi ${actionLabel.toLowerCase()} por ${adminUser.name}.`;
 
     try {
         await updateRequestAndNotify(requestUpdate, undefined, notificationMessage);
