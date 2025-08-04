@@ -129,14 +129,12 @@ Todos os arquivos anexados às solicitações de workflow através de um campo d
 
 A estrutura de pastas segue o padrão:
 
-`workflow-attachments/{userId}/{requestId}/{fileName}`
+`workflow-attachments/{requestId}-{originalFileName}`
 
 -   **`workflow-attachments`**: A pasta raiz para todos os anexos de workflows.
--   **`{userId}`**: O ID do colaborador (ID 3A RIVA) que realizou o upload do arquivo.
--   **`{requestId}`**: O ID da solicitação de workflow à qual o arquivo pertence.
--   **`{fileName}`**: O nome original do arquivo que foi enviado.
+-   **`{requestId}-{originalFileName}`**: O nome do arquivo é prefixado com o ID da solicitação para garantir unicidade e fácil associação, evitando a necessidade de múltiplas subpastas.
 
-Essa estrutura garante que os arquivos sejam organizados logicamente e vinculados tanto ao usuário quanto à solicitação específica, facilitando a auditoria e o gerenciamento diretamente pelo console do Firebase, se necessário.
+Essa estrutura garante que os arquivos sejam organizados logicamente e vinculados à solicitação específica, facilitando a auditoria e o gerenciamento diretamente pelo console do Firebase, se necessário.
 
 ---
 

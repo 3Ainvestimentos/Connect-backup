@@ -15,13 +15,15 @@ export type WithId<T> = T & { id: string };
 /**
  * Uploads a file to Firebase Storage.
  * @param file The file to upload.
- * @param userId The ID of the user uploading the file.
+ * @param userId The ID of the user uploading the file (used for logging, not path).
  * @param requestId The ID of the workflow request this file is associated with.
  * @param fileName The name of the file.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
 export const uploadFile = async (file: File, userId: string, requestId: string, fileName: string): Promise<string> => {
-    const filePath = `workflow-attachments/${userId}/${requestId}/${fileName}`;
+    // Standardized path: workflow-attachments/{requestId}-{originalFileName}
+    const standardizedFileName = `${requestId}-${fileName}`;
+    const filePath = `workflow-attachments/${standardizedFileName}`;
     const storageRef = ref(storage, filePath);
     try {
         const snapshot = await uploadBytes(storageRef, file);
