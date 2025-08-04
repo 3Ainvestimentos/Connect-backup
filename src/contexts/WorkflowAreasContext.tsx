@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
 export const workflowAreaSchema = z.object({
@@ -30,8 +30,9 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
 
     const { data: workflowAreas = [], isFetching } = useQuery<WorkflowArea[]>({
         queryKey: [COLLECTION_NAME],
-        queryFn: async () => [],
-        staleTime: Infinity,
+        // Fetch the initial data from Firestore
+        queryFn: () => getCollection<WorkflowArea>(COLLECTION_NAME),
+        staleTime: Infinity, // The listener will keep it fresh
         select: (data) => data.sort((a, b) => a.name.localeCompare(b.name)),
     });
 
@@ -52,7 +53,7 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
     const addWorkflowAreaMutation = useMutation<WithId<Omit<WorkflowArea, 'id'>>, Error, Omit<WorkflowArea, 'id'>>({
         mutationFn: (areaData) => addDocumentToCollection(COLLECTION_NAME, areaData),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+            // Listener handles the update, no need to invalidate
         },
     });
 
@@ -62,14 +63,14 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
             return updateDocumentInCollection(COLLECTION_NAME, id, data);
         },
         onSuccess: (_, variables) => {
-            queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+             // Listener handles the update, no need to invalidate
         },
     });
 
     const deleteWorkflowAreaMutation = useMutation<void, Error, string>({
         mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+             // Listener handles the update, no need to invalidate
         },
     });
 
