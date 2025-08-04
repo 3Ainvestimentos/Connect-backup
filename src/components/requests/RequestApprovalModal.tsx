@@ -476,6 +476,23 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       );
   }
 
+  // Find the user's action response for a specific history log
+  const findActionResponseForHistoryLog = (log: WorkflowHistoryLog) => {
+      // Find an action request where the user matches and the timestamp is very close
+      // This is a heuristic, as we don't directly link history logs to action responses
+      for (const statusId in request.actionRequests) {
+          const actionReqs = request.actionRequests[statusId];
+          const matchingAction = actionReqs.find(ar => 
+              ar.userId === log.userId && 
+              ar.respondedAt && 
+              Math.abs(parseISO(ar.respondedAt).getTime() - parseISO(log.timestamp).getTime()) < 2000 // 2 seconds tolerance
+          );
+          if (matchingAction) {
+              return matchingAction;
+          }
+      }
+      return null;
+  };
 
   return (
     <>
@@ -589,18 +606,31 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                       Histórico de Auditoria
                   </h3>
                   <div className="space-y-3">
-                      {request.history.slice().reverse().map((log, index) => (
-                          <div key={index} className="flex items-start gap-3 text-xs">
-                               <div className="flex flex-col items-center">
-                                  <Badge variant="secondary" className="font-semibold">{definition?.statuses.find(s => s.id === log.status)?.label || log.status}</Badge>
-                                  {index !== request.history.length - 1 && <div className="w-px h-6 bg-border" />}
+                      {request.history.slice().reverse().map((log, index) => {
+                          const actionResponse = findActionResponseForHistoryLog(log);
+                          const attachmentUrl = actionResponse?.attachmentUrl;
+                          const fileName = attachmentUrl ? decodeURIComponent(attachmentUrl.split('%2F').pop()?.split('?')[0] || 'Anexo') : null;
+
+                          return (
+                              <div key={index} className="flex items-start gap-3 text-xs">
+                                  <div className="flex flex-col items-center">
+                                      <Badge variant="secondary" className="font-semibold">{definition?.statuses.find(s => s.id === log.status)?.label || log.status}</Badge>
+                                      {index !== request.history.length - 1 && <div className="w-px h-6 bg-border" />}
+                                  </div>
+                                  <div className="pt-0.5 flex-grow">
+                                      <p className="font-semibold">{log.userName} <span className="text-muted-foreground font-normal">({format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')})</span></p>
+                                      <p className="text-muted-foreground">{log.notes}</p>
+                                      {attachmentUrl && fileName && (
+                                          <Button variant="outline" size="sm" asChild className="mt-1 h-auto px-2 py-1 text-xs">
+                                              <a href={attachmentUrl} target="_blank" rel="noopener noreferrer">
+                                                  <Paperclip className="mr-1.5 h-3 w-3" /> {fileName}
+                                              </a>
+                                          </Button>
+                                      )}
+                                  </div>
                               </div>
-                              <div className="pt-0.5">
-                                  <p className="font-semibold">{log.userName} <span className="text-muted-foreground font-normal">({format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')})</span></p>
-                                  <p className="text-muted-foreground">{log.notes}</p>
-                              </div>
-                          </div>
-                      ))}
+                          );
+                      })}
                   </div>
               </div>
               
