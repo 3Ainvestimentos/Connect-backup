@@ -170,7 +170,6 @@ export function ManageNews() {
                                             checked={item.isHighlight}
                                             onCheckedChange={() => toggleNewsHighlight(item.id)}
                                             aria-label="Marcar como destaque"
-                                            className="data-[state=checked]:bg-[hsl(170,60%,50%)]"
                                         />
                                     </TableCell>
                                     <TableCell className="text-right">
@@ -256,7 +255,6 @@ export function ManageNews() {
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
                                             disabled={isFormSubmitting}
-                                            className="data-[state=checked]:bg-[hsl(170,60%,50%)]"
                                         />
                                     )}
                                 />

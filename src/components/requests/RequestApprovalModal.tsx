@@ -421,7 +421,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
       if (!isPending) {
         const statusConfig = {
-          approved: { icon: ThumbsUp, color: 'bg-green-600', text: 'Aprovado' },
+          approved: { icon: ThumbsUp, color: 'bg-success', text: 'Aprovado' },
           rejected: { icon: ThumbsDown, color: 'bg-destructive', text: 'Rejeitado' },
           acknowledged: { icon: CheckCircle, color: 'bg-blue-600', text: 'Ciente' },
           executed: { icon: CheckCircle, color: 'bg-purple-600', text: 'Executado' },
@@ -444,7 +444,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
                     Reprovar
                 </Button>
-                <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
+                <Button className="bg-success hover:bg-success/90 text-success-foreground" size="sm" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
                     {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
                     Aprovar
                 </Button>
@@ -671,7 +671,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                           <div className="inline-block">
                             <Button 
                                 key={nextStatus?.id || 'no-next-status'}
-                                className="bg-[hsl(170,60%,50%)] hover:bg-[hsl(170,60%,45%)] text-white"
+                                className="bg-admin-primary hover:bg-admin-primary/90"
                                 onClick={() => nextStatus && handleStatusChange(nextStatus)} 
                                 disabled={isSubmitting || hasPendingActions || !nextStatus}
                                 style={hasPendingActions ? { pointerEvents: 'none' } : {}}
