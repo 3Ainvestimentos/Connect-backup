@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart, GripVertical } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart, GripVertical, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -21,6 +21,7 @@ import { ptBR } from 'date-fns/locale';
 import { Badge } from '../ui/badge';
 import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 const biLinkSchema = z.object({
     name: z.string().min(1, "O nome da aba é obrigatório."),
@@ -89,8 +90,9 @@ export function ManageCollaborators() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+    const [filters, setFilters] = useState<{ area: string[], position: string[] }>({ area: [], position: [] });
 
-    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
+    const { control, register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
     });
 
@@ -99,19 +101,30 @@ export function ManageCollaborators() {
         name: "biLinks",
     });
 
+    const uniqueAreas = useMemo(() => [...new Set(collaborators.map(c => c.area))].sort(), [collaborators]);
+    const uniquePositions = useMemo(() => [...new Set(collaborators.map(c => c.position))].sort(), [collaborators]);
+
     const filteredAndSortedCollaborators = useMemo(() => {
         let items = [...collaborators];
+
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             items = items.filter(c => {
                 const nameMatch = c.name?.toLowerCase().includes(lowercasedTerm) ?? false;
                 const emailMatch = c.email?.toLowerCase().includes(lowercasedTerm) ?? false;
                 const id3aMatch = c.id3a?.toLowerCase().includes(lowercasedTerm) ?? false;
-                const areaMatch = c.area?.toLowerCase().includes(lowercasedTerm) ?? false;
-                const positionMatch = c.position?.toLowerCase().includes(lowercasedTerm) ?? false;
-                return nameMatch || emailMatch || id3aMatch || areaMatch || positionMatch;
+                return nameMatch || emailMatch || id3aMatch;
             });
         }
+        
+        if (filters.area.length > 0) {
+            items = items.filter(c => filters.area.includes(c.area));
+        }
+
+        if (filters.position.length > 0) {
+            items = items.filter(c => filters.position.includes(c.position));
+        }
+
         if (sortKey) {
             items.sort((a, b) => {
                 const valA = a[sortKey as keyof Collaborator];
@@ -124,7 +137,7 @@ export function ManageCollaborators() {
             });
         }
         return items;
-    }, [collaborators, searchTerm, sortKey, sortDirection]);
+    }, [collaborators, searchTerm, sortKey, sortDirection, filters]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -133,6 +146,16 @@ export function ManageCollaborators() {
             setSortKey(key);
             setSortDirection('asc');
         }
+    };
+    
+    const handleFilterChange = (filterKey: 'area' | 'position', value: string) => {
+        setFilters(prev => {
+            const currentValues = prev[filterKey];
+            const newValues = currentValues.includes(value)
+                ? currentValues.filter(v => v !== value)
+                : [...currentValues, value];
+            return { ...prev, [filterKey]: newValues };
+        });
     };
 
     const handleFormDialogOpen = (collaborator: Collaborator | null) => {
@@ -287,9 +310,41 @@ export function ManageCollaborators() {
     };
     
     const SortableHeader = ({ tkey, label }: { tkey: SortKey, label: string }) => (
-        <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
-            {label}
-            {sortKey === tkey && (sortDirection === 'asc' ? <ChevronUp className="inline h-4 w-4 ml-1" /> : <ChevronDown className="inline h-4 w-4 ml-1" />)}
+        <TableHead>
+             <button onClick={() => handleSort(tkey)} className="flex items-center gap-1 hover:text-foreground">
+                {label}
+                {sortKey === tkey && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+            </button>
+        </TableHead>
+    );
+    
+    const FilterableHeader = ({ fkey, label, uniqueValues }: { fkey: 'area' | 'position', label: string, uniqueValues: string[] }) => (
+        <TableHead>
+            <div className="flex items-center gap-2">
+                <span className="flex-grow">{label}</span>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                            <Filter className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuLabel>Filtrar por {label}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <ScrollArea className="max-h-60">
+                        {uniqueValues.map(value => (
+                            <DropdownMenuCheckboxItem
+                                key={value}
+                                checked={filters[fkey].includes(value)}
+                                onCheckedChange={() => handleFilterChange(fkey, value)}
+                            >
+                                {value}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                        </ScrollArea>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </TableHead>
     );
 
@@ -329,8 +384,8 @@ export function ManageCollaborators() {
                             <TableHeader>
                                 <TableRow>
                                     <SortableHeader tkey="name" label="Colaborador" />
-                                    <SortableHeader tkey="area" label="Área" />
-                                    <SortableHeader tkey="position" label="Cargo" />
+                                    <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas} />
+                                    <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions} />
                                     <TableHead>Google Drive</TableHead>
                                     <TableHead>Links de BI</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
