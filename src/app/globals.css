@@ -18,8 +18,10 @@
     --muted-foreground: 220 10% 45%; /* Medium blueish gray */
     --accent: 38 59% 68%; /* #DFB87F */
     --accent-foreground: 0 0% 10%; /* Dark text on active gold */
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 72% 51%; /* Red */
+    --destructive-foreground: 0 85.7% 97.3%; /* Almost white for destructive */
+    --success: 142 71% 45%; /* Green */
+    --success-foreground: 142 71% 95%; /* Almost white for success */
     --border: 0 0% 89%; /* Slightly darker gray border */
     --input: 0 0% 93%; /* Lighter gray for input */
     --ring: 220 10% 45%; /* Medium blueish gray for rings - was primary gold */
@@ -66,6 +68,10 @@
     --muted-foreground: 210 15% 70%; /* Light cool gray for muted text */
     --accent: 38 59% 68%; /* #DFB87F - Unchanged */
     --accent-foreground: 0 0% 10%; /* Dark text on active gold - Unchanged */
+    --destructive: 0 72% 51%; /* Red */
+    --destructive-foreground: 0 85.7% 97.3%; /* Almost white for destructive */
+    --success: 142 71% 45%; /* Green */
+    --success-foreground: 142 71% 95%; /* Almost white for success */
     --border: 210 15% 25%; /* Visible cool gray border */
     --input: 210 15% 25%;
     --ring: 210 15% 70%; /* Light cool gray for rings */

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -207,7 +206,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
     try {
         await updateRequestAndNotify(requestUpdate, undefined, notificationMessage);
-        toast({ title: "Sucesso!", description: `Ação registrada como "${getTranslatedStatus(response)}".` });
+        toast({ title: "Sucesso!", description: `Ação registrada como "${getTranslatedStatus(response)}".`, variant: 'success' });
         setComment('');
         setAttachment(null);
     } catch (error) {
@@ -252,7 +251,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       await updateRequestAndNotify(requestUpdate, notificationMessage);
       toast({
         title: "Sucesso!",
-        description: `A solicitação foi atualizada para "${newStatus.label}". O usuário será notificado.`
+        description: `A solicitação foi atualizada para "${newStatus.label}". O usuário será notificado.`,
+        variant: 'success'
       });
       setComment('');
       onClose();
@@ -302,7 +302,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
     try {
       await updateRequestAndNotify(requestUpdate, requesterNotification, assigneeNotification);
-      toast({ title: "Sucesso!", description: `Solicitação atribuída a ${assignee.name}.` });
+      toast({ title: "Sucesso!", description: `Solicitação atribuída a ${assignee.name}.`, variant: 'success' });
       setComment('');
     } catch (error) {
        toast({ title: "Erro", description: "Não foi possível atribuir o responsável.", variant: "destructive" });
@@ -344,7 +344,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     
     try {
         await updateRequestAndNotify(requestUpdate, notificationMessage);
-        toast({ title: "Sucesso!", description: "Comentário adicionado ao histórico." });
+        toast({ title: "Sucesso!", description: "Comentário adicionado ao histórico.", variant: 'success' });
         setComment('');
     } catch (error) {
         toast({ title: "Erro", description: "Não foi possível adicionar o comentário.", variant: "destructive" });
