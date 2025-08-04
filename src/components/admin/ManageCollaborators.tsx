@@ -328,10 +328,10 @@ export function ManageCollaborators() {
                             <Filter className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
+                    <DropdownMenuContent className="max-h-60 overflow-y-auto">
                         <DropdownMenuLabel>Filtrar por {label}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <ScrollArea className="max-h-60">
+                        <ScrollArea>
                         {uniqueValues.map(value => (
                             <DropdownMenuCheckboxItem
                                 key={value}
