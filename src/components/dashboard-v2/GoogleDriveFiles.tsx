@@ -46,16 +46,16 @@ export default function GoogleDriveFiles() {
   const [items, setItems] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
   const [initialFolders, setInitialFolders] = useState<FolderInfo[]>([]);
-
+  const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
+  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([]);
+  
   const currentUserCollab = useMemo(() => {
     if (!user) return null;
     return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
 
-  const [currentFolder, setCurrentFolder] = useState<FolderInfo | null>(null);
-  const [folderHistory, setFolderHistory] = useState<FolderInfo[]>([]);
-  
   const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
@@ -66,6 +66,7 @@ export default function GoogleDriveFiles() {
 
     setIsLoading(true);
     setError(null);
+    setItems([]);
 
     try {
       window.gapi.client.setToken({ access_token: accessToken });
@@ -109,6 +110,47 @@ export default function GoogleDriveFiles() {
   }, [accessToken]);
 
 
+  const initializeDriveState = useCallback(async () => {
+    if (!user || !accessToken) {
+        if (!user) setIsLoading(false);
+        return;
+    }
+
+    if (!window.gapi.client || !window.gapi.client.drive) {
+        await new Promise<void>((resolve, reject) => {
+            window.gapi.load('client', () => {
+                window.gapi.client.init({
+                    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                    discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+                }).then(() => resolve()).catch((e: any) => reject(e));
+            });
+        });
+    }
+
+    setIsLoading(true);
+    const driveLinks = currentUserCollab?.googleDriveLinks;
+
+    if (driveLinks && driveLinks.length > 1) {
+        const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
+        const folderPromises = folderIds.map(id => fetchFolderDetails(id));
+        const fetchedFolders = await Promise.all(folderPromises);
+        setInitialFolders(fetchedFolders);
+        setItems([]);
+        setCurrentFolder(null);
+        setFolderHistory([]);
+    } else {
+        const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
+        const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
+        const rootFolder = { id: folderId, name: 'Início' };
+
+        setInitialFolders([]);
+        setCurrentFolder(rootFolder);
+        setFolderHistory([]);
+        if (folderId) await listFiles(folderId);
+    }
+    setIsLoading(false);
+  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
+
   useEffect(() => {
     if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
         setError("A biblioteca de cliente do Google não pôde ser carregada.");
@@ -116,58 +158,11 @@ export default function GoogleDriveFiles() {
         return;
     }
     
-    const initializeAndFetch = async () => {
-      if (!user || !accessToken) {
-        if (!user) setIsLoading(false);
-        return;
-      }
-      
-      setIsLoading(true);
-
-      if (!window.gapi.client || !window.gapi.client.drive) {
-          await new Promise<void>((resolve, reject) => {
-              window.gapi.load('client', () => {
-                  window.gapi.client.init({
-                      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                      discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-                  }).then(() => resolve()).catch((e:any) => reject(e));
-              });
-          });
-      }
-
-      const driveLinks = currentUserCollab?.googleDriveLinks;
-
-      if (driveLinks && driveLinks.length > 1) {
-        // Multiple folders: fetch their names and show them as the initial view
-        const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
-        const folderPromises = folderIds.map(id => fetchFolderDetails(id));
-        const fetchedFolders = await Promise.all(folderPromises);
-        setInitialFolders(fetchedFolders);
-        setItems([]); // Clear file list
-        setCurrentFolder(null); // No single current folder
-        setFolderHistory([]);
-      } else {
-        // Single folder or default to 'root'
-        const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
-        const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
-        
-        const rootFolderName = 'Início';
-        const rootFolder = { id: folderId, name: rootFolderName };
-        
-        setInitialFolders([]);
-        setCurrentFolder(rootFolder);
-        setFolderHistory([]);
-        if(folderId) listFiles(folderId);
-      }
-      setIsLoading(false);
-    }
-    
-    initializeAndFetch().catch(e => {
+    initializeDriveState().catch(e => {
         setError("Falha ao inicializar o cliente GAPI.");
         setIsLoading(false);
     });
-
-  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
+  }, [initializeDriveState]);
 
 
   const handleFolderClick = (folder: DriveFile | FolderInfo) => {
@@ -177,46 +172,41 @@ export default function GoogleDriveFiles() {
     listFiles(folder.id);
   };
   
-  const handleBreadcrumbClick = (folderId: string, index: number) => {
-    if(index === -1) { // Clicked on initial multi-folder view
-        setCurrentFolder(null);
-        setFolderHistory([]);
-        setItems([]);
+  const handleBreadcrumbClick = (folder: FolderInfo | null, index: number) => {
+    if (folder === null) { // Go back to root (either multi-folder view or single root)
+        initializeDriveState();
         return;
     }
-    setCurrentFolder({ id: folderId, name: folderHistory[index].name });
+    setCurrentFolder(folder);
     setFolderHistory(prev => prev.slice(0, index + 1));
-    listFiles(folderId);
+    listFiles(folder.id);
   }
 
   const renderBreadcrumbs = () => {
-    const history = folderHistory.length > 0 ? folderHistory : (currentFolder ? [currentFolder] : []);
     const rootName = initialFolders.length > 1 ? "Pastas" : "Início";
     
     return (
       <div className="flex items-center text-sm text-muted-foreground flex-wrap">
           <Button 
               variant="link" 
-              onClick={() => handleBreadcrumbClick('', -1)}
-              className={cn(
-                  "p-1 h-auto text-muted-foreground hover:text-foreground",
-                  history.length === 0 && "font-semibold text-foreground hover:text-foreground/80"
-              )}
-              disabled={initialFolders.length <= 1 && folderHistory.length === 0}
+              onClick={() => handleBreadcrumbClick(null, -1)}
+              className="p-1 h-auto text-muted-foreground hover:text-foreground"
+              disabled={isLoading}
           >
               {rootName}
           </Button>
 
-          {history.map((folder, index) => (
+          {folderHistory.map((folder, index) => (
               <React.Fragment key={folder.id}>
                   <ChevronRight className="h-4 w-4" />
                   <Button 
                       variant="link" 
-                      onClick={() => handleBreadcrumbClick(folder.id, index)} 
+                      onClick={() => handleBreadcrumbClick(folder, index)} 
                       className={cn(
                           "p-1 h-auto text-muted-foreground hover:text-foreground",
-                          index === history.length - 1 ? "font-semibold text-foreground hover:text-foreground/80" : ""
+                          index === folderHistory.length - 1 && "font-semibold text-foreground hover:text-foreground/80"
                       )}
+                      disabled={isLoading}
                   >
                       {folder.name}
                   </Button>
@@ -250,7 +240,7 @@ export default function GoogleDriveFiles() {
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Erro ao carregar arquivos</p>
                 <p className="text-xs">{error}</p>
-                <Button variant="link" size="sm" onClick={() => listFiles(currentFolder?.id || 'root')} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
+                <Button variant="link" size="sm" onClick={initializeDriveState} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
             </CardContent>
         </Card>
       );
