@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth, startOfToday } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Progress } from '@/components/ui/progress';
@@ -27,6 +27,13 @@ type AuditLogEvent = WithId<{
 
 export default function AuditPage() {
     const queryClient = useQueryClient();
+    const [today, setToday] = useState(new Date());
+
+    useEffect(() => {
+        // This ensures the date is set on the client-side, avoiding hydration mismatches
+        // and using the user's current date, not the server's build-time date.
+        setToday(new Date());
+    }, []);
     
     React.useEffect(() => {
         const unsubscribe = listenToCollection<AuditLogEvent>(
@@ -59,7 +66,7 @@ export default function AuditPage() {
         if (loginEvents.length === 0) return [];
 
         const startDate = startOfDay(parseISO(loginEvents[0].timestamp));
-        const endDate = startOfDay(new Date());
+        const endDate = startOfDay(today);
         
         const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
 
@@ -81,12 +88,12 @@ export default function AuditPage() {
 
         return cumulativeData;
 
-    }, [events, isLoading]);
+    }, [events, isLoading, today]);
 
     const loginsLast7Days = useMemo(() => {
         if (isLoading || events.length === 0) return [];
         
-        const endDate = endOfDay(new Date());
+        const endDate = endOfDay(today);
         const startDate = startOfDay(subDays(endDate, 6)); // Last 7 days including today
         
         const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
@@ -107,16 +114,15 @@ export default function AuditPage() {
                 Logins: loginsByDay[dayKey] || 0,
             };
         });
-    }, [events, isLoading]);
+    }, [events, isLoading, today]);
     
     const uniqueLoginsThisMonth = useMemo(() => {
         if (isLoading || collaborators.length === 0 || events.length === 0) {
             return { uniqueCount: 0, totalCount: collaborators.length, percentage: 0 };
         }
 
-        const now = new Date();
-        const start = startOfMonth(now);
-        const end = endOfMonth(now);
+        const start = startOfMonth(today);
+        const end = endOfMonth(today);
 
         const monthlyLogins = events.filter(event => {
             const eventDate = parseISO(event.timestamp);
@@ -130,7 +136,7 @@ export default function AuditPage() {
             totalCount: collaborators.length,
             percentage: collaborators.length > 0 ? (uniqueUserIds.size / collaborators.length) * 100 : 0,
         };
-    }, [events, collaborators, isLoading]);
+    }, [events, collaborators, isLoading, today]);
 
 
     const handleExport = () => {
@@ -238,4 +244,5 @@ export default function AuditPage() {
             </div>
         </SuperAdminGuard>
     );
-}
+
+    
