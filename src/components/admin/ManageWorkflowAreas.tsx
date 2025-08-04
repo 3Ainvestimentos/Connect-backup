@@ -26,7 +26,7 @@ export default function ManageWorkflowAreas() {
 
     const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<AreaFormValues>({
         resolver: zodResolver(workflowAreaSchema),
-        defaultValues: { name: '', icon: 'FolderOpen' },
+        defaultValues: { name: '', icon: 'FolderOpen', storageFolderPath: '' },
     });
 
     const handleOpenForm = (area: WorkflowArea | null) => {
@@ -34,7 +34,7 @@ export default function ManageWorkflowAreas() {
         if (area) {
             reset(area);
         } else {
-            reset({ name: '', icon: 'FolderOpen' });
+            reset({ name: '', icon: 'FolderOpen', storageFolderPath: '' });
         }
         setIsFormOpen(true);
     };
@@ -84,13 +84,14 @@ export default function ManageWorkflowAreas() {
                                 <TableRow>
                                     <TableHead>Ícone</TableHead>
                                     <TableHead>Nome da Área</TableHead>
+                                    <TableHead>Caminho no Storage</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="text-center">Carregando áreas...</TableCell>
+                                        <TableCell colSpan={4} className="text-center">Carregando áreas...</TableCell>
                                     </TableRow>
                                 ) : workflowAreas.map(area => {
                                     const Icon = getIcon(area.icon);
@@ -98,6 +99,7 @@ export default function ManageWorkflowAreas() {
                                         <TableRow key={area.id}>
                                             <TableCell><Icon className="h-5 w-5 text-muted-foreground" /></TableCell>
                                             <TableCell className="font-medium">{area.name}</TableCell>
+                                            <TableCell className="font-mono text-xs">{area.storageFolderPath || 'Padrão'}</TableCell>
                                             <TableCell className="text-right">
                                                 <Button variant="ghost" size="icon" onClick={() => handleOpenForm(area)} className="hover:bg-muted">
                                                     <Edit className="h-4 w-4" />
@@ -149,6 +151,12 @@ export default function ManageWorkflowAreas() {
                                 );
                             }}/>
                             {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="storageFolderPath">Caminho da Pasta no Storage (Opcional)</Label>
+                            <Input id="storageFolderPath" {...register('storageFolderPath')} placeholder="ex: financas/reembolsos" />
+                            <p className="text-xs text-muted-foreground mt-1">Se deixado em branco, será usada a pasta padrão 'workflow-attachments'.</p>
+                            {errors.storageFolderPath && <p className="text-sm text-destructive mt-1">{errors.storageFolderPath.message}</p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>

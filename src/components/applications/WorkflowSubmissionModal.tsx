@@ -1,6 +1,7 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { format, formatISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,6 +23,7 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { FormFieldDefinition, WorkflowDefinition } from '@/contexts/ApplicationsContext';
 import { uploadFile } from '@/lib/firestore-service';
 import { ScrollArea } from '../ui/scroll-area';
+import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 
 type DynamicFormData = { [key: string]: any };
 
@@ -37,8 +39,13 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
   const { addRequest, updateRequestAndNotify } = useWorkflows();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
+  const { workflowAreas } = useWorkflowAreas();
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<DynamicFormData>();
+
+  const workflowArea = useMemo(() => {
+    return workflowAreas.find(area => area.id === workflowDefinition.areaId);
+  }, [workflowDefinition, workflowAreas]);
 
   useEffect(() => {
     if (open) {
@@ -83,9 +90,11 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
 
         const newRequest = await addRequest(initialRequestPayload);
 
+        const storagePath = workflowArea?.storageFolderPath;
+
         const fileUploadPromises = Object.entries(fileFields).map(([fieldId, file]) => {
             if (file) {
-                return uploadFile(file, currentUserCollab.id3a, newRequest.id, file.name);
+                return uploadFile(file, newRequest.id, file.name, storagePath);
             }
             return Promise.resolve(null);
         });

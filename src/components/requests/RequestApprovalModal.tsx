@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Input } from '../ui/input';
 import { uploadFile } from '@/lib/firestore-service';
+import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -53,6 +54,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const { collaborators } = useCollaborators();
   const { updateRequestAndNotify } = useWorkflows();
   const { workflowDefinitions } = useApplications();
+  const { workflowAreas } = useWorkflowAreas();
+
   const [comment, setComment] = useState('');
   const [attachment, setAttachment] = useState<File | null>(null);
   const [assignee, setAssignee] = useState<Collaborator | null>(null);
@@ -68,6 +71,11 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return workflowDefinitions.find(def => def.name === request.type);
   }, [request, workflowDefinitions]);
   
+  const workflowArea = useMemo(() => {
+    if (!definition) return null;
+    return workflowAreas.find(area => area.id === definition.areaId);
+  }, [definition, workflowAreas]);
+
   const adminUser = useMemo(() => {
     if (!user) return null;
     return collaborators.find(c => c.email === user.email);
@@ -161,7 +169,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
     try {
         if (response === 'executed' && attachment) {
-            attachmentUrl = await uploadFile(attachment, adminUser.id3a, request.id, `execution_${Date.now()}_${attachment.name}`);
+            const storagePath = workflowArea?.storageFolderPath;
+            attachmentUrl = await uploadFile(attachment, request.id, attachment.name, storagePath);
             historyNote += ` Anexo: ${attachment.name}.`;
         }
     } catch (e) {

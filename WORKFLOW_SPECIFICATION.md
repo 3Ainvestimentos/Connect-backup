@@ -127,14 +127,16 @@ interface RoutingRule {
 
 Todos os arquivos anexados às solicitações de workflow através de um campo do tipo `file` ou durante uma etapa de "Execução" são armazenados de forma segura no **Firebase Cloud Storage**.
 
-A estrutura de pastas segue o padrão:
+A estrutura de pastas pode ser personalizada por "Área de Workflow" no painel de administração. Se uma área tiver um caminho de pasta definido (ex: `financeiro/reembolsos`), os anexos de todos os workflows daquela área serão salvos nesse caminho.
+
+Se nenhum caminho for especificado para a área, os arquivos seguirão a estrutura padrão:
 
 `workflow-attachments/{requestId}-{originalFileName}`
 
--   **`workflow-attachments`**: A pasta raiz para todos os anexos de workflows.
--   **`{requestId}-{originalFileName}`**: O nome do arquivo é prefixado com o ID da solicitação para garantir unicidade e fácil associação, evitando a necessidade de múltiplas subpastas.
+-   **`workflow-attachments`**: A pasta raiz padrão para todos os anexos de workflows sem área específica.
+-   **`{requestId}-{originalFileName}`**: O nome do arquivo é prefixado com o ID da solicitação para garantir unicidade e fácil associação.
 
-Essa estrutura garante que os arquivos sejam organizados logicamente e vinculados à solicitação específica, facilitando a auditoria e o gerenciamento diretamente pelo console do Firebase, se necessário.
+Essa estrutura garante que os arquivos sejam organizados logicamente e vinculados à solicitação, facilitando a auditoria e o gerenciamento.
 
 ---
 
