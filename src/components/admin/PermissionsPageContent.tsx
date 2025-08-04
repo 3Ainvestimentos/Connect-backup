@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Shield, Loader2, Search } from 'lucide-react';
+import { Shield, Loader2, Search, DollarSign } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 
@@ -19,6 +19,7 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canManageRequests', label: 'Solicitações' },
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
     { key: 'canViewBI', label: 'Business Intelligence' },
+    { key: 'canViewDra', label: 'DRA/Pagamentos' },
 ];
 
 function PermissionsTable() {
@@ -69,6 +70,7 @@ function PermissionsTable() {
                            <Skeleton className="h-3 w-64" />
                         </div>
                          <div className="flex gap-4">
+                            <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />
                             <Skeleton className="h-6 w-11" />
