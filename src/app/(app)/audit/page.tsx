@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth, startOfToday, endOfToday } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth, startOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Progress } from '@/components/ui/progress';
@@ -120,8 +120,7 @@ export default function AuditPage() {
 
         const monthlyLogins = events.filter(event => {
             const eventDate = parseISO(event.timestamp);
-            // Ensure the comparison is correct by checking if eventDate is within the interval
-            return eventDate >= start && eventDate <= end;
+            return isWithinInterval(eventDate, { start, end });
         });
 
         const uniqueUserIds = new Set(monthlyLogins.map(event => event.userId));

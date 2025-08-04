@@ -100,7 +100,7 @@ export default function ContentInteractionPage() {
           .sort((a, b) => b.uniqueViews - a.uniqueViews);
           
         const mostViewed = contentStats.length > 0 ? contentStats[0] : null;
-        const leastViewed = contentStats.length > 1 ? contentStats[contentStats.length - 1] : null;
+        const leastViewed = contentStats.length > 0 ? contentStats[contentStats.length - 1] : null;
 
         return { contentStats, mostViewed, leastViewed, pageAccessCounts };
 

@@ -51,8 +51,8 @@ export default function WorkflowAnalyticsPage() {
       const definition = workflowDefinitions.find(d => d.name === req.type);
       if (!definition) return;
 
-      const finalStatusId = definition.statuses[definition.statuses.length - 1]?.id;
-      if (req.status !== finalStatusId) return; // Only consider completed requests
+      const finalStatusIds = definition.statuses.filter(s => s.label.toLowerCase().includes('aprovado') || s.label.toLowerCase().includes('reprovado') || s.label.toLowerCase().includes('concluído')).map(s => s.id);
+      if (!finalStatusIds.includes(req.status)) return; // Only consider completed requests
 
       const submissionDate = parseISO(req.submittedAt);
       const completionDate = parseISO(req.lastUpdatedAt);
