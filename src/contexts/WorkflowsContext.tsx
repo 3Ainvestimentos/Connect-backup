@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getNextSequentialId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getNextSequentialId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
 import { getFirestore, writeBatch, doc } from 'firebase/firestore';
@@ -86,7 +86,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: requests = [], isFetching } = useQuery<WorkflowRequest[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<WorkflowRequest>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => data.map(r => ({
         ...r,
