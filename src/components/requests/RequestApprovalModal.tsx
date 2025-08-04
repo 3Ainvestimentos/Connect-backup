@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -412,6 +413,69 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   }
 
+  const renderCurrentUserAction = () => {
+      if (!currentUserActionRequest) return null;
+      
+      const actionDef = currentStatusDefinition?.action;
+      const isPending = currentUserActionRequest.status === 'pending';
+
+      if (!isPending) {
+        const statusConfig = {
+          approved: { icon: ThumbsUp, color: 'bg-green-600', text: 'Aprovado' },
+          rejected: { icon: ThumbsDown, color: 'bg-destructive', text: 'Rejeitado' },
+          acknowledged: { icon: CheckCircle, color: 'bg-blue-600', text: 'Ciente' },
+          executed: { icon: CheckCircle, color: 'bg-purple-600', text: 'Executado' },
+        }[currentUserActionRequest.status] || { icon: CheckCircle, color: 'bg-muted', text: 'Concluído' };
+
+        const Icon = statusConfig.icon;
+        
+        return (
+          <Button disabled className={cn("w-full", statusConfig.color)}>
+            <Icon className="mr-2 h-4 w-4" /> {statusConfig.text}
+          </Button>
+        )
+      }
+      
+      return (
+         <div className="mt-4 pt-4 border-t">
+          {actionDef?.type === 'approval' && (
+            <div className="flex flex-wrap gap-2">
+                <Button variant="destructive" size="sm" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
+                  {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
+                    Reprovar
+                </Button>
+                <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
+                    {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
+                    Aprovar
+                </Button>
+            </div>
+          )}
+          {actionDef?.type === 'execution' && (
+            <div className="w-full space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="execution_comment">Comentário {actionDef?.commentRequired && '*'}</Label>
+                    <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={actionDef?.commentPlaceholder || ''} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="execution_attachment">Anexo {actionDef?.attachmentRequired && '*'}</Label>
+                    <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={actionDef?.attachmentPlaceholder || ''}/>
+                </div>
+                <Button className="w-full bg-admin-primary hover:bg-admin-primary/90" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
+                    {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                    Confirmar Execução
+                </Button>
+            </div>
+          )}
+          {actionDef?.type === 'acknowledgement' && (
+            <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
+                {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                Marcar como Ciente
+            </Button>
+          )}
+        </div>
+      );
+  }
+
 
   return (
     <>
@@ -500,9 +564,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   <div className="p-4 bg-muted/50 rounded-md text-sm space-y-2">
                       {actionRequestsForCurrentStatus.map((ar) => {
                         const isCurrentUserAction = ar.userId === adminUser?.id3a;
-                        const isPending = ar.status === 'pending';
-                        const actionDef = currentStatusDefinition?.action;
-                        
                         return (
                           <div key={ar.userId} className={cn("p-2 border rounded-md")}>
                               <div className="flex items-center justify-between">
@@ -513,44 +574,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                   <Badge variant="secondary" className="capitalize">{getTranslatedStatus(ar.status)}</Badge>
                               </div>
 
-                              {isCurrentUserAction && isPending && actionDef && (
-                                <div className="mt-4 pt-4 border-t">
-                                  {actionDef.type === 'approval' && (
-                                    <div className="flex flex-wrap gap-2">
-                                        <Button variant="destructive" size="sm" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
-                                          {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
-                                            Reprovar
-                                        </Button>
-                                        <Button className="bg-green-600 hover:bg-green-700" size="sm" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
-                                            {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
-                                            Aprovar
-                                        </Button>
-                                    </div>
-                                  )}
-                                  {actionDef.type === 'execution' && (
-                                    <div className="w-full space-y-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="execution_comment">Comentário {actionDef?.commentRequired && '*'}</Label>
-                                            <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={actionDef?.commentPlaceholder || ''} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="execution_attachment">Anexo {actionDef?.attachmentRequired && '*'}</Label>
-                                            <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={actionDef?.attachmentPlaceholder || ''}/>
-                                        </div>
-                                        <Button className="w-full bg-[hsl(170,60%,50%)] hover:bg-[hsl(170,60%,45%)]" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
-                                            {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                            Confirmar Execução
-                                        </Button>
-                                    </div>
-                                  )}
-                                  {actionDef.type === 'acknowledgement' && (
-                                    <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
-                                        {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                        Marcar como Ciente
-                                    </Button>
-                                  )}
-                                </div>
-                              )}
+                              {isCurrentUserAction && renderCurrentUserAction()}
                           </div>
                         )
                       })}
