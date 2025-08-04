@@ -141,7 +141,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     
     const actionDef = currentStatusDefinition?.action;
     
-    // Validation for execution type
     if (response === 'executed' && actionDef?.type === 'execution') {
         if (actionDef.commentRequired && !comment.trim()) {
             toast({ title: "Erro de Validação", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
@@ -160,16 +159,15 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     let historyNote = `Ação foi ${actionLabel}.`;
     let attachmentUrl = '';
 
-    // Handle file upload FIRST if it's an execution step
-    if (response === 'executed' && attachment) {
-        try {
+    try {
+        if (response === 'executed' && attachment) {
             attachmentUrl = await uploadFile(attachment, adminUser.id3a, request.id, `execution_${Date.now()}_${attachment.name}`);
             historyNote += ` Anexo: ${attachment.name}.`;
-        } catch (e) {
-            toast({ title: "Erro de Upload", description: "Não foi possível enviar o anexo. A ação foi cancelada.", variant: "destructive"});
-            setIsSubmitting(false);
-            return;
         }
+    } catch (e) {
+        toast({ title: "Erro de Upload", description: "Não foi possível enviar o anexo. A ação foi cancelada.", variant: "destructive"});
+        setIsSubmitting(false);
+        return;
     }
     
     if (comment.trim()) {
@@ -495,9 +493,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         const isCurrentUserAction = ar.userId === adminUser?.id3a;
                         const isPending = ar.status === 'pending';
                         const actionDef = currentStatusDefinition?.action;
-
+                        
                         return (
-                          <div key={ar.userId} className={cn("p-2 border rounded-md", isCurrentUserAction && isPending && "border-primary/50 bg-primary/5")}>
+                          <div key={ar.userId} className={cn("p-2 border rounded-md")}>
                               <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                       {getActionRequestIcon(ar.status)}
@@ -507,7 +505,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                               </div>
 
                               {isCurrentUserAction && isPending && actionDef && (
-                                <div className="mt-4 pt-4 border-t border-primary/20">
+                                <div className="mt-4 pt-4 border-t">
                                   {actionDef.type === 'approval' && (
                                     <div className="flex flex-wrap gap-2">
                                         <Button variant="destructive" size="sm" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
