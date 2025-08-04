@@ -153,9 +153,9 @@ export default function ManageWorkflowAreas() {
                             {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="storageFolderPath">Caminho da Pasta no Storage (Opcional)</Label>
+                            <Label htmlFor="storageFolderPath">Caminho da Pasta no Storage</Label>
                             <Input id="storageFolderPath" {...register('storageFolderPath')} placeholder="ex: financas/reembolsos" />
-                            <p className="text-xs text-muted-foreground mt-1">Se deixado em branco, será usada a pasta padrão 'workflow-attachments'.</p>
+                            <p className="text-xs text-muted-foreground mt-1">Este campo é obrigatório e não pode ser uma pasta raiz.</p>
                             {errors.storageFolderPath && <p className="text-sm text-destructive mt-1">{errors.storageFolderPath.message}</p>}
                         </div>
                         <DialogFooter>

@@ -9,7 +9,7 @@ import * as z from 'zod';
 export const workflowAreaSchema = z.object({
     name: z.string().min(1, "O nome da área é obrigatório."),
     icon: z.string().min(1, "O ícone é obrigatório."),
-    storageFolderPath: z.string().optional(), // ex: "financeiro/reembolsos"
+    storageFolderPath: z.string().min(1, "O caminho da pasta no Storage é obrigatório."), // ex: "financeiro/reembolsos"
 });
 
 export type WorkflowArea = WithId<z.infer<typeof workflowAreaSchema>>;
