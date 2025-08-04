@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth, startOfToday, endOfToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Progress } from '@/components/ui/progress';
@@ -110,8 +110,8 @@ export default function AuditPage() {
     }, [events, isLoading]);
     
     const uniqueLoginsThisMonth = useMemo(() => {
-        if (isLoading || collaborators.length === 0) {
-            return { uniqueCount: 0, totalCount: 0, percentage: 0 };
+        if (isLoading || collaborators.length === 0 || events.length === 0) {
+            return { uniqueCount: 0, totalCount: collaborators.length, percentage: 0 };
         }
 
         const now = new Date();
@@ -120,7 +120,8 @@ export default function AuditPage() {
 
         const monthlyLogins = events.filter(event => {
             const eventDate = parseISO(event.timestamp);
-            return isWithinInterval(eventDate, { start, end });
+            // Ensure the comparison is correct by checking if eventDate is within the interval
+            return eventDate >= start && eventDate <= end;
         });
 
         const uniqueUserIds = new Set(monthlyLogins.map(event => event.userId));
@@ -128,9 +129,10 @@ export default function AuditPage() {
         return {
             uniqueCount: uniqueUserIds.size,
             totalCount: collaborators.length,
-            percentage: (uniqueUserIds.size / collaborators.length) * 100,
+            percentage: collaborators.length > 0 ? (uniqueUserIds.size / collaborators.length) * 100 : 0,
         };
     }, [events, collaborators, isLoading]);
+
 
     const handleExport = () => {
         const dataForCsv = events.map(event => ({
