@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
 import type { CollaboratorPermissions } from './CollaboratorsContext';
 import { useSystemSettings } from './SystemSettingsContext';
+import { addDocumentToCollection } from '@/lib/firestore-service';
 
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
@@ -163,6 +164,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const collaborator = collaborators.find(c => c.email === email);
 
       if (collaborator || isSuperAdminLogin) {
+        const userToLog = collaborator || { 
+            id3a: result.user.uid, 
+            name: result.user.displayName || 'Super Admin' 
+        };
+
+        // Log the login event
+        await addDocumentToCollection('audit_logs', {
+            eventType: 'login',
+            userId: userToLog.id3a,
+            userName: userToLog.name,
+            timestamp: new Date().toISOString(),
+            details: {}
+        });
+        
         router.push('/dashboard');
       } else {
         await firebaseSignOut(auth);
