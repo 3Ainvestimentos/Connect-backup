@@ -153,7 +153,7 @@ export default function DashboardV2Page() {
                 Seu navegador não suporta a tag de vídeo.
             </video>
         ) : (
-             <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="object-cover transition-transform duration-300 group-hover:scale-105" />
+             <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
             <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
@@ -171,22 +171,21 @@ export default function DashboardV2Page() {
             description="Veja os últimos anúncios e destaques da empresa."
           />
           {hasHighlights && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3" style={{ minHeight: '450px' }}>
-              {smallHighlights.length > 0 && (
-                <div className="md:col-span-1 flex flex-col gap-3">
-                  {smallHighlights.map(item => (
-                    <HighlightCard key={item.id} item={item} />
-                  ))}
-                </div>
-              )}
-              {largeHighlight && (
-                <div className={cn(
-                  "h-full",
-                  smallHighlights.length > 0 ? "md:col-span-2" : "md:col-span-3"
-                )}>
-                  <HighlightCard item={largeHighlight} />
-                </div>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
+                {largeHighlight && (
+                  <div className="md:col-span-1 md:row-span-2 h-full">
+                    <HighlightCard item={largeHighlight} className="h-full"/>
+                  </div>
+                )}
+                {smallHighlights.length > 0 && (
+                  <div className="md:col-span-1 grid grid-rows-2 gap-3">
+                    {smallHighlights.map(item => (
+                        <div key={item.id} className="h-full">
+                            <HighlightCard item={item} />
+                        </div>
+                    ))}
+                  </div>
+                )}
             </div>
           )}
         </section>
