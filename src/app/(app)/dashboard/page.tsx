@@ -134,7 +134,7 @@ export default function DashboardV2Page() {
   
   const HighlightCard = ({ item, className = "" }: { item: NewsItemType, className?: string }) => (
     <div 
-        className={cn("relative rounded-lg overflow-hidden group block cursor-pointer bg-black", className)}
+        className={cn("relative rounded-lg overflow-hidden group block cursor-pointer bg-black h-full", className)}
         onClick={() => handleViewNews(item)}
         onKeyDown={(e) => e.key === 'Enter' && handleViewNews(item)}
         tabIndex={0}
@@ -153,7 +153,7 @@ export default function DashboardV2Page() {
                 Your browser does not support the video tag.
             </video>
         ) : (
-             <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" data-ai-hint={item.dataAiHint} />
+             <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
             <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
@@ -172,12 +172,14 @@ export default function DashboardV2Page() {
           />
           {hasHighlights && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
-                <div className="flex flex-col gap-3">
-                    {smallHighlights.map(item => <HighlightCard key={item.id} item={item} />)}
-                </div>
+                {smallHighlights.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                        {smallHighlights.map(item => <HighlightCard key={item.id} item={item} />)}
+                    </div>
+                )}
                 {largeHighlight && (
-                     <div className="row-span-2">
-                        <HighlightCard item={largeHighlight} className="h-full"/>
+                     <div className={cn("row-span-2", smallHighlights.length === 0 && "md:col-span-2")}>
+                        <HighlightCard item={largeHighlight} />
                     </div>
                 )}
             </div>
@@ -322,7 +324,6 @@ export default function DashboardV2Page() {
                             alt={selectedNews.title}
                             layout="fill"
                             objectFit="cover"
-                            data-ai-hint={selectedNews.dataAiHint || "news article"}
                         />
                     )}
                 </div>
