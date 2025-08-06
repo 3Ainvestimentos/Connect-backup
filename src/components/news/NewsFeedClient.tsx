@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import type { NewsItemType } from '@/app/(app)/news/page';
+import type { NewsItemType } from '@/contexts/NewsContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { Search, CalendarDays } from 'lucide-react';
