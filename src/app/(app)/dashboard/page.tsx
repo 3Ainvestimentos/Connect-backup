@@ -173,7 +173,7 @@ export default function DashboardV2Page() {
           {hasHighlights && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
                 {largeHighlight && (
-                    <div className="md:row-span-2 h-full">
+                    <div className="h-full">
                        <HighlightCard item={largeHighlight} className="h-full" />
                     </div>
                 )}
