@@ -39,9 +39,14 @@ export function RecipientSelectionModal({
 
     useEffect(() => {
         if (isOpen) {
-            setLocalSelectedIds(new Set(selectedIds));
+            // If the incoming selection is ['all'], initialize the local state with all collaborator IDs.
+            if (selectedIds.includes('all')) {
+                setLocalSelectedIds(new Set(allCollaborators.map(c => c.id3a)));
+            } else {
+                setLocalSelectedIds(new Set(selectedIds));
+            }
         }
-    }, [isOpen, selectedIds]);
+    }, [isOpen, selectedIds, allCollaborators]);
     
 
     const filteredAndSortedCollaborators = useMemo(() => {
@@ -112,9 +117,12 @@ export function RecipientSelectionModal({
     };
     
     const handleConfirm = () => {
+        // If the number of selected IDs equals the total number of collaborators,
+        // it's equivalent to selecting 'all'.
         if (localSelectedIds.size === allCollaborators.length) {
             onConfirm(['all']);
         } else {
+            // Otherwise, confirm with the specific list of IDs.
             onConfirm(Array.from(localSelectedIds));
         }
     };
