@@ -18,6 +18,7 @@ import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
 import { useQueryClient } from '@tanstack/react-query';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -31,6 +32,7 @@ const newsSchema = z.object({
     dataAiHint: z.string().optional(),
     link: z.string().optional(),
     isHighlight: z.boolean().optional(),
+    highlightType: z.enum(['large', 'small']).optional(),
 });
 
 type NewsFormValues = z.infer<typeof newsSchema>;
@@ -41,12 +43,15 @@ export function ManageNews() {
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const queryClient = useQueryClient();
 
-    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
+    const { register, handleSubmit, reset, control, watch, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
         defaultValues: {
             isHighlight: false,
+            highlightType: 'small',
         }
     });
+
+    const isHighlightWatch = watch('isHighlight');
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
@@ -55,6 +60,7 @@ export function ManageNews() {
               ...newsItem,
               date: new Date(newsItem.date).toISOString().split('T')[0],
               videoUrl: newsItem.videoUrl || '',
+              highlightType: newsItem.highlightType || 'small',
             };
             reset(formattedNews);
         } else {
@@ -70,6 +76,7 @@ export function ManageNews() {
                 dataAiHint: '',
                 link: '',
                 isHighlight: false,
+                highlightType: 'small',
             });
         }
         setIsDialogOpen(true);
@@ -105,14 +112,20 @@ export function ManageNews() {
     };
     
     const onSubmit = async (data: NewsFormValues) => {
-        const currentlyActive = newsItems.filter(n => n.isHighlight && n.id !== editingNews?.id).length;
-        if(data.isHighlight && currentlyActive >= 3) {
-             toast({
-                title: "Limite de destaques atingido",
-                description: "Por favor, desative outro destaque antes de ativar este.",
-                variant: "destructive",
-            });
-            return;
+        const currentlyActiveHighlights = newsItems.filter(n => n.isHighlight && n.id !== editingNews?.id);
+        
+        if (data.isHighlight) {
+            if(currentlyActiveHighlights.length >= 3) {
+                 toast({ title: "Limite de destaques atingido (3).", variant: "destructive" });
+                 return;
+            }
+            if(data.highlightType === 'large') {
+                const hasLargeHighlight = currentlyActiveHighlights.some(h => h.highlightType === 'large');
+                if(hasLargeHighlight) {
+                    toast({ title: "Já existe um destaque grande ativo.", variant: "destructive" });
+                    return;
+                }
+            }
         }
 
         try {
@@ -246,7 +259,7 @@ export function ManageNews() {
                                 <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" disabled={isFormSubmitting}/>
                             </div>
                             <div className="flex items-center space-x-2">
-                            <Controller
+                                <Controller
                                     name="isHighlight"
                                     control={control}
                                     render={({ field }) => (
@@ -260,6 +273,29 @@ export function ManageNews() {
                                 />
                                 <Label htmlFor="isHighlight">Marcar como Destaque</Label>
                             </div>
+
+                            {isHighlightWatch && (
+                                <div>
+                                    <Label htmlFor="highlightType">Tipo de Destaque</Label>
+                                    <Controller
+                                        name="highlightType"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select onValueChange={field.onChange} value={field.value} disabled={isFormSubmitting}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecione o tipo de destaque..." />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="small">Pequeno</SelectItem>
+                                                    <SelectItem value="large">Grande</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                    {errors.highlightType && <p className="text-sm text-destructive mt-1">{errors.highlightType.message}</p>}
+                                </div>
+                            )}
+
                             <DialogFooter className="pt-4">
                                 <DialogClose asChild>
                                     <Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button>

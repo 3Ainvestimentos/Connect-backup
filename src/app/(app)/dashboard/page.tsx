@@ -88,6 +88,10 @@ export default function DashboardV2Page() {
 
   const activeHighlights = useMemo(() => newsItems.filter(item => item.isHighlight), [newsItems]);
 
+  const largeHighlight = useMemo(() => activeHighlights.find(h => h.highlightType === 'large'), [activeHighlights]);
+  const smallHighlights = useMemo(() => activeHighlights.filter(h => h.highlightType === 'small' || !h.highlightType).slice(0, 2), [activeHighlights]);
+  const hasHighlights = largeHighlight || smallHighlights.length > 0;
+
   const handleViewMessage = (messageToView: MessageType) => {
     if (!currentUserCollab) return;
     markMessageAsRead(messageToView.id, currentUserCollab.id3a);
@@ -127,25 +131,7 @@ export default function DashboardV2Page() {
         setIsDeleting(false);
     }
   };
-
-  const renderHighlights = () => {
-      switch (activeHighlights.length) {
-          case 1: return <HighlightCard item={activeHighlights[0]} />;
-          case 2: return (<> <HighlightCard item={activeHighlights[0]} /> <HighlightCard item={activeHighlights[1]} /> </>);
-          case 3: return (<> <HighlightCard item={activeHighlights[0]} /> <HighlightCard item={activeHighlights[1]} className="md:row-span-2" /> <HighlightCard item={activeHighlights[2]} /> </>);
-          default: return null;
-      }
-  };
   
-  const getGridClass = () => {
-    switch (activeHighlights.length) {
-      case 1: return "grid-cols-1";
-      case 2: return "grid-cols-1 md:grid-cols-2";
-      case 3: return "grid-cols-1 md:grid-cols-2 md:grid-rows-2";
-      default: return "grid-cols-1";
-    }
-  }
-
   const HighlightCard = ({ item, className = "" }: { item: NewsItemType, className?: string }) => (
     <div 
         className={cn("relative rounded-lg overflow-hidden group block cursor-pointer bg-black", className)}
@@ -179,17 +165,24 @@ export default function DashboardV2Page() {
   return (
     <>
       <div className="space-y-6 p-6 md:p-8">
-        {activeHighlights.length > 0 && (
-          <section>
-            <PageHeader
-              title={pageTitle}
-              description="Veja os últimos anúncios e destaques da empresa."
-            />
-            <div className={cn("grid gap-3", getGridClass())} style={{ minHeight: '450px' }}>
-              {renderHighlights()}
+        <section>
+          <PageHeader
+            title={pageTitle}
+            description="Veja os últimos anúncios e destaques da empresa."
+          />
+          {hasHighlights && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
+                <div className="flex flex-col gap-3">
+                    {smallHighlights.map(item => <HighlightCard key={item.id} item={item} />)}
+                </div>
+                {largeHighlight && (
+                     <div className="row-span-2">
+                        <HighlightCard item={largeHighlight} className="h-full"/>
+                    </div>
+                )}
             </div>
-          </section>
-        )}
+          )}
+        </section>
         
         <section className="flex flex-col gap-6">
             <Card className="shadow-sm flex flex-col w-full">

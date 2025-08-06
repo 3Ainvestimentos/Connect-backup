@@ -17,6 +17,7 @@ export interface NewsItemType {
   videoUrl?: string; // Optional video URL
   dataAiHint?: string;
   isHighlight: boolean;
+  highlightType?: 'large' | 'small'; // New field for highlight size
   link?: string;
 }
 
@@ -82,15 +83,8 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     const targetNews = newsItems.find(n => n.id === id);
     if (!targetNews) return;
 
-    const currentlyActive = newsItems.filter(n => n.isHighlight).length;
-    if (!targetNews.isHighlight && currentlyActive >= 3) {
-        toast({
-            title: "Limite Atingido",
-            description: "Você pode ter no máximo 3 destaques ativos.",
-            variant: "destructive",
-        });
-        return;
-    }
+    // The logic to limit highlights to 3 is now managed in the form validation
+    // and dashboard rendering, making this toggle simpler.
     updateNewsItemMutation.mutate({ ...targetNews, isHighlight: !targetNews.isHighlight });
   }, [newsItems, updateNewsItemMutation]);
 
