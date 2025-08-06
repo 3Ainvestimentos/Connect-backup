@@ -76,7 +76,7 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Fechar
           </Button>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !selectedValue}>
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !selectedValue} className="bg-success hover:bg-success/90">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Enviar Resposta
           </Button>
