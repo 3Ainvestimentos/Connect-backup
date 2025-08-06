@@ -6,9 +6,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { usePolls } from '@/contexts/PollsContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileDown, PieChart, Users, CheckSquare } from 'lucide-react';
+import { ArrowLeft, FileDown, PieChart as PieChartIcon, CheckSquare } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ResponsiveContainer, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
@@ -122,7 +122,7 @@ export default function PollResultsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><PieChart className="h-5 w-5"/> Distribuição das Respostas</CardTitle>
+          <CardTitle className="flex items-center gap-2"><PieChartIcon className="h-5 w-5"/> Distribuição das Respostas</CardTitle>
         </CardHeader>
         <CardContent>
           {totalResponses > 0 ? (
@@ -139,7 +139,8 @@ export default function PollResultsPage() {
             </ResponsiveContainer>
           ) : (
             <div className="text-center py-10 text-muted-foreground">
-                <p>Ainda não há respostas para esta pesquisa.</p>
+                <PieChartIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                <p className="mt-4">Ainda não há respostas para esta pesquisa.</p>
             </div>
           )}
         </CardContent>
