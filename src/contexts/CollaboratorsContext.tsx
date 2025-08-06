@@ -11,6 +11,7 @@ export interface CollaboratorPermissions {
   canManageContent: boolean;
   canViewTasks: boolean;
   canViewBI: boolean;
+  canViewRankings: boolean;
   canViewCRM?: boolean;
   canViewStrategicPanel?: boolean;
   canViewDra?: boolean;
@@ -57,6 +58,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageContent: false,
   canViewTasks: false,
   canViewBI: false,
+  canViewRankings: false,
   canViewCRM: false,
   canViewStrategicPanel: false,
   canViewDra: false,

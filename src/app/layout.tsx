@@ -17,6 +17,7 @@ import { QuickLinksProvider } from '@/contexts/QuickLinksContext';
 import { SystemSettingsProvider } from '@/contexts/SystemSettingsContext';
 import { Roboto, Archivo } from 'next/font/google';
 import { PollsProvider } from '@/contexts/PollsContext';
+import { RankingsProvider } from '@/contexts/RankingsContext';
 
 
 const fontRoboto = Roboto({
@@ -64,7 +65,9 @@ export default function RootLayout({
                                   <WorkflowsProvider>
                                     <QuickLinksProvider>
                                       <PollsProvider>
-                                        {children}
+                                        <RankingsProvider>
+                                          {children}
+                                        </RankingsProvider>
                                       </PollsProvider>
                                     </QuickLinksProvider>
                                   </WorkflowsProvider>

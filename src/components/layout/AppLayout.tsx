@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, DollarSign, ListChecks } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, DollarSign, ListChecks, Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -54,6 +54,7 @@ export const navItems = [
   { href: '/applications', label: 'Solicitações', icon: Workflow, external: false, permission: null },
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false, permission: null },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
+  { href: '/rankings', label: 'Rankings e Campanhas', icon: Award, external: false, permission: 'canViewRankings' },
   { href: '/store', label: 'Store', icon: ShoppingCart, external: true, permission: null },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false, permission: null },
 ];
@@ -341,7 +342,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
                 {navItems.map((item) => {
-                  if (item.href === '/bi' && !permissions.canViewBI) return null;
+                  if (item.permission && !permissions[item.permission as keyof typeof permissions]) {
+                    return null;
+                  }
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
