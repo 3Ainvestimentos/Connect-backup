@@ -90,6 +90,28 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
     }
 };
 
+/**
+ * Fetches all documents from a specified subcollection.
+ * @param collectionName The name of the parent collection.
+ * @param docId The ID of the parent document.
+ * @param subcollectionName The name of the subcollection.
+ * @returns A promise that resolves to an array of documents with their IDs.
+ */
+export const getSubcollection = async <T>(collectionName: string, docId: string, subcollectionName: string): Promise<WithId<T>[]> => {
+    try {
+        const subcollectionRef = collection(db, collectionName, docId, subcollectionName);
+        const snapshot = await getDocs(subcollectionRef);
+        const data: WithId<T>[] = [];
+        snapshot.forEach((doc) => {
+            data.push({ id: doc.id, ...doc.data() } as WithId<T>);
+        });
+        return data;
+    } catch (error) {
+        console.error(`Error fetching subcollection ${subcollectionName} from ${collectionName}/${docId}:`, error);
+        throw new Error(`Não foi possível carregar a subcoleção de ${subcollectionName}.`);
+    }
+}
+
 
 /**
  * Fetches a single document by its ID from a specified collection.

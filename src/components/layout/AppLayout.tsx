@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, DollarSign } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, DollarSign, ListChecks } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -45,9 +45,10 @@ import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 import { useApplications } from '@/contexts/ApplicationsContext';
+import PollTrigger from '@/components/polls/PollTrigger';
 
 
-const navItems = [
+export const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false, permission: null },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false, permission: null },
   { href: '/applications', label: 'Solicitações', icon: Workflow, external: false, permission: null },
@@ -391,6 +392,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Sidebar>
         )}
       </div>
+      <PollTrigger />
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
     </>
