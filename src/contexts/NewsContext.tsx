@@ -10,14 +10,13 @@ export interface NewsItemType {
   id: string;
   title: string;
   snippet: string;
-  content: string; // Full content for modal view
+  content: string;
   category: string;
   date: string;
   imageUrl: string;
-  videoUrl?: string; // Optional video URL
-  dataAiHint?: string;
+  videoUrl?: string;
   isHighlight: boolean;
-  highlightType?: 'large' | 'small'; // New field for highlight size
+  highlightType?: 'large' | 'small';
   link?: string;
 }
 
@@ -28,6 +27,7 @@ interface NewsContextType {
   updateNewsItem: (item: NewsItemType) => Promise<void>;
   deleteNewsItemMutation: UseMutationResult<void, Error, string, unknown>;
   toggleNewsHighlight: (id: string) => void;
+  updateHighlightType: (id: string, type: 'large' | 'small') => void;
 }
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
@@ -57,45 +57,68 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
     mutationFn: (itemData) => addDocumentToCollection(COLLECTION_NAME, itemData),
-    onSuccess: () => {
-        // Invalidation is not strictly needed due to the listener
-    },
+    onSuccess: () => {},
   });
 
-  const updateNewsItemMutation = useMutation<void, Error, NewsItemType>({
+  const updateNewsItemMutation = useMutation<void, Error, Partial<NewsItemType> & { id: string }>({
     mutationFn: (updatedItem) => {
         const { id, ...data } = updatedItem;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {
-        // Listener will handle invalidation
-    }
+    onSuccess: () => {}
   });
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      // Listener will handle invalidation
-    },
+    onSuccess: () => {},
   });
 
   const toggleNewsHighlight = useCallback((id: string) => {
     const targetNews = newsItems.find(n => n.id === id);
     if (!targetNews) return;
 
-    // The logic to limit highlights to 3 is now managed in the form validation
-    // and dashboard rendering, making this toggle simpler.
-    updateNewsItemMutation.mutate({ ...targetNews, isHighlight: !targetNews.isHighlight });
+    const currentlyActiveCount = newsItems.filter(n => n.isHighlight && n.id !== id).length;
+    if (!targetNews.isHighlight && currentlyActiveCount >= 3) {
+      toast({
+        title: "Limite de destaques atingido",
+        description: "Você pode ter no máximo 3 notícias em destaque.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    updateNewsItemMutation.mutate({ id, isHighlight: !targetNews.isHighlight });
   }, [newsItems, updateNewsItemMutation]);
+
+  const updateHighlightType = useCallback((id: string, type: 'large' | 'small') => {
+    const targetNews = newsItems.find(n => n.id === id);
+    if (!targetNews) return;
+
+    if(type === 'large') {
+      const hasAnotherLarge = newsItems.some(n => n.id !== id && n.isHighlight && n.highlightType === 'large');
+      if (hasAnotherLarge) {
+        toast({
+          title: "Atenção",
+          description: "Já existe um destaque grande ativo. Altere o outro para 'pequeno' primeiro.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+    
+    updateNewsItemMutation.mutate({ id, highlightType: type });
+  }, [newsItems, updateNewsItemMutation]);
+
 
   const value = useMemo(() => ({
     newsItems,
     loading: isFetching,
-    addNewsItem: (item) => addNewsItemMutation.mutateAsync(item),
+    addNewsItem: (item) => addNewsItemMutation.mutateAsync(item) as Promise<any>,
     updateNewsItem: (item) => updateNewsItemMutation.mutateAsync(item),
     deleteNewsItemMutation,
     toggleNewsHighlight,
-  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight]);
+    updateHighlightType,
+  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType]);
 
   return (
     <NewsContext.Provider value={value}>

@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -12,12 +11,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
 import { ScrollArea } from '../ui/scroll-area';
-import { useQueryClient } from '@tanstack/react-query';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const newsSchema = z.object({
@@ -29,29 +27,21 @@ const newsSchema = z.object({
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
     imageUrl: z.string().url("URL da imagem inválida").or(z.literal("")),
     videoUrl: z.string().url("URL do vídeo inválida").optional().or(z.literal('')),
-    dataAiHint: z.string().optional(),
     link: z.string().optional(),
     isHighlight: z.boolean().optional(),
     highlightType: z.enum(['large', 'small']).optional(),
 });
 
-type NewsFormValues = z.infer<typeof newsSchema>;
+type NewsFormValues = Omit<z.infer<typeof newsSchema>, 'isHighlight' | 'highlightType'>;
 
 export function ManageNews() {
-    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight } = useNews();
+    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
-    const queryClient = useQueryClient();
 
-    const { register, handleSubmit, reset, control, watch, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
-        resolver: zodResolver(newsSchema),
-        defaultValues: {
-            isHighlight: false,
-            highlightType: 'small',
-        }
+    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
+        resolver: zodResolver(newsSchema.omit({ isHighlight: true, highlightType: true })),
     });
-
-    const isHighlightWatch = watch('isHighlight');
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
@@ -60,7 +50,6 @@ export function ManageNews() {
               ...newsItem,
               date: new Date(newsItem.date).toISOString().split('T')[0],
               videoUrl: newsItem.videoUrl || '',
-              highlightType: newsItem.highlightType || 'small',
             };
             reset(formattedNews);
         } else {
@@ -73,10 +62,7 @@ export function ManageNews() {
                 date: new Date().toISOString().split('T')[0],
                 imageUrl: 'https://placehold.co/300x200.png',
                 videoUrl: '',
-                dataAiHint: '',
                 link: '',
-                isHighlight: false,
-                highlightType: 'small',
             });
         }
         setIsDialogOpen(true);
@@ -85,56 +71,19 @@ export function ManageNews() {
     const handleDelete = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja excluir esta notícia?")) return;
 
-        const { id: toastId, update } = toast({
-            title: "Diagnóstico de Exclusão",
-            description: "1. Iniciando exclusão...",
-            variant: "default",
+        await deleteNewsItemMutation.mutateAsync(id, {
+            onSuccess: () => toast({ title: "Sucesso!", description: "Notícia excluída." }),
+            onError: (error) => toast({ title: "Falha na Exclusão", description: error.message, variant: "destructive" }),
         });
-
-        try {
-            update({ description: "2. Acionando a função de exclusão..." });
-            await deleteNewsItemMutation.mutateAsync(id);
-
-            update({
-                title: "Sucesso!",
-                description: "3. Exclusão concluída. Atualizando a lista.",
-            });
-
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-            update({
-                title: "Falha na Exclusão",
-                description: `3. Erro: ${errorMessage}`,
-                variant: "destructive",
-            });
-            console.error("Falha detalhada ao excluir:", error);
-        }
     };
     
     const onSubmit = async (data: NewsFormValues) => {
-        const currentlyActiveHighlights = newsItems.filter(n => n.isHighlight && n.id !== editingNews?.id);
-        
-        if (data.isHighlight) {
-            if(currentlyActiveHighlights.length >= 3) {
-                 toast({ title: "Limite de destaques atingido (3).", variant: "destructive" });
-                 return;
-            }
-            if(data.highlightType === 'large') {
-                const hasLargeHighlight = currentlyActiveHighlights.some(h => h.highlightType === 'large');
-                if(hasLargeHighlight) {
-                    toast({ title: "Já existe um destaque grande ativo.", variant: "destructive" });
-                    return;
-                }
-            }
-        }
-
         try {
             if (editingNews) {
                 await updateNewsItem({ ...editingNews, ...data, videoUrl: data.videoUrl || undefined });
                 toast({ title: "Notícia atualizada com sucesso." });
             } else {
-                const { id, ...dataWithoutId } = data;
-                await addNewsItem({ ...dataWithoutId, videoUrl: data.videoUrl || undefined });
+                await addNewsItem({ ...data, isHighlight: false, highlightType: 'small', videoUrl: data.videoUrl || undefined });
                 toast({ title: "Notícia adicionada com sucesso." });
             }
             setIsDialogOpen(false);
@@ -147,7 +96,7 @@ export function ManageNews() {
             });
         }
     };
-
+    
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -167,8 +116,8 @@ export function ManageNews() {
                             <TableRow>
                                 <TableHead>Título</TableHead>
                                 <TableHead>Categoria</TableHead>
-                                <TableHead>Data</TableHead>
                                 <TableHead>Destaque</TableHead>
+                                <TableHead>Tipo de Destaque</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -177,13 +126,28 @@ export function ManageNews() {
                                 <TableRow key={item.id}>
                                     <TableCell className="font-medium">{item.title}</TableCell>
                                     <TableCell>{item.category}</TableCell>
-                                    <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
                                     <TableCell>
                                         <Switch
                                             checked={item.isHighlight}
                                             onCheckedChange={() => toggleNewsHighlight(item.id)}
                                             aria-label="Marcar como destaque"
                                         />
+                                    </TableCell>
+                                     <TableCell>
+                                        {item.isHighlight && (
+                                             <Select
+                                                defaultValue={item.highlightType || 'small'}
+                                                onValueChange={(value) => updateHighlightType(item.id, value as 'large' | 'small')}
+                                            >
+                                                <SelectTrigger className="w-[120px]">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="small">Pequeno</SelectItem>
+                                                    <SelectItem value="large">Grande</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
@@ -254,48 +218,7 @@ export function ManageNews() {
                                 <Input id="link" {...register('link')} placeholder="https://..." disabled={isFormSubmitting}/>
                                 {errors.link && <p className="text-sm text-destructive mt-1">{errors.link.message}</p>}
                             </div>
-                            <div>
-                                <Label htmlFor="dataAiHint">Dica para IA da Imagem (opcional)</Label>
-                                <Input id="dataAiHint" {...register('dataAiHint')} placeholder="ex: business meeting" disabled={isFormSubmitting}/>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <Controller
-                                    name="isHighlight"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Switch
-                                            id="isHighlight"
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            disabled={isFormSubmitting}
-                                        />
-                                    )}
-                                />
-                                <Label htmlFor="isHighlight">Marcar como Destaque</Label>
-                            </div>
-
-                            {isHighlightWatch && (
-                                <div>
-                                    <Label htmlFor="highlightType">Tipo de Destaque</Label>
-                                    <Controller
-                                        name="highlightType"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={isFormSubmitting}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Selecione o tipo de destaque..." />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="small">Pequeno</SelectItem>
-                                                    <SelectItem value="large">Grande</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    />
-                                    {errors.highlightType && <p className="text-sm text-destructive mt-1">{errors.highlightType.message}</p>}
-                                </div>
-                            )}
-
+                            
                             <DialogFooter className="pt-4">
                                 <DialogClose asChild>
                                     <Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button>
