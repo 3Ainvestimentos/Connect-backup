@@ -150,7 +150,7 @@ export default function DashboardV2Page() {
                 playsInline
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             >
-                Your browser does not support the video tag.
+                Seu navegador não suporta a tag de vídeo.
             </video>
         ) : (
              <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -171,14 +171,14 @@ export default function DashboardV2Page() {
             description="Veja os últimos anúncios e destaques da empresa."
           />
           {hasHighlights && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3" style={{ minHeight: '450px' }}>
                 {smallHighlights.length > 0 && (
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-3 md:col-span-1">
                         {smallHighlights.map(item => <HighlightCard key={item.id} item={item} />)}
                     </div>
                 )}
                 {largeHighlight && (
-                     <div className={cn("row-span-2", smallHighlights.length === 0 && "md:col-span-2")}>
+                     <div className={cn("md:row-span-2", smallHighlights.length > 0 ? "md:col-span-2" : "md:col-span-3")}>
                         <HighlightCard item={largeHighlight} />
                     </div>
                 )}
