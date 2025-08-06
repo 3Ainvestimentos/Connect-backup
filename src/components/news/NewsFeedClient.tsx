@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import type { NewsItemType } from '@/contexts/NewsContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
-import { Search, CalendarDays } from 'lucide-react';
+import { Search, CalendarDays, Link as LinkIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -136,6 +136,16 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
               <ScrollArea className="max-h-[40vh] pr-4">
                 <div className="py-4 text-sm text-foreground">
                   {selectedNews.content && <p className="whitespace-pre-wrap">{selectedNews.content}</p>}
+                   {selectedNews.link && (
+                    <div className="mt-4">
+                       <Button variant="outline" asChild>
+                         <a href={selectedNews.link} target="_blank" rel="noopener noreferrer">
+                           <LinkIcon className="mr-2 h-4 w-4" />
+                           Acessar Link
+                         </a>
+                       </Button>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
               <DialogFooter>

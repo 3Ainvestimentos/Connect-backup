@@ -342,6 +342,16 @@ export default function DashboardV2Page() {
               <ScrollArea className="max-h-[40vh] pr-4">
                 <div className="py-4 text-sm text-foreground">
                   {selectedNews.content && <p className="whitespace-pre-wrap">{selectedNews.content}</p>}
+                  {selectedNews.link && (
+                    <div className="mt-4">
+                       <Button variant="outline" asChild>
+                         <a href={selectedNews.link} target="_blank" rel="noopener noreferrer">
+                           <LinkIcon className="mr-2 h-4 w-4" />
+                           Acessar Link
+                         </a>
+                       </Button>
+                    </div>
+                 )}
                 </div>
               </ScrollArea>
               <DialogFooter>
