@@ -171,21 +171,21 @@ export default function DashboardV2Page() {
             description="Veja os últimos anúncios e destaques da empresa."
           />
           {hasHighlights && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3" style={{ minHeight: '450px' }}>
-                {largeHighlight && (
-                  <div className="md:col-span-2 md:row-span-2 h-full">
-                    <HighlightCard item={largeHighlight} className="h-full"/>
-                  </div>
-                )}
-                {smallHighlights.length > 0 && (
-                  <div className="md:col-span-1 flex flex-col gap-3">
-                    {smallHighlights.map(item => (
-                        <div key={item.id} className="h-full flex-1">
-                            <HighlightCard item={item} className="h-full" />
-                        </div>
-                    ))}
-                  </div>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
+              {largeHighlight && (
+                <div className="md:row-span-2 h-full">
+                  <HighlightCard item={largeHighlight} className="h-full" />
+                </div>
+              )}
+              {smallHighlights.length > 0 && (
+                <div className="flex flex-col gap-3 h-full">
+                  {smallHighlights.map(item => (
+                    <div key={item.id} className="flex-1 h-full">
+                      <HighlightCard item={item} className="h-full" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </section>
