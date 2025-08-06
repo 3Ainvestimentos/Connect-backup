@@ -172,16 +172,21 @@ export default function DashboardV2Page() {
           />
           {hasHighlights && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3" style={{ minHeight: '450px' }}>
-                {smallHighlights.length > 0 && (
-                    <div className="flex flex-col gap-3 md:col-span-1">
-                        {smallHighlights.map(item => <HighlightCard key={item.id} item={item} />)}
-                    </div>
-                )}
-                {largeHighlight && (
-                     <div className={cn("md:row-span-2", smallHighlights.length > 0 ? "md:col-span-2" : "md:col-span-3")}>
-                        <HighlightCard item={largeHighlight} />
-                    </div>
-                )}
+              {smallHighlights.length > 0 && (
+                <div className="md:col-span-1 flex flex-col gap-3">
+                  {smallHighlights.map(item => (
+                    <HighlightCard key={item.id} item={item} />
+                  ))}
+                </div>
+              )}
+              {largeHighlight && (
+                <div className={cn(
+                  "h-full",
+                  smallHighlights.length > 0 ? "md:col-span-2" : "md:col-span-3"
+                )}>
+                  <HighlightCard item={largeHighlight} />
+                </div>
+              )}
             </div>
           )}
         </section>
