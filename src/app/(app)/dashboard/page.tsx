@@ -153,7 +153,7 @@ export default function DashboardV2Page() {
                 Your browser does not support the video tag.
             </video>
         ) : (
-             <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" />
+             <Image src={item.imageUrl} alt={item.title} layout="fill" objectFit="cover" className="object-cover transition-transform duration-300 group-hover:scale-105" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
             <h3 className="text-xl font-headline font-bold text-white">{item.title}</h3>
