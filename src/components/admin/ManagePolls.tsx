@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState } from 'react';
 import { usePolls, type PollType, pollSchema } from '@/contexts/PollsContext';
@@ -102,7 +101,7 @@ export function ManagePolls() {
         }
     };
 
-    const getRecipientDescription = (ids: string[]) => {
+    const getRecipientDescription = (ids: string[] | undefined) => {
         if (!ids || ids.length === 0) return 'Nenhum destinatário';
         if (ids.includes('all')) return 'Todos os Colaboradores';
         return `${ids.length} colaborador(es)`;
