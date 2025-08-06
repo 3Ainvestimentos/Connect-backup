@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -6,8 +5,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRankings } from '@/contexts/RankingsContext';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, Award } from 'lucide-react';
-import AdminGuard from '@/components/auth/AdminGuard';
+import { Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
@@ -16,9 +14,9 @@ function RankingsPageContent() {
 
     if (loading) {
         return (
-            <div className="space-y-4">
+            <div className="space-y-4 flex-grow flex flex-col">
                 <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-[70vh] w-full" />
+                <Skeleton className="flex-grow w-full" />
             </div>
         )
     }
@@ -34,13 +32,19 @@ function RankingsPageContent() {
     }
 
     return (
-        <Tabs defaultValue={rankings[0]?.id} className="w-full h-full flex flex-col">
-            <TabsList>
-                {rankings.map(ranking => (
-                    <TabsTrigger key={ranking.id} value={ranking.id}>{ranking.name}</TabsTrigger>
-                ))}
-            </TabsList>
-            <div className="flex-grow mt-4">
+        <Tabs defaultValue={rankings[0]?.id} className="w-full flex-grow flex flex-col">
+            <PageHeader
+                title="Rankings e Campanhas"
+                description="Acompanhe os resultados e materiais das campanhas vigentes."
+                actions={
+                    <TabsList>
+                        {rankings.map(ranking => (
+                            <TabsTrigger key={ranking.id} value={ranking.id}>{ranking.name}</TabsTrigger>
+                        ))}
+                    </TabsList>
+                }
+            />
+            <div className="flex-grow">
                 {rankings.map(ranking => (
                     <TabsContent key={ranking.id} value={ranking.id} className="w-full h-full m-0">
                          <iframe
@@ -84,15 +88,8 @@ export default function RankingsPage() {
     }
     
     return (
-        <div className="space-y-6 p-6 md:p-8 flex flex-col h-full">
-            <PageHeader
-                title="Rankings e Campanhas"
-                description="Acompanhe os resultados e materiais das campanhas vigentes."
-            />
-            <div className="flex-grow">
-                 <RankingsPageContent />
-            </div>
+        <div className="p-6 md:p-8 flex flex-col h-full">
+            <RankingsPageContent />
         </div>
     );
 }
-
