@@ -172,20 +172,20 @@ export default function DashboardV2Page() {
           />
           {hasHighlights && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
-              {largeHighlight && (
-                <div className="md:row-span-2 h-full">
-                  <HighlightCard item={largeHighlight} className="h-full" />
-                </div>
-              )}
-              {smallHighlights.length > 0 && (
-                <div className="flex flex-col gap-3 h-full">
-                  {smallHighlights.map(item => (
-                    <div key={item.id} className="flex-1 h-full">
-                      <HighlightCard item={item} className="h-full" />
+                {largeHighlight && (
+                    <div className="md:row-span-2 h-full">
+                       <HighlightCard item={largeHighlight} className="h-full" />
                     </div>
-                  ))}
-                </div>
-              )}
+                )}
+                {smallHighlights.length > 0 && (
+                  <div className="flex flex-col gap-3 h-full">
+                      {smallHighlights.map(item => (
+                          <div key={item.id} className="flex-1 h-full">
+                              <HighlightCard item={item} className="h-full" />
+                          </div>
+                      ))}
+                  </div>
+                )}
             </div>
           )}
         </section>
@@ -290,7 +290,7 @@ export default function DashboardV2Page() {
                     <Image src={selectedMessage.mediaUrl} alt="Mídia da mensagem" width={500} height={300} className="rounded-md object-cover w-full" />
                   </div>
                  )}
-                 {selectedMessage.content.split('\n').map((line, index) => (<p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>))}
+                 {selectedMessage.content.split('\\n').map((line, index) => (<p key={index} className="mb-2 last:mb-0">{line || '\u00A0'}</p>))}
                  {selectedMessage.link && (
                     <div className="mt-4">
                        <Button variant="outline" asChild>
@@ -341,7 +341,7 @@ export default function DashboardV2Page() {
               </DialogHeader>
               <ScrollArea className="max-h-[40vh] pr-4">
                 <div className="py-4 text-sm text-foreground space-y-4">
-                  {selectedNews.content && selectedNews.content.split('\n').map((paragraph, index) => (
+                  {selectedNews.content && selectedNews.content.split('\\n').map((paragraph, index) => (
                     <p key={index}>{paragraph}</p>
                   ))}
                 </div>
