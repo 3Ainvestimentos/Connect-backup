@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 
 export interface DocumentType {
   id: string;
@@ -32,7 +32,7 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: documents = [], isFetching } = useQuery<DocumentType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [], // The listener will populate the data
+    queryFn: () => getCollection<DocumentType>(COLLECTION_NAME),
     staleTime: Infinity,
   });
 
@@ -53,21 +53,21 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({
     mutationFn: (docData: Omit<DocumentType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, docData),
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Listener handles the update, no need to invalidate
     },
   });
 
   const updateDocumentMutation = useMutation<void, Error, DocumentType>({
     mutationFn: (updatedDoc: DocumentType) => updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc),
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Listener handles the update, no need to invalidate
     },
   });
 
   const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener handles the update, no need to invalidate
     },
   });
 
