@@ -12,19 +12,20 @@ export interface NewsItemType {
   snippet: string;
   content: string;
   category: string;
-  date: string;
+  date: string; // ISO string
   imageUrl: string;
   videoUrl?: string;
   isHighlight: boolean;
   highlightType?: 'large' | 'small';
   link?: string;
+  order: number;
 }
 
 interface NewsContextType {
   newsItems: NewsItemType[];
   loading: boolean;
   addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<WithId<Omit<NewsItemType, 'id'>>>;
-  updateNewsItem: (item: NewsItemType) => Promise<void>;
+  updateNewsItem: (item: Partial<NewsItemType> & { id: string }) => Promise<void>;
   deleteNewsItemMutation: UseMutationResult<void, Error, string, unknown>;
   toggleNewsHighlight: (id: string) => void;
   updateHighlightType: (id: string, type: 'large' | 'small') => void;
@@ -38,15 +39,20 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: newsItems = [], isFetching } = useQuery<NewsItemType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: async () => [], // The listener will populate the data
     staleTime: Infinity,
+    select: (data) => data.sort((a, b) => (a.order || 0) - (b.order || 0)),
   });
 
   React.useEffect(() => {
     const unsubscribe = listenToCollection<NewsItemType>(
       COLLECTION_NAME,
       (newData) => {
-        queryClient.setQueryData([COLLECTION_NAME], newData);
+        const processedData = newData.map(item => ({
+          ...item,
+          order: item.order ?? 0, // Ensure order exists
+        })).sort((a, b) => a.order - b.order);
+        queryClient.setQueryData([COLLECTION_NAME], processedData);
       },
       (error) => {
         console.error("Failed to listen to news collection:", error);
@@ -56,7 +62,11 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   }, [queryClient]);
 
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
-    mutationFn: (itemData) => addDocumentToCollection(COLLECTION_NAME, itemData),
+    mutationFn: (itemData) => {
+        const currentMaxOrder = newsItems.reduce((max, item) => Math.max(max, item.order || 0), 0);
+        const dataWithOrder = { ...itemData, order: currentMaxOrder + 1 };
+        return addDocumentToCollection(COLLECTION_NAME, dataWithOrder);
+    },
     onSuccess: () => {},
   });
 

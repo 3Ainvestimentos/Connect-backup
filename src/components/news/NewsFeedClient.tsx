@@ -20,7 +20,8 @@ interface NewsFeedClientProps {
 
 export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps) {
   const [selectedNews, setSelectedNews] = useState<NewsItemType | null>(null);
-  const sortedNews = [...initialNewsItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // The sorting is now handled by the context based on the `order` field.
+  const sortedNews = initialNewsItems;
   
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
@@ -79,7 +80,7 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
                       alt={item.title}
                       layout="fill"
                       objectFit="cover"
-                      data-ai-hint={item.dataAiHint || "news article"}
+                      className="object-cover"
                     />
                 )}
               </div>
@@ -121,7 +122,6 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
                             alt={selectedNews.title}
                             layout="fill"
                             objectFit="cover"
-                            data-ai-hint={selectedNews.dataAiHint || "news article"}
                         />
                     )}
                 </div>

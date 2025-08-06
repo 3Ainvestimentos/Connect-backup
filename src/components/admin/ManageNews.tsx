@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -28,11 +29,9 @@ const newsSchema = z.object({
     imageUrl: z.string().url("URL da imagem inválida").or(z.literal("")),
     videoUrl: z.string().url("URL do vídeo inválida").optional().or(z.literal('')),
     link: z.string().optional(),
-    isHighlight: z.boolean().optional(),
-    highlightType: z.enum(['large', 'small']).optional(),
 });
 
-type NewsFormValues = Omit<z.infer<typeof newsSchema>, 'isHighlight' | 'highlightType'>;
+type NewsFormValues = z.infer<typeof newsSchema>;
 
 export function ManageNews() {
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType } = useNews();
@@ -40,8 +39,17 @@ export function ManageNews() {
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
 
     const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
-        resolver: zodResolver(newsSchema.omit({ isHighlight: true, highlightType: true })),
+        resolver: zodResolver(newsSchema),
     });
+    
+    const handleOrderChange = async (newsId: string, newOrder: number) => {
+        try {
+            await updateNewsItem({ id: newsId, order: newOrder });
+            toast({ title: "Ordem atualizada", description: "A nova ordem da notícia foi salva." });
+        } catch (error) {
+            toast({ title: "Erro", description: "Não foi possível atualizar a ordem.", variant: "destructive" });
+        }
+    };
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
@@ -83,7 +91,7 @@ export function ManageNews() {
                 await updateNewsItem({ ...editingNews, ...data, videoUrl: data.videoUrl || undefined });
                 toast({ title: "Notícia atualizada com sucesso." });
             } else {
-                await addNewsItem({ ...data, isHighlight: false, highlightType: 'small', videoUrl: data.videoUrl || undefined });
+                await addNewsItem({ ...data, isHighlight: false, highlightType: 'small', videoUrl: data.videoUrl || undefined, order: 0 });
                 toast({ title: "Notícia adicionada com sucesso." });
             }
             setIsDialogOpen(false);
@@ -114,8 +122,10 @@ export function ManageNews() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[100px]">Ordem</TableHead>
                                 <TableHead>Título</TableHead>
                                 <TableHead>Categoria</TableHead>
+                                <TableHead>Data</TableHead>
                                 <TableHead>Destaque</TableHead>
                                 <TableHead>Tipo de Destaque</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
@@ -124,8 +134,17 @@ export function ManageNews() {
                         <TableBody>
                             {newsItems.map(item => (
                                 <TableRow key={item.id}>
+                                    <TableCell>
+                                        <Input
+                                          type="number"
+                                          defaultValue={item.order}
+                                          onBlur={(e) => handleOrderChange(item.id, parseInt(e.target.value, 10))}
+                                          className="w-20"
+                                        />
+                                    </TableCell>
                                     <TableCell className="font-medium">{item.title}</TableCell>
                                     <TableCell>{item.category}</TableCell>
+                                    <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
                                     <TableCell>
                                         <Switch
                                             checked={item.isHighlight}
