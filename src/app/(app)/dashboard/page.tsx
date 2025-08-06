@@ -172,20 +172,16 @@ export default function DashboardV2Page() {
           />
           {hasHighlights && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
-                {largeHighlight && (
-                    <div className="h-full">
-                       <HighlightCard item={largeHighlight} className="h-full" />
-                    </div>
-                )}
-                {smallHighlights.length > 0 && (
-                  <div className="flex flex-col gap-3 h-full">
-                      {smallHighlights.map(item => (
-                          <div key={item.id} className="flex-1 h-full">
-                              <HighlightCard item={item} className="h-full" />
-                          </div>
-                      ))}
-                  </div>
-                )}
+                <div className="h-full md:row-span-2">
+                    {largeHighlight && <HighlightCard item={largeHighlight} className="h-full" />}
+                </div>
+                <div className="flex flex-col gap-3 h-full">
+                    {smallHighlights.map(item => (
+                        <div key={item.id} className="flex-1 h-full">
+                            <HighlightCard item={item} className="h-full" />
+                        </div>
+                    ))}
+                </div>
             </div>
           )}
         </section>
@@ -319,7 +315,7 @@ export default function DashboardV2Page() {
           {selectedNews && (
             <>
               <DialogHeader>
-                <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black">
+                <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4 bg-black">
                     {selectedNews.videoUrl ? (
                          <video src={selectedNews.videoUrl} controls autoPlay className="w-full h-full object-contain" />
                     ) : (

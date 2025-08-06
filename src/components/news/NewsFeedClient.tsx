@@ -113,7 +113,7 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
           {selectedNews && (
             <>
               <DialogHeader>
-                 <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-black">
+                 <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4 bg-black">
                     {selectedNews.videoUrl ? (
                          <video src={selectedNews.videoUrl} controls autoPlay className="w-full h-full object-contain" />
                     ) : (
