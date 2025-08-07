@@ -52,7 +52,7 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
   const addRankingMutation = useMutation<WithId<Omit<RankingType, 'id'>>, Error, Omit<RankingType, 'id'>>({
     mutationFn: (rankingData) => addDocumentToCollection(COLLECTION_NAME, rankingData),
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        // Listener handles update, no invalidation needed
     },
   });
 
@@ -62,14 +62,14 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener handles update, no invalidation needed
     },
   });
 
   const deleteRankingMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      // Listener handles update, no invalidation needed
     },
   });
 
