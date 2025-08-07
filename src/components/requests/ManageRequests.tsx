@@ -32,7 +32,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
 import Papa from 'papaparse';
@@ -50,21 +49,8 @@ export function ManageRequests() {
     const [selectedRequest, setSelectedRequest] = useState<WorkflowRequest | null>(null);
     const [assigneeFilter, setAssigneeFilter] = useState('all'); // 'all', 'unassigned', or collaborator id3a
     
-    // Create a flat list of all possible statuses from all definitions
-    const allStatuses = useMemo(() => {
-        const statusMap = new Map<string, string>();
-        workflowDefinitions.forEach(def => {
-            def.statuses.forEach(status => {
-                if (!statusMap.has(status.id)) {
-                    statusMap.set(status.id, status.label);
-                }
-            });
-        });
-        return Array.from(statusMap.entries()).map(([id, label]) => ({ id, label }));
-    }, [workflowDefinitions]);
-    
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
-
+    
     useEffect(() => {
         const currentUserCollab = collaborators.find(c => c.email === user?.email);
         if (permissions.canManageRequests && currentUserCollab?.id3a) {
@@ -75,11 +61,36 @@ export function ManageRequests() {
         }
     }, [user, permissions.canManageRequests, collaborators, markRequestsAsViewedBy, requests]);
 
+    const ownedRequests = useMemo(() => {
+      if (!user) return [];
+      return requests.filter(req => req.ownerEmail === user.email && !req.isArchived);
+    }, [requests, user]);
+
+    const availableStatuses = useMemo(() => {
+      const statusMap = new Map<string, string>();
+      ownedRequests.forEach(req => {
+        const definition = workflowDefinitions.find(d => d.name === req.type);
+        const statusDef = definition?.statuses.find(s => s.id === req.status);
+        if (statusDef && !statusMap.has(statusDef.id)) {
+            statusMap.set(statusDef.id, statusDef.label);
+        }
+      });
+      return Array.from(statusMap.entries()).map(([id, label]) => ({ id, label }));
+    }, [ownedRequests, workflowDefinitions]);
+
+    const availableAssignees = useMemo(() => {
+      const assigneeIds = new Set<string>();
+      ownedRequests.forEach(req => {
+        if (req.assignee) {
+          assigneeIds.add(req.assignee.id);
+        }
+      });
+      return collaborators.filter(c => assigneeIds.has(c.id3a));
+    }, [ownedRequests, collaborators]);
+
 
     const filteredRequests = useMemo(() => {
-        if (!user) return [];
-        // Only show requests for workflows the user owns that are not archived
-        let filtered = requests.filter(req => req.ownerEmail === user.email && !req.isArchived);
+        let filtered = [...ownedRequests];
 
         if (statusFilter.length > 0) {
             filtered = filtered.filter(req => statusFilter.includes(req.status));
@@ -90,7 +101,7 @@ export function ManageRequests() {
             filtered = filtered.filter(req => req.assignee?.id === assigneeFilter);
         }
         return filtered;
-    }, [requests, statusFilter, assigneeFilter, user]);
+    }, [ownedRequests, statusFilter, assigneeFilter]);
 
     const handleStatusFilterChange = (statusId: string) => {
         setStatusFilter(prev => 
@@ -185,8 +196,8 @@ export function ManageRequests() {
                                     <DropdownMenuRadioGroup value={assigneeFilter} onValueChange={setAssigneeFilter}>
                                         <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="unassigned">Não Atribuídos</DropdownMenuRadioItem>
-                                        <DropdownMenuSeparator />
-                                        {collaborators.map(c => (
+                                        {availableAssignees.length > 0 && <DropdownMenuSeparator />}
+                                        {availableAssignees.map(c => (
                                             <DropdownMenuRadioItem key={c.id} value={c.id3a}>
                                                 {c.name}
                                             </DropdownMenuRadioItem>
@@ -204,7 +215,7 @@ export function ManageRequests() {
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Status</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    {allStatuses.map(status => (
+                                    {availableStatuses.map(status => (
                                         <DropdownMenuCheckboxItem
                                             key={status.id}
                                             checked={statusFilter.includes(status.id)}
@@ -215,7 +226,7 @@ export function ManageRequests() {
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                             <Button variant="secondary" onClick={handleExportCSV} disabled={filteredRequests.length === 0}>
+                             <Button onClick={handleExportCSV} disabled={filteredRequests.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                                 <FileDown className="mr-2 h-4 w-4" />
                                 Exportar CSV
                             </Button>
@@ -266,7 +277,7 @@ export function ManageRequests() {
                                             <TableCell className="text-right">
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" disabled={archiveRequestMutation.isPending && archiveRequestMutation.variables === req.id}>
+                                                        <Button variant="ghost" size="icon" disabled={archiveRequestMutation.isPending && archiveRequestMutation.variables === req.id} className="hover:bg-muted">
                                                             {archiveRequestMutation.isPending && archiveRequestMutation.variables === req.id ? (
                                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                                             ) : (
@@ -287,7 +298,7 @@ export function ManageRequests() {
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
-                                                <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)}>
+                                                <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)} className="hover:bg-muted">
                                                     <Eye className="h-5 w-5" />
                                                 </Button>
                                             </TableCell>
