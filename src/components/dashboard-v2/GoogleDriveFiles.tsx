@@ -107,59 +107,66 @@ export default function GoogleDriveFiles() {
     setIsLoading(true);
     setError(null);
     
-    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
-        setIsLoading(false);
-        return;
-    }
+    const timeoutId = setTimeout(() => {
+        if (isLoading) {
+            setError("A API do Google demorou muito para responder. Por favor, saia e faça login novamente para reautenticar.");
+            setIsLoading(false);
+        }
+    }, 10000); // 10 second timeout
 
     try {
-      const initDrive = async () => {
-          try {
-              const driveLinks = currentUserCollab?.googleDriveLinks;
+        if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+            clearTimeout(timeoutId);
+            setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página ou fazer login novamente.");
+            setIsLoading(false);
+            return;
+        }
 
-              if (driveLinks && driveLinks.length > 1) {
-                  const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
-                  const folderPromises = folderIds.map(id => fetchFolderDetails(id));
-                  const fetchedFolders = await Promise.all(folderPromises);
-                  setInitialFolders(fetchedFolders);
-                  setItems([]);
-                  setCurrentFolder(null);
-                  setFolderHistory([]);
-              } else {
-                  const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
-                  const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
-                  const rootFolder = { id: folderId, name: 'Início' };
+        const initDrive = async () => {
+            try {
+                const driveLinks = currentUserCollab?.googleDriveLinks;
+                if (driveLinks && driveLinks.length > 1) {
+                    const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
+                    const folderPromises = folderIds.map(id => fetchFolderDetails(id));
+                    const fetchedFolders = await Promise.all(folderPromises);
+                    setInitialFolders(fetchedFolders);
+                    setItems([]);
+                    setCurrentFolder(null);
+                    setFolderHistory([]);
+                } else {
+                    const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
+                    const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
+                    const rootFolder = { id: folderId, name: 'Início' };
+                    setInitialFolders([]);
+                    setCurrentFolder(rootFolder);
+                    setFolderHistory([]);
+                    if (folderId) await listFiles(folderId);
+                }
+            } catch (e) {
+                setError("Falha ao processar as pastas do Drive. Por favor, faça login novamente.");
+                console.error(e);
+            } finally {
+                clearTimeout(timeoutId);
+                setIsLoading(false);
+            }
+        };
 
-                  setInitialFolders([]);
-                  setCurrentFolder(rootFolder);
-                  setFolderHistory([]);
-                  if (folderId) await listFiles(folderId);
-              }
-          } catch (e) {
-              setError("Falha ao processar as pastas do Drive. Por favor, faça login novamente.");
-              console.error(e);
-          } finally {
-              setIsLoading(false);
-          }
-      };
-      
-      window.gapi.load('client', () => {
-          window.gapi.client.init({
-              apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-              discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-          }).then(() => {
-              initDrive();
-          }).catch((e: any) => {
-              setError("Falha ao inicializar a API. Por favor, saia e faça login novamente para reautenticar.");
-              setIsLoading(false);
-          });
-      });
+        window.gapi.load('client', () => {
+            window.gapi.client.init({
+                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+            }).then(initDrive).catch((e: any) => {
+                clearTimeout(timeoutId);
+                setError("Falha ao inicializar a API. Por favor, saia e faça login novamente para reautenticar.");
+                setIsLoading(false);
+            });
+        });
     } catch(e) {
+       clearTimeout(timeoutId);
        setError("Falha ao carregar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
        setIsLoading(false);
     }
-  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
+  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails, isLoading]);
 
   useEffect(() => {
     if (user && accessToken) {
@@ -168,7 +175,8 @@ export default function GoogleDriveFiles() {
         setIsLoading(false);
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, initializeDriveState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, accessToken]);
 
   const handleFolderClick = (folder: DriveFile | FolderInfo) => {
     const newFolder = { id: folder.id, name: folder.name };
@@ -223,25 +231,6 @@ export default function GoogleDriveFiles() {
   }
   
   const renderContent = () => {
-    if (isLoading) {
-        return (
-            <div className="space-y-4 pr-3">
-               {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-           </div>
-        )
-    }
-
-    if (error) {
-      return (
-         <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
-            <AlertCircle className="h-8 w-8 mb-2" />
-            <p className="font-semibold">Falha ao carregar</p>
-            <p className="text-xs">{error}</p>
-            <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
-        </div>
-      );
-    }
-      
     const list = currentFolder ? items : initialFolders;
 
     if (list.length === 0) {

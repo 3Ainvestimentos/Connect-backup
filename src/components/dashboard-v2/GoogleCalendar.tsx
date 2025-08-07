@@ -85,32 +85,43 @@ export default function GoogleCalendar() {
   const initializeGapiClient = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    
-    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
+
+    const timeoutId = setTimeout(() => {
+        if (isLoading) {
+            setError("A API do Google demorou muito para responder. Por favor, saia e faça login novamente para reautenticar.");
+            setIsLoading(false);
+        }
+    }, 10000); // 10 second timeout
+
+    try {
+      if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+        clearTimeout(timeoutId);
+        setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página ou fazer login novamente.");
         setIsLoading(false);
         return;
-    }
-    
-    try {
-        const initClient = () => {
-            window.gapi.client.init({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-            }).then(() => {
-                listMonthEvents(currentMonth);
-            }).catch((e: any) => {
-                setError("Falha ao inicializar a API. Por favor, saia e faça login novamente.");
-                setIsLoading(false);
-            });
-        };
-        
-        window.gapi.load('client', initClient);
+      }
+      
+      const initClient = () => {
+        window.gapi.client.init({
+          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+        }).then(() => {
+            clearTimeout(timeoutId);
+            listMonthEvents(currentMonth);
+        }).catch((e: any) => {
+            clearTimeout(timeoutId);
+            setError("Falha ao inicializar a API. Por favor, saia e faça login novamente para reautenticar.");
+            setIsLoading(false);
+        });
+      };
+      
+      window.gapi.load('client', initClient);
     } catch (e) {
-        setError("Falha ao carregar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
-        setIsLoading(false);
+      clearTimeout(timeoutId);
+      setError("Falha ao carregar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
+      setIsLoading(false);
     }
-  }, [listMonthEvents, currentMonth]);
+  }, [listMonthEvents, currentMonth, isLoading]);
 
   useEffect(() => {
     if (user && accessToken) {
@@ -119,7 +130,8 @@ export default function GoogleCalendar() {
         setIsLoading(false);
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, initializeGapiClient]); 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, accessToken]); 
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {
@@ -141,26 +153,6 @@ export default function GoogleCalendar() {
 
 
   const renderEvents = () => {
-    if (isLoading) {
-        return (
-            <div className="space-y-2 pr-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-            </div>
-        )
-    }
-    
-    if (error) {
-        return (
-             <div className="text-center text-destructive text-sm p-4 flex flex-col items-center gap-2">
-              <AlertCircle className="mx-auto h-6 w-6"/>
-              <p className="font-semibold">Falha ao carregar</p>
-              <p className="text-xs">{error}</p>
-              <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
-            </div>
-        )
-    }
-
     if (eventsForSelectedDay.length > 0) {
         return (
             <ul className="space-y-2 pr-4">
