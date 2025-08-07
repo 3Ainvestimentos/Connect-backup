@@ -64,34 +64,39 @@ export default function GoogleCalendar() {
       'orderBy': 'startTime'
     });
 
-    if (!response || !response.result || !response.result.items) {
+    if (!response || !response.result) {
         throw new Error("A resposta da API do Google Calendar foi inválida ou nula.");
     }
 
-    setEvents(response.result.items);
+    setEvents(response.result.items || []);
     setError(null);
 
   }, [user, accessToken]);
 
-  const initializeGapiClient = useCallback(() => {
-    const init = async () => {
-        try {
-            await window.gapi.client.init({
-                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+  const initializeGapiClient = useCallback(async () => {
+    const timeoutId = setTimeout(() => {
+        setError("O carregamento da API demorou muito. Por favor, saia e faça login novamente.");
+    }, 10000); // 10-second timeout
+
+    try {
+        if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
+            await new Promise<void>((resolve, reject) => {
+                window.gapi.load('client', () => {
+                    window.gapi.client.init({
+                        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+                    }).then(() => resolve(), (err: any) => reject(err));
+                });
             });
+            clearTimeout(timeoutId);
             await listMonthEvents(currentMonth);
-        } catch (e: any) {
-            console.error("Erro ao inicializar ou buscar eventos:", e);
-            setError("Falha ao carregar os eventos. Por favor, saia e faça login novamente para reautenticar.");
+        } else {
+            throw new Error("Não foi possível carregar a API do Google. Verifique sua conexão ou tente fazer login novamente.");
         }
-    };
-    
-    if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
-        window.gapi.load('client', init);
-    } else {
-        // This case handles when the GAPI script itself fails to load.
-        setError("Não foi possível carregar a API do Google. Verifique sua conexão ou tente fazer login novamente.");
+    } catch (e: any) {
+        clearTimeout(timeoutId);
+        console.error("Erro ao inicializar ou buscar eventos:", e);
+        setError("Falha ao carregar os eventos. Por favor, saia e faça login novamente para reautenticar.");
     }
   }, [listMonthEvents, currentMonth]);
 
@@ -102,7 +107,7 @@ export default function GoogleCalendar() {
     } else if (!user) {
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, currentMonth, initializeGapiClient]); 
+  }, [user, accessToken, initializeGapiClient]); 
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {
@@ -112,6 +117,10 @@ export default function GoogleCalendar() {
 
   const handleMonthChange = (month: Date) => {
       setCurrentMonth(month);
+      listMonthEvents(month).catch(err => {
+          console.error("Failed to fetch events on month change:", err);
+          setError("Falha ao buscar eventos do novo mês. Por favor, tente novamente.");
+      });
   };
   
   const eventDates = useMemo(() => events.map(e => new Date(e.start.dateTime || e.start.date)), [events]);
@@ -150,7 +159,7 @@ export default function GoogleCalendar() {
         )
     }
     
-    return <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para este dia.</p>;
+    return <p className="text-center text-muted-foreground text-sm py-4">Erro no carregamento da API, faça login novamente</p>;
   }
 
   return (

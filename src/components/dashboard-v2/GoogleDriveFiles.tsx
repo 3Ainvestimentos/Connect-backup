@@ -68,11 +68,11 @@ export default function GoogleDriveFiles() {
         orderBy: 'folder,modifiedTime desc'
     });
     
-    if (!response || !response.result || !response.result.files) {
+    if (!response || !response.result) {
         throw new Error("A resposta da API do Google Drive foi inválida ou nula.");
     }
     
-    setItems(response.result.files);
+    setItems(response.result.files || []);
     setError(null);
 
   }, [user, accessToken]);
@@ -116,27 +116,38 @@ export default function GoogleDriveFiles() {
         setError(null);
     } catch (e) {
         console.error("Erro ao processar pastas do Drive:", e);
-        setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
+        throw e;
     }
   }, [currentUserCollab, fetchFolderDetails, listFiles]);
   
   const initializeGapiClient = useCallback(() => {
+    const timeoutId = setTimeout(() => {
+        setError("O carregamento da API demorou muito. Por favor, saia e faça login novamente.");
+    }, 10000);
+
     const init = async () => {
         try {
-            await window.gapi.client.init({
-                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+            await new Promise<void>((resolve, reject) => {
+                window.gapi.load('client', () => {
+                    window.gapi.client.init({
+                        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+                    }).then(() => resolve(), (err: any) => reject(err));
+                });
             });
+            clearTimeout(timeoutId);
             await initializeDriveState();
         } catch (e: any) {
+             clearTimeout(timeoutId);
              console.error("Erro ao inicializar ou buscar arquivos do Drive:", e);
              setError("Falha ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
         }
     };
 
      if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
-        window.gapi.load('client', init);
+        init();
     } else {
+        clearTimeout(timeoutId);
         setError("Não foi possível carregar a API do Google. Verifique sua conexão ou tente fazer login novamente.");
     }
   }, [initializeDriveState]);
@@ -212,7 +223,7 @@ export default function GoogleDriveFiles() {
     const list = currentFolder ? items : initialFolders;
 
     if (list.length === 0) {
-      return <p className="text-center text-muted-foreground text-sm py-4">Nenhum item encontrado.</p>
+      return <p className="text-center text-muted-foreground text-sm py-4">Erro no carregamento da API, faça login novamente</p>
     }
 
     return (
