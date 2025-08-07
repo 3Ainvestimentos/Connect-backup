@@ -120,7 +120,7 @@ export default function MyTasksPage() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)}>
+                                                <Button variant="ghost" size="icon" onClick={() => setSelectedRequest(req)} className="hover:bg-muted">
                                                     <Eye className="h-5 w-5" />
                                                 </Button>
                                             </TableCell>
@@ -167,7 +167,7 @@ export default function MyTasksPage() {
                 <div className="space-y-6">
                     <TasksTable
                         title="Ações Pendentes"
-                        description="solicitação(ões) aguardando sua aprovação ou ciência."
+                        description="solicitação(ões) aguardando sua aprovação, ciência ou execução."
                         tasks={actionTasks}
                         icon={ShieldCheck}
                     />
