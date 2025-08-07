@@ -83,28 +83,33 @@ export default function GoogleCalendar() {
   }, [user, accessToken]);
 
   const initializeGapiClient = useCallback(() => {
+    setIsLoading(true);
+    setError(null);
+    
     if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
         setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
         setIsLoading(false);
         return;
     }
-
-    setIsLoading(true);
-    setError(null);
-
-    const initClient = () => {
-      window.gapi.client.init({
-        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-      }).then(() => {
-        listMonthEvents(currentMonth);
-      }).catch((e: any) => {
-        setError("Falha ao inicializar a API. Por favor, saia e faça login novamente.");
-        setIsLoading(false);
-      });
-    };
     
-    window.gapi.load('client', initClient);
+    try {
+        const initClient = () => {
+            window.gapi.client.init({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+            }).then(() => {
+                listMonthEvents(currentMonth);
+            }).catch((e: any) => {
+                setError("Falha ao inicializar a API. Por favor, saia e faça login novamente.");
+                setIsLoading(false);
+            });
+        };
+        
+        window.gapi.load('client', initClient);
+    } catch (e) {
+        setError("Falha ao carregar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
+        setIsLoading(false);
+    }
   }, [listMonthEvents, currentMonth]);
 
   useEffect(() => {
@@ -114,7 +119,7 @@ export default function GoogleCalendar() {
         setIsLoading(false);
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken]); // Dependency on initializeGapiClient removed to avoid re-running on every render
+  }, [user, accessToken, initializeGapiClient]); 
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {
@@ -151,7 +156,7 @@ export default function GoogleCalendar() {
               <AlertCircle className="mx-auto h-6 w-6"/>
               <p className="font-semibold">Falha ao carregar</p>
               <p className="text-xs">{error}</p>
-               <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
+              <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
             </div>
         )
     }
@@ -194,30 +199,54 @@ export default function GoogleCalendar() {
             <CardDescription>Visualize seus próximos compromissos e eventos.</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col gap-4">
-            <div className="flex justify-center">
-                <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDayClick}
-                    month={currentMonth}
-                    onMonthChange={handleMonthChange}
-                    className="rounded-md border"
-                    modifiers={{ event: eventDates }}
-                    modifiersClassNames={{
-                        event: 'bg-muted rounded-full',
-                        today: 'bg-muted-foreground/40 text-foreground font-bold',
-                    }}
-                    locale={ptBR}
-                />
+          {isLoading ? (
+            <div className="flex-grow flex flex-col gap-4">
+                <div className="flex justify-center">
+                    <Skeleton className="h-[298px] w-[336px]" />
+                </div>
+                 <div className="flex-grow min-h-0">
+                    <Skeleton className="h-6 w-1/2 mb-2" />
+                    <div className="space-y-2 pr-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </div>
             </div>
-            <div className="flex-grow min-h-0">
-            <h3 className="text-sm font-semibold mb-2">
-                Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
-            </h3>
-            <ScrollArea className="h-40">
-                {renderEvents()}
-            </ScrollArea>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
+                <AlertCircle className="h-8 w-8 mb-2" />
+                <p className="font-semibold">Falha ao carregar</p>
+                <p className="text-sm">{error}</p>
+                <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
             </div>
+          ) : (
+             <>
+                <div className="flex justify-center">
+                    <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={handleDayClick}
+                        month={currentMonth}
+                        onMonthChange={handleMonthChange}
+                        className="rounded-md border"
+                        modifiers={{ event: eventDates }}
+                        modifiersClassNames={{
+                            event: 'bg-muted rounded-full',
+                            today: 'bg-muted-foreground/40 text-foreground font-bold',
+                        }}
+                        locale={ptBR}
+                    />
+                </div>
+                <div className="flex-grow min-h-0">
+                <h3 className="text-sm font-semibold mb-2">
+                    Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
+                </h3>
+                <ScrollArea className="h-40">
+                    {renderEvents()}
+                </ScrollArea>
+                </div>
+            </>
+          )}
         </CardContent>
         </Card>
         <GoogleEventDetailsModal
