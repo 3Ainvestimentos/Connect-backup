@@ -94,10 +94,10 @@ export function ManageRankings() {
                                     <TableCell className="font-medium">{item.name}</TableCell>
                                     <TableCell className="text-xs text-muted-foreground truncate max-w-xs">{item.pdfUrl}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={deleteRankingMutation.isPending && deleteRankingMutation.variables === item.id}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={deleteRankingMutation.isPending && deleteRankingMutation.variables === item.id} className="hover:bg-muted">
                                             {deleteRankingMutation.isPending && deleteRankingMutation.variables === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
                                         </Button>
                                     </TableCell>

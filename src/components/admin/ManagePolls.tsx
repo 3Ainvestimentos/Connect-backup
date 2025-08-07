@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { usePolls, type PollType, pollSchema } from '@/contexts/PollsContext';
@@ -143,13 +144,13 @@ export function ManagePolls() {
                                         </Badge>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" asChild>
+                                        <Button variant="ghost" size="icon" asChild className="hover:bg-muted">
                                             <Link href={`/admin/polls/${item.id}/results`}><BarChart className="h-4 w-4" /></Link>
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={deletePollMutation.isPending && deletePollMutation.variables === item.id}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={deletePollMutation.isPending && deletePollMutation.variables === item.id} className="hover:bg-muted">
                                             {deletePollMutation.isPending && deletePollMutation.variables === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
                                         </Button>
                                     </TableCell>
