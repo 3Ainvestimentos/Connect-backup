@@ -64,28 +64,28 @@ interface FAQModalProps {
 
 const faqItems = [
   {
-    question: "Como faço login na plataforma?",
-    answer: "O acesso ao 3A RIVA Connect é feito exclusivamente com sua conta Google corporativa (@3ainvestimentos.com.br). Na tela de login, clique em 'Entrar com Google' e utilize suas credenciais."
+    question: "Como faço para acessar a plataforma?",
+    answer: "O login no 3A RIVA Connect é feito com sua conta Google da 3A Investimentos (@3ainvestimentos.com.br ou @3ariva.com.br). Na página inicial, clique em 'Entrar com Google' e use suas credenciais."
   },
   {
-    question: "Onde encontro os formulários de solicitação (férias, suporte, etc.)?",
-    answer: "Todos os formulários e ferramentas estão centralizados na seção 'Aplicações e Suporte'. Basta clicar no card correspondente (ex: 'Solicitar Férias', 'Suporte T.I') para abrir a janela de solicitação."
+    question: "Onde eu inicio uma solicitação (reembolso, férias, etc.)?",
+    answer: "Vá para a seção 'Solicitações' no menu lateral. Lá, você verá botões para cada área (Financeiro, RH, etc.). Clique na área desejada para ver os processos disponíveis e iniciar sua solicitação."
   },
   {
-    question: "Para que serve a seção 'Labs'?",
-    answer: "A seção 'Labs' é o nosso repositório de conhecimento, onde você encontra vídeos de treinamento, painéis de estudo e outros materiais para o seu desenvolvimento contínuo."
+    question: "Como acompanho minhas solicitações e tarefas?",
+    answer: "Na mesma página de 'Solicitações', há uma tabela com 'Minhas Solicitações' para você ver o andamento do que pediu. Se você precisa aprovar ou executar uma tarefa, ela aparecerá em 'Minhas Tarefas/Ações', acessível pelo menu do seu avatar."
   },
   {
-    question: "Como posso usar o chatbot Bob?",
-    answer: "Bob é seu assistente de IA. Você pode fazer perguntas sobre políticas da empresa, pedir para ele encontrar documentos ('procure pela política de home office'), ou até mesmo resumir uma conversa. Acesse-o pelo menu 'Bob'."
+    question: "O que encontro na seção 'Labs'?",
+    answer: "A seção 'Labs' é nosso repositório de conhecimento. Lá você encontra vídeos de treinamento, painéis de estudo e outros materiais para o seu desenvolvimento contínuo."
   },
   {
-    question: "Posso alterar o tema da plataforma (claro/escuro)?",
-    answer: "Sim! Clique no seu avatar no canto superior direito para abrir o menu do usuário. Lá, você encontrará a opção 'Tema', onde poderá escolher entre 'Claro' e 'Escuro'."
+    question: "Como o chatbot Bob pode me ajudar?",
+    answer: "Bob é seu assistente com IA. Ele pode responder perguntas sobre políticas da empresa, buscar documentos ('procure pela política de home office') e resumir conversas. Acesse-o pelo menu 'Bob'."
   },
   {
-    question: "Como vejo as informações do meu perfil?",
-    answer: "Clique no seu avatar no canto superior direito e selecione a opção 'Meu Perfil'. Uma janela será exibida com suas informações de cargo, área, líder, etc."
+    question: "Como posso visualizar meu perfil e alterar o tema?",
+    answer: "Clique no seu avatar no canto superior direito para abrir o menu. Selecione 'Meu Perfil' para ver suas informações. No mesmo menu, você encontrará a opção 'Tema' para alternar entre os modos claro e escuro."
   }
 ];
 
