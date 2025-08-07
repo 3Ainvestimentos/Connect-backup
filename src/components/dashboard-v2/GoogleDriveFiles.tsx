@@ -56,33 +56,25 @@ export default function GoogleDriveFiles() {
 
   const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
-      if (!user) setError("Usuário não autenticado.");
-      else if (!accessToken) setError("Token de acesso expirado. Por favor, faça login novamente.");
-      return;
+        throw new Error("Usuário não autenticado ou token de acesso inválido.");
     }
-
+    
+    window.gapi.client.setToken({ access_token: accessToken });
+    
+    const response = await window.gapi.client.drive.files.list({
+        q: `'${folderId}' in parents and trashed = false`,
+        pageSize: 100,
+        fields: "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink, mimeType)",
+        orderBy: 'folder,modifiedTime desc'
+    });
+    
+    if (!response || !response.result || !response.result.files) {
+        throw new Error("A resposta da API do Google Drive foi inválida ou nula.");
+    }
+    
+    setItems(response.result.files);
     setError(null);
-    setItems([]);
 
-    try {
-      window.gapi.client.setToken({ access_token: accessToken });
-      
-      const response = await window.gapi.client.drive.files.list({
-          q: `'${folderId}' in parents and trashed = false`,
-          pageSize: 100,
-          fields: "nextPageToken, files(id, name, modifiedTime, webViewLink, iconLink, mimeType)",
-          orderBy: 'folder,modifiedTime desc'
-      });
-      
-      if (!response || !response.result) {
-          throw new Error("A resposta da API do Google Drive foi inválida ou nula.");
-      }
-      setItems(response.result.files || []);
-      
-    } catch (err: any) {
-      console.error("Erro ao buscar arquivos do Drive:", err);
-      setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
-    }
   }, [user, accessToken]);
 
 
@@ -102,88 +94,86 @@ export default function GoogleDriveFiles() {
 
 
   const initializeDriveState = useCallback(async () => {
-    setError(null);
-    setItems([]);
-    
     try {
-        if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-            throw new Error("A biblioteca de cliente do Google não pôde ser carregada.");
+        const driveLinks = currentUserCollab?.googleDriveLinks;
+        if (driveLinks && driveLinks.length > 1) {
+            const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
+            const folderPromises = folderIds.map(id => fetchFolderDetails(id));
+            const fetchedFolders = await Promise.all(folderPromises);
+            setInitialFolders(fetchedFolders);
+            setItems([]);
+            setCurrentFolder(null);
+            setFolderHistory([]);
+        } else {
+            const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
+            const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
+            const rootFolder = { id: folderId, name: 'Início' };
+            setInitialFolders([]);
+            setCurrentFolder(rootFolder);
+            setFolderHistory([]);
+            if (folderId) await listFiles(folderId);
         }
-
-        const initDrive = async () => {
-            try {
-                const driveLinks = currentUserCollab?.googleDriveLinks;
-                if (driveLinks && driveLinks.length > 1) {
-                    const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
-                    const folderPromises = folderIds.map(id => fetchFolderDetails(id));
-                    const fetchedFolders = await Promise.all(folderPromises);
-                    setInitialFolders(fetchedFolders);
-                    setItems([]);
-                    setCurrentFolder(null);
-                    setFolderHistory([]);
-                } else {
-                    const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
-                    const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
-                    const rootFolder = { id: folderId, name: 'Início' };
-                    setInitialFolders([]);
-                    setCurrentFolder(rootFolder);
-                    setFolderHistory([]);
-                    if (folderId) await listFiles(folderId);
-                }
-            } catch (e) {
-                console.error("Erro ao processar pastas do Drive:", e);
-                setError("Ocorreu um erro ao processar as pastas do Drive. Tente fazer login novamente.");
-            }
-        };
-
-        window.gapi.load('client', () => {
-            window.gapi.client.init({
+        setError(null);
+    } catch (e) {
+        console.error("Erro ao processar pastas do Drive:", e);
+        setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
+    }
+  }, [currentUserCollab, fetchFolderDetails, listFiles]);
+  
+  const initializeGapiClient = useCallback(() => {
+    const init = async () => {
+        try {
+            await window.gapi.client.init({
                 apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
                 discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-            }).then(initDrive).catch((e: any) => {
-                 console.error("Erro ao inicializar o cliente GAPI Drive:", e);
-                setError("Falha ao inicializar a API do Google Drive. Por favor, saia e faça login novamente para reautenticar.");
             });
-        });
-    } catch(e: any) {
-       console.error("Falha ao carregar GAPI Drive:", e);
-       setError("Não foi possível carregar a API do Google Drive. Por favor, saia e faça login novamente para reautenticar.");
+            await initializeDriveState();
+        } catch (e: any) {
+             console.error("Erro ao inicializar ou buscar arquivos do Drive:", e);
+             setError("Falha ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
+        }
+    };
+
+     if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
+        window.gapi.load('client', init);
+    } else {
+        setError("Não foi possível carregar a API do Google. Verifique sua conexão ou tente fazer login novamente.");
     }
-  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
+  }, [initializeDriveState]);
 
   useEffect(() => {
     if (user && accessToken) {
-      if (window.gapi && window.gapi.client && window.gapi.client.drive) {
-          if (currentFolder) {
-              listFiles(currentFolder.id);
-          } else {
-              initializeDriveState();
-          }
-      } else {
-          initializeDriveState();
-      }
+        initializeGapiClient();
     } else if (!user) {
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, initializeDriveState, listFiles, currentFolder]);
+  }, [user, accessToken, initializeGapiClient]);
 
-  const handleFolderClick = (folder: DriveFile | FolderInfo) => {
-    const newFolder = { id: folder.id, name: folder.name };
-    if (currentFolder) { 
-        setFolderHistory(prev => [...prev, currentFolder]);
+  const handleFolderClick = async (folder: DriveFile | FolderInfo) => {
+    try {
+        const newFolder = { id: folder.id, name: folder.name };
+        if (currentFolder) { 
+            setFolderHistory(prev => [...prev, currentFolder]);
+        }
+        setCurrentFolder(newFolder);
+        await listFiles(folder.id);
+    } catch (e) {
+        setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
     }
-    setCurrentFolder(newFolder);
-    listFiles(folder.id);
   };
   
-  const handleBreadcrumbClick = (folder: FolderInfo | null, index: number) => {
-    if (folder === null) { 
-        initializeDriveState();
-        return;
+  const handleBreadcrumbClick = async (folder: FolderInfo | null, index: number) => {
+    try {
+        if (folder === null) { 
+            await initializeDriveState();
+            return;
+        }
+        setCurrentFolder(folder);
+        setFolderHistory(prev => prev.slice(0, index));
+        await listFiles(folder.id);
+    } catch (e) {
+        setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
     }
-    setCurrentFolder(folder);
-    setFolderHistory(prev => prev.slice(0, index));
-    listFiles(folder.id);
   }
 
   const renderBreadcrumbs = () => {
@@ -219,8 +209,6 @@ export default function GoogleDriveFiles() {
   }
   
   const renderContent = () => {
-    if (error) return null;
-
     const list = currentFolder ? items : initialFolders;
 
     if (list.length === 0) {
