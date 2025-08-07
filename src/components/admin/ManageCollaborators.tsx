@@ -324,7 +324,7 @@ export function ManageCollaborators() {
                 <span className="flex-grow">{label}</span>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                        <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-muted">
                             <Filter className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
@@ -354,7 +354,9 @@ export function ManageCollaborators() {
                 <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                      <div className="flex-grow">
                         <CardTitle>Gerenciar Colaboradores</CardTitle>
-                        <CardDescription>Adicione, edite ou remova colaboradores da plataforma.</CardDescription>
+                        <CardDescription>
+                            Exibindo {filteredAndSortedCollaborators.length} de {collaborators.length} colaborador(es).
+                        </CardDescription>
                     </div>
                      <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
                         <div className="relative flex-grow sm:flex-grow-0">
@@ -612,3 +614,4 @@ export function ManageCollaborators() {
         </>
     );
 }
+
