@@ -165,47 +165,49 @@ export default function GoogleCalendar() {
   return (
     <>
         <Card className="shadow-sm flex flex-col h-full">
-        <CardHeader>
-            <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
-            <CardDescription>Visualize seus próximos compromissos e eventos.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow flex flex-col gap-4">
-          {error ? (
-            <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
-                <AlertCircle className="h-8 w-8 mb-2" />
-                <p className="font-semibold">Falha ao carregar</p>
-                <p className="text-sm">{error}</p>
-                <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
-            </div>
-          ) : (
-             <>
-                <div className="flex justify-center">
-                    <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={handleDayClick}
-                        month={currentMonth}
-                        onMonthChange={handleMonthChange}
-                        className="rounded-md border"
-                        modifiers={{ event: eventDates }}
-                        modifiersClassNames={{
-                            event: 'bg-muted rounded-full',
-                            today: 'bg-muted-foreground/40 text-foreground font-bold',
-                        }}
-                        locale={ptBR}
-                    />
+            <CardHeader>
+                <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
+                <CardDescription>Visualize seus próximos compromissos e eventos.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-grow flex flex-col gap-4">
+              {error ? (
+                <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
+                    <AlertCircle className="h-8 w-8 mb-2" />
+                    <p className="font-semibold">Falha ao carregar</p>
+                    <p className="text-sm">{error}</p>
+                    <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
                 </div>
-                <div className="flex-grow min-h-0">
-                <h3 className="text-sm font-semibold mb-2">
-                    Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
-                </h3>
-                <ScrollArea className="h-40">
-                    {renderEvents()}
-                </ScrollArea>
-                </div>
-            </>
-          )}
-        </CardContent>
+              ) : (
+                 <>
+                    <div className="flex justify-center">
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={handleDayClick}
+                            month={currentMonth}
+                            onMonthChange={handleMonthChange}
+                            className="rounded-md border"
+                            modifiers={{ event: eventDates }}
+                            modifiersClassNames={{
+                                event: 'bg-muted rounded-full',
+                                today: 'bg-muted-foreground/40 text-foreground font-bold',
+                            }}
+                            locale={ptBR}
+                        />
+                    </div>
+                    <div className="flex-grow flex flex-col min-h-0">
+                        <h3 className="text-sm font-semibold mb-2 flex-shrink-0">
+                            Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
+                        </h3>
+                        <div className="flex-grow relative">
+                            <ScrollArea className="absolute inset-0">
+                                {renderEvents()}
+                            </ScrollArea>
+                        </div>
+                    </div>
+                </>
+              )}
+            </CardContent>
         </Card>
         <GoogleEventDetailsModal
             isOpen={!!selectedEvent}

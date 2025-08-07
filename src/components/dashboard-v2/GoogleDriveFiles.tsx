@@ -280,10 +280,12 @@ export default function GoogleDriveFiles() {
             </div>
          ) : (
             <>
-                {(currentFolder || initialFolders.length > 1) && renderBreadcrumbs()}
-                <div className="flex-grow min-h-0">
-                    <ScrollArea className="h-64 pr-3">
-                    {renderContent()}
+                <div className="flex-shrink-0">
+                    {(currentFolder || initialFolders.length > 1) && renderBreadcrumbs()}
+                </div>
+                <div className="flex-grow min-h-0 relative">
+                    <ScrollArea className="absolute inset-0 pr-3">
+                        {renderContent()}
                     </ScrollArea>
                 </div>
             </>
