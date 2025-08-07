@@ -216,7 +216,7 @@ export function RecipientSelectionModal({
                         </p>
                         <div>
                             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-                            <Button type="button" onClick={handleConfirm} className="ml-2">Confirmar</Button>
+                            <Button type="button" onClick={handleConfirm} className="ml-2 bg-admin-primary hover:bg-admin-primary/90">Confirmar</Button>
                         </div>
                     </div>
                 </DialogFooter>
