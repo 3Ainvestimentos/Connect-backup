@@ -47,36 +47,6 @@ export default function GoogleCalendar() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
 
-  const initializeGapiClient = useCallback(() => {
-    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        setError("A biblioteca de cliente do Google não pôde ser carregada.");
-        setIsLoading(false);
-        return;
-    }
-    
-    setIsLoading(true);
-    setError(null);
-
-    const init = () => {
-        window.gapi.client.init({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-        }).then(() => {
-            listMonthEvents(currentMonth);
-        }).catch((e: any) => {
-             setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página ou fazer login novamente.");
-             setIsLoading(false);
-        });
-    }
-
-    if (window.gapi.client && window.gapi.client.calendar) {
-      listMonthEvents(currentMonth);
-    } else {
-       window.gapi.load('client', init);
-    }
-  }, [listMonthEvents, currentMonth]);
-
-
   const listMonthEvents = useCallback(async (month: Date) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
@@ -118,6 +88,36 @@ export default function GoogleCalendar() {
       setIsLoading(false);
     }
   }, [user, accessToken]);
+
+  const initializeGapiClient = useCallback(() => {
+    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+        setError("A biblioteca de cliente do Google não pôde ser carregada.");
+        setIsLoading(false);
+        return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+
+    const init = () => {
+        window.gapi.client.init({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+        }).then(() => {
+            listMonthEvents(currentMonth);
+        }).catch((e: any) => {
+             setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página ou fazer login novamente.");
+             setIsLoading(false);
+        });
+    }
+
+    if (window.gapi.client && window.gapi.client.calendar) {
+      listMonthEvents(currentMonth);
+    } else {
+       window.gapi.load('client', init);
+    }
+  }, [listMonthEvents, currentMonth]);
+
 
   useEffect(() => {
     if (user && accessToken) {
