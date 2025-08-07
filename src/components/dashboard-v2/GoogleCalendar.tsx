@@ -50,7 +50,7 @@ export default function GoogleCalendar() {
   const listMonthEvents = useCallback(async (month: Date) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
-      else if (!accessToken) setError("Token de acesso não encontrado. Por favor, atualize a página.");
+      else if (!accessToken) setError("Token de acesso não encontrado.");
       setIsLoading(false);
       return;
     }
@@ -74,6 +74,7 @@ export default function GoogleCalendar() {
       });
 
       setEvents(response.result.items || []);
+      setError(null);
       
     } catch (err: any) {
       console.error("Erro ao buscar eventos do calendário:", err);
@@ -93,31 +94,37 @@ export default function GoogleCalendar() {
     setIsLoading(true);
     setError(null);
 
-    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        setError("A biblioteca de cliente do Google não pôde ser carregada.");
-        setIsLoading(false);
-        return;
-    }
+    const timeout = setTimeout(() => {
+        if (isLoading) {
+            setError("A API do Google demorou muito para responder. Verifique sua conexão ou tente novamente.");
+            setIsLoading(false);
+        }
+    }, 10000); // 10-second timeout
 
     const initClient = () => {
         window.gapi.client.init({
             apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
         }).then(() => {
+            clearTimeout(timeout);
             listMonthEvents(currentMonth);
         }).catch((e: any) => {
-             setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página.");
-             setIsLoading(false);
+            clearTimeout(timeout);
+            setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página.");
+            setIsLoading(false);
         });
     };
 
-    if (window.gapi.client && window.gapi.client.calendar) {
-        listMonthEvents(currentMonth);
-    } else {
-        window.gapi.load('client', initClient);
+    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+        clearTimeout(timeout);
+        setError("A biblioteca de cliente do Google não pôde ser carregada.");
+        setIsLoading(false);
+        return;
     }
-  }, [listMonthEvents, currentMonth]);
-
+    
+    // gapi.load is the first step.
+    window.gapi.load('client', initClient);
+  }, [listMonthEvents, currentMonth, isLoading]);
 
   useEffect(() => {
     if (user && accessToken) {
@@ -125,7 +132,8 @@ export default function GoogleCalendar() {
     } else if (!user) {
         setIsLoading(false);
     }
-  }, [user, accessToken]); // Removido initializeGapiClient para evitar loop
+    // Eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, accessToken]);
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {

@@ -59,7 +59,7 @@ export default function GoogleDriveFiles() {
   const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
-      else if (!accessToken) setError("Token de acesso não encontrado. Por favor, atualize a página.");
+      else if (!accessToken) setError("Token de acesso não encontrado.");
       setIsLoading(false);
       return;
     }
@@ -79,7 +79,7 @@ export default function GoogleDriveFiles() {
       });
 
       setItems(response.result.files || []);
-
+      setError(null);
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
       let errorMessage = "Não foi possível carregar os arquivos do Drive.";
@@ -96,8 +96,8 @@ export default function GoogleDriveFiles() {
 
 
   const fetchFolderDetails = useCallback(async (folderId: string): Promise<FolderInfo> => {
+    window.gapi.client.setToken({ access_token: accessToken });
     try {
-      window.gapi.client.setToken({ access_token: accessToken });
       const response = await window.gapi.client.drive.files.get({
         fileId: folderId,
         fields: 'id, name',
@@ -111,15 +111,18 @@ export default function GoogleDriveFiles() {
 
 
   const initializeDriveState = useCallback(async () => {
-    if (!user || !accessToken) {
-        if (!user) setIsLoading(false);
-        return;
-    }
-    
     setIsLoading(true);
     setError(null);
-    
+
+    const timeout = setTimeout(() => {
+        if (isLoading) {
+            setError("A API do Google demorou muito para responder. Verifique sua conexão ou tente novamente.");
+            setIsLoading(false);
+        }
+    }, 10000); // 10-second timeout
+
     const initDrive = async () => {
+        clearTimeout(timeout); // Clear timeout once we start the actual logic
         try {
             const driveLinks = currentUserCollab?.googleDriveLinks;
 
@@ -150,33 +153,41 @@ export default function GoogleDriveFiles() {
     };
     
     try {
-        if (window.gapi.client && window.gapi.client.drive) {
-            await initDrive();
-        } else {
-             if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-                setError("A biblioteca de cliente do Google não pôde ser carregada.");
-                setIsLoading(false);
-                return;
-            }
-            await new Promise<void>((resolve, reject) => {
-                window.gapi.load('client', () => {
-                    window.gapi.client.init({
-                        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-                    }).then(() => resolve()).catch((e: any) => reject(e));
-                });
-            });
-            await initDrive();
+        if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+            clearTimeout(timeout);
+            setError("A biblioteca de cliente do Google não pôde ser carregada.");
+            setIsLoading(false);
+            return;
         }
+
+        window.gapi.load('client', () => {
+            window.gapi.client.init({
+                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+            }).then(() => {
+                initDrive();
+            }).catch((e: any) => {
+                clearTimeout(timeout);
+                setError("Falha ao inicializar o cliente GAPI.");
+                setIsLoading(false);
+            });
+        });
+
     } catch(e) {
-         setError("Falha ao inicializar o cliente GAPI.");
-         setIsLoading(false);
+        clearTimeout(timeout);
+        setError("Falha ao configurar a API do Google Drive.");
+        setIsLoading(false);
     } 
-  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
+  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails, isLoading]);
 
   useEffect(() => {
-    initializeDriveState();
-  }, [accessToken]); // Changed dependency to accessToken to re-init on token change
+    if (user && accessToken) {
+      initializeDriveState();
+    } else if (!user) {
+        setIsLoading(false);
+    }
+    // Eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, accessToken]);
 
   const handleFolderClick = (folder: DriveFile | FolderInfo) => {
     const newFolder = { id: folder.id, name: folder.name };
