@@ -41,7 +41,6 @@ export interface CalendarEvent {
 export default function GoogleCalendar() {
   const { user, accessToken, signOut } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -51,11 +50,9 @@ export default function GoogleCalendar() {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
       else if (!accessToken) setError("Token de acesso expirado. Por favor, faça login novamente.");
-      setIsLoading(false);
       return;
     }
     
-    setIsLoading(true);
     setError(null);
     
     try {
@@ -77,27 +74,15 @@ export default function GoogleCalendar() {
     } catch (err: any) {
       console.error("Erro ao buscar eventos do calendário:", err);
       setError("Ocorreu um erro ao carregar os eventos. Por favor, saia e faça login novamente para reautenticar.");
-    } finally {
-      setIsLoading(false);
     }
   }, [user, accessToken]);
 
   const initializeGapiClient = useCallback(() => {
-    setIsLoading(true);
     setError(null);
-
-    const timeoutId = setTimeout(() => {
-        if (isLoading) {
-            setError("A API do Google demorou muito para responder. Por favor, saia e faça login novamente para reautenticar.");
-            setIsLoading(false);
-        }
-    }, 10000); // 10 second timeout
 
     try {
       if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        clearTimeout(timeoutId);
         setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página ou fazer login novamente.");
-        setIsLoading(false);
         return;
       }
       
@@ -106,28 +91,22 @@ export default function GoogleCalendar() {
           apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
           discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
         }).then(() => {
-            clearTimeout(timeoutId);
             listMonthEvents(currentMonth);
         }).catch((e: any) => {
-            clearTimeout(timeoutId);
             setError("Falha ao inicializar a API. Por favor, saia e faça login novamente para reautenticar.");
-            setIsLoading(false);
         });
       };
       
       window.gapi.load('client', initClient);
     } catch (e) {
-      clearTimeout(timeoutId);
       setError("Falha ao carregar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
-      setIsLoading(false);
     }
-  }, [listMonthEvents, currentMonth, isLoading]);
+  }, [listMonthEvents, currentMonth]);
 
   useEffect(() => {
     if (user && accessToken) {
       initializeGapiClient();
     } else if (!user) {
-        setIsLoading(false);
         setError("Usuário não autenticado.");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -191,20 +170,7 @@ export default function GoogleCalendar() {
             <CardDescription>Visualize seus próximos compromissos e eventos.</CardDescription>
         </CardHeader>
         <CardContent className="flex-grow flex flex-col gap-4">
-          {isLoading ? (
-            <div className="flex-grow flex flex-col gap-4">
-                <div className="flex justify-center">
-                    <Skeleton className="h-[298px] w-[336px]" />
-                </div>
-                 <div className="flex-grow min-h-0">
-                    <Skeleton className="h-6 w-1/2 mb-2" />
-                    <div className="space-y-2 pr-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                </div>
-            </div>
-          ) : error ? (
+          {error ? (
             <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Falha ao carregar</p>

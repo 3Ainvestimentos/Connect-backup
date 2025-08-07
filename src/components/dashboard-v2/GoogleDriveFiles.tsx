@@ -44,7 +44,6 @@ export default function GoogleDriveFiles() {
   const { user, accessToken, signOut } = useAuth();
   const { collaborators } = useCollaborators();
   const [items, setItems] = useState<DriveFile[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const [initialFolders, setInitialFolders] = useState<FolderInfo[]>([]);
@@ -60,11 +59,9 @@ export default function GoogleDriveFiles() {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
       else if (!accessToken) setError("Token de acesso expirado. Por favor, faça login novamente.");
-      setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
     setError(null);
     setItems([]);
 
@@ -82,8 +79,6 @@ export default function GoogleDriveFiles() {
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
       setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
-    } finally {
-      setIsLoading(false);
     }
   }, [user, accessToken]);
 
@@ -104,21 +99,11 @@ export default function GoogleDriveFiles() {
 
 
   const initializeDriveState = useCallback(async () => {
-    setIsLoading(true);
     setError(null);
     
-    const timeoutId = setTimeout(() => {
-        if (isLoading) {
-            setError("A API do Google demorou muito para responder. Por favor, saia e faça login novamente para reautenticar.");
-            setIsLoading(false);
-        }
-    }, 10000); // 10 second timeout
-
     try {
         if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-            clearTimeout(timeoutId);
             setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página ou fazer login novamente.");
-            setIsLoading(false);
             return;
         }
 
@@ -145,9 +130,6 @@ export default function GoogleDriveFiles() {
             } catch (e) {
                 setError("Falha ao processar as pastas do Drive. Por favor, faça login novamente.");
                 console.error(e);
-            } finally {
-                clearTimeout(timeoutId);
-                setIsLoading(false);
             }
         };
 
@@ -156,23 +138,18 @@ export default function GoogleDriveFiles() {
                 apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
                 discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
             }).then(initDrive).catch((e: any) => {
-                clearTimeout(timeoutId);
                 setError("Falha ao inicializar a API. Por favor, saia e faça login novamente para reautenticar.");
-                setIsLoading(false);
             });
         });
     } catch(e) {
-       clearTimeout(timeoutId);
        setError("Falha ao carregar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
-       setIsLoading(false);
     }
-  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails, isLoading]);
+  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
 
   useEffect(() => {
     if (user && accessToken) {
       initializeDriveState();
     } else if (!user) {
-        setIsLoading(false);
         setError("Usuário não autenticado.");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -219,7 +196,6 @@ export default function GoogleDriveFiles() {
                           "p-1 h-auto text-muted-foreground hover:text-foreground",
                           index === breadcrumbs.length - 1 && "font-semibold text-foreground hover:text-foreground/80"
                       )}
-                      disabled={isLoading}
                   >
                       {crumb.name}
                   </Button>
@@ -282,16 +258,7 @@ export default function GoogleDriveFiles() {
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-grow min-h-0 flex flex-col gap-2">
-         {isLoading ? (
-            <div className="flex-grow min-h-0 flex flex-col gap-2">
-                <Skeleton className="h-6 w-1/3" />
-                <div className="flex-grow min-h-0">
-                    <div className="space-y-4 pr-3">
-                        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                    </div>
-                </div>
-            </div>
-         ) : error ? (
+         {error ? (
             <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
                 <AlertCircle className="h-8 w-8 mb-2" />
                 <p className="font-semibold">Falha ao carregar</p>
