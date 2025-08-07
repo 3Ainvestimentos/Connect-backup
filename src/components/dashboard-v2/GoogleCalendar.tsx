@@ -74,10 +74,6 @@ export default function GoogleCalendar() {
   }, [user, accessToken]);
 
   const initializeGapiClient = useCallback(async () => {
-    const timeoutId = setTimeout(() => {
-        setError("O carregamento da API demorou muito. Por favor, saia e faça login novamente.");
-    }, 10000); // 10-second timeout
-
     try {
         if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
             await new Promise<void>((resolve, reject) => {
@@ -88,13 +84,11 @@ export default function GoogleCalendar() {
                     }).then(() => resolve(), (err: any) => reject(err));
                 });
             });
-            clearTimeout(timeoutId);
             await listMonthEvents(currentMonth);
         } else {
             throw new Error("Não foi possível carregar a API do Google. Verifique sua conexão ou tente fazer login novamente.");
         }
     } catch (e: any) {
-        clearTimeout(timeoutId);
         console.error("Erro ao inicializar ou buscar eventos:", e);
         setError("Falha ao carregar os eventos. Por favor, saia e faça login novamente para reautenticar.");
     }
@@ -159,7 +153,7 @@ export default function GoogleCalendar() {
         )
     }
     
-    return <p className="text-center text-muted-foreground text-sm py-4">Erro no carregamento da API, faça login novamente</p>;
+    return <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para este dia.</p>;
   }
 
   return (
@@ -169,7 +163,7 @@ export default function GoogleCalendar() {
                 <CardTitle className="font-headline text-foreground text-xl">Google Calendar</CardTitle>
                 <CardDescription>Visualize seus próximos compromissos e eventos.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-grow flex flex-col gap-4">
+            <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden">
               {error ? (
                 <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
                     <AlertCircle className="h-8 w-8 mb-2" />

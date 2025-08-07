@@ -121,10 +121,6 @@ export default function GoogleDriveFiles() {
   }, [currentUserCollab, fetchFolderDetails, listFiles]);
   
   const initializeGapiClient = useCallback(() => {
-    const timeoutId = setTimeout(() => {
-        setError("O carregamento da API demorou muito. Por favor, saia e faça login novamente.");
-    }, 10000);
-
     const init = async () => {
         try {
             await new Promise<void>((resolve, reject) => {
@@ -135,10 +131,8 @@ export default function GoogleDriveFiles() {
                     }).then(() => resolve(), (err: any) => reject(err));
                 });
             });
-            clearTimeout(timeoutId);
             await initializeDriveState();
         } catch (e: any) {
-             clearTimeout(timeoutId);
              console.error("Erro ao inicializar ou buscar arquivos do Drive:", e);
              setError("Falha ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
         }
@@ -147,7 +141,6 @@ export default function GoogleDriveFiles() {
      if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
         init();
     } else {
-        clearTimeout(timeoutId);
         setError("Não foi possível carregar a API do Google. Verifique sua conexão ou tente fazer login novamente.");
     }
   }, [initializeDriveState]);
@@ -223,7 +216,7 @@ export default function GoogleDriveFiles() {
     const list = currentFolder ? items : initialFolders;
 
     if (list.length === 0) {
-      return <p className="text-center text-muted-foreground text-sm py-4">Erro no carregamento da API, faça login novamente</p>
+      return <p className="text-center text-muted-foreground text-sm py-4">Nenhum item encontrado.</p>
     }
 
     return (
@@ -270,7 +263,7 @@ export default function GoogleDriveFiles() {
             Navegue pelas suas pastas ou abra os arquivos diretamente.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow min-h-0 flex flex-col gap-2">
+      <CardContent className="flex-grow min-h-0 flex flex-col gap-2 overflow-hidden">
          {error ? (
             <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
                 <AlertCircle className="h-8 w-8 mb-2" />
@@ -283,7 +276,7 @@ export default function GoogleDriveFiles() {
                 <div className="flex-shrink-0">
                     {(currentFolder || initialFolders.length > 1) && renderBreadcrumbs()}
                 </div>
-                <div className="flex-grow min-h-0 relative">
+                <div className="flex-grow relative">
                     <ScrollArea className="absolute inset-0 pr-3">
                         {renderContent()}
                     </ScrollArea>
