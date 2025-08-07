@@ -94,46 +94,34 @@ export default function GoogleCalendar() {
     setIsLoading(true);
     setError(null);
 
-    const timeout = setTimeout(() => {
-        if (isLoading) {
-            setError("A API do Google demorou muito para responder. Verifique sua conexão ou tente novamente.");
-            setIsLoading(false);
-        }
-    }, 10000); // 10-second timeout
-
     const initClient = () => {
-        window.gapi.client.init({
-            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-        }).then(() => {
-            clearTimeout(timeout);
-            listMonthEvents(currentMonth);
-        }).catch((e: any) => {
-            clearTimeout(timeout);
-            setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página.");
-            setIsLoading(false);
-        });
+      window.gapi.client.init({
+        apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+        discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+      }).then(() => {
+        listMonthEvents(currentMonth);
+      }).catch((e: any) => {
+        setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página.");
+        setIsLoading(false);
+      });
     };
-
-    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        clearTimeout(timeout);
+    
+    if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
+        window.gapi.load('client', initClient);
+    } else {
         setError("A biblioteca de cliente do Google não pôde ser carregada.");
         setIsLoading(false);
-        return;
     }
-    
-    // gapi.load is the first step.
-    window.gapi.load('client', initClient);
-  }, [listMonthEvents, currentMonth, isLoading]);
+  }, [listMonthEvents, currentMonth]);
 
   useEffect(() => {
     if (user && accessToken) {
       initializeGapiClient();
     } else if (!user) {
         setIsLoading(false);
+        setError("Usuário não autenticado.");
     }
-    // Eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, accessToken]);
+  }, [user, accessToken, initializeGapiClient]);
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {

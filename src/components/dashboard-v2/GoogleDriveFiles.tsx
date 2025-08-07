@@ -114,15 +114,7 @@ export default function GoogleDriveFiles() {
     setIsLoading(true);
     setError(null);
 
-    const timeout = setTimeout(() => {
-        if (isLoading) {
-            setError("A API do Google demorou muito para responder. Verifique sua conexão ou tente novamente.");
-            setIsLoading(false);
-        }
-    }, 10000); // 10-second timeout
-
     const initDrive = async () => {
-        clearTimeout(timeout); // Clear timeout once we start the actual logic
         try {
             const driveLinks = currentUserCollab?.googleDriveLinks;
 
@@ -152,14 +144,7 @@ export default function GoogleDriveFiles() {
         }
     };
     
-    try {
-        if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-            clearTimeout(timeout);
-            setError("A biblioteca de cliente do Google não pôde ser carregada.");
-            setIsLoading(false);
-            return;
-        }
-
+    if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
         window.gapi.load('client', () => {
             window.gapi.client.init({
                 apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -167,27 +152,24 @@ export default function GoogleDriveFiles() {
             }).then(() => {
                 initDrive();
             }).catch((e: any) => {
-                clearTimeout(timeout);
                 setError("Falha ao inicializar o cliente GAPI.");
                 setIsLoading(false);
             });
         });
-
-    } catch(e) {
-        clearTimeout(timeout);
-        setError("Falha ao configurar a API do Google Drive.");
-        setIsLoading(false);
-    } 
-  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails, isLoading]);
+    } else {
+      setError("A biblioteca de cliente do Google não pôde ser carregada.");
+      setIsLoading(false);
+    }
+  }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
 
   useEffect(() => {
     if (user && accessToken) {
       initializeDriveState();
     } else if (!user) {
         setIsLoading(false);
+        setError("Usuário não autenticado.");
     }
-    // Eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, accessToken]);
+  }, [user, accessToken, initializeDriveState]);
 
   const handleFolderClick = (folder: DriveFile | FolderInfo) => {
     const newFolder = { id: folder.id, name: folder.name };
