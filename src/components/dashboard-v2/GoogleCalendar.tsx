@@ -90,31 +90,31 @@ export default function GoogleCalendar() {
   }, [user, accessToken]);
 
   const initializeGapiClient = useCallback(() => {
+    setIsLoading(true);
+    setError(null);
+
     if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
         setError("A biblioteca de cliente do Google não pôde ser carregada.");
         setIsLoading(false);
         return;
     }
-    
-    setIsLoading(true);
-    setError(null);
 
-    const init = () => {
+    const initClient = () => {
         window.gapi.client.init({
             apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
             discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
         }).then(() => {
             listMonthEvents(currentMonth);
         }).catch((e: any) => {
-             setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página ou fazer login novamente.");
+             setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página.");
              setIsLoading(false);
         });
-    }
+    };
 
     if (window.gapi.client && window.gapi.client.calendar) {
-      listMonthEvents(currentMonth);
+        listMonthEvents(currentMonth);
     } else {
-       window.gapi.load('client', init);
+        window.gapi.load('client', initClient);
     }
   }, [listMonthEvents, currentMonth]);
 
@@ -125,7 +125,7 @@ export default function GoogleCalendar() {
     } else if (!user) {
         setIsLoading(false);
     }
-  }, [user, accessToken, initializeGapiClient]);
+  }, [user, accessToken]); // Removido initializeGapiClient para evitar loop
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {
@@ -165,7 +165,7 @@ export default function GoogleCalendar() {
                     modifiers={{ event: eventDates }}
                     modifiersClassNames={{
                         event: 'bg-muted rounded-full',
-                        today: 'bg-muted-foreground/40 text-foreground rounded-full font-bold',
+                        today: 'bg-muted-foreground/40 text-foreground font-bold',
                     }}
                     locale={ptBR}
                 />

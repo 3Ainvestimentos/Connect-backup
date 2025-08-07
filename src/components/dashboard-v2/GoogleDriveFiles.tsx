@@ -115,37 +115,37 @@ export default function GoogleDriveFiles() {
         if (!user) setIsLoading(false);
         return;
     }
-
-    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        setError("A biblioteca de cliente do Google não pôde ser carregada.");
-        setIsLoading(false);
-        return;
-    }
     
     setIsLoading(true);
     setError(null);
-
+    
     const initDrive = async () => {
-        const driveLinks = currentUserCollab?.googleDriveLinks;
+        try {
+            const driveLinks = currentUserCollab?.googleDriveLinks;
 
-        if (driveLinks && driveLinks.length > 1) {
-            const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
-            const folderPromises = folderIds.map(id => fetchFolderDetails(id));
-            const fetchedFolders = await Promise.all(folderPromises);
-            setInitialFolders(fetchedFolders);
-            setItems([]);
-            setCurrentFolder(null);
-            setFolderHistory([]);
-            setIsLoading(false); // Done loading for multi-folder view
-        } else {
-            const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
-            const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
-            const rootFolder = { id: folderId, name: 'Início' };
+            if (driveLinks && driveLinks.length > 1) {
+                const folderIds = driveLinks.map(extractFolderIdFromUrl).filter((id): id is string => id !== null);
+                const folderPromises = folderIds.map(id => fetchFolderDetails(id));
+                const fetchedFolders = await Promise.all(folderPromises);
+                setInitialFolders(fetchedFolders);
+                setItems([]);
+                setCurrentFolder(null);
+                setFolderHistory([]);
+            } else {
+                const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
+                const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
+                const rootFolder = { id: folderId, name: 'Início' };
 
-            setInitialFolders([]);
-            setCurrentFolder(rootFolder);
-            setFolderHistory([]);
-            if (folderId) await listFiles(folderId); else setIsLoading(false);
+                setInitialFolders([]);
+                setCurrentFolder(rootFolder);
+                setFolderHistory([]);
+                if (folderId) await listFiles(folderId);
+            }
+        } catch (e) {
+            setError("Falha ao processar as pastas do Drive.");
+            console.error(e);
+        } finally {
+            setIsLoading(false);
         }
     };
     
@@ -153,6 +153,11 @@ export default function GoogleDriveFiles() {
         if (window.gapi.client && window.gapi.client.drive) {
             await initDrive();
         } else {
+             if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+                setError("A biblioteca de cliente do Google não pôde ser carregada.");
+                setIsLoading(false);
+                return;
+            }
             await new Promise<void>((resolve, reject) => {
                 window.gapi.load('client', () => {
                     window.gapi.client.init({
@@ -171,12 +176,11 @@ export default function GoogleDriveFiles() {
 
   useEffect(() => {
     initializeDriveState();
-  }, [initializeDriveState]);
-
+  }, [accessToken]); // Changed dependency to accessToken to re-init on token change
 
   const handleFolderClick = (folder: DriveFile | FolderInfo) => {
     const newFolder = { id: folder.id, name: folder.name };
-    if (currentFolder) { // Add current folder to history before navigating
+    if (currentFolder) { 
         setFolderHistory(prev => [...prev, currentFolder]);
     }
     setCurrentFolder(newFolder);
@@ -184,7 +188,7 @@ export default function GoogleDriveFiles() {
   };
   
   const handleBreadcrumbClick = (folder: FolderInfo | null, index: number) => {
-    if (folder === null) { // Go back to root (either multi-folder view or single root)
+    if (folder === null) { 
         initializeDriveState();
         return;
     }
@@ -226,22 +230,15 @@ export default function GoogleDriveFiles() {
     );
   }
   
-  if (isLoading && !error && !items.length && !initialFolders.length) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline text-foreground text-xl">Google Drive</CardTitle>
-          <Skeleton className="h-4 w-1/2" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-            <Skeleton className="h-6 w-1/4" />
-            {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-        </CardContent>
-      </Card>
-    );
-  }
-  
   const renderContent = () => {
+    if (isLoading) {
+        return (
+            <div className="space-y-4 pr-3">
+               {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+           </div>
+        )
+    }
+
     if (error) {
       return (
          <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
@@ -306,14 +303,8 @@ export default function GoogleDriveFiles() {
       <CardContent className="flex-grow min-h-0 flex flex-col gap-2">
          {currentFolder && renderBreadcrumbs()}
          <div className="flex-grow min-h-0">
-            <ScrollArea className={cn("h-full relative transition-opacity pr-3", isLoading ? "opacity-40" : "opacity-100")}>
-                {isLoading && !error ? (
-                     <div className="space-y-4">
-                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-                    </div>
-                ): (
-                    renderContent()
-                )}
+            <ScrollArea className="h-full pr-3">
+              {renderContent()}
             </ScrollArea>
         </div>
       </CardContent>
