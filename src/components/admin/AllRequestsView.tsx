@@ -202,7 +202,7 @@ export function AllRequestsView() {
                             </Button>
                             <Button onClick={handleExportCSV} disabled={filteredAndSortedRequests.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                                 <FileDown className="mr-2 h-4 w-4" />
-                                Exportar
+                                Exportar CSV
                             </Button>
                         </div>
                     </div>
