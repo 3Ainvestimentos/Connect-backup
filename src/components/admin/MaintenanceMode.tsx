@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,31 +12,41 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Construction } from 'lucide-react';
+import { Loader2, Construction, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Separator } from '../ui/separator';
+import { RecipientSelectionModal } from './RecipientSelectionModal';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
 const maintenanceSchema = z.object({
   maintenanceMode: z.boolean(),
   maintenanceMessage: z.string().min(10, 'A mensagem deve ter pelo menos 10 caracteres.'),
+  allowedUserIds: z.array(z.string()).optional(),
 });
 
 type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 export function MaintenanceMode() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
+  const { collaborators } = useCollaborators();
+  const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
 
   const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<MaintenanceFormValues>({
     resolver: zodResolver(maintenanceSchema),
     defaultValues: {
       maintenanceMode: false,
       maintenanceMessage: '',
+      allowedUserIds: [],
     },
   });
 
-  // When settings are loaded from the context, reset the form with those values
   useEffect(() => {
     if (!loading) {
-      reset(settings);
+      reset({
+        maintenanceMode: settings.maintenanceMode,
+        maintenanceMessage: settings.maintenanceMessage,
+        allowedUserIds: settings.allowedUserIds || [],
+      });
     }
   }, [settings, loading, reset]);
 
@@ -47,7 +57,7 @@ export function MaintenanceMode() {
          if (checked) {
             toast({
               title: "Modo de Manutenção Ativado!",
-              description: "O acesso à plataforma agora está restrito a Super Administradores.",
+              description: "O acesso à plataforma agora está restrito a usuários autorizados.",
             });
           } else {
             toast({
@@ -61,38 +71,46 @@ export function MaintenanceMode() {
             description: 'Não foi possível alterar o modo de manutenção.',
             variant: 'destructive',
           });
-          // Revert visual state on failure
           setValue('maintenanceMode', !checked, { shouldDirty: true }); 
       }
   };
 
   const onSubmit = async (data: MaintenanceFormValues) => {
     try {
-      // Only update the message, as the switch is handled separately
-      await updateSystemSettings({ maintenanceMessage: data.maintenanceMessage });
-      toast({
-        title: "Mensagem de Manutenção Salva",
-        description: "A mensagem foi atualizada com sucesso.",
+      await updateSystemSettings({ 
+        maintenanceMessage: data.maintenanceMessage,
+        allowedUserIds: data.allowedUserIds,
       });
-      reset({ ...data }); // Resets dirty state for the form
+      toast({
+        title: "Configurações Salvas",
+        description: "As alterações foram salvas com sucesso.",
+      });
+      reset({ ...data }); 
     } catch (error) {
       toast({
-        title: 'Erro ao Salvar Mensagem',
-        description: 'Não foi possível salvar a mensagem de manutenção.',
+        title: 'Erro ao Salvar',
+        description: 'Não foi possível salvar as configurações.',
         variant: 'destructive',
       });
     }
   };
   
   const maintenanceModeOn = watch('maintenanceMode');
+  const allowedUserIds = watch('allowedUserIds') || [];
+
+  const getRecipientDescription = (ids: string[]) => {
+      if (!ids || ids.length === 0) return 'Nenhum usuário extra autorizado.';
+      if (ids.length === 1) return '1 usuário autorizado.';
+      return `${ids.length} usuários autorizados.`;
+  }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2"><Construction className="h-6 w-6"/>Modo de Manutenção</CardTitle>
         <CardDescription>
-            Ative para suspender o acesso de todos os usuários, exceto Super Admins.
-            Ideal para realizar atualizações ou manutenções na plataforma.
+            Ative para suspender o acesso, exceto para Super Admins e usuários autorizados.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -108,7 +126,7 @@ export function MaintenanceMode() {
                 </Label>
                 <p className="text-sm text-muted-foreground">
                   {maintenanceModeOn 
-                    ? "Acesso restrito apenas para Super Administradores."
+                    ? "Acesso restrito a usuários autorizados."
                     : "Acesso liberado para todos os colaboradores."
                   }
                 </p>
@@ -135,14 +153,42 @@ export function MaintenanceMode() {
              {errors.maintenanceMessage && <p className="text-sm text-destructive mt-1">{errors.maintenanceMessage.message}</p>}
           </div>
 
+          <Separator/>
+          
+          <div className="space-y-2">
+            <Label>Usuários Autorizados</Label>
+            <p className="text-sm text-muted-foreground">
+              Estes usuários poderão acessar a plataforma mesmo com o modo de manutenção ativo.
+              Super Admins sempre têm acesso.
+            </p>
+            <Button type="button" variant="outline" className="w-full justify-start text-left" onClick={() => setIsSelectionModalOpen(true)}>
+                <Users className="mr-2 h-4 w-4" />
+                <span>{getRecipientDescription(allowedUserIds)}</span>
+            </Button>
+          </div>
+
+
           <div className="flex justify-end">
             <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Mensagem
+              Salvar
             </Button>
           </div>
         </form>
       </CardContent>
     </Card>
+    <RecipientSelectionModal
+        isOpen={isSelectionModalOpen}
+        onClose={() => setIsSelectionModalOpen(false)}
+        allCollaborators={collaborators}
+        selectedIds={allowedUserIds}
+        onConfirm={(newIds) => {
+            // We set 'all' to be an empty array for this specific use case
+            const finalIds = newIds.includes('all') ? [] : newIds;
+            setValue('allowedUserIds', finalIds, { shouldDirty: true, shouldValidate: true });
+            setIsSelectionModalOpen(false);
+        }}
+    />
+    </>
   );
 }

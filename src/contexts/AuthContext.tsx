@@ -63,14 +63,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (user) {
             const collaborator = collaborators.find(c => c.email === user.email);
             const isSuper = !!user.email && SUPER_ADMIN_EMAILS.includes(user.email);
-            
-            // Maintenance mode check
-            if (settings.maintenanceMode && !isSuper) {
+            const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
+
+            if (settings.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
                  await firebaseSignOut(auth);
                  setUser(null);
                  setAccessToken(null);
-                 // No need to redirect, login page will show maintenance message.
-                 // We don't show a toast here to avoid bothering users who just opened the page.
             } else if (!collaborator && collaborators.length > 0 && !isSuper) { 
                 await firebaseSignOut(auth);
                 toast({
@@ -102,7 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth, router, collaborators, loadingCollaborators, settings.maintenanceMode]);
+  }, [auth, router, collaborators, loadingCollaborators, settings.maintenanceMode, settings.allowedUserIds]);
 
 
   useEffect(() => {
@@ -149,9 +147,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const email = result.user.email;
       const isSuperAdminLogin = !!email && SUPER_ADMIN_EMAILS.includes(email);
+      const collaborator = collaborators.find(c => c.email === email);
+      const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 
-      // Check for maintenance mode *after* getting user's email
-      if (settings.maintenanceMode && !isSuperAdminLogin) {
+      if (settings.maintenanceMode && !isSuperAdminLogin && !isAllowedDuringMaintenance) {
          await firebaseSignOut(auth);
          toast({
             title: "Manutenção em Andamento",
@@ -159,19 +158,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             variant: "default",
             duration: 10000,
          });
-         setLoading(false); // Stop loading before returning
+         setLoading(false);
          return;
       }
       
-      const collaborator = collaborators.find(c => c.email === email);
-
       if (collaborator || isSuperAdminLogin) {
         const userToLog = collaborator || { 
             id3a: result.user.uid, 
             name: result.user.displayName || 'Super Admin' 
         };
 
-        // Log the login event
         await addDocumentToCollection('audit_logs', {
             eventType: 'login',
             userId: userToLog.id3a,
@@ -192,7 +188,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: unknown) {
       if (error instanceof Error && 'code' in error) {
           const firebaseError = error as { code: string; message: string };
-          // Do not log "popup closed by user" as an error, it's a normal action.
           if (firebaseError.code !== 'auth/popup-closed-by-user' && firebaseError.code !== 'auth/cancelled-popup-request') {
             console.error("Firebase Login Error:", firebaseError);
             toast({
