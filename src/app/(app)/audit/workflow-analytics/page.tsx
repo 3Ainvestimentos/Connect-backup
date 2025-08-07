@@ -18,20 +18,36 @@ export default function WorkflowAnalyticsPage() {
 
   const requestsByStatus = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
-    const statusCounts: { [key: string]: number } = {};
+    
+    const statusCounts = {
+        'Em aberto': 0,
+        'Em processamento': 0,
+        'Finalizado': 0,
+    };
 
     requests.forEach(req => {
-        statusCounts[req.status] = (statusCounts[req.status] || 0) + 1;
+        const definition = workflowDefinitions.find(d => d.name === req.type);
+        if (!definition || !definition.statuses || definition.statuses.length === 0) {
+            statusCounts['Em processamento']++;
+            return;
+        }
+
+        const initialStatusId = definition.statuses[0].id;
+        const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+        const currentStatusDef = definition.statuses.find(s => s.id === req.status);
+        
+        if (req.status === initialStatusId) {
+            statusCounts['Em aberto']++;
+        } else if (currentStatusDef && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
+            statusCounts['Finalizado']++;
+        } else {
+            statusCounts['Em processamento']++;
+        }
     });
 
-    const allStatuses = new Map<string, string>();
-    workflowDefinitions.forEach(def => def.statuses.forEach(s => allStatuses.set(s.id, s.label)));
-
-    return Object.entries(statusCounts).map(([statusId, count]) => ({
-      name: allStatuses.get(statusId) || statusId,
-      value: count,
-    }));
+    return Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
   }, [requests, loadingRequests, workflowDefinitions]);
+
 
   const requestsByType = useMemo(() => {
      if (loadingRequests) return [];
