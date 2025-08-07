@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { Shield, Loader2, Search, DollarSign, Award } from 'lucide-react';
+import { Shield, Loader2, Search, DollarSign, Award, Filter, ChevronDown, ChevronUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] = [
     { key: 'canManageContent', label: 'Conteúdo' },
@@ -27,16 +29,32 @@ function PermissionsTable() {
     const { collaborators, loading, updateCollaboratorPermissions } = useCollaborators();
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filters, setFilters] = useState<{ area: string[], position: string[] }>({ area: [], position: [] });
+
+    const uniqueAreas = useMemo(() => [...new Set(collaborators.map(c => c.area))].sort(), [collaborators]);
+    const uniquePositions = useMemo(() => [...new Set(collaborators.map(c => c.position))].sort(), [collaborators]);
 
     const filteredCollaborators = useMemo(() => {
-        const sortedByName = [...collaborators].sort((a, b) => a.name.localeCompare(b.name));
-        if (!searchTerm) return sortedByName;
+        let items = [...collaborators].sort((a, b) => a.name.localeCompare(b.name));
         
-        return sortedByName.filter(c => 
-            c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            c.email.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [collaborators, searchTerm]);
+        if (searchTerm) {
+            const lowercasedTerm = searchTerm.toLowerCase();
+            items = items.filter(c => 
+                c.name.toLowerCase().includes(lowercasedTerm) ||
+                c.email.toLowerCase().includes(lowercasedTerm)
+            );
+        }
+
+        if (filters.area.length > 0) {
+            items = items.filter(c => filters.area.includes(c.area));
+        }
+
+        if (filters.position.length > 0) {
+            items = items.filter(c => filters.position.includes(c.position));
+        }
+
+        return items;
+    }, [collaborators, searchTerm, filters]);
 
     const handlePermissionToggle = async (collaborator: Collaborator, permissionKey: keyof CollaboratorPermissions) => {
         const newPermissions = {
@@ -60,6 +78,46 @@ function PermissionsTable() {
             setUpdatingId(null);
         }
     };
+    
+    const handleFilterChange = (filterKey: 'area' | 'position', value: string) => {
+        setFilters(prev => {
+            const currentValues = prev[filterKey];
+            const newValues = currentValues.includes(value)
+                ? currentValues.filter(v => v !== value)
+                : [...currentValues, value];
+            return { ...prev, [filterKey]: newValues };
+        });
+    };
+    
+    const FilterableHeader = ({ fkey, label, uniqueValues }: { fkey: 'area' | 'position', label: string, uniqueValues: string[] }) => (
+        <TableHead>
+            <div className="flex items-center gap-2">
+                <span className="flex-grow">{label}</span>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-muted">
+                            <Filter className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="max-h-60 overflow-y-auto">
+                        <DropdownMenuLabel>Filtrar por {label}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <ScrollArea>
+                        {uniqueValues.map(value => (
+                            <DropdownMenuCheckboxItem
+                                key={value}
+                                checked={filters[fkey].includes(value)}
+                                onCheckedChange={() => handleFilterChange(fkey, value)}
+                            >
+                                {value}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                        </ScrollArea>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </TableHead>
+    );
 
     if (loading) {
         return (
@@ -111,6 +169,8 @@ function PermissionsTable() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Colaborador</TableHead>
+                                <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas} />
+                                <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions} />
                                 {permissionLabels.map(p => <TableHead key={p.key}>{p.label}</TableHead>)}
                             </TableRow>
                         </TableHeader>
@@ -118,6 +178,8 @@ function PermissionsTable() {
                             {filteredCollaborators.map(collaborator => (
                                 <TableRow key={collaborator.id}>
                                     <TableCell className="font-medium">{collaborator.name}<br/><span className="text-xs text-muted-foreground">{collaborator.email}</span></TableCell>
+                                    <TableCell>{collaborator.area}</TableCell>
+                                    <TableCell>{collaborator.position}</TableCell>
                                     {permissionLabels.map(p => (
                                         <TableCell key={p.key}>
                                             {updatingId === collaborator.id ? (
@@ -140,7 +202,7 @@ function PermissionsTable() {
                 </div>
                  {filteredCollaborators.length === 0 && (
                     <div className="text-center py-10">
-                        <p className="text-muted-foreground">Nenhum colaborador encontrado para a busca "{searchTerm}".</p>
+                        <p className="text-muted-foreground">Nenhum colaborador encontrado para os filtros aplicados.</p>
                     </div>
                 )}
             </CardContent>
