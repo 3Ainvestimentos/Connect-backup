@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -214,8 +215,8 @@ const Sidebar = React.forwardRef<
       <div
           ref={ref}
           className={cn(
-            "group hidden md:flex flex-shrink-0 flex-col bg-sidebar text-sidebar-foreground duration-200 transition-[width] ease-linear fixed z-50 h-full", 
-            "top-[var(--header-height)] h-[calc(100vh-var(--header-height))]",
+            "group hidden md:flex flex-shrink-0 flex-col bg-sidebar text-sidebar-foreground duration-200 transition-[width] ease-linear fixed z-40 h-full", 
+            "top-0 h-screen pt-[var(--header-height)]",
             "group-data-[state=expanded]/sidebar-wrapper:w-[var(--sidebar-width)]",
             "group-data-[state=collapsed]/sidebar-wrapper:w-[var(--sidebar-width-icon)]",
             className
