@@ -8,11 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint, FileDown, Route } from 'lucide-react';
+import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint, FileDown, Route, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view';
@@ -59,8 +60,8 @@ export default function ContentInteractionPage() {
         select: (data) => data.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download' || e.eventType === 'page_view')
     });
 
-    const { contentStats, mostViewed, leastViewed, pageAccessCounts } = useMemo(() => {
-        if (isLoading || !events.length) return { contentStats: [], mostViewed: null, leastViewed: null, pageAccessCounts: [] };
+    const { contentStats, top5Contents, pageAccessCounts } = useMemo(() => {
+        if (isLoading || !events.length) return { contentStats: [], top5Contents: [], pageAccessCounts: [] };
 
         const viewEvents = events.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download');
 
@@ -99,10 +100,9 @@ export default function ContentInteractionPage() {
           .map(([id, s]) => ({ id, ...s, uniqueViews: s.uniqueViewers.size }))
           .sort((a, b) => b.uniqueViews - a.uniqueViews);
           
-        const mostViewed = contentStats.length > 0 ? contentStats[0] : null;
-        const leastViewed = contentStats.length > 0 ? contentStats[contentStats.length - 1] : null;
+        const top5Contents = contentStats.slice(0, 5);
 
-        return { contentStats, mostViewed, leastViewed, pageAccessCounts };
+        return { contentStats, top5Contents, pageAccessCounts };
 
     }, [events, isLoading]);
 
@@ -156,29 +156,33 @@ export default function ContentInteractionPage() {
                             <Medal className="h-5 w-5 text-amber-500" />
                         </CardHeader>
                         <CardContent>
-                            {isLoading ? <Skeleton className="h-8 w-3/4" /> : mostViewed ? (
+                            {isLoading ? <Skeleton className="h-8 w-3/4" /> : top5Contents.length > 0 ? (
                                 <>
-                                    <p className="text-xl font-bold">{mostViewed.title}</p>
-                                    <p className="text-xs text-muted-foreground">{mostViewed.uniqueViews} visualizadores únicos</p>
+                                    <p className="text-xl font-bold">{top5Contents[0].title}</p>
+                                    <p className="text-xs text-muted-foreground">{top5Contents[0].uniqueViews} visualizadores únicos</p>
                                 </>
                             ) : (
                                 <p className="text-sm text-muted-foreground">Sem dados.</p>
                             )}
                         </CardContent>
                     </Card>
-                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Conteúdo Menos Popular</CardTitle>
-                            <Bomb className="h-5 w-5 text-muted-foreground" />
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-500"/> Top 5 Conteúdos Populares</CardTitle>
+                            <CardDescription>Conteúdos com mais visualizadores únicos.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {isLoading ? <Skeleton className="h-8 w-3/4" /> : leastViewed ? (
-                                <>
-                                    <p className="text-xl font-bold">{leastViewed.title}</p>
-                                    <p className="text-xs text-muted-foreground">{leastViewed.uniqueViews} visualizadores únicos</p>
-                                </>
+                            {isLoading ? <Skeleton className="h-24 w-full" /> : top5Contents.length > 0 ? (
+                                <ol className="space-y-2 text-sm">
+                                    {top5Contents.map((item, index) => (
+                                        <li key={item.id} className="flex items-center justify-between gap-2">
+                                            <span className="truncate"><strong>{index + 1}.</strong> {item.title}</span>
+                                            <Badge variant="secondary">{item.uniqueViews} visualizações</Badge>
+                                        </li>
+                                    ))}
+                                </ol>
                             ) : (
-                                <p className="text-sm text-muted-foreground">Sem dados.</p>
+                                <p className="text-sm text-muted-foreground">Sem dados de visualização.</p>
                             )}
                         </CardContent>
                     </Card>

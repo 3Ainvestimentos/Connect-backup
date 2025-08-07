@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown } from 'lucide-react';
+import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown, ThumbsUp, ThumbsDown, Trophy } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
 import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -15,6 +15,8 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import Papa from 'papaparse';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view' | 'search_term_used';
@@ -30,8 +32,6 @@ export default function AuditPage() {
     const [today, setToday] = useState(new Date());
 
     useEffect(() => {
-        // This ensures the date is set on the client-side, avoiding hydration mismatches
-        // and using the user's current date, not the server's build-time date.
         setToday(new Date());
     }, []);
     
@@ -56,6 +56,26 @@ export default function AuditPage() {
     const { collaborators, loading: loadingCollaborators } = useCollaborators();
 
     const isLoading = isLoadingEvents || loadingCollaborators;
+    
+    const { userLoginStats } = useMemo(() => {
+        if (isLoading || collaborators.length === 0) return { userLoginStats: [] };
+
+        const loginCounts = events.reduce((acc, event) => {
+            acc[event.userId] = (acc[event.userId] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        const allUserStats = collaborators.map(collab => ({
+            id: collab.id3a,
+            name: collab.name,
+            photoURL: collab.photoURL,
+            count: loginCounts[collab.id3a] || 0,
+        })).sort((a,b) => b.count - a.count);
+        
+        return { userLoginStats: allUserStats };
+
+    }, [events, collaborators, isLoading]);
+
 
     const cumulativeLogins = useMemo(() => {
         if (isLoading || events.length === 0) return [];
@@ -158,6 +178,39 @@ export default function AuditPage() {
         link.click();
         document.body.removeChild(link);
     };
+    
+    const UserEngagementList = ({ users, title, icon: Icon }: { users: typeof userLoginStats, title: string, icon: React.ElementType }) => (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Icon className="h-5 w-5"/>{title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                 <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Colaborador</TableHead>
+                                <TableHead className="text-right">Logins</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {users.map(user => (
+                            <TableRow key={user.id}>
+                                <TableCell className="flex items-center gap-2">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-medium truncate">{user.name}</span>
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-bold">{user.count}</TableCell>
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+    );
 
     if (isLoading) {
         return (
@@ -186,6 +239,11 @@ export default function AuditPage() {
                         </Button>
                     </CardHeader>
                 </Card>
+                
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <UserEngagementList users={userLoginStats.slice(0, 20)} title="Mais Engajados (Top 20)" icon={ThumbsUp} />
+                    <UserEngagementList users={[...userLoginStats].sort((a,b) => a.count - b.count).slice(0, 20)} title="Menos Engajados (Top 20)" icon={ThumbsDown} />
+                </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <Card>
