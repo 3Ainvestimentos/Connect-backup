@@ -4,7 +4,7 @@ const NuvemShopEmbed = () => {
   return (
     <div style={{ width: '100%', height: 'calc(100vh - var(--header-height))' }}>
       <iframe 
-        src="https://store-3ariva.com.br" 
+        src="https://www.store-3ariva.com.br" 
         width="100%" 
         height="100%" 
         frameBorder="0"
