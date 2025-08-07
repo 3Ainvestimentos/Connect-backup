@@ -12,6 +12,7 @@ import { Calendar } from '../ui/calendar';
 import { ScrollArea } from '../ui/scroll-area';
 import { GoogleEventDetailsModal } from './GoogleEventDetailsModal';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/button';
 
 
 declare global {
@@ -45,6 +46,35 @@ export default function GoogleCalendar() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+
+  const initializeGapiClient = useCallback(() => {
+    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+        setError("A biblioteca de cliente do Google não pôde ser carregada.");
+        setIsLoading(false);
+        return;
+    }
+    
+    setIsLoading(true);
+    setError(null);
+
+    const init = () => {
+        window.gapi.client.init({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+        }).then(() => {
+            listMonthEvents(currentMonth);
+        }).catch((e: any) => {
+             setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página ou fazer login novamente.");
+             setIsLoading(false);
+        });
+    }
+
+    if (window.gapi.client && window.gapi.client.calendar) {
+      listMonthEvents(currentMonth);
+    } else {
+       window.gapi.load('client', init);
+    }
+  }, [listMonthEvents, currentMonth]);
 
 
   const listMonthEvents = useCallback(async (month: Date) => {
@@ -90,34 +120,12 @@ export default function GoogleCalendar() {
   }, [user, accessToken]);
 
   useEffect(() => {
-    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
-        setError("A biblioteca de cliente do Google não pôde ser carregada.");
-        setIsLoading(false);
-        return;
-    }
-    
-    const initializeGapiClient = () => {
-      window.gapi.client.init({
-          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-      }).then(() => {
-          if (user && accessToken) {
-              listMonthEvents(currentMonth);
-          } else if (!user) {
-            setIsLoading(false);
-          }
-      }).catch((e: any) => {
-           setError("Falha ao inicializar o cliente GAPI.");
-           setIsLoading(false);
-      });
-    }
-
-    if (window.gapi.client) {
+    if (user && accessToken) {
       initializeGapiClient();
-    } else {
-      window.gapi.load('client', initializeGapiClient);
+    } else if (!user) {
+        setIsLoading(false);
     }
-  }, [user, accessToken, listMonthEvents, currentMonth]);
+  }, [user, accessToken, initializeGapiClient]);
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {
@@ -173,9 +181,10 @@ export default function GoogleCalendar() {
                         <Skeleton className="h-10 w-full" />
                     </div>
                 ) : error ? (
-                    <div className="text-center text-destructive text-sm p-4">
-                    <AlertCircle className="mx-auto h-6 w-6 mb-1"/>
-                    <p>{error}</p>
+                    <div className="text-center text-destructive text-sm p-4 flex flex-col items-center gap-2">
+                      <AlertCircle className="mx-auto h-6 w-6"/>
+                      <p>{error}</p>
+                      <Button variant="link" size="sm" onClick={initializeGapiClient} className="text-xs text-destructive">Tentar novamente</Button>
                     </div>
                 ) : eventsForSelectedDay.length > 0 ? (
                     <ul className="space-y-2 pr-4">
