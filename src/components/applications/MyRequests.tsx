@@ -132,7 +132,7 @@ export default function MyRequests() {
                                                     )}
                                                 </TableCell>
                                                 <TableCell className="text-right">
-                                                    <Button variant="ghost" size="icon" onClick={() => handleViewDetails(req)}>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleViewDetails(req)} className="hover:bg-muted">
                                                         <Eye className="h-5 w-5" />
                                                     </Button>
                                                 </TableCell>
