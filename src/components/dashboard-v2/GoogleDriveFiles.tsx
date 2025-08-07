@@ -41,7 +41,7 @@ const extractFolderIdFromUrl = (url: string): string | null => {
 
 
 export default function GoogleDriveFiles() {
-  const { user, accessToken } = useAuth();
+  const { user, accessToken, signOut } = useAuth();
   const { collaborators } = useCollaborators();
   const [items, setItems] = useState<DriveFile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -59,7 +59,7 @@ export default function GoogleDriveFiles() {
   const listFiles = useCallback(async (folderId: string) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
-      else if (!accessToken) setError("Token de acesso não encontrado.");
+      else if (!accessToken) setError("Token de acesso expirado. Por favor, faça login novamente.");
       setIsLoading(false);
       return;
     }
@@ -82,13 +82,7 @@ export default function GoogleDriveFiles() {
       setError(null);
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
-      let errorMessage = "Não foi possível carregar os arquivos do Drive.";
-      if (err.result?.error?.message) {
-        errorMessage = `Erro da API: ${err.result.error.message}. Tente atualizar a página.`;
-      } else if(err.message) {
-        errorMessage = err.message;
-      }
-      setError(errorMessage);
+      setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
     } finally {
       setIsLoading(false);
     }
@@ -137,7 +131,7 @@ export default function GoogleDriveFiles() {
                 if (folderId) await listFiles(folderId);
             }
         } catch (e) {
-            setError("Falha ao processar as pastas do Drive.");
+            setError("Falha ao processar as pastas do Drive. Por favor, faça login novamente.");
             console.error(e);
         } finally {
             setIsLoading(false);
@@ -152,12 +146,12 @@ export default function GoogleDriveFiles() {
             }).then(() => {
                 initDrive();
             }).catch((e: any) => {
-                setError("Falha ao inicializar o cliente GAPI.");
+                setError("Falha ao inicializar a API. Por favor, saia e faça login novamente.");
                 setIsLoading(false);
             });
         });
     } else {
-      setError("A biblioteca de cliente do Google não pôde ser carregada.");
+      setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
       setIsLoading(false);
     }
   }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
@@ -236,9 +230,9 @@ export default function GoogleDriveFiles() {
       return (
          <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
             <AlertCircle className="h-8 w-8 mb-2" />
-            <p className="font-semibold">Erro ao carregar arquivos</p>
+            <p className="font-semibold">Falha ao carregar</p>
             <p className="text-xs">{error}</p>
-            <Button variant="link" size="sm" onClick={initializeDriveState} className="text-xs mt-2 text-destructive">Tentar novamente</Button>
+            <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
         </div>
       );
     }

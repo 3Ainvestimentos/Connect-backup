@@ -39,7 +39,7 @@ export interface CalendarEvent {
 }
 
 export default function GoogleCalendar() {
-  const { user, accessToken } = useAuth();
+  const { user, accessToken, signOut } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +50,7 @@ export default function GoogleCalendar() {
   const listMonthEvents = useCallback(async (month: Date) => {
     if (!user || !accessToken) {
       if (!user) setError("Usuário não autenticado.");
-      else if (!accessToken) setError("Token de acesso não encontrado.");
+      else if (!accessToken) setError("Token de acesso expirado. Por favor, faça login novamente.");
       setIsLoading(false);
       return;
     }
@@ -78,13 +78,7 @@ export default function GoogleCalendar() {
       
     } catch (err: any) {
       console.error("Erro ao buscar eventos do calendário:", err);
-      let errorMessage = "Não foi possível carregar os eventos do calendário.";
-      if (err.result?.error?.message) {
-        errorMessage = `Erro da API: ${err.result.error.message}. Tente atualizar a página para renovar a permissão.`;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      setError(errorMessage);
+      setError("Ocorreu um erro ao carregar os eventos. Por favor, saia e faça login novamente para reautenticar.");
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +95,7 @@ export default function GoogleCalendar() {
       }).then(() => {
         listMonthEvents(currentMonth);
       }).catch((e: any) => {
-        setError("Falha ao inicializar o cliente GAPI. Tente atualizar a página.");
+        setError("Falha ao inicializar a API. Por favor, saia e faça login novamente.");
         setIsLoading(false);
       });
     };
@@ -109,7 +103,7 @@ export default function GoogleCalendar() {
     if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
         window.gapi.load('client', initClient);
     } else {
-        setError("A biblioteca de cliente do Google não pôde ser carregada.");
+        setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
         setIsLoading(false);
     }
   }, [listMonthEvents, currentMonth]);
@@ -179,8 +173,9 @@ export default function GoogleCalendar() {
                 ) : error ? (
                     <div className="text-center text-destructive text-sm p-4 flex flex-col items-center gap-2">
                       <AlertCircle className="mx-auto h-6 w-6"/>
-                      <p>{error}</p>
-                      <Button variant="link" size="sm" onClick={initializeGapiClient} className="text-xs text-destructive">Tentar novamente</Button>
+                      <p className="font-semibold">Falha ao carregar</p>
+                      <p className="text-xs">{error}</p>
+                       <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
                     </div>
                 ) : eventsForSelectedDay.length > 0 ? (
                     <ul className="space-y-2 pr-4">
