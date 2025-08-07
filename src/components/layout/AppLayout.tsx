@@ -330,13 +330,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
-      <div className="flex h-[calc(100vh-var(--header-height))]"> 
-        <SidebarInset className={cn(!isChatbotPage && "md:ml-[var(--sidebar-width-icon)]")}>
-          {children}
-        </SidebarInset>
-        
+      <div className="flex flex-1"> 
         {!isChatbotPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
@@ -394,11 +390,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarFooter>
           </Sidebar>
         )}
+        <main className={cn("flex-1", !isChatbotPage && "md:ml-[var(--sidebar-width-icon)]")}>
+          {children}
+        </main>
       </div>
       <PollTrigger />
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
-    </>
+    </div>
   );
 }
 
