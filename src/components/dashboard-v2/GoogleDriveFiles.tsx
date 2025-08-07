@@ -79,7 +79,6 @@ export default function GoogleDriveFiles() {
       });
 
       setItems(response.result.files || []);
-      setError(null);
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
       setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
@@ -105,6 +104,12 @@ export default function GoogleDriveFiles() {
 
 
   const initializeDriveState = useCallback(async () => {
+    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+        setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
+        setIsLoading(false);
+        return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -138,22 +143,17 @@ export default function GoogleDriveFiles() {
         }
     };
     
-    if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
-        window.gapi.load('client', () => {
-            window.gapi.client.init({
-                apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-                discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
-            }).then(() => {
-                initDrive();
-            }).catch((e: any) => {
-                setError("Falha ao inicializar a API. Por favor, saia e faça login novamente.");
-                setIsLoading(false);
-            });
+    window.gapi.load('client', () => {
+        window.gapi.client.init({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
+        }).then(() => {
+            initDrive();
+        }).catch((e: any) => {
+            setError("Falha ao inicializar a API. Por favor, saia e faça login novamente.");
+            setIsLoading(false);
         });
-    } else {
-      setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
-      setIsLoading(false);
-    }
+    });
   }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
 
   useEffect(() => {
@@ -163,7 +163,7 @@ export default function GoogleDriveFiles() {
         setIsLoading(false);
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, initializeDriveState]);
+  }, [user, accessToken]); // Removed initializeDriveState to avoid re-running
 
   const handleFolderClick = (folder: DriveFile | FolderInfo) => {
     const newFolder = { id: folder.id, name: folder.name };

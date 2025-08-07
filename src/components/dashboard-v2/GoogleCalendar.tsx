@@ -74,8 +74,6 @@ export default function GoogleCalendar() {
       });
 
       setEvents(response.result.items || []);
-      setError(null);
-      
     } catch (err: any) {
       console.error("Erro ao buscar eventos do calendário:", err);
       setError("Ocorreu um erro ao carregar os eventos. Por favor, saia e faça login novamente para reautenticar.");
@@ -85,6 +83,12 @@ export default function GoogleCalendar() {
   }, [user, accessToken]);
 
   const initializeGapiClient = useCallback(() => {
+    if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
+        setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
+        setIsLoading(false);
+        return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -100,12 +104,7 @@ export default function GoogleCalendar() {
       });
     };
     
-    if (typeof window.gapi !== 'undefined' && typeof window.gapi.load !== 'undefined') {
-        window.gapi.load('client', initClient);
-    } else {
-        setError("A biblioteca de cliente do Google não pôde ser carregada. Tente atualizar a página.");
-        setIsLoading(false);
-    }
+    window.gapi.load('client', initClient);
   }, [listMonthEvents, currentMonth]);
 
   useEffect(() => {
@@ -115,7 +114,7 @@ export default function GoogleCalendar() {
         setIsLoading(false);
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, initializeGapiClient]);
+  }, [user, accessToken]); // Dependency on initializeGapiClient removed to avoid re-running on every render
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {
@@ -135,6 +134,57 @@ export default function GoogleCalendar() {
     return events.filter(e => isSameDay(new Date(e.start.dateTime || e.start.date), selectedDate));
   }, [events, selectedDate]);
 
+
+  const renderEvents = () => {
+    if (isLoading) {
+        return (
+            <div className="space-y-2 pr-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </div>
+        )
+    }
+    
+    if (error) {
+        return (
+             <div className="text-center text-destructive text-sm p-4 flex flex-col items-center gap-2">
+              <AlertCircle className="mx-auto h-6 w-6"/>
+              <p className="font-semibold">Falha ao carregar</p>
+              <p className="text-xs">{error}</p>
+               <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
+            </div>
+        )
+    }
+
+    if (eventsForSelectedDay.length > 0) {
+        return (
+            <ul className="space-y-2 pr-4">
+            {eventsForSelectedDay.map((event) => {
+                const startDate = new Date(event.start.dateTime || event.start.date);
+                const endDate = new Date(event.end.dateTime || event.end.date);
+                const isAllDay = !event.start.dateTime;
+                
+                const timeFormat = isAllDay 
+                  ? 'Dia todo'
+                  : `${format(startDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
+
+                return (
+                    <li key={event.id} className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted cursor-pointer" onClick={() => setSelectedEvent(event)}>
+                        <div className={cn("font-semibold text-foreground w-24 flex-shrink-0 text-center", isAllDay && 'text-muted-foreground')}>
+                            {timeFormat}
+                        </div>
+                        <div className="flex-grow border-l-2 border-border pl-3 truncate">
+                            <p className="font-semibold truncate">{event.summary}</p>
+                        </div>
+                    </li>
+                );
+            })}
+            </ul>
+        )
+    }
+    
+    return <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para este dia.</p>;
+  }
 
   return (
     <>
@@ -165,44 +215,7 @@ export default function GoogleCalendar() {
                 Eventos de {selectedDate ? format(selectedDate, 'dd/MM/yyyy') : 'hoje'}
             </h3>
             <ScrollArea className="h-40">
-                {isLoading ? (
-                    <div className="space-y-2 pr-4">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                ) : error ? (
-                    <div className="text-center text-destructive text-sm p-4 flex flex-col items-center gap-2">
-                      <AlertCircle className="mx-auto h-6 w-6"/>
-                      <p className="font-semibold">Falha ao carregar</p>
-                      <p className="text-xs">{error}</p>
-                       <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
-                    </div>
-                ) : eventsForSelectedDay.length > 0 ? (
-                    <ul className="space-y-2 pr-4">
-                    {eventsForSelectedDay.map((event) => {
-                        const startDate = new Date(event.start.dateTime || event.start.date);
-                        const endDate = new Date(event.end.dateTime || event.end.date);
-                        const isAllDay = !event.start.dateTime;
-                        
-                        const timeFormat = isAllDay 
-                          ? 'Dia todo'
-                          : `${format(startDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
-
-                        return (
-                            <li key={event.id} className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted cursor-pointer" onClick={() => setSelectedEvent(event)}>
-                                <div className={cn("font-semibold text-foreground w-24 flex-shrink-0 text-center", isAllDay && 'text-muted-foreground')}>
-                                    {timeFormat}
-                                </div>
-                                <div className="flex-grow border-l-2 border-border pl-3 truncate">
-                                    <p className="font-semibold truncate">{event.summary}</p>
-                                </div>
-                            </li>
-                        );
-                    })}
-                    </ul>
-                ) : (
-                    <p className="text-center text-muted-foreground text-sm py-4">Nenhum evento para este dia.</p>
-                )}
+                {renderEvents()}
             </ScrollArea>
             </div>
         </CardContent>
