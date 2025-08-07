@@ -4,7 +4,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, CalendarDays, Clock } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, isSameDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -54,6 +53,7 @@ export default function GoogleCalendar() {
     }
     
     setError(null);
+    setEvents([]);
     
     try {
       window.gapi.client.setToken({ access_token: accessToken });
@@ -71,10 +71,11 @@ export default function GoogleCalendar() {
       });
       
       // If the response is there but the items are missing, it might be an auth issue.
-      if (!response.result.items) {
-          throw new Error("A resposta da API não continha os itens esperados. A autenticação pode ter expirado.");
+      if (!response || !response.result) {
+          throw new Error("A resposta da API do Google Calendar foi inválida ou nula.");
       }
-      setEvents(response.result.items);
+      setEvents(response.result.items || []);
+
     } catch (err: any) {
       console.error("Erro ao buscar eventos do calendário:", err);
       setError("Ocorreu um erro ao carregar os eventos. Por favor, saia e faça login novamente para reautenticar.");
@@ -88,29 +89,39 @@ export default function GoogleCalendar() {
         throw new Error("A biblioteca de cliente do Google não pôde ser carregada.");
       }
       
-      window.gapi.load('client', () => {
-        window.gapi.client.init({
-          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-          discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
-        }).then(() => {
-            listMonthEvents(currentMonth);
-        }).catch((e: any) => {
-            throw new Error("Falha ao inicializar o cliente da API do Google.");
-        });
-      });
+      const init = () => {
+         window.gapi.client.init({
+            apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+            discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest"],
+          }).then(() => {
+              listMonthEvents(currentMonth);
+          }).catch((e: any) => {
+              console.error("Erro ao inicializar o cliente GAPI:", e);
+              setError("Falha ao inicializar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
+          });
+      };
+      
+      window.gapi.load('client', init);
+
     } catch (e: any) {
-        console.error("Falha ao inicializar GAPI:", e);
+        console.error("Falha ao carregar GAPI:", e);
         setError("Não foi possível carregar a API do Google. Por favor, saia e faça login novamente para reautenticar.");
     }
   }, [listMonthEvents, currentMonth]);
 
+
   useEffect(() => {
     if (user && accessToken) {
-      initializeGapiClient();
+        // A simple check to see if the gapi client is loaded.
+        if (window.gapi && window.gapi.client) {
+            listMonthEvents(currentMonth);
+        } else {
+            initializeGapiClient();
+        }
     } else if (!user) {
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, initializeGapiClient]); 
+  }, [user, accessToken, currentMonth, listMonthEvents, initializeGapiClient]); 
 
   const handleDayClick = (day: Date | undefined) => {
     if(day) {
@@ -120,18 +131,19 @@ export default function GoogleCalendar() {
 
   const handleMonthChange = (month: Date) => {
       setCurrentMonth(month);
-      listMonthEvents(month);
   };
   
   const eventDates = useMemo(() => events.map(e => new Date(e.start.dateTime || e.start.date)), [events]);
   
   const eventsForSelectedDay = useMemo(() => {
-    if (!selectedDate || error) return [];
+    if (!selectedDate) return [];
     return events.filter(e => isSameDay(new Date(e.start.dateTime || e.start.date), selectedDate));
-  }, [events, selectedDate, error]);
+  }, [events, selectedDate]);
 
 
   const renderEvents = () => {
+    if (error) return null;
+
     if (eventsForSelectedDay.length > 0) {
         return (
             <ul className="space-y-2 pr-4">

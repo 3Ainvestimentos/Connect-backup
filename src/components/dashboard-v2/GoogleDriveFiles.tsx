@@ -4,7 +4,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { HardDrive, AlertCircle, ExternalLink, FolderOpen, ChevronRight, File as FileIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -75,10 +74,11 @@ export default function GoogleDriveFiles() {
           orderBy: 'folder,modifiedTime desc'
       });
       
-      if (!response.result.files) {
-          throw new Error("A resposta da API do Drive não continha os itens esperados. A autenticação pode ter expirado.");
+      if (!response || !response.result) {
+          throw new Error("A resposta da API do Google Drive foi inválida ou nula.");
       }
-      setItems(response.result.files);
+      setItems(response.result.files || []);
+      
     } catch (err: any) {
       console.error("Erro ao buscar arquivos do Drive:", err);
       setError("Ocorreu um erro ao carregar os arquivos. Por favor, saia e faça login novamente para reautenticar.");
@@ -103,6 +103,7 @@ export default function GoogleDriveFiles() {
 
   const initializeDriveState = useCallback(async () => {
     setError(null);
+    setItems([]);
     
     try {
         if (typeof window.gapi === 'undefined' || typeof window.gapi.load === 'undefined') {
@@ -130,7 +131,8 @@ export default function GoogleDriveFiles() {
                     if (folderId) await listFiles(folderId);
                 }
             } catch (e) {
-                throw new Error("Falha ao processar as pastas do Drive.");
+                console.error("Erro ao processar pastas do Drive:", e);
+                setError("Ocorreu um erro ao processar as pastas do Drive. Tente fazer login novamente.");
             }
         };
 
@@ -139,22 +141,31 @@ export default function GoogleDriveFiles() {
                 apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
                 discoveryDocs: ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"],
             }).then(initDrive).catch((e: any) => {
-                throw new Error("Falha ao inicializar o cliente da API do Google Drive.");
+                 console.error("Erro ao inicializar o cliente GAPI Drive:", e);
+                setError("Falha ao inicializar a API do Google Drive. Por favor, saia e faça login novamente para reautenticar.");
             });
         });
     } catch(e: any) {
-       console.error("Falha ao inicializar GAPI Drive:", e);
+       console.error("Falha ao carregar GAPI Drive:", e);
        setError("Não foi possível carregar a API do Google Drive. Por favor, saia e faça login novamente para reautenticar.");
     }
   }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
 
   useEffect(() => {
     if (user && accessToken) {
-      initializeDriveState();
+      if (window.gapi && window.gapi.client && window.gapi.client.drive) {
+          if (currentFolder) {
+              listFiles(currentFolder.id);
+          } else {
+              initializeDriveState();
+          }
+      } else {
+          initializeDriveState();
+      }
     } else if (!user) {
         setError("Usuário não autenticado.");
     }
-  }, [user, accessToken, initializeDriveState]);
+  }, [user, accessToken, initializeDriveState, listFiles, currentFolder]);
 
   const handleFolderClick = (folder: DriveFile | FolderInfo) => {
     const newFolder = { id: folder.id, name: folder.name };
@@ -208,16 +219,7 @@ export default function GoogleDriveFiles() {
   }
   
   const renderContent = () => {
-    if (error) {
-        return (
-             <div className="flex flex-col items-center justify-center text-center text-destructive p-4 h-full">
-                <AlertCircle className="h-8 w-8 mb-2" />
-                <p className="font-semibold">Falha ao carregar</p>
-                <p className="text-sm">{error}</p>
-                <Button variant="destructive" size="sm" onClick={signOut} className="mt-2 text-xs">Fazer Login Novamente</Button>
-            </div>
-        )
-    }
+    if (error) return null;
 
     const list = currentFolder ? items : initialFolders;
 
