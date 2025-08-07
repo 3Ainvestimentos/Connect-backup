@@ -200,7 +200,7 @@ export function AllRequestsView() {
                                 <Archive className="mr-2 h-4 w-4"/>
                                 {showArchived ? "Ocultar Arquivadas" : "Mostrar Arquivadas"}
                             </Button>
-                            <Button variant="outline" onClick={handleExportCSV} disabled={filteredAndSortedRequests.length === 0}>
+                            <Button onClick={handleExportCSV} disabled={filteredAndSortedRequests.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                                 <FileDown className="mr-2 h-4 w-4" />
                                 Exportar
                             </Button>
@@ -266,7 +266,7 @@ export function AllRequestsView() {
                                             </TableCell>
                                             <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => setViewingRequest(req)}>
+                                                <Button variant="ghost" size="icon" onClick={() => setViewingRequest(req)} className="hover:bg-muted">
                                                     <Eye className="h-5 w-5 text-muted-foreground"/>
                                                 </Button>
                                             </TableCell>

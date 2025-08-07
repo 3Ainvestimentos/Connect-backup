@@ -204,7 +204,7 @@ export function WorkflowDefinitionsTab() {
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={def.allowedUserIds?.includes('all') ? 'default' : 'secondary'} className="flex items-center gap-1.5 w-fit">
+                                                <Badge variant={def.allowedUserIds?.includes('all') ? 'outline' : 'secondary'} className="flex items-center gap-1.5 w-fit">
                                                   <Users className="h-3 w-3" />
                                                   {getAccessDescription(def.allowedUserIds || ['all'])}
                                                 </Badge>
