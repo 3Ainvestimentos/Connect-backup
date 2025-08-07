@@ -136,6 +136,7 @@ export default function GoogleDriveFiles() {
             setItems([]);
             setCurrentFolder(null);
             setFolderHistory([]);
+            setIsLoading(false); // Done loading for multi-folder view
         } else {
             const singleLink = driveLinks && driveLinks.length === 1 ? driveLinks[0] : 'https://drive.google.com/drive/my-drive';
             const folderId = singleLink ? extractFolderIdFromUrl(singleLink) || (singleLink.includes('my-drive') ? 'root' : '') : 'root';
@@ -144,7 +145,7 @@ export default function GoogleDriveFiles() {
             setInitialFolders([]);
             setCurrentFolder(rootFolder);
             setFolderHistory([]);
-            if (folderId) await listFiles(folderId);
+            if (folderId) await listFiles(folderId); else setIsLoading(false);
         }
     };
     
@@ -164,9 +165,8 @@ export default function GoogleDriveFiles() {
         }
     } catch(e) {
          setError("Falha ao inicializar o cliente GAPI.");
-    } finally {
-        setIsLoading(false);
-    }
+         setIsLoading(false);
+    } 
   }, [user, accessToken, currentUserCollab, listFiles, fetchFolderDetails]);
 
   useEffect(() => {
@@ -189,45 +189,44 @@ export default function GoogleDriveFiles() {
         return;
     }
     setCurrentFolder(folder);
-    setFolderHistory(prev => prev.slice(0, index + 1));
+    setFolderHistory(prev => prev.slice(0, index));
     listFiles(folder.id);
   }
 
   const renderBreadcrumbs = () => {
     const rootName = initialFolders.length > 1 ? "Pastas" : "Início";
     
+    const breadcrumbs = [
+        { name: rootName, folder: folderHistory.length > 0 ? folderHistory[0] : null, index: -1},
+        ...folderHistory.map((f, i) => ({ name: f.name, folder: f, index: i})),
+    ];
+    if (currentFolder && (folderHistory.length === 0 || currentFolder.id !== folderHistory[folderHistory.length - 1]?.id)) {
+        breadcrumbs.push({ name: currentFolder.name, folder: currentFolder, index: folderHistory.length });
+    }
+    
     return (
       <div className="flex items-center text-sm text-muted-foreground flex-wrap">
-          <Button 
-              variant="link" 
-              onClick={() => handleBreadcrumbClick(folderHistory.length > 0 ? folderHistory[0] : null, -1)}
-              className="p-1 h-auto text-muted-foreground hover:text-foreground"
-              disabled={isLoading}
-          >
-              {rootName}
-          </Button>
-
-          {folderHistory.map((folder, index) => (
-              <React.Fragment key={folder.id}>
-                  <ChevronRight className="h-4 w-4" />
+          {breadcrumbs.map((crumb, index) => (
+              <React.Fragment key={crumb.folder?.id || 'root'}>
                   <Button 
                       variant="link" 
-                      onClick={() => handleBreadcrumbClick(folder, index)} 
+                      onClick={() => index === 0 ? initializeDriveState() : handleBreadcrumbClick(crumb.folder, index-1)}
                       className={cn(
                           "p-1 h-auto text-muted-foreground hover:text-foreground",
-                          index === folderHistory.length - 1 && "font-semibold text-foreground hover:text-foreground/80"
+                          index === breadcrumbs.length - 1 && "font-semibold text-foreground hover:text-foreground/80"
                       )}
                       disabled={isLoading}
                   >
-                      {folder.name}
+                      {crumb.name}
                   </Button>
+                   {index < breadcrumbs.length - 1 && <ChevronRight className="h-4 w-4" />}
               </React.Fragment>
           ))}
       </div>
     );
   }
   
-  if (isLoading && !error) {
+  if (isLoading && !error && !items.length && !initialFolders.length) {
     return (
       <Card>
         <CardHeader>
@@ -308,7 +307,13 @@ export default function GoogleDriveFiles() {
          {currentFolder && renderBreadcrumbs()}
          <div className="flex-grow min-h-0">
             <ScrollArea className={cn("h-full relative transition-opacity pr-3", isLoading ? "opacity-40" : "opacity-100")}>
-                {renderContent()}
+                {isLoading && !error ? (
+                     <div className="space-y-4">
+                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
+                    </div>
+                ): (
+                    renderContent()
+                )}
             </ScrollArea>
         </div>
       </CardContent>
