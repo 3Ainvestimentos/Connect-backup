@@ -50,7 +50,7 @@ export function WorkflowGroupModal({ open, onOpenChange, areaName, group, onWork
                     <Icon className="h-6 w-6 text-muted-foreground flex-shrink-0" />
                     <div className="flex-grow">
                         <p className="font-semibold font-body text-sm text-card-foreground">{workflow.name}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{workflow.description}</p>
+                        <p className="text-xs text-muted-foreground">{workflow.description}</p>
                     </div>
                   </CardContent>
                 </Card>
