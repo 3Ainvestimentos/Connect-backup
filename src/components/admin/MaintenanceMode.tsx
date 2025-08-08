@@ -17,6 +17,17 @@ import { cn } from '@/lib/utils';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Input } from '../ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 const maintenanceSchema = z.object({
   maintenanceMode: z.boolean(),
@@ -27,7 +38,6 @@ type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 const termsSchema = z.object({
   termsUrl: z.string().url("Por favor, insira uma URL válida.").or(z.literal('')),
-  termsVersion: z.coerce.number().min(1, 'A versão deve ser um número maior que zero.'),
 });
 type TermsFormValues = z.infer<typeof termsSchema>;
 
@@ -205,7 +215,6 @@ function LegalDocsCard() {
         if (!loading && settings) {
             termsForm.reset({
                 termsUrl: settings.termsUrl,
-                termsVersion: settings.termsVersion,
             });
             privacyForm.reset({
                 privacyPolicyUrl: settings.privacyPolicyUrl,
@@ -214,14 +223,17 @@ function LegalDocsCard() {
     }, [settings, loading, termsForm.reset, privacyForm.reset]);
 
     const onSubmitTerms = async (data: TermsFormValues) => {
+        const currentVersion = settings.termsVersion || 1;
+        const newVersion = currentVersion + 1;
+        
         try {
             await updateSystemSettings({
                 termsUrl: data.termsUrl,
-                termsVersion: data.termsVersion,
+                termsVersion: newVersion,
             });
             toast({
-                title: "Termos de Uso Atualizados",
-                description: "A URL e a versão foram salvas. Usuários com versões antigas serão solicitados a aceitar novamente.",
+                title: "Termos de Uso Publicados",
+                description: `A versão foi atualizada para ${newVersion.toFixed(1)} e uma nova rodada de aceite será iniciada.`,
             });
             termsForm.reset(data); // reset to new saved values
         } catch (error) {
@@ -258,24 +270,25 @@ function LegalDocsCard() {
                  <form onSubmit={termsForm.handleSubmit(onSubmitTerms)} className="space-y-4">
                     <div className="p-4 border rounded-lg bg-background">
                          <h3 className="font-semibold text-lg">Termos de Uso</h3>
-                         <p className="text-sm text-muted-foreground mb-4">Atualize a versão para forçar uma nova rodada de aceite pelos usuários.</p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <p className="text-sm text-muted-foreground mb-4">Atualize o link e salve para forçar uma nova rodada de aceite pelos usuários.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
                             <div className="space-y-2">
-                                <Label htmlFor="termsVersion">Versão Atual</Label>
-                                <Input id="termsVersion" type="number" {...termsForm.register('termsVersion')} className="w-24" />
-                                {termsForm.formState.errors.termsVersion && <p className="text-sm text-destructive mt-1">{termsForm.formState.errors.termsVersion.message}</p>}
+                                <Label>Versão Atual</Label>
+                                <div className="h-10 px-3 py-2 border rounded-md bg-muted text-muted-foreground w-24 flex items-center">
+                                    {(settings.termsVersion || 1).toFixed(1)}
+                                </div>
                             </div>
-                             <div className="p-3 border rounded-md bg-muted/50 flex items-center justify-center gap-4">
-                                 <UserCheck className="h-8 w-8 text-green-600" />
-                                 <div className="text-center">
-                                    <p className="text-2xl font-bold">{collaborators.length - pendingAcceptanceCount}</p>
+                             <div className="grid grid-cols-2 gap-2">
+                                <div className="p-3 border rounded-md bg-muted/50 flex flex-col items-center justify-center gap-1">
+                                    <UserCheck className="h-6 w-6 text-green-600" />
+                                    <p className="text-xl font-bold">{collaborators.length - pendingAcceptanceCount}</p>
                                     <p className="text-xs text-muted-foreground">Aceites</p>
-                                 </div>
-                                 <Users className="h-8 w-8 text-yellow-600" />
-                                  <div className="text-center">
-                                    <p className="text-2xl font-bold">{pendingAcceptanceCount}</p>
+                                </div>
+                                <div className="p-3 border rounded-md bg-muted/50 flex flex-col items-center justify-center gap-1">
+                                    <Users className="h-6 w-6 text-yellow-600" />
+                                    <p className="text-xl font-bold">{pendingAcceptanceCount}</p>
                                     <p className="text-xs text-muted-foreground">Pendentes</p>
-                                 </div>
+                                </div>
                              </div>
                         </div>
                         <div className="space-y-2 mt-4">
@@ -285,10 +298,25 @@ function LegalDocsCard() {
                             {termsForm.formState.errors.termsUrl && <p className="text-sm text-destructive mt-1">{termsForm.formState.errors.termsUrl.message}</p>}
                         </div>
                         <div className="flex justify-end mt-4">
-                            <Button type="submit" disabled={termsForm.formState.isSubmitting || !termsForm.formState.isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {termsForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Salvar Termos de Uso
-                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" disabled={!termsForm.formState.isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
+                                        Salvar e Publicar Nova Versão
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar Nova Versão?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Ao salvar, a versão dos Termos de Uso será incrementada para {(settings.termsVersion + 1).toFixed(1)}. Todos os usuários serão solicitados a aceitar os novos termos no próximo acesso. Deseja continuar?
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={termsForm.handleSubmit(onSubmitTerms)}>Sim, publicar nova versão</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                 </form>
