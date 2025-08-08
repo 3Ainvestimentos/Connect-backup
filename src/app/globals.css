@@ -108,6 +108,43 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  .prose {
+    @apply text-foreground;
+  }
+  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    @apply text-foreground;
+  }
+  .prose strong {
+    @apply text-foreground;
+  }
+  .prose a {
+    @apply text-primary;
+  }
+  .prose blockquote {
+    @apply border-l-primary text-muted-foreground;
+  }
+  .prose code {
+    @apply text-foreground;
+  }
+  
+  .dark .prose {
+    @apply text-foreground;
+  }
+  .dark .prose h1, .dark .prose h2, .dark .prose h3, .dark .prose h4, .dark .prose h5, .dark .prose h6 {
+    @apply text-foreground;
+  }
+  .dark .prose strong {
+    @apply text-foreground;
+  }
+  .dark .prose a {
+    @apply text-primary;
+  }
+  .dark .prose blockquote {
+    @apply border-l-primary text-muted-foreground;
+  }
+  .dark .prose code {
+    @apply text-foreground;
+  }
 }
 
 @layer utilities {

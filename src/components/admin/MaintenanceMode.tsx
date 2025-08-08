@@ -74,6 +74,7 @@ function TermsManager() {
                      <div className="space-y-2">
                         <Label htmlFor="termsContent">Conteúdo dos Termos</Label>
                         <Textarea id="termsContent" {...register('termsContent')} rows={10} placeholder="Cole ou digite os termos de uso aqui..."/>
+                        <p className="text-xs text-muted-foreground">Você pode usar a sintaxe Markdown para formatação (ex: **negrito**, *itálico*, - lista).</p>
                         {errors.termsContent && <p className="text-sm text-destructive mt-1">{errors.termsContent.message}</p>}
                     </div>
                     <div className="flex justify-end">

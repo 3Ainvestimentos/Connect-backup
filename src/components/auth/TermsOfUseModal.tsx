@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface TermsOfUseModalProps {
   isOpen: boolean;
@@ -49,9 +51,11 @@ export function TermsOfUseModal({ isOpen, content, onAccept, onDecline }: TermsO
         </DialogHeader>
         <div className="flex-grow min-h-0 border rounded-md">
             <ScrollArea className="h-full p-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-                    {content}
-                </div>
+                <article className="prose prose-sm dark:prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {content}
+                    </ReactMarkdown>
+                </article>
             </ScrollArea>
         </div>
         <div className="flex items-center space-x-2 pt-4">
