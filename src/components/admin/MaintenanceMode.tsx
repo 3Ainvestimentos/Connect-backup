@@ -1,8 +1,8 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import React, { useEffect, useState, useMemo } from 'react';
+import { useForm, useController } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,62 +12,68 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useSystemSettings, type SystemSettings } from '@/contexts/SystemSettingsContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Construction, Users, FileText } from 'lucide-react';
+import { Loader2, Construction, Users, FileText, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Input } from '../ui/input';
 
-const settingsSchema = z.object({
+const maintenanceSchema = z.object({
   maintenanceMode: z.boolean(),
   maintenanceMessage: z.string().min(10, 'A mensagem de manutenção deve ter pelo menos 10 caracteres.'),
   allowedUserIds: z.array(z.string()).optional(),
-  termsContent: z.string().min(20, 'O conteúdo dos termos deve ter pelo menos 20 caracteres.'),
-  termsVersion: z.coerce.number().min(1, 'A versão deve ser um número maior que zero.'),
 });
+type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
-type SettingsFormValues = z.infer<typeof settingsSchema>;
 
-export function MaintenanceMode() {
+const termsSchema = z.object({
+    termsContent: z.string().min(20, 'O conteúdo dos termos deve ter pelo menos 20 caracteres.'),
+    termsVersion: z.coerce.number().min(1, 'A versão deve ser um número maior que zero.'),
+});
+type TermsFormValues = z.infer<typeof termsSchema>;
+
+function MaintenanceCard() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
   const { collaborators } = useCollaborators();
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<SettingsFormValues>({
-    resolver: zodResolver(settingsSchema),
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<MaintenanceFormValues>({
+    resolver: zodResolver(maintenanceSchema),
     defaultValues: {
       maintenanceMode: false,
       maintenanceMessage: '',
       allowedUserIds: [],
-      termsContent: '',
-      termsVersion: 1,
     },
   });
 
   useEffect(() => {
     if (!loading && settings) {
-      reset(settings);
+      reset({
+          maintenanceMode: settings.maintenanceMode,
+          maintenanceMessage: settings.maintenanceMessage,
+          allowedUserIds: settings.allowedUserIds,
+      });
     }
   }, [settings, loading, reset]);
-
-  const onSubmit = async (data: SettingsFormValues) => {
+  
+  const onSubmit = async (data: MaintenanceFormValues) => {
     try {
       await updateSystemSettings(data);
       toast({
-        title: "Configurações Salvas",
-        description: "As configurações do sistema foram salvas com sucesso.",
+        title: "Configurações de Manutenção Salvas",
+        description: "As configurações de manutenção foram salvas com sucesso.",
       });
-      reset(data); // Reseta o 'dirty' state para desabilitar o botão de salvar
+      reset(data); 
     } catch (error) {
       toast({
         title: 'Erro ao Salvar',
-        description: 'Não foi possível salvar as configurações.',
+        description: 'Não foi possível salvar as configurações de manutenção.',
         variant: 'destructive',
       });
     }
   };
-  
+
   const maintenanceModeOn = watch('maintenanceMode');
   const allowedUserIds = watch('allowedUserIds') || [];
 
@@ -79,7 +85,7 @@ export function MaintenanceMode() {
 
   return (
     <>
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+     <form onSubmit={handleSubmit(onSubmit)}>
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Construction className="h-6 w-6"/>Modo de Manutenção</CardTitle>
@@ -136,40 +142,16 @@ export function MaintenanceMode() {
                         <span>{getRecipientDescription(allowedUserIds)}</span>
                     </Button>
                 </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6"/> Gerenciamento de Termos de Uso</CardTitle>
-                <CardDescription>
-                    Edite o conteúdo e a versão dos Termos de Uso. Aumentar a versão forçará todos os usuários a aceitarem os termos novamente.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <Label htmlFor="termsVersion">Versão dos Termos</Label>
-                    <Input id="termsVersion" type="number" {...register('termsVersion')} className="w-24" />
-                    {errors.termsVersion && <p className="text-sm text-destructive mt-1">{errors.termsVersion.message}</p>}
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="termsContent">Conteúdo dos Termos</Label>
-                    <Textarea id="termsContent" {...register('termsContent')} rows={10} placeholder="Cole ou digite os termos de uso aqui..."/>
-                    <p className="text-xs text-muted-foreground">Você pode usar a sintaxe Markdown para formatação (ex: **negrito**, *itálico*, - lista).</p>
-                    {errors.termsContent && <p className="text-sm text-destructive mt-1">{errors.termsContent.message}</p>}
+                <div className="flex justify-end">
+                    <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar Configurações de Manutenção
+                    </Button>
                 </div>
             </CardContent>
         </Card>
-
-        <div className="flex justify-end sticky bottom-6">
-            <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar Todas as Configurações
-            </Button>
-        </div>
-    </form>
-    
-    <RecipientSelectionModal
+      </form>
+       <RecipientSelectionModal
         isOpen={isSelectionModalOpen}
         onClose={() => setIsSelectionModalOpen(false)}
         allCollaborators={collaborators}
@@ -181,5 +163,105 @@ export function MaintenanceMode() {
         }}
     />
     </>
+  );
+}
+
+
+function TermsOfUseCard() {
+    const { settings, loading, updateSystemSettings } = useSystemSettings();
+    const { collaborators } = useCollaborators();
+
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<TermsFormValues>({
+        resolver: zodResolver(termsSchema),
+        defaultValues: {
+            termsContent: '',
+            termsVersion: 1,
+        },
+    });
+
+    useEffect(() => {
+        if (!loading && settings) {
+            reset({
+                termsContent: settings.termsContent,
+                termsVersion: settings.termsVersion,
+            });
+        }
+    }, [settings, loading, reset]);
+
+    const pendingAcceptanceCount = useMemo(() => {
+        if (loading || !collaborators.length) return 0;
+        return collaborators.filter(c => (c.acceptedTermsVersion || 0) < settings.termsVersion).length;
+    }, [collaborators, settings.termsVersion, loading]);
+
+    const onSubmit = async (data: TermsFormValues) => {
+        try {
+            await updateSystemSettings(data);
+            toast({
+                title: "Termos Salvos",
+                description: "Os Termos de Uso foram salvos com sucesso.",
+            });
+            reset(data); // Resets the 'dirty' state
+        } catch (error) {
+            toast({
+                title: 'Erro ao Salvar Termos',
+                description: 'Não foi possível salvar os Termos de Uso.',
+                variant: 'destructive',
+            });
+        }
+    };
+    
+    return (
+        <form onSubmit={handleSubmit(onSubmit)}>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6"/> Gerenciamento de Termos de Uso</CardTitle>
+                    <CardDescription>
+                        Edite o conteúdo e a versão dos Termos de Uso. Aumentar a versão forçará todos os usuários a aceitarem os termos novamente.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="termsVersion">Versão dos Termos</Label>
+                            <Input id="termsVersion" type="number" {...register('termsVersion')} className="w-24" />
+                            {errors.termsVersion && <p className="text-sm text-destructive mt-1">{errors.termsVersion.message}</p>}
+                        </div>
+                         <div className="p-3 border rounded-md bg-muted/50 flex items-center justify-center gap-4">
+                             <UserCheck className="h-8 w-8 text-green-600" />
+                             <div className="text-center">
+                                <p className="text-2xl font-bold">{collaborators.length - pendingAcceptanceCount}</p>
+                                <p className="text-xs text-muted-foreground">Usuários Aceitaram</p>
+                             </div>
+                             <Users className="h-8 w-8 text-yellow-600" />
+                              <div className="text-center">
+                                <p className="text-2xl font-bold">{pendingAcceptanceCount}</p>
+                                <p className="text-xs text-muted-foreground">Aceites Pendentes</p>
+                             </div>
+                         </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="termsContent">Conteúdo dos Termos</Label>
+                        <Textarea id="termsContent" {...register('termsContent')} rows={10} placeholder="Cole ou digite os termos de uso aqui..."/>
+                        <p className="text-xs text-muted-foreground">Você pode usar a sintaxe Markdown para formatação (ex: **negrito**, *itálico*, - lista).</p>
+                        {errors.termsContent && <p className="text-sm text-destructive mt-1">{errors.termsContent.message}</p>}
+                    </div>
+                    <div className="flex justify-end">
+                        <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Salvar Termos
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+        </form>
+    );
+}
+
+export function MaintenanceMode() {
+  return (
+    <div className="space-y-6">
+      <MaintenanceCard />
+      <TermsOfUseCard />
+    </div>
   );
 }
