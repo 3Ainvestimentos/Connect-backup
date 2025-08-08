@@ -14,54 +14,49 @@ import { useSystemSettings, type SystemSettings } from '@/contexts/SystemSetting
 import { toast } from '@/hooks/use-toast';
 import { Loader2, Construction, Users, FileText, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Input } from '../ui/input';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ReactMarkdown } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 
-// Schema for the maintenance message and allowed users
-const maintenanceDetailsSchema = z.object({
+const maintenanceSchema = z.object({
+  maintenanceMode: z.boolean(),
   maintenanceMessage: z.string().min(10, 'A mensagem de manutenção deve ter pelo menos 10 caracteres.'),
   allowedUserIds: z.array(z.string()).optional(),
 });
-type MaintenanceDetailsFormValues = z.infer<typeof maintenanceDetailsSchema>;
+type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
-// Schema for the legal documents
-const legalDocsSchema = z.object({
-  termsUrl: z.string().url("Por favor, insira uma URL válida para os Termos de Uso.").or(z.literal('')),
-  privacyPolicyUrl: z.string().url("Por favor, insira uma URL válida para a Política de Privacidade.").or(z.literal('')),
+const termsSchema = z.object({
+  termsUrl: z.string().url("Por favor, insira uma URL válida.").or(z.literal('')),
   termsVersion: z.coerce.number().min(1, 'A versão deve ser um número maior que zero.'),
 });
-type LegalDocsFormValues = z.infer<typeof legalDocsSchema>;
+type TermsFormValues = z.infer<typeof termsSchema>;
+
+const privacySchema = z.object({
+  privacyPolicyUrl: z.string().url("Por favor, insira uma URL válida.").or(z.literal('')),
+});
+type PrivacyFormValues = z.infer<typeof privacySchema>;
 
 
 function MaintenanceCard() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
-  const { collaborators } = useCollaborators();
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [isUpdatingSwitch, setIsUpdatingSwitch] = useState(false);
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<MaintenanceDetailsFormValues>({
-    resolver: zodResolver(maintenanceDetailsSchema),
-    defaultValues: {
-      maintenanceMessage: '',
-      allowedUserIds: [],
-    },
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<MaintenanceFormValues>({
+    resolver: zodResolver(maintenanceSchema),
   });
 
   useEffect(() => {
     if (!loading && settings) {
       reset({
+        maintenanceMode: settings.maintenanceMode,
         maintenanceMessage: settings.maintenanceMessage,
         allowedUserIds: settings.allowedUserIds,
       });
     }
   }, [settings, loading, reset]);
 
-  const onSubmitMaintenanceDetails = async (data: MaintenanceDetailsFormValues) => {
+  const onSubmitMaintenanceDetails = async (data: MaintenanceFormValues) => {
     try {
       await updateSystemSettings({ 
         maintenanceMessage: data.maintenanceMessage,
@@ -102,6 +97,7 @@ function MaintenanceCard() {
   };
 
   const allowedUserIds = watch('allowedUserIds') || [];
+  const { collaborators } = useCollaborators();
 
   const getRecipientDescription = (ids: string[]) => {
       if (!ids || ids.length === 0) return 'Nenhum usuário extra autorizado.';
@@ -152,7 +148,7 @@ function MaintenanceCard() {
                         {...register('maintenanceMessage')}
                         rows={4}
                         placeholder="Digite a mensagem que será exibida na tela de login durante a manutenção..."
-                        disabled={isSubmitting}
+                        disabled={isFormSubmitting}
                     />
                     {errors.maintenanceMessage && <p className="text-sm text-destructive mt-1">{errors.maintenanceMessage.message}</p>}
                 </div>
@@ -168,9 +164,9 @@ function MaintenanceCard() {
                     </Button>
                 </div>
                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Detalhes
+                    <Button type="submit" disabled={isFormSubmitting} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
+                        {isFormSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar Detalhes da Manutenção
                     </Button>
                 </div>
             </form>
@@ -197,43 +193,51 @@ function LegalDocsCard() {
     const { settings, loading, updateSystemSettings } = useSystemSettings();
     const { collaborators } = useCollaborators();
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<LegalDocsFormValues>({
-        resolver: zodResolver(legalDocsSchema),
-        defaultValues: {
-            termsUrl: '',
-            privacyPolicyUrl: '',
-            termsVersion: 1,
-        },
+    const termsForm = useForm<TermsFormValues>({
+        resolver: zodResolver(termsSchema),
+    });
+
+    const privacyForm = useForm<PrivacyFormValues>({
+        resolver: zodResolver(privacySchema),
     });
 
     useEffect(() => {
         if (!loading && settings) {
-            reset({
+            termsForm.reset({
                 termsUrl: settings.termsUrl,
-                privacyPolicyUrl: settings.privacyPolicyUrl,
                 termsVersion: settings.termsVersion,
             });
+            privacyForm.reset({
+                privacyPolicyUrl: settings.privacyPolicyUrl,
+            });
         }
-    }, [settings, loading, reset]);
+    }, [settings, loading, termsForm.reset, privacyForm.reset]);
 
-    const onSubmitLegalDocs = async (data: LegalDocsFormValues) => {
+    const onSubmitTerms = async (data: TermsFormValues) => {
         try {
             await updateSystemSettings({
                 termsUrl: data.termsUrl,
-                privacyPolicyUrl: data.privacyPolicyUrl,
                 termsVersion: data.termsVersion,
             });
             toast({
-                title: "Documentos Legais Salvos",
-                description: "As URLs e a versão dos termos foram atualizadas com sucesso.",
+                title: "Termos de Uso Atualizados",
+                description: "A URL e a versão foram salvas. Usuários com versões antigas serão solicitados a aceitar novamente.",
             });
-            reset(data);
+            termsForm.reset(data); // reset to new saved values
         } catch (error) {
-            toast({
-                title: 'Erro ao Salvar',
-                description: 'Não foi possível salvar as configurações dos documentos.',
-                variant: 'destructive',
+            toast({ title: 'Erro ao Salvar', description: 'Não foi possível salvar os Termos de Uso.', variant: 'destructive' });
+        }
+    };
+    
+    const onSubmitPrivacy = async (data: PrivacyFormValues) => {
+        try {
+            await updateSystemSettings({
+                privacyPolicyUrl: data.privacyPolicyUrl,
             });
+            toast({ title: "Política de Privacidade Salva", description: "A URL foi atualizada com sucesso." });
+            privacyForm.reset(data); // reset to new saved values
+        } catch (error) {
+            toast({ title: 'Erro ao Salvar', description: 'Não foi possível salvar a Política de Privacidade.', variant: 'destructive' });
         }
     };
     
@@ -247,53 +251,70 @@ function LegalDocsCard() {
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6"/>Gerenciamento de Documentos Legais</CardTitle>
                 <CardDescription>
-                    Insira as URLs dos documentos e aumente a versão dos Termos para forçar todos os usuários a aceitá-los novamente.
+                    Gerencie os links para os Termos de Uso e Política de Privacidade.
                 </CardDescription>
             </CardHeader>
-             <form onSubmit={handleSubmit(onSubmitLegalDocs)}>
-                <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="termsVersion">Versão dos Termos</Label>
-                            <Input id="termsVersion" type="number" {...register('termsVersion')} className="w-24" />
-                            {errors.termsVersion && <p className="text-sm text-destructive mt-1">{errors.termsVersion.message}</p>}
+            <CardContent className="space-y-8">
+                 <form onSubmit={termsForm.handleSubmit(onSubmitTerms)} className="space-y-4">
+                    <div className="p-4 border rounded-lg bg-background">
+                         <h3 className="font-semibold text-lg">Termos de Uso</h3>
+                         <p className="text-sm text-muted-foreground mb-4">Atualize a versão para forçar uma nova rodada de aceite pelos usuários.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="termsVersion">Versão Atual</Label>
+                                <Input id="termsVersion" type="number" {...termsForm.register('termsVersion')} className="w-24" />
+                                {termsForm.formState.errors.termsVersion && <p className="text-sm text-destructive mt-1">{termsForm.formState.errors.termsVersion.message}</p>}
+                            </div>
+                             <div className="p-3 border rounded-md bg-muted/50 flex items-center justify-center gap-4">
+                                 <UserCheck className="h-8 w-8 text-green-600" />
+                                 <div className="text-center">
+                                    <p className="text-2xl font-bold">{collaborators.length - pendingAcceptanceCount}</p>
+                                    <p className="text-xs text-muted-foreground">Aceites</p>
+                                 </div>
+                                 <Users className="h-8 w-8 text-yellow-600" />
+                                  <div className="text-center">
+                                    <p className="text-2xl font-bold">{pendingAcceptanceCount}</p>
+                                    <p className="text-xs text-muted-foreground">Pendentes</p>
+                                 </div>
+                             </div>
                         </div>
-                         <div className="p-3 border rounded-md bg-muted/50 flex items-center justify-center gap-4">
-                             <UserCheck className="h-8 w-8 text-green-600" />
-                             <div className="text-center">
-                                <p className="text-2xl font-bold">{collaborators.length - pendingAcceptanceCount}</p>
-                                <p className="text-xs text-muted-foreground">Usuários Aceitaram</p>
-                             </div>
-                             <Users className="h-8 w-8 text-yellow-600" />
-                              <div className="text-center">
-                                <p className="text-2xl font-bold">{pendingAcceptanceCount}</p>
-                                <p className="text-xs text-muted-foreground">Aceites Pendentes</p>
-                             </div>
-                         </div>
+                        <div className="space-y-2 mt-4">
+                            <Label htmlFor="termsUrl">URL dos Termos de Uso (.docx)</Label>
+                            <Input id="termsUrl" {...termsForm.register('termsUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
+                            <p className="text-xs text-muted-foreground">Este documento será exibido no modal de aceite.</p>
+                            {termsForm.formState.errors.termsUrl && <p className="text-sm text-destructive mt-1">{termsForm.formState.errors.termsUrl.message}</p>}
+                        </div>
+                        <div className="flex justify-end mt-4">
+                            <Button type="submit" disabled={termsForm.formState.isSubmitting || !termsForm.formState.isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {termsForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Termos de Uso
+                            </Button>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="termsUrl">URL dos Termos de Uso (.docx)</Label>
-                        <Input id="termsUrl" {...register('termsUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
-                        <p className="text-xs text-muted-foreground">Este documento será exibido no modal de aceite.</p>
-                        {errors.termsUrl && <p className="text-sm text-destructive mt-1">{errors.termsUrl.message}</p>}
+                </form>
+
+                 <form onSubmit={privacyForm.handleSubmit(onSubmitPrivacy)} className="space-y-4">
+                     <div className="p-4 border rounded-lg bg-background">
+                        <h3 className="font-semibold text-lg">Política de Privacidade</h3>
+                        <p className="text-sm text-muted-foreground mb-4">Atualize o link que será exibido no FAQ.</p>
+                        <div className="space-y-2">
+                            <Label htmlFor="privacyPolicyUrl">URL da Política de Privacidade (.docx)</Label>
+                            <Input id="privacyPolicyUrl" {...privacyForm.register('privacyPolicyUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
+                            {privacyForm.formState.errors.privacyPolicyUrl && <p className="text-sm text-destructive mt-1">{privacyForm.formState.errors.privacyPolicyUrl.message}</p>}
+                        </div>
+                         <div className="flex justify-end mt-4">
+                            <Button type="submit" disabled={privacyForm.formState.isSubmitting || !privacyForm.formState.isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {privacyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Salvar Política de Privacidade
+                            </Button>
+                        </div>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="privacyPolicyUrl">URL da Política de Privacidade (.docx)</Label>
-                        <Input id="privacyPolicyUrl" {...register('privacyPolicyUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
-                        <p className="text-xs text-muted-foreground">Este documento será acessível no FAQ.</p>
-                        {errors.privacyPolicyUrl && <p className="text-sm text-destructive mt-1">{errors.privacyPolicyUrl.message}</p>}
-                    </div>
-                </CardContent>
-                <div className="p-6 pt-0 flex justify-end">
-                    <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Documentos Legais
-                    </Button>
-                </div>
-            </form>
+                </form>
+            </CardContent>
         </Card>
     );
 }
+
 
 export function MaintenanceMode() {
   return (
@@ -303,4 +324,3 @@ export function MaintenanceMode() {
     </div>
   );
 }
-
