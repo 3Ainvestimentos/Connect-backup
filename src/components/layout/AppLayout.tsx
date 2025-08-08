@@ -43,9 +43,11 @@ import ProfileModal from '../applications/ProfileModal';
 import { useWorkflows } from '@/contexts/WorkflowsContext';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import { addDocumentToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection } from '@/lib/firestore-service';
 import { useApplications } from '@/contexts/ApplicationsContext';
 import PollTrigger from '@/components/polls/PollTrigger';
+import { useSystemSettings } from '@/contexts/SystemSettingsContext';
+import { TermsOfUseModal } from '../auth/TermsOfUseModal';
 
 
 export const navItems = [
@@ -202,8 +204,9 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
 
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, signOut, permissions } = useAuth();
-  const { collaborators } = useCollaborators();
+  const { user, loading, signOut, permissions, isSuperAdmin } = useAuth();
+  const { collaborators, loading: collaboratorsLoading } = useCollaborators();
+  const { settings, loading: settingsLoading } = useSystemSettings();
   const { theme, setTheme } = useTheme();
   const { requests, loading: workflowsLoading } = useWorkflows();
   const { workflowDefinitions } = useApplications();
@@ -213,6 +216,42 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isChatbotPage = pathname === '/chatbot';
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
+  const currentUserCollab = useMemo(() => {
+    if (!user) return null;
+    return collaborators.find(c => c.email === user.email);
+  }, [user, collaborators]);
+
+  useEffect(() => {
+    if (loading || collaboratorsLoading || settingsLoading || isSuperAdmin) return;
+    
+    if (currentUserCollab) {
+      const userTermsVersion = currentUserCollab.acceptedTermsVersion || 0;
+      if (userTermsVersion < settings.termsVersion) {
+        setShowTermsModal(true);
+      }
+    }
+  }, [currentUserCollab, settings.termsVersion, loading, collaboratorsLoading, settingsLoading, isSuperAdmin]);
+  
+  const handleAcceptTerms = async () => {
+    if (!currentUserCollab) return false;
+    try {
+        await updateDocumentInCollection('collaborators', currentUserCollab.id, {
+            acceptedTermsVersion: settings.termsVersion
+        });
+        setShowTermsModal(false);
+        toast({ title: "Termos aceitos!", description: "Obrigado! Você já pode acessar a plataforma."});
+        return true;
+    } catch(e) {
+        toast({ title: "Erro", description: "Não foi possível salvar sua confirmação. Tente novamente.", variant: 'destructive'});
+        return false;
+    }
+  };
+
+  const handleDeclineTerms = () => {
+      signOut();
+  };
 
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
@@ -397,6 +436,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <PollTrigger />
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
+      <TermsOfUseModal
+        isOpen={showTermsModal}
+        content={settings.termsContent}
+        onAccept={handleAcceptTerms}
+        onDecline={handleDeclineTerms}
+      />
     </div>
   );
 }

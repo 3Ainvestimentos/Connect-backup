@@ -37,6 +37,7 @@ export interface Collaborator {
   permissions: CollaboratorPermissions;
   googleDriveLinks?: string[]; // Array de links para pastas do Google Drive
   biLinks?: BILink[]; // Link para o painel de BI específico do usuário
+  acceptedTermsVersion?: number; // Versão dos termos aceitos pelo usuário
 }
 
 interface CollaboratorsContextType {
@@ -105,7 +106,10 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   });
 
   const updateCollaboratorMutation = useMutation<void, Error, Collaborator>({
-    mutationFn: (updatedCollaborator: Collaborator) => updateDocumentInCollection(COLLECTION_NAME, updatedCollaborator.id, updatedCollaborator),
+    mutationFn: (updatedCollaborator: Collaborator) => {
+        const { id, ...data } = updatedCollaborator;
+        return updateDocumentInCollection(COLLECTION_NAME, id, data);
+    },
     onSuccess: (_, variables) => {
       // Listener will handle update
     },

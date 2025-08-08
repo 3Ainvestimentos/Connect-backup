@@ -24,7 +24,7 @@ export default function AdminPage() {
                     <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
                         <TabsTrigger value="permissions">Permissões</TabsTrigger>
-                        <TabsTrigger value="maintenance">Manutenção</TabsTrigger>
+                        <TabsTrigger value="maintenance">Configurações</TabsTrigger>
                     </TabsList>
                      <TabsContent value="collaborators">
                         <ManageCollaborators />
