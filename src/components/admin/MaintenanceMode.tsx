@@ -28,7 +28,7 @@ type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
 
 const termsSchema = z.object({
-    termsContent: z.string().min(20, 'O conteúdo dos termos deve ter pelo menos 20 caracteres.'),
+    termsUrl: z.string().url("Por favor, insira uma URL válida para o documento de termos."),
     termsVersion: z.coerce.number().min(1, 'A versão deve ser um número maior que zero.'),
 });
 type TermsFormValues = z.infer<typeof termsSchema>;
@@ -174,7 +174,7 @@ function TermsOfUseCard() {
     const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<TermsFormValues>({
         resolver: zodResolver(termsSchema),
         defaultValues: {
-            termsContent: '',
+            termsUrl: '',
             termsVersion: 1,
         },
     });
@@ -182,7 +182,7 @@ function TermsOfUseCard() {
     useEffect(() => {
         if (!loading && settings) {
             reset({
-                termsContent: settings.termsContent,
+                termsUrl: settings.termsUrl,
                 termsVersion: settings.termsVersion,
             });
         }
@@ -216,7 +216,7 @@ function TermsOfUseCard() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6"/> Gerenciamento de Termos de Uso</CardTitle>
                     <CardDescription>
-                        Edite o conteúdo e a versão dos Termos de Uso. Aumentar a versão forçará todos os usuários a aceitarem os termos novamente.
+                        Insira a URL do documento .docx e aumente a versão para forçar todos os usuários a aceitarem os termos novamente.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -240,10 +240,9 @@ function TermsOfUseCard() {
                          </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="termsContent">Conteúdo dos Termos</Label>
-                        <Textarea id="termsContent" {...register('termsContent')} rows={10} placeholder="Cole ou digite os termos de uso aqui..."/>
-                        <p className="text-xs text-muted-foreground">Você pode usar a sintaxe Markdown para formatação (ex: **negrito**, *itálico*, - lista).</p>
-                        {errors.termsContent && <p className="text-sm text-destructive mt-1">{errors.termsContent.message}</p>}
+                        <Label htmlFor="termsUrl">URL do Documento (.docx)</Label>
+                        <Input id="termsUrl" {...register('termsUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
+                        {errors.termsUrl && <p className="text-sm text-destructive mt-1">{errors.termsUrl.message}</p>}
                     </div>
                     <div className="flex justify-end">
                         <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">

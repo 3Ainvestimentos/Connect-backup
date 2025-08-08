@@ -3,23 +3,20 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 
 interface TermsOfUseModalProps {
   isOpen: boolean;
-  content: string;
+  termsUrl: string;
   onAccept: () => Promise<boolean>;
   onDecline: () => void;
 }
 
-export function TermsOfUseModal({ isOpen, content, onAccept, onDecline }: TermsOfUseModalProps) {
+export function TermsOfUseModal({ isOpen, termsUrl, onAccept, onDecline }: TermsOfUseModalProps) {
   const [isChecked, setIsChecked] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,23 +37,23 @@ export function TermsOfUseModal({ isOpen, content, onAccept, onDecline }: TermsO
     onDecline();
   };
 
+  const viewerUrl = `https://docs.google.com/gview?url=${encodeURIComponent(termsUrl)}&embedded=true`;
+
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="sm:max-w-2xl flex flex-col h-[90vh]" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="sm:max-w-3xl flex flex-col h-[90vh]" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-headline">Termos de Uso e Política de Privacidade</DialogTitle>
           <DialogDescription>
             Por favor, leia e aceite os termos para continuar.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex-grow min-h-0 border rounded-md">
-            <ScrollArea className="h-full p-4">
-                <article className="prose prose-sm dark:prose-invert max-w-none">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {content}
-                    </ReactMarkdown>
-                </article>
-            </ScrollArea>
+        <div className="flex-grow min-h-0 border rounded-md bg-muted/30">
+            <iframe 
+                src={viewerUrl}
+                className="w-full h-full border-0"
+                title="Termos de Uso"
+            />
         </div>
         <div className="flex items-center space-x-2 pt-4">
           <Checkbox id="terms-checkbox" checked={isChecked} onCheckedChange={(checked) => setIsChecked(!!checked)} />

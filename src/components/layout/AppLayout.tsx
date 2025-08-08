@@ -438,7 +438,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
       <TermsOfUseModal
         isOpen={showTermsModal}
-        content={settings.termsContent}
+        termsUrl={settings.termsUrl}
         onAccept={handleAcceptTerms}
         onDecline={handleDeclineTerms}
       />

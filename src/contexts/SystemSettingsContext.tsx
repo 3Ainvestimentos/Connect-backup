@@ -9,7 +9,7 @@ export interface SystemSettings {
   maintenanceMode: boolean;
   maintenanceMessage: string;
   allowedUserIds: string[];
-  termsContent: string;
+  termsUrl: string;
   termsVersion: number;
 }
 
@@ -28,7 +28,7 @@ const defaultSettings: SystemSettings = {
     maintenanceMode: false,
     maintenanceMessage: 'A plataforma está temporariamente indisponível para manutenção. Voltaremos em breve.',
     allowedUserIds: [],
-    termsContent: 'Por favor, adicione os termos de uso no painel de administração.',
+    termsUrl: '',
     termsVersion: 1,
 };
 
