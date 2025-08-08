@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -125,14 +124,14 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
                     </p>
                     <div className="flex flex-col items-start gap-2">
                         {settings.termsUrl && (
-                             <Button variant="link" asChild className="p-0 h-auto">
+                             <Button variant="link" asChild className="p-0 h-auto text-foreground hover:underline">
                                 <a href={`https://docs.google.com/gview?url=${encodeURIComponent(settings.termsUrl)}&embedded=true`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
                                     <FileText className="h-4 w-4" />Termos de Uso
                                 </a>
                             </Button>
                         )}
                         {settings.privacyPolicyUrl && (
-                             <Button variant="link" asChild className="p-0 h-auto">
+                             <Button variant="link" asChild className="p-0 h-auto text-foreground hover:underline">
                                 <a href={`https://docs.google.com/gview?url=${encodeURIComponent(settings.privacyPolicyUrl)}&embedded=true`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
                                     <FileText className="h-4 w-4" />Política de Privacidade
                                 </a>
@@ -146,7 +145,7 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
            <Link
               href="/chatbot"
               onClick={() => onOpenChange(false)}
-              className="block mt-4 text-center p-4 bg-background rounded-lg transition-colors hover:bg-muted/50"
+              className="block mt-4 text-center p-4 bg-background rounded-lg transition-colors"
             >
               <BobIcon className="mx-auto h-10 w-10 mb-2" />
               <p className="text-foreground text-sm">
