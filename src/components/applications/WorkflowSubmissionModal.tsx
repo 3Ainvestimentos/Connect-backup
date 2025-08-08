@@ -24,6 +24,8 @@ import { FormFieldDefinition, WorkflowDefinition } from '@/contexts/Applications
 import { uploadFile } from '@/lib/firestore-service';
 import { ScrollArea } from '../ui/scroll-area';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 type DynamicFormData = { [key: string]: any };
 
@@ -242,7 +244,13 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       <DialogContent className="max-w-2xl font-body flex flex-col h-auto max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="font-headline text-2xl">{workflowDefinition.name}</DialogTitle>
-          <DialogDescription>{workflowDefinition.description}</DialogDescription>
+           <DialogDescription asChild>
+                <div className="prose prose-sm dark:prose-invert">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {workflowDefinition.description}
+                    </ReactMarkdown>
+                </div>
+            </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto -mx-6 px-6">
             <div className="space-y-4">
@@ -257,7 +265,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="button" disabled={isSubmitting} onClick={handleSubmit(onSubmit)} className="bg-[hsl(170,60%,50%)] hover:bg-[hsl(170,60%,45%)] text-white">
+            <Button type="button" disabled={isSubmitting} onClick={handleSubmit(onSubmit)} className="bg-admin-primary hover:bg-admin-primary/90">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Enviar Solicitação
             </Button>
