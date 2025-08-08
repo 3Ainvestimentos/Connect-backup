@@ -1,12 +1,12 @@
 
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, User, Users, FolderOpen } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, User, Users, FolderOpen, Filter, ChevronUp, ChevronDown, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { getIcon } from '@/lib/icons';
 import { WorkflowDefinitionForm } from '@/components/admin/WorkflowDefinitionForm';
@@ -16,15 +16,89 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import ManageWorkflowAreas from '@/components/admin/ManageWorkflowAreas';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
+import { Input } from '../ui/input';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { ScrollArea } from '../ui/scroll-area';
+
+type SortKey = 'name' | 'areaId' | 'ownerEmail';
 
 export function WorkflowDefinitionsTab() {
     const { workflowDefinitions, loading, deleteWorkflowDefinitionMutation, addWorkflowDefinition } = useApplications();
     const { collaborators } = useCollaborators();
     const { workflowAreas } = useWorkflowAreas();
+    
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingDefinition, setEditingDefinition] = useState<WorkflowDefinition | null>(null);
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const [searchTerm, setSearchTerm] = useState('');
+    const [areaFilter, setAreaFilter] = useState<string[]>([]);
+    const [ownerFilter, setOwnerFilter] = useState<string[]>([]);
+    const [sortKey, setSortKey] = useState<SortKey>('name');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
+    const getAreaName = (areaId: string) => {
+        return workflowAreas.find(a => a.id === areaId)?.name || 'N/A';
+    };
+
+    const getOwnerName = (email: string) => {
+        return collaborators.find(c => c.email === email)?.name || email;
+    };
+
+    const uniqueAreas = useMemo(() => {
+        const areaIds = new Set(workflowDefinitions.map(def => def.areaId));
+        return workflowAreas.filter(area => areaIds.has(area.id));
+    }, [workflowDefinitions, workflowAreas]);
+
+    const uniqueOwners = useMemo(() => {
+        const ownerEmails = new Set(workflowDefinitions.map(def => def.ownerEmail));
+        return collaborators.filter(c => ownerEmails.has(c.email));
+    }, [workflowDefinitions, collaborators]);
+
+    const filteredAndSortedDefinitions = useMemo(() => {
+        let items = [...workflowDefinitions];
+
+        if (searchTerm) {
+            items = items.filter(def => def.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+        if (areaFilter.length > 0) {
+            items = items.filter(def => areaFilter.includes(def.areaId));
+        }
+        if (ownerFilter.length > 0) {
+            items = items.filter(def => ownerFilter.includes(def.ownerEmail));
+        }
+
+        items.sort((a, b) => {
+            let valA: string, valB: string;
+
+            if (sortKey === 'areaId') {
+                valA = getAreaName(a.areaId);
+                valB = getAreaName(b.areaId);
+            } else if (sortKey === 'ownerEmail') {
+                valA = getOwnerName(a.ownerEmail);
+                valB = getOwnerName(b.ownerEmail);
+            } else {
+                valA = a[sortKey];
+                valB = b[sortKey];
+            }
+            
+            const comparison = valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' });
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+        return items;
+    }, [workflowDefinitions, searchTerm, areaFilter, ownerFilter, sortKey, sortDirection]);
+
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
 
     const handleOpenForm = (definition: WorkflowDefinition | null) => {
         setEditingDefinition(definition);
@@ -124,51 +198,84 @@ export function WorkflowDefinitionsTab() {
 
         reader.readAsText(file);
     };
-    
-    const getAreaName = (areaId: string) => {
-        const area = workflowAreas.find(a => a.id === areaId);
-        return area?.name || 'Área Desconhecida';
-    }
 
-    const getOwnerName = (email: string) => {
-        const owner = collaborators.find(c => c.email === email);
-        return owner?.name || email;
-    }
-    
     const getAccessDescription = (ids: string[]) => {
         if (!ids || ids.length === 0) return 'Ninguém';
         if (ids.includes('all')) return 'Todos';
         return `${ids.length} Colaborador(es)`;
     };
+    
+    const FilterableHeader = ({ label, items, selectedItems, onCheckedChange, displayKey, valueKey }: any) => (
+        <TableHead>
+            <div className="flex items-center gap-2">
+                <span className="flex-grow">{label}</span>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-muted">
+                            <Filter className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuLabel>Filtrar por {label}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <ScrollArea className="max-h-60">
+                        {items.map((item: any) => (
+                            <DropdownMenuCheckboxItem
+                                key={item[valueKey]}
+                                checked={selectedItems.includes(item[valueKey])}
+                                onCheckedChange={() => onCheckedChange(item[valueKey])}
+                            >
+                                {item[displayKey]}
+                            </DropdownMenuCheckboxItem>
+                        ))}
+                        </ScrollArea>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </TableHead>
+    );
 
     return (
         <div className="space-y-6">
             <ManageWorkflowAreas />
             <Separator />
             <Card>
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <div>
-                        <CardTitle>Definições de Workflow</CardTitle>
-                        <CardDescription>
-                            {workflowDefinitions.length} workflow(s) definido(s).
-                        </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                         <Button onClick={() => fileInputRef.current?.click()} variant="outline" disabled={isImporting}>
-                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                            {isImporting ? 'Importando...' : 'Importar JSON'}
-                        </Button>
-                         <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept=".json"
-                            onChange={handleFileImport}
-                        />
-                        <Button onClick={() => handleOpenForm(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nova Definição
-                        </Button>
+                <CardHeader>
+                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle>Definições de Workflow</CardTitle>
+                            <CardDescription>
+                                {filteredAndSortedDefinitions.length} de {workflowDefinitions.length} workflow(s) exibido(s).
+                            </CardDescription>
+                        </div>
+                        <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+                             <div className="relative flex-grow">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                    placeholder="Buscar por nome..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="pl-10 w-full"
+                                />
+                            </div>
+                            <div className="flex gap-2">
+                                <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-grow" disabled={isImporting}>
+                                    {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                    {isImporting ? 'Importando...' : 'Importar JSON'}
+                                </Button>
+                                 <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept=".json"
+                                    onChange={handleFileImport}
+                                />
+                                <Button onClick={() => handleOpenForm(null)} className="bg-admin-primary hover:bg-admin-primary/90 flex-grow">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Nova Definição
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -176,16 +283,35 @@ export function WorkflowDefinitionsTab() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Ícone</TableHead>
-                                    <TableHead>Nome</TableHead>
-                                    <TableHead>Área</TableHead>
-                                    <TableHead>Proprietário</TableHead>
+                                    <TableHead className="w-12">Ícone</TableHead>
+                                    <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50">
+                                        <div className="flex items-center gap-1">
+                                            Nome
+                                            {sortKey === 'name' && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                        </div>
+                                    </TableHead>
+                                    <FilterableHeader
+                                        label="Área"
+                                        items={uniqueAreas}
+                                        selectedItems={areaFilter}
+                                        onCheckedChange={(id: string) => setAreaFilter(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id])}
+                                        displayKey="name"
+                                        valueKey="id"
+                                    />
+                                    <FilterableHeader
+                                        label="Proprietário"
+                                        items={uniqueOwners}
+                                        selectedItems={ownerFilter}
+                                        onCheckedChange={(email: string) => setOwnerFilter(prev => prev.includes(email) ? prev.filter(p => p !== email) : [...prev, email])}
+                                        displayKey="name"
+                                        valueKey="email"
+                                    />
                                     <TableHead>Acesso</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {workflowDefinitions.map(def => {
+                                {filteredAndSortedDefinitions.map(def => {
                                     const Icon = getIcon(def.icon);
                                     return (
                                         <TableRow key={def.id}>
@@ -227,6 +353,11 @@ export function WorkflowDefinitionsTab() {
                             </TableBody>
                         </Table>
                     </div>
+                     {filteredAndSortedDefinitions.length === 0 && (
+                        <div className="text-center py-10 text-muted-foreground">
+                            Nenhuma definição de workflow encontrada para os filtros aplicados.
+                        </div>
+                    )}
                 </CardContent>
             </Card>
             
