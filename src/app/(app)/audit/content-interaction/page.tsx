@@ -8,12 +8,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Eye, FileText, Newspaper, User, Medal, Bomb, Download, Fingerprint, FileDown, Route, Trophy } from 'lucide-react';
+import { Eye, FileText, Newspaper, User, Medal, Download, FileDown, Route, Trophy, Bot, LineChart as LineChartIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Papa from 'papaparse';
-import { format } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc } from 'date-fns';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view';
@@ -60,8 +61,8 @@ export default function ContentInteractionPage() {
         select: (data) => data.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download' || e.eventType === 'page_view')
     });
 
-    const { contentStats, top5Contents, pageAccessCounts } = useMemo(() => {
-        if (isLoading || !events.length) return { contentStats: [], top5Contents: [], pageAccessCounts: [] };
+    const { contentStats, top5Contents, pageAccessCounts, chatbotAccessHistory } = useMemo(() => {
+        if (isLoading || !events.length) return { contentStats: [], top5Contents: [], pageAccessCounts: [], chatbotAccessHistory: [] };
 
         const viewEvents = events.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download');
 
@@ -102,7 +103,40 @@ export default function ContentInteractionPage() {
           
         const top5Contents = contentStats.slice(0, 5);
 
-        return { contentStats, top5Contents, pageAccessCounts };
+        // Chatbot specific analytics
+        const chatbotEvents = events
+          .filter(e => e.eventType === 'page_view' && e.details.path === '/chatbot')
+          .sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
+        
+        let chatbotAccessHistory: { date: string; "Acessos Totais": number; "Acessos Únicos": number }[] = [];
+        if (chatbotEvents.length > 0) {
+            const startDate = startOfDay(new Date()); // Start from today
+            const endDate = startOfDay(parseISO(chatbotEvents[0].timestamp));
+
+            const dateRange = eachDayOfInterval({ start: endDate, end: startDate });
+
+            const accessByDay: { [key: string]: { total: number, uniqueUsers: Set<string> } } = {};
+            chatbotEvents.forEach(event => {
+                const dayKey = format(startOfDay(parseISO(event.timestamp)), 'yyyy-MM-dd');
+                if (!accessByDay[dayKey]) {
+                    accessByDay[dayKey] = { total: 0, uniqueUsers: new Set() };
+                }
+                accessByDay[dayKey].total += 1;
+                accessByDay[dayKey].uniqueUsers.add(event.userId);
+            });
+
+            chatbotAccessHistory = dateRange.map(day => {
+                const dayKey = format(day, 'yyyy-MM-dd');
+                return {
+                    date: format(day, 'dd/MM'),
+                    'Acessos Totais': accessByDay[dayKey]?.total || 0,
+                    'Acessos Únicos': accessByDay[dayKey]?.uniqueUsers.size || 0,
+                };
+            }).reverse();
+        }
+
+
+        return { contentStats, top5Contents, pageAccessCounts, chatbotAccessHistory };
 
     }, [events, isLoading]);
 
@@ -187,6 +221,32 @@ export default function ContentInteractionPage() {
                         </CardContent>
                     </Card>
                 </div>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Bot className="h-5 w-5"/>Histórico de Acessos ao Chatbot Bob</CardTitle>
+                        <CardDescription>Acessos totais e únicos à página do chatbot ao longo do tempo.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoading ? <Skeleton className="h-64 w-full" /> : chatbotAccessHistory.length > 0 ? (
+                             <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={chatbotAccessHistory}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))"/>
+                                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12}/>
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false}/>
+                                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }}/>
+                                    <Legend />
+                                    <Line type="monotone" dataKey="Acessos Totais" stroke="hsl(var(--chart-1))" strokeWidth={2} activeDot={{ r: 8 }}/>
+                                    <Line type="monotone" dataKey="Acessos Únicos" stroke="hsl(var(--chart-2))" strokeWidth={2} activeDot={{ r: 8 }}/>
+                                </LineChart>
+                            </ResponsiveContainer>
+                        ) : (
+                             <div className="text-center py-10 text-muted-foreground">
+                                <LineChartIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                                <p className="mt-4">Ainda não há dados de acesso para o chatbot.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <Card className="lg:col-span-2">
@@ -280,3 +340,4 @@ export default function ContentInteractionPage() {
         </SuperAdminGuard>
     );
 }
+
