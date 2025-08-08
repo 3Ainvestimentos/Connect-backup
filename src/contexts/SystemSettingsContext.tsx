@@ -11,6 +11,7 @@ export interface SystemSettings {
   allowedUserIds: string[];
   termsUrl: string;
   termsVersion: number;
+  privacyPolicyUrl: string;
 }
 
 interface SystemSettingsContextType {
@@ -30,6 +31,7 @@ const defaultSettings: SystemSettings = {
     allowedUserIds: [],
     termsUrl: '',
     termsVersion: 1,
+    privacyPolicyUrl: '',
 };
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {

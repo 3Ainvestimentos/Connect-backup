@@ -17,9 +17,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from '@/components/ui/button';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '../ui/separator';
+import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 
 const BobIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" fill="none" {...props}>
@@ -90,6 +91,8 @@ const faqItems = [
 ];
 
 export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
+  const { settings } = useSystemSettings();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg font-body">
@@ -114,6 +117,30 @@ export default function FAQModal({ open, onOpenChange }: FAQModalProps) {
                 </AccordionContent>
               </AccordionItem>
             ))}
+             <AccordionItem value="terms">
+                <AccordionTrigger className="text-left font-body text-sm font-semibold">Onde encontro os documentos legais?</AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                    <p className="font-body text-muted-foreground">
+                      Você pode acessar os documentos legais da plataforma clicando nos links abaixo.
+                    </p>
+                    <div className="flex flex-col items-start gap-2">
+                        {settings.termsUrl && (
+                             <Button variant="link" asChild className="p-0 h-auto">
+                                <a href={`https://docs.google.com/gview?url=${encodeURIComponent(settings.termsUrl)}&embedded=true`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                    <FileText className="h-4 w-4" />Termos de Uso
+                                </a>
+                            </Button>
+                        )}
+                        {settings.privacyPolicyUrl && (
+                             <Button variant="link" asChild className="p-0 h-auto">
+                                <a href={`https://docs.google.com/gview?url=${encodeURIComponent(settings.privacyPolicyUrl)}&embedded=true`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                    <FileText className="h-4 w-4" />Política de Privacidade
+                                </a>
+                            </Button>
+                        )}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
           </Accordion>
            <Separator className="my-4" />
            <Link

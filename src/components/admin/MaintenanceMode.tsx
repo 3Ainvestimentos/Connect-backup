@@ -19,31 +19,32 @@ import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Input } from '../ui/input';
 
-const maintenanceSchema = z.object({
+const systemSettingsSchema = z.object({
   maintenanceMode: z.boolean(),
   maintenanceMessage: z.string().min(10, 'A mensagem de manutenção deve ter pelo menos 10 caracteres.'),
   allowedUserIds: z.array(z.string()).optional(),
+  termsUrl: z.string().url("Por favor, insira uma URL válida para os Termos de Uso.").or(z.literal('')),
+  privacyPolicyUrl: z.string().url("Por favor, insira uma URL válida para a Política de Privacidade.").or(z.literal('')),
+  termsVersion: z.coerce.number().min(1, 'A versão deve ser um número maior que zero.'),
 });
-type MaintenanceFormValues = z.infer<typeof maintenanceSchema>;
 
+type SystemSettingsFormValues = z.infer<typeof systemSettingsSchema>;
 
-const termsSchema = z.object({
-    termsUrl: z.string().url("Por favor, insira uma URL válida para o documento de termos."),
-    termsVersion: z.coerce.number().min(1, 'A versão deve ser um número maior que zero.'),
-});
-type TermsFormValues = z.infer<typeof termsSchema>;
 
 function MaintenanceCard() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
   const { collaborators } = useCollaborators();
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
 
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<MaintenanceFormValues>({
-    resolver: zodResolver(maintenanceSchema),
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting, isDirty } } = useForm<SystemSettingsFormValues>({
+    resolver: zodResolver(systemSettingsSchema),
     defaultValues: {
       maintenanceMode: false,
       maintenanceMessage: '',
       allowedUserIds: [],
+      termsUrl: '',
+      privacyPolicyUrl: '',
+      termsVersion: 1,
     },
   });
 
@@ -53,22 +54,25 @@ function MaintenanceCard() {
           maintenanceMode: settings.maintenanceMode,
           maintenanceMessage: settings.maintenanceMessage,
           allowedUserIds: settings.allowedUserIds,
+          termsUrl: settings.termsUrl,
+          privacyPolicyUrl: settings.privacyPolicyUrl,
+          termsVersion: settings.termsVersion,
       });
     }
   }, [settings, loading, reset]);
   
-  const onSubmit = async (data: MaintenanceFormValues) => {
+  const onSubmit = async (data: SystemSettingsFormValues) => {
     try {
       await updateSystemSettings(data);
       toast({
-        title: "Configurações de Manutenção Salvas",
-        description: "As configurações de manutenção foram salvas com sucesso.",
+        title: "Configurações Salvas",
+        description: "As configurações do sistema foram salvas com sucesso.",
       });
       reset(data); 
     } catch (error) {
       toast({
         title: 'Erro ao Salvar',
-        description: 'Não foi possível salvar as configurações de manutenção.',
+        description: 'Não foi possível salvar as configurações.',
         variant: 'destructive',
       });
     }
@@ -82,10 +86,15 @@ function MaintenanceCard() {
       if (ids.length === 1) return '1 usuário autorizado.';
       return `${ids.length} usuários autorizados.`;
   }
+  
+  const pendingAcceptanceCount = useMemo(() => {
+        if (loading || !collaborators.length) return 0;
+        return collaborators.filter(c => (c.acceptedTermsVersion || 0) < settings.termsVersion).length;
+    }, [collaborators, settings.termsVersion, loading]);
 
   return (
     <>
-     <form onSubmit={handleSubmit(onSubmit)}>
+     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><Construction className="h-6 w-6"/>Modo de Manutenção</CardTitle>
@@ -142,14 +151,55 @@ function MaintenanceCard() {
                         <span>{getRecipientDescription(allowedUserIds)}</span>
                     </Button>
                 </div>
-                <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Salvar Configurações de Manutenção
-                    </Button>
+            </CardContent>
+        </Card>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6"/>Gerenciamento de Documentos Legais</CardTitle>
+                <CardDescription>
+                    Insira as URLs dos documentos e aumente a versão dos Termos para forçar todos os usuários a aceitá-los novamente.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="termsVersion">Versão dos Termos</Label>
+                        <Input id="termsVersion" type="number" {...register('termsVersion')} className="w-24" />
+                        {errors.termsVersion && <p className="text-sm text-destructive mt-1">{errors.termsVersion.message}</p>}
+                    </div>
+                     <div className="p-3 border rounded-md bg-muted/50 flex items-center justify-center gap-4">
+                         <UserCheck className="h-8 w-8 text-green-600" />
+                         <div className="text-center">
+                            <p className="text-2xl font-bold">{collaborators.length - pendingAcceptanceCount}</p>
+                            <p className="text-xs text-muted-foreground">Usuários Aceitaram</p>
+                         </div>
+                         <Users className="h-8 w-8 text-yellow-600" />
+                          <div className="text-center">
+                            <p className="text-2xl font-bold">{pendingAcceptanceCount}</p>
+                            <p className="text-xs text-muted-foreground">Aceites Pendentes</p>
+                         </div>
+                     </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="termsUrl">URL dos Termos de Uso (.docx)</Label>
+                    <Input id="termsUrl" {...register('termsUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
+                    {errors.termsUrl && <p className="text-sm text-destructive mt-1">{errors.termsUrl.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="privacyPolicyUrl">URL da Política de Privacidade (.docx)</Label>
+                    <Input id="privacyPolicyUrl" {...register('privacyPolicyUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
+                    {errors.privacyPolicyUrl && <p className="text-sm text-destructive mt-1">{errors.privacyPolicyUrl.message}</p>}
                 </div>
             </CardContent>
         </Card>
+        
+        <div className="flex justify-end">
+            <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Todas as Configurações
+            </Button>
+        </div>
       </form>
        <RecipientSelectionModal
         isOpen={isSelectionModalOpen}
@@ -167,100 +217,10 @@ function MaintenanceCard() {
 }
 
 
-function TermsOfUseCard() {
-    const { settings, loading, updateSystemSettings } = useSystemSettings();
-    const { collaborators } = useCollaborators();
-
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting, isDirty } } = useForm<TermsFormValues>({
-        resolver: zodResolver(termsSchema),
-        defaultValues: {
-            termsUrl: '',
-            termsVersion: 1,
-        },
-    });
-
-    useEffect(() => {
-        if (!loading && settings) {
-            reset({
-                termsUrl: settings.termsUrl,
-                termsVersion: settings.termsVersion,
-            });
-        }
-    }, [settings, loading, reset]);
-
-    const pendingAcceptanceCount = useMemo(() => {
-        if (loading || !collaborators.length) return 0;
-        return collaborators.filter(c => (c.acceptedTermsVersion || 0) < settings.termsVersion).length;
-    }, [collaborators, settings.termsVersion, loading]);
-
-    const onSubmit = async (data: TermsFormValues) => {
-        try {
-            await updateSystemSettings(data);
-            toast({
-                title: "Termos Salvos",
-                description: "Os Termos de Uso foram salvos com sucesso.",
-            });
-            reset(data); // Resets the 'dirty' state
-        } catch (error) {
-            toast({
-                title: 'Erro ao Salvar Termos',
-                description: 'Não foi possível salvar os Termos de Uso.',
-                variant: 'destructive',
-            });
-        }
-    };
-    
-    return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><FileText className="h-6 w-6"/> Gerenciamento de Termos de Uso</CardTitle>
-                    <CardDescription>
-                        Insira a URL do documento .docx e aumente a versão para forçar todos os usuários a aceitarem os termos novamente.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="termsVersion">Versão dos Termos</Label>
-                            <Input id="termsVersion" type="number" {...register('termsVersion')} className="w-24" />
-                            {errors.termsVersion && <p className="text-sm text-destructive mt-1">{errors.termsVersion.message}</p>}
-                        </div>
-                         <div className="p-3 border rounded-md bg-muted/50 flex items-center justify-center gap-4">
-                             <UserCheck className="h-8 w-8 text-green-600" />
-                             <div className="text-center">
-                                <p className="text-2xl font-bold">{collaborators.length - pendingAcceptanceCount}</p>
-                                <p className="text-xs text-muted-foreground">Usuários Aceitaram</p>
-                             </div>
-                             <Users className="h-8 w-8 text-yellow-600" />
-                              <div className="text-center">
-                                <p className="text-2xl font-bold">{pendingAcceptanceCount}</p>
-                                <p className="text-xs text-muted-foreground">Aceites Pendentes</p>
-                             </div>
-                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="termsUrl">URL do Documento (.docx)</Label>
-                        <Input id="termsUrl" {...register('termsUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
-                        {errors.termsUrl && <p className="text-sm text-destructive mt-1">{errors.termsUrl.message}</p>}
-                    </div>
-                    <div className="flex justify-end">
-                        <Button type="submit" disabled={isSubmitting || !isDirty} className="bg-admin-primary hover:bg-admin-primary/90 shadow-lg">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Salvar Termos
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </form>
-    );
-}
-
 export function MaintenanceMode() {
   return (
     <div className="space-y-6">
       <MaintenanceCard />
-      <TermsOfUseCard />
     </div>
   );
 }
