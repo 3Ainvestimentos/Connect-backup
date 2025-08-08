@@ -235,19 +235,22 @@ function LegalDocsCard() {
                 title: "Termos de Uso Publicados",
                 description: `A versão foi atualizada para ${newVersion.toFixed(1)} e uma nova rodada de aceite será iniciada.`,
             });
-            termsForm.reset(data); // reset to new saved values
+            termsForm.reset(data);
         } catch (error) {
             toast({ title: 'Erro ao Salvar', description: 'Não foi possível salvar os Termos de Uso.', variant: 'destructive' });
         }
     };
     
     const onSubmitPrivacy = async (data: PrivacyFormValues) => {
+        const currentVersion = settings.privacyPolicyVersion || 1;
+        const newVersion = currentVersion + 1;
         try {
             await updateSystemSettings({
                 privacyPolicyUrl: data.privacyPolicyUrl,
+                privacyPolicyVersion: newVersion,
             });
-            toast({ title: "Política de Privacidade Salva", description: "A URL foi atualizada com sucesso." });
-            privacyForm.reset(data); // reset to new saved values
+            toast({ title: "Política de Privacidade Salva", description: `A URL foi atualizada com sucesso para a versão ${newVersion.toFixed(1)}.` });
+            privacyForm.reset(data);
         } catch (error) {
             toast({ title: 'Erro ao Salvar', description: 'Não foi possível salvar a Política de Privacidade.', variant: 'destructive' });
         }
@@ -294,7 +297,7 @@ function LegalDocsCard() {
                         <div className="space-y-2 mt-4">
                             <Label htmlFor="termsUrl">URL dos Termos de Uso (.docx)</Label>
                             <Input id="termsUrl" {...termsForm.register('termsUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
-                            <p className="text-xs text-muted-foreground">Este documento será exibido no modal de aceite.</p>
+                            <p className="text-xs text-muted-foreground mt-1">Este documento será exibido no modal de aceite.</p>
                             {termsForm.formState.errors.termsUrl && <p className="text-sm text-destructive mt-1">{termsForm.formState.errors.termsUrl.message}</p>}
                         </div>
                         <div className="flex justify-end mt-4">
@@ -324,17 +327,40 @@ function LegalDocsCard() {
                  <form onSubmit={privacyForm.handleSubmit(onSubmitPrivacy)} className="space-y-4">
                      <div className="p-4 border rounded-lg bg-background">
                         <h3 className="font-semibold text-lg">Política de Privacidade</h3>
-                        <p className="text-sm text-muted-foreground mb-4">Atualize o link que será exibido no FAQ.</p>
-                        <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground mb-4">Atualize o link que será exibido no FAQ. Esta ação não solicita novo aceite dos usuários.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                             <div className="space-y-2">
+                                <Label>Versão Atual</Label>
+                                <div className="h-10 px-3 py-2 border rounded-md bg-muted text-muted-foreground w-24 flex items-center">
+                                    {(settings.privacyPolicyVersion || 1).toFixed(1)}
+                                </div>
+                            </div>
+                        </div>
+                        <div className="space-y-2 mt-4">
                             <Label htmlFor="privacyPolicyUrl">URL da Política de Privacidade (.docx)</Label>
                             <Input id="privacyPolicyUrl" {...privacyForm.register('privacyPolicyUrl')} placeholder="Cole a URL pública do seu arquivo .docx aqui..."/>
                             {privacyForm.formState.errors.privacyPolicyUrl && <p className="text-sm text-destructive mt-1">{privacyForm.formState.errors.privacyPolicyUrl.message}</p>}
                         </div>
                          <div className="flex justify-end mt-4">
-                            <Button type="submit" disabled={privacyForm.formState.isSubmitting || !privacyForm.formState.isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {privacyForm.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Salvar Política de Privacidade
-                            </Button>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" disabled={!privacyForm.formState.isDirty} className="bg-admin-primary hover:bg-admin-primary/90">
+                                        Salvar e Publicar Nova Versão
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar Nova Versão?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Ao salvar, a versão da Política de Privacidade será incrementada para {(settings.privacyPolicyVersion + 1).toFixed(1)} para fins de controle, mas não solicitará um novo aceite dos usuários. Deseja continuar?
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={privacyForm.handleSubmit(onSubmitPrivacy)}>Sim, publicar nova versão</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                         </div>
                     </div>
                 </form>

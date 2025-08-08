@@ -12,6 +12,7 @@ export interface SystemSettings {
   termsUrl: string;
   termsVersion: number;
   privacyPolicyUrl: string;
+  privacyPolicyVersion: number;
 }
 
 interface SystemSettingsContextType {
@@ -32,6 +33,7 @@ const defaultSettings: SystemSettings = {
     termsUrl: '',
     termsVersion: 1,
     privacyPolicyUrl: '',
+    privacyPolicyVersion: 1,
 };
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {
