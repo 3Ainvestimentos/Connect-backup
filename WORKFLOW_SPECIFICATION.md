@@ -64,12 +64,21 @@ interface WorkflowStatusDefinition {
   id: string;    // ID único (sem espaços, usar snake_case). Ex: "em_analise".
   label: string; // O nome da etapa exibido para os usuários. Ex: "Em Análise".
   action?: {     // (Opcional) Define uma ação que precisa ser tomada nesta etapa.
-    type: 'approval' | 'acknowledgement'; // 'approval' (Aprovar/Reprovar) ou 'acknowledgement' (Ciente).
+    type: 'approval' | 'acknowledgement' | 'execution'; // Define o tipo de ação necessária.
     label: string; // Texto do botão para solicitar a ação. Ex: "Solicitar Aprovação da Diretoria".
     approverIds?: string[]; // (Opcional) Lista de IDs de colaboradores pré-definidos para a ação.
+    commentRequired?: boolean; // (Opcional, para type: 'execution') Torna o comentário obrigatório.
+    attachmentRequired?: boolean; // (Opcional, para type: 'execution') Torna o anexo obrigatório.
+    commentPlaceholder?: string; // (Opcional, para type: 'execution') Texto de ajuda para o comentário.
+    attachmentPlaceholder?: string; // (Opcional, para type: 'execution') Texto de ajuda para o anexo.
   }
 }
 ```
+
+**Tipos de Ação (`action.type`):**
+-   `approval`: Exibe os botões "Aprovar" e "Reprovar".
+-   `acknowledgement`: Exibe um único botão "Marcar como Ciente".
+-   `execution`: Exibe um campo de comentário e um upload de arquivo, com um botão "Confirmar Execução".
 
 ### 2.3. Regras de SLA (`SlaRule`)
 
@@ -185,18 +194,24 @@ Este exemplo pode ser usado como um modelo para criar um arquivo `reembolso.json
       "id": "comprovante",
       "label": "Anexar Comprovante",
       "type": "file",
-      "required": true,
-      "placeholder": ""
+      "required": true
     }
   ],
   "statuses": [
     {
-      "id": "pendente_analise_imediata",
-      "label": "Pendente de Análise Imediata"
+      "id": "pendente_analise",
+      "label": "Pendente de Análise"
     },
     {
-      "id": "em_analise_financeiro",
-      "label": "Em Análise (Financeiro)"
+      "id": "analise_financeiro",
+      "label": "Em Análise (Financeiro)",
+      "action": {
+        "type": "execution",
+        "label": "Executar Análise",
+        "commentRequired": true,
+        "attachmentRequired": false,
+        "commentPlaceholder": "Digite aqui o parecer da análise financeira..."
+      }
     },
     {
       "id": "aguardando_aprovacao_diretoria",
