@@ -634,7 +634,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {(isAssignee && !currentUserActionRequest) && (
+              {(canTakeAction && !currentUserActionRequest) && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário</Label>
                     <div className="flex items-center gap-2 mt-1">
@@ -645,7 +645,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             placeholder="Deixe uma observação para o solicitante e para o histórico..."
                             disabled={isSubmitting}
                         />
-                        {isOwner && (
+                        {(isOwner || isAssignee) && (
                             <Button 
                                 variant="secondary" 
                                 onClick={handleAddComment} 
@@ -664,7 +664,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow">
-                {(isAssignee && !currentUserActionRequest) && (
+                {(canTakeAction && !currentUserActionRequest) && (
                      <TooltipProvider>
                       <Tooltip delayDuration={300}>
                         <TooltipTrigger asChild>
