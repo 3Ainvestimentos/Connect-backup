@@ -69,9 +69,9 @@ export function GoogleEventDetailsModal({ isOpen, onClose, event }: GoogleEventD
                 )}
                 
                 {event.hangoutLink && (
-                     <Button asChild variant="outline" className="w-full">
+                     <Button asChild className="w-full bg-success hover:bg-success/90 text-success-foreground">
                         <a href={event.hangoutLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                            <Video className="h-4 w-4 text-muted-foreground"/>
+                            <Video className="h-4 w-4"/>
                             Entrar na videoconferência
                             <ExternalLink className="h-3 w-3" />
                         </a>
