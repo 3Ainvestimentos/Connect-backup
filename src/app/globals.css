@@ -118,7 +118,7 @@
     @apply text-foreground;
   }
   .prose a {
-    @apply text-primary;
+    @apply text-foreground underline;
   }
   .prose blockquote {
     @apply border-l-primary text-muted-foreground;
@@ -137,7 +137,7 @@
     @apply text-foreground;
   }
   .dark .prose a {
-    @apply text-primary;
+    @apply text-foreground underline;
   }
   .dark .prose blockquote {
     @apply border-l-primary text-muted-foreground;
