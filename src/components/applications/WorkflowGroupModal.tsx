@@ -13,6 +13,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WorkflowDefinition } from '@/contexts/ApplicationsContext';
 import { getIcon } from '@/lib/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface WorkflowGroupModalProps {
   open: boolean;
@@ -50,7 +52,11 @@ export function WorkflowGroupModal({ open, onOpenChange, areaName, group, onWork
                     <Icon className="h-6 w-6 text-muted-foreground flex-shrink-0" />
                     <div className="flex-grow">
                         <p className="font-semibold font-body text-sm text-card-foreground">{workflow.name}</p>
-                        <p className="text-xs text-muted-foreground">{workflow.description}</p>
+                        <div className="prose prose-sm dark:prose-invert text-xs text-muted-foreground">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {workflow.description}
+                            </ReactMarkdown>
+                        </div>
                     </div>
                   </CardContent>
                 </Card>
