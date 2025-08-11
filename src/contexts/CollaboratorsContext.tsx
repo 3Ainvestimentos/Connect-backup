@@ -14,7 +14,6 @@ export interface CollaboratorPermissions {
   canViewRankings: boolean;
   canViewCRM?: boolean;
   canViewStrategicPanel?: boolean;
-  canViewDra?: boolean;
 }
 
 export interface BILink {
@@ -62,7 +61,6 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewRankings: false,
   canViewCRM: false,
   canViewStrategicPanel: false,
-  canViewDra: false,
 };
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {

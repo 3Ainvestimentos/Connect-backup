@@ -5,12 +5,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function DraLayout({
+export default function CustosInfraestruturaLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, permissions } = useAuth();
+  const { user, loading, isSuperAdmin } = useAuth();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -18,13 +18,13 @@ export default function DraLayout({
     if (!loading) {
       if (!user) {
         router.replace('/login');
-      } else if (!permissions.canViewDra) {
+      } else if (!isSuperAdmin) {
         router.replace('/dashboard');
       } else {
         setIsAuthorized(true);
       }
     }
-  }, [user, loading, permissions.canViewDra, router]);
+  }, [user, loading, isSuperAdmin, router]);
 
   if (loading || !isAuthorized) {
     return (
@@ -38,7 +38,7 @@ export default function DraLayout({
   }
 
   return (
-    <div className="flex-grow h-[calc(100vh-var(--header-height))]">
+    <div className="flex-grow h-full">
         {children}
     </div>
   );

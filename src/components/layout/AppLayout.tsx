@@ -156,20 +156,6 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                   </Link>
               </DropdownMenuItem>
           )}
-          {permissions.canViewDra && (
-             <DropdownMenuItem asChild>
-                 <Link href="/dra/pagamentos" className="cursor-pointer font-body">
-                     <Banknote className="mr-2 h-4 w-4" />
-                     <span>DRA/Pagamentos</span>
-                 </Link>
-             </DropdownMenuItem>
-            )}
-          {isSuperAdmin && (
-             <>
-                <DropdownMenuItem asChild><Link href="/admin/crm" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Briefcase className="mr-2 h-4 w-4" /><span>CRM Interno</span></Link></DropdownMenuItem>
-                <DropdownMenuItem asChild><Link href="/admin/strategic-panel" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Target className="mr-2 h-4 w-4" /><span>Painel Estratégico</span></Link></DropdownMenuItem>
-            </>
-          )}
         </DropdownMenuGroup>
         
         {isAdmin && (
@@ -179,14 +165,14 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Painéis de controle</DropdownMenuLabel>
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
-                {isSuperAdmin && <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
-                    <DropdownMenuItem asChild>
-                        <Link href="/admin" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive">
-                            <Shield className="mr-2 h-4 w-4" />
-                            <span>Sistema</span>
-                        </Link>
-                    </DropdownMenuItem>
+                  <>
+                     <DropdownMenuItem asChild><Link href="/dra/pagamentos" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Banknote className="mr-2 h-4 w-4" /><span>Custos/Infraestrutura</span></Link></DropdownMenuItem>
+                     <DropdownMenuItem asChild><Link href="/admin/crm" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Briefcase className="mr-2 h-4 w-4" /><span>CRM Interno</span></Link></DropdownMenuItem>
+                     <DropdownMenuItem asChild><Link href="/admin/strategic-panel" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Target className="mr-2 h-4 w-4" /><span>Painel Estratégico</span></Link></DropdownMenuItem>
+                     <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>
+                     <DropdownMenuItem asChild><Link href="/admin" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Shield className="mr-2 h-4 w-4" /><span>Sistema</span></Link></DropdownMenuItem>
+                  </>
                 )}
             </DropdownMenuGroup>
           </>

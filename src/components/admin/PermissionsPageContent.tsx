@@ -22,7 +22,6 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
     { key: 'canViewBI', label: 'Business Intelligence' },
     { key: 'canViewRankings', label: 'Rankings' },
-    { key: 'canViewDra', label: 'DRA/Pagamentos' },
 ];
 
 function PermissionsTable() {
