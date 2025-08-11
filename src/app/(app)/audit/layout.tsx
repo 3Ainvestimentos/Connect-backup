@@ -3,16 +3,19 @@
 
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AuditProvider, useAudit } from '@/contexts/AuditContext';
 import { usePathname, useRouter } from 'next/navigation';
 
-export default function AuditLayout({
+function AuditLayoutContent({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { dateRange, setDateRange } = useAudit();
 
   const handleTabChange = (value: string) => {
     router.push(value);
@@ -32,6 +35,7 @@ export default function AuditLayout({
         <PageHeader 
           title="Painel de Auditoria" 
           description="Monitore eventos, uso e engajamento da plataforma."
+          actions={<DatePickerWithRange date={dateRange} onDateChange={setDateRange} />}
         />
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
@@ -46,4 +50,17 @@ export default function AuditLayout({
       </div>
     </SuperAdminGuard>
   );
+}
+
+
+export default function AuditLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+    return (
+        <AuditProvider>
+            <AuditLayoutContent>{children}</AuditLayoutContent>
+        </AuditProvider>
+    )
 }

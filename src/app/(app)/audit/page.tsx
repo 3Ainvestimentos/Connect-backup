@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown, ThumbsUp, ThumbsDown, Trophy } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, subDays, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Progress } from '@/components/ui/progress';
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import Papa from 'papaparse';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useAudit } from '@/contexts/AuditContext';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view' | 'search_term_used';
@@ -26,16 +27,10 @@ type AuditLogEvent = WithId<{
     details: { [key: string]: any };
 }>;
 
-const CUTOFF_DATE = new Date('2024-08-11T00:00:00.000Z');
-
 
 export default function AuditPage() {
     const queryClient = useQueryClient();
-    const [today, setToday] = useState(new Date());
-
-    useEffect(() => {
-        setToday(new Date());
-    }, []);
+    const { dateRange } = useAudit();
     
     React.useEffect(() => {
         const unsubscribe = listenToCollection<AuditLogEvent>(
@@ -50,18 +45,27 @@ export default function AuditPage() {
         return () => unsubscribe();
     }, [queryClient]);
     
-    const { data: events = [], isLoading: isLoadingEvents } = useQuery<AuditLogEvent[]>({
+    const { data: allEvents = [], isLoading: isLoadingEvents } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
-        select: (data) => data.filter(e => {
-             const isLoginEvent = e.eventType === 'login';
-             const eventDate = parseISO(e.timestamp);
-             return isLoginEvent && compareAsc(eventDate, CUTOFF_DATE) >= 0;
-        }),
     });
+
     const { collaborators, loading: loadingCollaborators } = useCollaborators();
 
     const isLoading = isLoadingEvents || loadingCollaborators;
+
+    const events = useMemo(() => {
+        if (!dateRange?.from || !dateRange?.to) return [];
+        
+        const from = startOfDay(dateRange.from);
+        const to = endOfDay(dateRange.to);
+
+        return allEvents.filter(e => {
+             const isLoginEvent = e.eventType === 'login';
+             const eventDate = parseISO(e.timestamp);
+             return isLoginEvent && isWithinInterval(eventDate, { start: from, end: to });
+        });
+    }, [allEvents, dateRange]);
     
     const { userLoginStats } = useMemo(() => {
         if (isLoading || collaborators.length === 0) return { userLoginStats: [] };
@@ -84,17 +88,17 @@ export default function AuditPage() {
 
 
     const cumulativeLogins = useMemo(() => {
-        if (isLoading || events.length === 0) return [];
+        if (isLoading || events.length === 0 || !dateRange?.from || !dateRange.to) return [];
         
         const loginEvents = events
             .sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
             
         if (loginEvents.length === 0) return [];
 
-        const startDate = startOfDay(parseISO(loginEvents[0].timestamp));
-        const endDate = startOfDay(today);
+        const startDate = startOfDay(dateRange.from);
+        const endDate = startOfDay(dateRange.to);
         
-        const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+        const dateRangeInterval = eachDayOfInterval({ start: startDate, end: endDate });
 
         const loginsByDay: { [key: string]: number } = {};
         loginEvents.forEach(event => {
@@ -103,26 +107,26 @@ export default function AuditPage() {
         });
 
         let accumulatedLogins = 0;
-        const cumulativeData = dateRange.map(day => {
+        const cumulativeData = dateRangeInterval.map(day => {
             const dayKey = format(day, 'yyyy-MM-dd');
             accumulatedLogins += (loginsByDay[dayKey] || 0);
             return {
-                date: format(day, 'dd/MM/yy'),
+                date: format(day, 'dd/MM'),
                 'Logins Acumulados': accumulatedLogins,
             };
         });
 
         return cumulativeData;
 
-    }, [events, isLoading, today]);
+    }, [events, isLoading, dateRange]);
 
     const loginsLast7Days = useMemo(() => {
-        if (isLoading || events.length === 0) return [];
+         if (isLoading || events.length === 0 || !dateRange?.from || !dateRange.to) return [];
         
-        const endDate = endOfDay(today);
-        const startDate = startOfDay(subDays(endDate, 6)); // Last 7 days including today
+        const endDate = endOfDay(dateRange.to);
+        const startDate = startOfDay(dateRange.from);
         
-        const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+        const dateRangeInterval = eachDayOfInterval({ start: startDate, end: endDate });
 
         const loginsByDay: { [key: string]: number } = {};
         events.forEach(event => {
@@ -133,36 +137,28 @@ export default function AuditPage() {
             }
         });
 
-        return dateRange.map(day => {
+        return dateRangeInterval.map(day => {
             const dayKey = format(day, 'yyyy-MM-dd');
             return {
-                date: format(day, 'EEE', { locale: ptBR }),
+                date: format(day, 'dd/MM'),
                 Logins: loginsByDay[dayKey] || 0,
             };
         });
-    }, [events, isLoading, today]);
+    }, [events, isLoading, dateRange]);
     
     const uniqueLoginsThisMonth = useMemo(() => {
         if (isLoading || collaborators.length === 0 || events.length === 0) {
             return { uniqueCount: 0, totalCount: collaborators.length, percentage: 0 };
         }
-
-        const start = startOfMonth(today);
-        const end = endOfMonth(today);
-
-        const monthlyLogins = events.filter(event => {
-            const eventDate = parseISO(event.timestamp);
-            return isWithinInterval(eventDate, { start, end });
-        });
-
-        const uniqueUserIds = new Set(monthlyLogins.map(event => event.userId));
+        
+        const uniqueUserIds = new Set(events.map(event => event.userId));
         
         return {
             uniqueCount: uniqueUserIds.size,
             totalCount: collaborators.length,
             percentage: collaborators.length > 0 ? (uniqueUserIds.size / collaborators.length) * 100 : 0,
         };
-    }, [events, collaborators, isLoading, today]);
+    }, [events, collaborators, isLoading]);
 
 
     const handleExport = () => {
@@ -237,7 +233,7 @@ export default function AuditPage() {
                     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                             <CardTitle className="flex items-center gap-2"><LogIn className="h-6 w-6"/>Análise de Logins</CardTitle>
-                            <CardDescription>Análise da frequência e do volume de acessos à plataforma.</CardDescription>
+                            <CardDescription>Análise da frequência e do volume de acessos à plataforma no período selecionado.</CardDescription>
                         </div>
                         <Button onClick={handleExport} disabled={isLoading || events.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                             <FileDown className="mr-2 h-4 w-4" />
@@ -271,7 +267,7 @@ export default function AuditPage() {
                     </Card>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><BarChartIcon className="h-5 w-5"/>Logins nos Últimos 7 Dias</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-lg"><BarChartIcon className="h-5 w-5"/>Logins no Período</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
@@ -290,7 +286,7 @@ export default function AuditPage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
                             <UsersIcon className="h-5 w-5" />
-                            Logins Únicos (Mês Atual)
+                            Logins Únicos (no Período)
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -300,7 +296,7 @@ export default function AuditPage() {
                             </p>
                             <Progress value={uniqueLoginsThisMonth.percentage} className="h-3 [&>div]:bg-[hsl(var(--admin-primary))]"/>
                             <p className="text-sm text-muted-foreground">
-                                {uniqueLoginsThisMonth.percentage.toFixed(1)}% dos colaboradores fizeram login pelo menos uma vez este mês.
+                                {uniqueLoginsThisMonth.percentage.toFixed(1)}% dos colaboradores fizeram login pelo menos uma vez no período selecionado.
                             </p>
                         </div>
                     </CardContent>

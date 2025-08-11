@@ -12,9 +12,10 @@ import { Eye, FileText, Newspaper, User, Medal, Download, FileDown, Route, Troph
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Papa from 'papaparse';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, isWithinInterval, endOfDay } from 'date-fns';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Line } from 'recharts';
+import { useAudit } from '@/contexts/AuditContext';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view';
@@ -38,11 +39,9 @@ const EVENT_TYPE_CONFIG: { [key in AuditLogEvent['eventType']]?: { label: string
     page_view: { label: 'Acesso de Página', icon: Eye },
 };
 
-const CUTOFF_DATE = new Date('2024-08-11T00:00:00.000Z');
-
-
 export default function ContentInteractionPage() {
     const queryClient = useQueryClient();
+    const { dateRange } = useAudit();
 
     React.useEffect(() => {
         const unsubscribe = listenToCollection<AuditLogEvent>(
@@ -57,15 +56,24 @@ export default function ContentInteractionPage() {
         return () => unsubscribe();
     }, [queryClient]);
     
-    const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
+    const { data: allEvents = [], isLoading } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
-        select: (data) => data.filter(e => {
+    });
+
+    const events = useMemo(() => {
+        if (!dateRange?.from || !dateRange?.to) return [];
+        
+        const from = startOfDay(dateRange.from);
+        const to = endOfDay(dateRange.to);
+
+        return allEvents.filter(e => {
             const isRelevantEvent = e.eventType === 'content_view' || e.eventType === 'document_download' || e.eventType === 'page_view';
             const eventDate = parseISO(e.timestamp);
-            return isRelevantEvent && compareAsc(eventDate, CUTOFF_DATE) >= 0;
-        })
-    });
+            return isRelevantEvent && isWithinInterval(eventDate, { start: from, end: to });
+        });
+    }, [allEvents, dateRange]);
+
 
     const { contentStats, top5Contents, pageAccessCounts, chatbotAccessHistory, topChatbotUsers } = useMemo(() => {
         if (isLoading || !events.length) return { contentStats: [], top5Contents: [], pageAccessCounts: [], chatbotAccessHistory: [], topChatbotUsers: [] };
@@ -116,11 +124,11 @@ export default function ContentInteractionPage() {
         
         // Chatbot History
         let chatbotAccessHistory: { date: string; "Acessos Totais": number; "Acessos Únicos": number }[] = [];
-        if (chatbotEvents.length > 0) {
-            const startDate = startOfDay(parseISO(chatbotEvents[0].timestamp));
-            const endDate = startOfDay(new Date());
+        if (chatbotEvents.length > 0 && dateRange?.from && dateRange.to) {
+            const startDate = startOfDay(dateRange.from);
+            const endDate = startOfDay(dateRange.to);
 
-            const dateRange = eachDayOfInterval({ start: startDate, end: endDate });
+            const dateRangeInterval = eachDayOfInterval({ start: startDate, end: endDate });
 
             const accessByDay: { [key: string]: { total: number, uniqueUsers: Set<string> } } = {};
             chatbotEvents.forEach(event => {
@@ -132,7 +140,7 @@ export default function ContentInteractionPage() {
                 accessByDay[dayKey].uniqueUsers.add(event.userId);
             });
 
-            chatbotAccessHistory = dateRange.map(day => {
+            chatbotAccessHistory = dateRangeInterval.map(day => {
                 const dayKey = format(day, 'yyyy-MM-dd');
                 return {
                     date: format(day, 'dd/MM'),
@@ -159,7 +167,7 @@ export default function ContentInteractionPage() {
 
         return { contentStats, top5Contents, pageAccessCounts, chatbotAccessHistory, topChatbotUsers };
 
-    }, [events, isLoading]);
+    }, [events, isLoading, dateRange]);
 
     const handleExport = () => {
         const dataForCsv = contentStats.map(item => ({
@@ -195,7 +203,7 @@ export default function ContentInteractionPage() {
                     <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                         <div>
                             <CardTitle className="flex items-center gap-2"><Eye className="h-6 w-6"/>Análise de Conteúdos e Páginas</CardTitle>
-                            <CardDescription>Análise de visualizações, downloads e acessos para entender o engajamento.</CardDescription>
+                            <CardDescription>Análise de visualizações, downloads e acessos para entender o engajamento no período selecionado.</CardDescription>
                         </div>
                         <Button onClick={handleExport} disabled={isLoading || contentStats.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                             <FileDown className="mr-2 h-4 w-4" />
@@ -396,4 +404,3 @@ export default function ContentInteractionPage() {
         </SuperAdminGuard>
     );
 }
-

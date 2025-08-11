@@ -8,21 +8,28 @@ import { useApplications } from '@/contexts/ApplicationsContext';
 import { useWorkflows, WorkflowRequest } from '@/contexts/WorkflowsContext';
 import { useMemo } from 'react';
 import { FileClock, Timer, Hourglass, ListChecks, Workflow as WorkflowIcon } from 'lucide-react';
-import { differenceInBusinessDays, parseISO, compareAsc } from 'date-fns';
+import { differenceInBusinessDays, parseISO, compareAsc, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { useAudit } from '@/contexts/AuditContext';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
-const CUTOFF_DATE = new Date('2024-08-11T00:00:00.000Z');
 
 export default function WorkflowAnalyticsPage() {
   const { workflowDefinitions } = useApplications();
-  const { requests, loading: loadingRequests } = useWorkflows();
+  const { requests: allRequests, loading: loadingRequests } = useWorkflows();
+  const { dateRange } = useAudit();
 
   const filteredRequests = useMemo(() => {
-    return requests.filter(req => {
+    if (!dateRange?.from || !dateRange?.to) return [];
+    
+    const from = startOfDay(dateRange.from);
+    const to = endOfDay(dateRange.to);
+
+    return allRequests.filter(req => {
       const eventDate = parseISO(req.submittedAt);
-      return compareAsc(eventDate, CUTOFF_DATE) >= 0;
+      return isWithinInterval(eventDate, { start: from, end: to });
     });
-  }, [requests]);
+  }, [allRequests, dateRange]);
+
 
   const requestsByStatus = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
