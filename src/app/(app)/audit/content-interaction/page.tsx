@@ -38,6 +38,8 @@ const EVENT_TYPE_CONFIG: { [key in AuditLogEvent['eventType']]?: { label: string
     page_view: { label: 'Acesso de Página', icon: Eye },
 };
 
+const CUTOFF_DATE = new Date('2024-08-11T00:00:00.000Z');
+
 
 export default function ContentInteractionPage() {
     const queryClient = useQueryClient();
@@ -58,7 +60,11 @@ export default function ContentInteractionPage() {
     const { data: events = [], isLoading } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
-        select: (data) => data.filter(e => e.eventType === 'content_view' || e.eventType === 'document_download' || e.eventType === 'page_view')
+        select: (data) => data.filter(e => {
+            const isRelevantEvent = e.eventType === 'content_view' || e.eventType === 'document_download' || e.eventType === 'page_view';
+            const eventDate = parseISO(e.timestamp);
+            return isRelevantEvent && compareAsc(eventDate, CUTOFF_DATE) >= 0;
+        })
     });
 
     const { contentStats, top5Contents, pageAccessCounts, chatbotAccessHistory, topChatbotUsers } = useMemo(() => {

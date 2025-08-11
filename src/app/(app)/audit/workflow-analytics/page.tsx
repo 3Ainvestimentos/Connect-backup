@@ -8,13 +8,21 @@ import { useApplications } from '@/contexts/ApplicationsContext';
 import { useWorkflows, WorkflowRequest } from '@/contexts/WorkflowsContext';
 import { useMemo } from 'react';
 import { FileClock, Timer, Hourglass, ListChecks, Workflow as WorkflowIcon } from 'lucide-react';
-import { differenceInBusinessDays, parseISO } from 'date-fns';
+import { differenceInBusinessDays, parseISO, compareAsc } from 'date-fns';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
+const CUTOFF_DATE = new Date('2024-08-11T00:00:00.000Z');
 
 export default function WorkflowAnalyticsPage() {
   const { workflowDefinitions } = useApplications();
   const { requests, loading: loadingRequests } = useWorkflows();
+
+  const filteredRequests = useMemo(() => {
+    return requests.filter(req => {
+      const eventDate = parseISO(req.submittedAt);
+      return compareAsc(eventDate, CUTOFF_DATE) >= 0;
+    });
+  }, [requests]);
 
   const requestsByStatus = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
@@ -25,7 +33,7 @@ export default function WorkflowAnalyticsPage() {
         'Finalizado': 0,
     };
 
-    requests.forEach(req => {
+    filteredRequests.forEach(req => {
         const definition = workflowDefinitions.find(d => d.name === req.type);
         if (!definition || !definition.statuses || definition.statuses.length === 0) {
             statusCounts['Em processamento']++;
@@ -46,24 +54,24 @@ export default function WorkflowAnalyticsPage() {
     });
 
     return Object.entries(statusCounts).map(([name, value]) => ({ name, value }));
-  }, [requests, loadingRequests, workflowDefinitions]);
+  }, [filteredRequests, loadingRequests, workflowDefinitions]);
 
 
   const requestsByType = useMemo(() => {
      if (loadingRequests) return [];
       const typeCounts: { [key: string]: number } = {};
-      requests.forEach(req => {
+      filteredRequests.forEach(req => {
           typeCounts[req.type] = (typeCounts[req.type] || 0) + 1;
       });
       return Object.entries(typeCounts).map(([name, value]) => ({ name, value })).sort((a,b) => b.value - a.value);
-  }, [requests, loadingRequests]);
+  }, [filteredRequests, loadingRequests]);
 
   const averageResolutionTime = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
     
     const resolutionTimes: { [type: string]: { totalDays: number, count: number } } = {};
 
-    requests.forEach(req => {
+    filteredRequests.forEach(req => {
       const definition = workflowDefinitions.find(d => d.name === req.type);
       if (!definition) return;
 
@@ -86,14 +94,14 @@ export default function WorkflowAnalyticsPage() {
       'Tempo Médio (dias)': parseFloat((data.totalDays / data.count).toFixed(2))
     }));
 
-  }, [requests, loadingRequests, workflowDefinitions]);
+  }, [filteredRequests, loadingRequests, workflowDefinitions]);
   
   const averageTimePerStatus = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
     
     const timePerStatus: { [type: string]: { [statusId: string]: { totalDays: number, count: number } } } = {};
 
-    requests.forEach(req => {
+    filteredRequests.forEach(req => {
       if (!timePerStatus[req.type]) timePerStatus[req.type] = {};
       
       for (let i = 0; i < req.history.length - 1; i++) {
@@ -128,7 +136,7 @@ export default function WorkflowAnalyticsPage() {
 
     return result;
 
-  }, [requests, loadingRequests, workflowDefinitions]);
+  }, [filteredRequests, loadingRequests, workflowDefinitions]);
 
 
   return (

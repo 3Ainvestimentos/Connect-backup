@@ -26,6 +26,8 @@ type AuditLogEvent = WithId<{
     details: { [key: string]: any };
 }>;
 
+const CUTOFF_DATE = new Date('2024-08-11T00:00:00.000Z');
+
 
 export default function AuditPage() {
     const queryClient = useQueryClient();
@@ -51,7 +53,11 @@ export default function AuditPage() {
     const { data: events = [], isLoading: isLoadingEvents } = useQuery<AuditLogEvent[]>({
         queryKey: ['audit_logs'],
         queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
-        select: (data) => data.filter(e => e.eventType === 'login'),
+        select: (data) => data.filter(e => {
+             const isLoginEvent = e.eventType === 'login';
+             const eventDate = parseISO(e.timestamp);
+             return isLoginEvent && compareAsc(eventDate, CUTOFF_DATE) >= 0;
+        }),
     });
     const { collaborators, loading: loadingCollaborators } = useCollaborators();
 
