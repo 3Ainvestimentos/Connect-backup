@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useMemo } from 'react';
 import { useMessages, type MessageType } from '@/contexts/MessagesContext';
@@ -11,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2, Users, Bot } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2, Users, Bot, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -21,6 +22,7 @@ import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { Switch } from '../ui/switch';
 import { cn } from '@/lib/utils';
+import { parseISO, compareDesc } from 'date-fns';
 
 const messageSchema = z.object({
     id: z.string().optional(),
@@ -33,6 +35,9 @@ const messageSchema = z.object({
 });
 
 type MessageFormValues = z.infer<typeof messageSchema>;
+type SortKey = 'date' | 'title';
+type SortDirection = 'asc' | 'desc';
+
 
 const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: MessageType | null; recipients: Collaborator[]; onOpenChange: (open: boolean) => void; }) => {
     if (!message) return null;
@@ -82,6 +87,9 @@ export function ManageMessages() {
     const [editingMessage, setEditingMessage] = useState<MessageType | null>(null);
     const [viewingStatusFor, setViewingStatusFor] = useState<MessageType | null>(null);
     const [showSystemMessages, setShowSystemMessages] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [sortKey, setSortKey] = useState<SortKey>('date');
+    const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const queryClient = useQueryClient();
     
     const form = useForm<MessageFormValues>({
@@ -90,13 +98,41 @@ export function ManageMessages() {
     });
 
     const watchRecipientIds = form.watch('recipientIds');
+    
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
 
     const filteredMessages = useMemo(() => {
-        if (showSystemMessages) {
-            return messages;
+        let items = [...messages];
+
+        if (!showSystemMessages) {
+            items = items.filter(msg => msg.sender !== 'Sistema de Workflows');
         }
-        return messages.filter(msg => msg.sender !== 'Sistema de Workflows');
-    }, [messages, showSystemMessages]);
+
+        if (searchTerm) {
+            items = items.filter(msg => msg.title.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+
+        items.sort((a, b) => {
+            if (sortKey === 'date') {
+                const comparison = compareDesc(parseISO(a.date), parseISO(b.date));
+                return sortDirection === 'asc' ? -comparison : comparison;
+            }
+            if (sortKey === 'title') {
+                const comparison = a.title.localeCompare(b.title);
+                return sortDirection === 'asc' ? comparison : -comparison;
+            }
+            return 0;
+        });
+
+        return items;
+    }, [messages, showSystemMessages, searchTerm, sortKey, sortDirection]);
 
     const handleDialogOpen = (message: MessageType | null) => {
         setEditingMessage(message);
@@ -188,20 +224,31 @@ export function ManageMessages() {
 
     return (
         <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <CardTitle>Gerenciar Mensagens</CardTitle>
                     <CardDescription>Adicione, edite ou remova mensagens do mural.</CardDescription>
                 </div>
-                 <div className="flex items-center gap-4">
-                    <div className="flex items-center space-x-2">
-                        <Switch id="show-system" checked={showSystemMessages} onCheckedChange={setShowSystemMessages} className="data-[state=checked]:bg-admin-primary" />
-                        <Label htmlFor="show-system" className="text-sm text-muted-foreground">Mostrar mensagens do sistema</Label>
+                 <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-4">
+                    <div className="relative flex-grow w-full sm:w-auto">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Buscar por título..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
                     </div>
-                    <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Mensagem
-                    </Button>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center space-x-2">
+                            <Switch id="show-system" checked={showSystemMessages} onCheckedChange={setShowSystemMessages} className="data-[state=checked]:bg-admin-primary" />
+                            <Label htmlFor="show-system" className="text-sm text-muted-foreground whitespace-nowrap">Mostrar sistema</Label>
+                        </div>
+                        <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -209,9 +256,19 @@ export function ManageMessages() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Título</TableHead>
+                                <TableHead onClick={() => handleSort('title')} className="cursor-pointer hover:bg-muted/50">
+                                    <div className="flex items-center gap-1">
+                                        Título
+                                        {sortKey === 'title' && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                    </div>
+                                </TableHead>
                                 <TableHead>Destinatários</TableHead>
-                                <TableHead>Data</TableHead>
+                                <TableHead onClick={() => handleSort('date')} className="cursor-pointer hover:bg-muted/50">
+                                    <div className="flex items-center gap-1">
+                                        Data
+                                        {sortKey === 'date' && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                                    </div>
+                                </TableHead>
                                 <TableHead>Leituras</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
@@ -233,7 +290,7 @@ export function ManageMessages() {
                                             {getRecipientDescription(item.recipientIds)}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</TableCell>
+                                    <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</TableCell>
                                     <TableCell>
                                         <Button 
                                             variant="link" 
