@@ -12,8 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2, Users, Bot, Search, ChevronUp, ChevronDown } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { PlusCircle, Edit, Trash2, CheckCircle, XCircle, Loader2, Users, Bot, Search, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
@@ -90,6 +90,8 @@ export function ManageMessages() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('date');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+    const [currentPage, setCurrentPage] = useState(1);
+    const ROWS_PER_PAGE = 100;
     const queryClient = useQueryClient();
     
     const form = useForm<MessageFormValues>({
@@ -106,6 +108,7 @@ export function ManageMessages() {
             setSortKey(key);
             setSortDirection('asc');
         }
+        setCurrentPage(1);
     };
 
     const filteredMessages = useMemo(() => {
@@ -133,7 +136,19 @@ export function ManageMessages() {
 
         return items;
     }, [messages, showSystemMessages, searchTerm, sortKey, sortDirection]);
+    
+    const totalPages = Math.ceil(filteredMessages.length / ROWS_PER_PAGE);
+    const paginatedMessages = useMemo(() => {
+        const startIndex = (currentPage - 1) * ROWS_PER_PAGE;
+        const endIndex = startIndex + ROWS_PER_PAGE;
+        return filteredMessages.slice(startIndex, endIndex);
+    }, [filteredMessages, currentPage]);
 
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1);
+    }
+    
     const handleDialogOpen = (message: MessageType | null) => {
         setEditingMessage(message);
         if (message) {
@@ -235,7 +250,7 @@ export function ManageMessages() {
                         <Input 
                             placeholder="Buscar por título..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={handleSearchChange}
                             className="pl-10"
                         />
                     </div>
@@ -274,7 +289,7 @@ export function ManageMessages() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredMessages.map(item => {
+                            {paginatedMessages.map(item => {
                                 const recipients = getMessageRecipients(item, collaborators);
                                 const totalRecipients = recipients.length;
                                 const readCount = item.readBy.length;
@@ -320,6 +335,35 @@ export function ManageMessages() {
                 </div>
             </CardContent>
 
+             <CardFooter className="flex items-center justify-between">
+                <div className="text-sm text-muted-foreground">
+                    Exibindo {paginatedMessages.length} de {filteredMessages.length} mensagens.
+                </div>
+                <div className="flex items-center space-x-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                    >
+                        <ChevronLeft className="h-4 w-4" />
+                        <span className="sr-only">Anterior</span>
+                    </Button>
+                    <span className="text-sm">
+                        Página {currentPage} de {totalPages}
+                    </span>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                    >
+                         <span className="sr-only">Próxima</span>
+                         <ChevronRight className="h-4 w-4" />
+                    </Button>
+                </div>
+            </CardFooter>
+
              <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingMessage(null); setIsFormOpen(isOpen); }}>
                 <DialogContent className="max-w-2xl">
                 <ScrollArea className="max-h-[80vh]">
@@ -361,7 +405,7 @@ export function ManageMessages() {
                                <Users className="mr-2 h-4 w-4" />
                                <span>{getRecipientDescription(watchRecipientIds)}</span>
                             </Button>
-                            {form.formState.errors.recipientIds && <p className="text-sm text-destructive mt-1">{form.formState.errors.recipientIds.message}</p>}
+                            {form.formState.errors.recipientIds && <p className="text-sm text-destructive mt-1">{form.formState.errors.recipientIds.message as string}</p>}
                         </div>
 
                         <DialogFooter className="mt-6">
@@ -394,3 +438,5 @@ export function ManageMessages() {
         </Card>
     );
 }
+
+    
