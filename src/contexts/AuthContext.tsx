@@ -15,7 +15,7 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
 
 const scopes = [
-  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/drive.readonly'
 ];
 scopes.forEach(scope => googleProvider.addScope(scope));
