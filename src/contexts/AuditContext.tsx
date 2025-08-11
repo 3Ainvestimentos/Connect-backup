@@ -13,7 +13,7 @@ interface AuditContextType {
 const AuditContext = createContext<AuditContextType | undefined>(undefined);
 
 // Set the start date for the audit logs
-const AUDIT_START_DATE = new Date('2024-08-01');
+const AUDIT_START_DATE = new Date('2025-08-01');
 
 export const AuditProvider = ({ children }: { children: ReactNode }) => {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({

@@ -21,6 +21,11 @@ interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> 
     onDateChange: (date: DateRange | undefined) => void;
 }
 
+// A data inicial dos logs é definida aqui para desabilitar dias anteriores no calendário.
+// Idealmente, isso viria de uma configuração central, mas para manter o componente simples, está aqui.
+const AUDIT_START_DATE = new Date('2024-08-01');
+
+
 export function DatePickerWithRange({
   className,
   date,
@@ -63,7 +68,7 @@ export function DatePickerWithRange({
             onSelect={onDateChange}
             numberOfMonths={2}
             locale={ptBR}
-            disabled={(day) => day < new Date('2024-08-01') || day > new Date()}
+            disabled={(day) => day < AUDIT_START_DATE || day > new Date()}
           />
         </PopoverContent>
       </Popover>
