@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { Textarea } from '../ui/textarea';
 
 interface PollModalProps {
   poll: PollType;
@@ -26,8 +27,8 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
   const { collaborators } = useCollaborators();
 
   const handleSubmit = async () => {
-    if (!selectedValue) {
-      toast({ title: 'Por favor, selecione uma opção.', variant: 'destructive' });
+    if (!selectedValue.trim()) {
+      toast({ title: 'Por favor, forneça uma resposta.', variant: 'destructive' });
       return;
     }
     const currentUser = collaborators.find(c => c.email === user?.email);
@@ -46,12 +47,15 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
       });
       toast({ title: 'Obrigado por responder!', description: 'Sua resposta foi registrada.', variant: 'success' });
       onOpenChange(false);
+      setSelectedValue('');
     } catch (error) {
       toast({ title: 'Erro ao enviar resposta', description: (error as Error).message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
   };
+  
+  const isMultipleChoice = poll.type === 'multiple-choice';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,22 +65,35 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
           <DialogDescription>Sua opinião é importante para nós.</DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <RadioGroup value={selectedValue} onValueChange={setSelectedValue}>
-            <div className="space-y-2">
-              {poll.options.map((option, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <RadioGroupItem value={option} id={`option-${index}`} />
-                  <Label htmlFor={`option-${index}`}>{option}</Label>
-                </div>
-              ))}
-            </div>
-          </RadioGroup>
+          {isMultipleChoice ? (
+            <RadioGroup value={selectedValue} onValueChange={setSelectedValue}>
+              <div className="space-y-2">
+                {poll.options.map((option, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <RadioGroupItem value={option} id={`option-${index}`} />
+                    <Label htmlFor={`option-${index}`}>{option}</Label>
+                  </div>
+                ))}
+              </div>
+            </RadioGroup>
+          ) : (
+             <div className="space-y-2">
+                <Label htmlFor="open-text-response">Sua resposta:</Label>
+                <Textarea
+                    id="open-text-response"
+                    value={selectedValue}
+                    onChange={(e) => setSelectedValue(e.target.value)}
+                    placeholder="Digite sua resposta aqui..."
+                    rows={4}
+                />
+             </div>
+          )}
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
             Fechar
           </Button>
-          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !selectedValue} className="bg-success hover:bg-success/90">
+          <Button type="submit" onClick={handleSubmit} disabled={isSubmitting || !selectedValue.trim()} className="bg-success hover:bg-success/90">
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Enviar Resposta
           </Button>

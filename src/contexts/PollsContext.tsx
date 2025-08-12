@@ -9,10 +9,19 @@ import { useAuth } from './AuthContext';
 
 export const pollSchema = z.object({
   question: z.string().min(1, "A pergunta é obrigatória."),
-  options: z.array(z.object({ value: z.string().min(1, "A opção não pode ser vazia.") })).min(2, "São necessárias pelo menos duas opções."),
+  type: z.enum(['multiple-choice', 'open-text']).default('multiple-choice'),
+  options: z.array(z.object({ value: z.string().min(1, "A opção não pode ser vazia.") })).optional(),
   targetPage: z.string().min(1, "A página alvo é obrigatória."),
   recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário."),
   isActive: z.boolean().default(true),
+}).superRefine((data, ctx) => {
+    if (data.type === 'multiple-choice' && (!data.options || data.options.length < 2)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['options'],
+        message: 'São necessárias pelo menos duas opções para o tipo múltipla escolha.',
+      });
+    }
 });
 
 export type PollType = WithId<Omit<z.infer<typeof pollSchema>, 'options'> & { options: string[] }>;

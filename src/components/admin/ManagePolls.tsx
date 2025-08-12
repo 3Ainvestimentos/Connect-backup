@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle, Edit, Trash2, Loader2, Users, BarChart, File, X, Route } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Users, BarChart, File, X, Route, MessageSquare, CheckSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Switch } from '../ui/switch';
 import Link from 'next/link';
 import { navItems } from '@/components/layout/AppLayout';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 type PollFormValues = Zod.infer<typeof pollSchema>;
 
@@ -39,6 +40,7 @@ export function ManagePolls() {
         resolver: zodResolver(pollSchema),
         defaultValues: {
             question: '',
+            type: 'multiple-choice',
             options: [{ value: '' }, { value: '' }],
             targetPage: '/dashboard',
             recipientIds: ['all'],
@@ -52,18 +54,20 @@ export function ManagePolls() {
     });
 
     const watchRecipientIds = form.watch('recipientIds');
-    const watchIsActive = form.watch('isActive');
+    const watchPollType = form.watch('type');
 
     const handleDialogOpen = (poll: PollType | null) => {
         setEditingPoll(poll);
         if (poll) {
             form.reset({
                 ...poll,
-                options: poll.options.map(opt => ({ value: opt })),
+                type: poll.type || 'multiple-choice',
+                options: poll.options?.map(opt => ({ value: opt })),
             });
         } else {
             form.reset({
                 question: '',
+                type: 'multiple-choice',
                 options: [{ value: 'Sim' }, { value: 'Não' }],
                 targetPage: '/dashboard',
                 recipientIds: ['all'],
@@ -86,7 +90,7 @@ export function ManagePolls() {
     const onSubmit = async (data: PollFormValues) => {
         const pollData = {
             ...data,
-            options: data.options.map(opt => opt.value),
+            options: data.type === 'multiple-choice' ? (data.options || []).map(opt => opt.value) : [],
         };
         try {
             if (editingPoll) {
@@ -179,21 +183,34 @@ export function ManagePolls() {
                                 <Input id="question" {...form.register('question')} />
                                 {form.formState.errors.question && <p className="text-sm text-destructive mt-1">{form.formState.errors.question.message}</p>}
                             </div>
+
                              <div>
-                                <Label>Opções de Resposta</Label>
-                                {fields.map((field, index) => (
-                                    <div key={field.id} className="flex items-center gap-2">
-                                        <Input {...form.register(`options.${index}.value`)} />
-                                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                <Button type="button" variant="outline" size="sm" onClick={() => append({ value: '' })} className="mt-2">
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Opção
-                                </Button>
-                                {form.formState.errors.options && <p className="text-sm text-destructive mt-1">{form.formState.errors.options.message}</p>}
+                                <Label>Tipo de Resposta</Label>
+                                <Controller name="type" control={form.control} render={({ field }) => (
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center gap-4 mt-2">
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="multiple-choice" id="multiple-choice" /><Label htmlFor="multiple-choice" className="flex items-center gap-2"><CheckSquare className="h-4 w-4"/>Múltipla Escolha</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="open-text" id="open-text" /><Label htmlFor="open-text" className="flex items-center gap-2"><MessageSquare className="h-4 w-4"/>Texto Aberto</Label></div>
+                                    </RadioGroup>
+                                )}/>
                             </div>
+
+                            {watchPollType === 'multiple-choice' && (
+                                <div>
+                                    <Label>Opções de Resposta</Label>
+                                    {fields.map((field, index) => (
+                                        <div key={field.id} className="flex items-center gap-2 mt-1">
+                                            <Input {...form.register(`options.${index}.value`)} />
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button type="button" variant="outline" size="sm" onClick={() => append({ value: '' })} className="mt-2">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Opção
+                                    </Button>
+                                    {form.formState.errors.options && <p className="text-sm text-destructive mt-1">{form.formState.errors.options.message}</p>}
+                                </div>
+                            )}
 
                             <Separator />
                             

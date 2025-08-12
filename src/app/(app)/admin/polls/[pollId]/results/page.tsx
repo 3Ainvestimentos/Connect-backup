@@ -6,12 +6,14 @@ import { useParams, useRouter } from 'next/navigation';
 import { usePolls } from '@/contexts/PollsContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileDown, PieChart as PieChartIcon, CheckSquare } from 'lucide-react';
+import { ArrowLeft, FileDown, PieChart as PieChartIcon, CheckSquare, MessageSquare } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import Papa from 'papaparse';
 import { format } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
 
@@ -25,7 +27,7 @@ export default function PollResultsPage() {
   const responses = React.useMemo(() => pollResponses[pollId] || [], [pollResponses, pollId]);
 
   const resultsData = React.useMemo(() => {
-    if (!poll || responses.length === 0) return [];
+    if (!poll || responses.length === 0 || poll.type !== 'multiple-choice') return [];
     
     const counts: { [key: string]: number } = {};
     poll.options.forEach(option => {
@@ -87,6 +89,8 @@ export default function PollResultsPage() {
       </div>
     );
   }
+  
+  const isMultipleChoice = poll.type === 'multiple-choice';
 
   return (
     <div className="space-y-6 p-6 md:p-8">
@@ -100,7 +104,7 @@ export default function PollResultsPage() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
             </Button>
-            <Button onClick={handleExportCSV} disabled={totalResponses === 0}>
+            <Button onClick={handleExportCSV} disabled={totalResponses === 0} className="bg-admin-primary hover:bg-admin-primary/90">
                 <FileDown className="mr-2 h-4 w-4" />
                 Exportar CSV
             </Button>
@@ -122,21 +126,47 @@ export default function PollResultsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2"><PieChartIcon className="h-5 w-5"/> Distribuição das Respostas</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            {isMultipleChoice ? <PieChartIcon className="h-5 w-5"/> : <MessageSquare className="h-5 w-5"/>}
+            {isMultipleChoice ? 'Distribuição das Respostas' : 'Respostas Abertas'}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {totalResponses > 0 ? (
-            <ResponsiveContainer width="100%" height={400}>
-              <PieChart>
-                <Pie data={resultsData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} label>
-                  {resultsData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            isMultipleChoice ? (
+              <ResponsiveContainer width="100%" height={400}>
+                <PieChart>
+                  <Pie data={resultsData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} label>
+                    {resultsData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+                <ScrollArea className="h-[400px]">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Colaborador</TableHead>
+                                <TableHead>Resposta</TableHead>
+                                <TableHead className="text-right">Data</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {responses.map(r => (
+                                <TableRow key={r.id}>
+                                    <TableCell className="font-medium">{r.userName}</TableCell>
+                                    <TableCell className="whitespace-pre-wrap">{r.answer}</TableCell>
+                                    <TableCell className="text-right text-xs text-muted-foreground">{format(new Date(r.answeredAt), 'dd/MM/yy HH:mm')}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
+            )
           ) : (
             <div className="text-center py-10 text-muted-foreground">
                 <PieChartIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
