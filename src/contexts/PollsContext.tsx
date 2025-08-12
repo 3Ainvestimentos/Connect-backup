@@ -11,6 +11,7 @@ export const pollSchema = z.object({
   question: z.string().min(1, "A pergunta é obrigatória."),
   type: z.enum(['multiple-choice', 'open-text']).default('multiple-choice'),
   options: z.array(z.object({ value: z.string().min(1, "A opção não pode ser vazia.") })).optional(),
+  allowOtherOption: z.boolean().optional().default(false),
   targetPage: z.string().min(1, "A página alvo é obrigatória."),
   recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário."),
   isActive: z.boolean().default(true),
@@ -24,7 +25,7 @@ export const pollSchema = z.object({
     }
 });
 
-export type PollType = WithId<Omit<z.infer<typeof pollSchema>, 'options'> & { options: string[] }>;
+export type PollType = WithId<Omit<z.infer<typeof pollSchema>, 'options'> & { options: string[], allowOtherOption?: boolean }>;
 
 export interface PollResponseType {
   id: string;

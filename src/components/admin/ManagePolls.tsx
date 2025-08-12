@@ -42,6 +42,7 @@ export function ManagePolls() {
             question: '',
             type: 'multiple-choice',
             options: [{ value: '' }, { value: '' }],
+            allowOtherOption: false,
             targetPage: '/dashboard',
             recipientIds: ['all'],
             isActive: true,
@@ -63,12 +64,14 @@ export function ManagePolls() {
                 ...poll,
                 type: poll.type || 'multiple-choice',
                 options: poll.options?.map(opt => ({ value: opt })),
+                allowOtherOption: poll.allowOtherOption || false,
             });
         } else {
             form.reset({
                 question: '',
                 type: 'multiple-choice',
                 options: [{ value: 'Sim' }, { value: 'Não' }],
+                allowOtherOption: false,
                 targetPage: '/dashboard',
                 recipientIds: ['all'],
                 isActive: true,
@@ -91,6 +94,7 @@ export function ManagePolls() {
         const pollData = {
             ...data,
             options: data.type === 'multiple-choice' ? (data.options || []).map(opt => opt.value) : [],
+            allowOtherOption: data.type === 'multiple-choice' ? data.allowOtherOption : false,
         };
         try {
             if (editingPoll) {
@@ -195,7 +199,7 @@ export function ManagePolls() {
                             </div>
 
                             {watchPollType === 'multiple-choice' && (
-                                <div>
+                                <div className="p-3 border rounded-md space-y-4">
                                     <Label>Opções de Resposta</Label>
                                     {fields.map((field, index) => (
                                         <div key={field.id} className="flex items-center gap-2 mt-1">
@@ -209,6 +213,13 @@ export function ManagePolls() {
                                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Opção
                                     </Button>
                                     {form.formState.errors.options && <p className="text-sm text-destructive mt-1">{form.formState.errors.options.message}</p>}
+                                    <Separator/>
+                                     <div className="flex items-center space-x-2">
+                                        <Controller name="allowOtherOption" control={form.control} render={({ field }) => (
+                                            <Switch id="allowOtherOption" checked={field.value} onCheckedChange={field.onChange} />
+                                        )}/>
+                                        <Label htmlFor="allowOtherOption">Permitir opção "Outros"?</Label>
+                                    </div>
                                 </div>
                             )}
 

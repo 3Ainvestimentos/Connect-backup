@@ -14,6 +14,7 @@ import Papa from 'papaparse';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
 
@@ -26,22 +27,31 @@ export default function PollResultsPage() {
   const poll = React.useMemo(() => polls.find(p => p.id === pollId), [polls, pollId]);
   const responses = React.useMemo(() => pollResponses[pollId] || [], [pollResponses, pollId]);
 
-  const resultsData = React.useMemo(() => {
-    if (!poll || responses.length === 0 || poll.type !== 'multiple-choice') return [];
+  const { resultsData, otherResponses } = React.useMemo(() => {
+    if (!poll || responses.length === 0) return { resultsData: [], otherResponses: [] };
     
-    const counts: { [key: string]: number } = {};
-    poll.options.forEach(option => {
-      counts[option] = 0;
-    });
+    if (poll.type === 'multiple-choice') {
+        const counts: { [key: string]: number } = {};
+        const tempOtherResponses: any[] = [];
+        
+        poll.options.forEach(option => {
+            counts[option] = 0;
+        });
 
-    responses.forEach(response => {
-      if (counts[response.answer] !== undefined) {
-        counts[response.answer]++;
-      }
-    });
+        responses.forEach(response => {
+            if (counts[response.answer] !== undefined) {
+                counts[response.answer]++;
+            } else {
+                tempOtherResponses.push(response);
+            }
+        });
+        
+        const finalResultsData = Object.entries(counts).map(([name, value]) => ({ name, value }));
 
-    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+        return { resultsData: finalResultsData, otherResponses: tempOtherResponses };
+    }
 
+    return { resultsData: [], otherResponses: [] };
   }, [poll, responses]);
 
   const totalResponses = responses.length;
@@ -175,6 +185,39 @@ export default function PollResultsPage() {
           )}
         </CardContent>
       </Card>
+       {otherResponses.length > 0 && (
+         <>
+            <Separator />
+            <Card>
+                <CardHeader>
+                    <CardTitle>Respostas "Outros"</CardTitle>
+                    <CardDescription>Respostas personalizadas enviadas através da opção "Outros".</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-[200px]">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Colaborador</TableHead>
+                                    <TableHead>Resposta</TableHead>
+                                    <TableHead className="text-right">Data</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {otherResponses.map(r => (
+                                    <TableRow key={r.id}>
+                                        <TableCell className="font-medium">{r.userName}</TableCell>
+                                        <TableCell className="whitespace-pre-wrap">{r.answer}</TableCell>
+                                        <TableCell className="text-right text-xs text-muted-foreground">{format(new Date(r.answeredAt), 'dd/MM/yy HH:mm')}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+         </>
+       )}
     </div>
   );
 }
