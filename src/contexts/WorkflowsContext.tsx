@@ -222,26 +222,31 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         if (newStatusDef?.action?.approverIds && newStatusDef.action.approverIds.length > 0) {
             const now = new Date();
             const adminUser = collaborators.find(c => c.email === user?.email);
-            const historyNote = `Ação de "${newStatusDef.action.label}" solicitada automaticamente para ${newStatusDef.action.approverIds.length} colaborador(es) pré-definido(s).`;
             
-            const newActionRequests = newStatusDef.action.approverIds.map(approverId => {
-                const approver = collaborators.find(c => c.id3a === approverId);
-                return {
-                    userId: approverId,
-                    userName: approver?.name || 'Desconhecido',
+            // Validate approverIds before creating action requests
+            const validApprovers = newStatusDef.action.approverIds.map(approverId => 
+                collaborators.find(c => c.id3a === approverId)
+            ).filter((c): c is WithId<any> => !!c); // Type guard to filter out undefined
+
+            if (validApprovers.length > 0) {
+                const newActionRequests = validApprovers.map(approver => ({
+                    userId: approver.id3a,
+                    userName: approver.name,
                     status: 'pending' as const,
                     requestedAt: formatISO(now),
                     respondedAt: '',
-                };
-            });
+                }));
 
-            // Append to payload
-            payload.actionRequests = {
-                ...originalRequest?.actionRequests,
-                [newStatusDef.id]: newActionRequests
-            };
-            if (payload.history && adminUser) {
-              payload.history.push({ timestamp: formatISO(now), status: newStatusDef.id, userId: adminUser.id3a, userName: adminUser.name, notes: historyNote });
+                // Append to payload
+                payload.actionRequests = {
+                    ...originalRequest?.actionRequests,
+                    [newStatusDef.id]: newActionRequests
+                };
+                
+                if (payload.history && adminUser) {
+                  const historyNote = `Ação de "${newStatusDef.action.label}" solicitada automaticamente para ${validApprovers.length} colaborador(es) pré-definido(s).`;
+                  payload.history.push({ timestamp: formatISO(now), status: newStatusDef.id, userId: adminUser.id3a, userName: adminUser.name, notes: historyNote });
+                }
             }
         }
         
@@ -340,3 +345,6 @@ export const useWorkflows = (): WorkflowsContextType => {
   }
   return context;
 };
+
+
+    

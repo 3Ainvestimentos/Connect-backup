@@ -121,18 +121,17 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const hasPendingActions = useMemo(() => {
     if (!currentStatusDefinition?.action) return false;
-    // Se não houver solicitações de ação, não há pendências
-    if (actionRequestsForCurrentStatus.length === 0) return false;
     
-    // Se a ação for 'execution', qualquer resposta (mesmo pendente) não bloqueia o avanço.
-    // O avanço é controlado pelo responsável.
+    // Filter out actions for users who are "Desconhecido" (Unknown)
+    const validActionRequests = actionRequestsForCurrentStatus.filter(ar => ar.userName !== 'Desconhecido');
+    
+    if (validActionRequests.length === 0) return false;
+
     if (currentStatusDefinition.action.type === 'execution') {
-        return false;
+      return false;
     }
 
-    // Para 'approval' e 'acknowledgement', verifica se TODOS os solicitados já responderam.
-    // Se houver alguém com status 'pending', a etapa está bloqueada.
-    return actionRequestsForCurrentStatus.some(ar => ar.status === 'pending');
+    return validActionRequests.some(ar => ar.status === 'pending');
   }, [actionRequestsForCurrentStatus, currentStatusDefinition]);
 
 
@@ -724,5 +723,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
+    
 
     
