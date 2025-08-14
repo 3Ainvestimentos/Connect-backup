@@ -44,26 +44,30 @@ export default function ApplicationsPage() {
 
     const groups: GroupedWorkflows = {};
     const areaMap = new Map(workflowAreas.map(area => [area.id, area]));
-
-    accessibleWorkflows.forEach(def => {
-      const area = areaMap.get(def.areaId);
-      const areaName = area?.name || 'Outros';
-      if (!groups[areaName]) {
-        groups[areaName] = [];
-      }
-      groups[areaName].push(def);
-    });
     
-    // Sort workflows within each group alphabetically
-    for (const areaName in groups) {
-      groups[areaName].sort((a, b) => a.name.localeCompare(b.name));
-    }
+    // Use the sorted order from workflowAreas to build the groups
+    workflowAreas.forEach(area => {
+      const workflowsForArea = accessibleWorkflows.filter(def => def.areaId === area.id);
+      if (workflowsForArea.length > 0) {
+        // Sort the workflows inside the group based on the area's custom order
+        workflowsForArea.sort((a, b) => {
+          const orderA = area.workflowOrder?.indexOf(a.id) ?? -1;
+          const orderB = area.workflowOrder?.indexOf(b.id) ?? -1;
+          if (orderA !== -1 && orderB !== -1) return orderA - orderB;
+          if (orderA !== -1) return -1;
+          if (orderB !== -1) return 1;
+          return a.name.localeCompare(b.name); // Fallback sort
+        });
+        groups[area.name] = workflowsForArea;
+      }
+    });
 
     return groups;
   }, [workflowDefinitions, currentUserCollab, workflowAreas]);
 
   const sortedGroupKeys = React.useMemo(() => {
-      return Object.keys(groupedWorkflows).sort((a, b) => a.localeCompare(b));
+    // The keys should already be in a reasonable order if they come from the sorted workflowAreas
+    return Object.keys(groupedWorkflows);
   }, [groupedWorkflows]);
 
   const handleAppClick = (group: WorkflowDefinition[]) => {
@@ -84,11 +88,8 @@ export default function ApplicationsPage() {
   };
 
   const getAreaIcon = (areaName: string) => {
-      const firstWorkflow = groupedWorkflows[areaName]?.[0];
-      if (!firstWorkflow) return 'FolderOpen'; // fallback
-      
-      const area = workflowAreas.find(a => a.id === firstWorkflow.areaId);
-      return area?.icon || 'FolderOpen'; // fallback
+      const area = workflowAreas.find(a => a.name === areaName);
+      return area?.icon || 'FolderOpen';
   };
 
   return (

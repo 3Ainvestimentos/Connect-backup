@@ -68,9 +68,7 @@ export function WorkflowDefinitionsTab() {
         if (ownerFilter.length > 0) {
             items = items.filter(def => ownerFilter.includes(def.ownerEmail));
         }
-
-        // The sorting from the context already handles the 'order' field.
-        // If an explicit column sort is applied, it will override the default order.
+        
         if (sortKey) {
             items.sort((a, b) => {
                 if (sortKey === 'name') {
@@ -89,19 +87,6 @@ export function WorkflowDefinitionsTab() {
 
         return items;
     }, [workflowDefinitions, searchTerm, areaFilter, ownerFilter, sortKey, sortDirection]);
-
-    const handleOrderChange = async (defId: string, newOrder: number) => {
-        const definition = workflowDefinitions.find(d => d.id === defId);
-        if (definition) {
-            try {
-                await updateWorkflowDefinition({ ...definition, order: newOrder });
-                toast({ title: "Ordem atualizada" });
-            } catch (error) {
-                toast({ title: "Erro ao atualizar ordem", variant: "destructive" });
-            }
-        }
-    };
-
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -296,7 +281,6 @@ export function WorkflowDefinitionsTab() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-12">Ícone</TableHead>
-                                     <TableHead className="w-24">Ordem</TableHead>
                                     <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50">
                                         <div className="flex items-center gap-1">
                                             Nome
@@ -329,15 +313,6 @@ export function WorkflowDefinitionsTab() {
                                     return (
                                         <TableRow key={def.id}>
                                             <TableCell><Icon className="h-5 w-5 text-muted-foreground" /></TableCell>
-                                            <TableCell>
-                                                <Input 
-                                                    type="number" 
-                                                    defaultValue={def.order}
-                                                    onBlur={(e) => handleOrderChange(def.id, parseInt(e.target.value, 10) || 0)}
-                                                    className="w-20"
-                                                    aria-label={`Ordem do workflow ${def.name}`}
-                                                />
-                                            </TableCell>
                                             <TableCell className="font-medium">{def.name}</TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className="flex items-center gap-1.5 w-fit">

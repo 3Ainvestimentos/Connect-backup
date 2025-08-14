@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle, Edit, Trash2, Loader2, FolderOpen } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, FolderOpen, ListOrdered } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,13 +16,18 @@ import { ScrollArea } from '../ui/scroll-area';
 import { toast } from '@/hooks/use-toast';
 import { iconList, getIcon } from '@/lib/icons';
 import { useWorkflowAreas, WorkflowArea, workflowAreaSchema } from '@/contexts/WorkflowAreasContext';
+import { OrderWorkflowsModal } from './OrderWorkflowsModal';
+import { useApplications } from '@/contexts/ApplicationsContext';
 
 type AreaFormValues = Omit<WorkflowArea, 'id'>;
 
 export default function ManageWorkflowAreas() {
     const { workflowAreas, loading, addWorkflowArea, updateWorkflowArea, deleteWorkflowAreaMutation } = useWorkflowAreas();
+    const { workflowDefinitions } = useApplications();
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
     const [editingArea, setEditingArea] = useState<WorkflowArea | null>(null);
+    const [areaToOrder, setAreaToOrder] = useState<WorkflowArea | null>(null);
 
     const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<AreaFormValues>({
         resolver: zodResolver(workflowAreaSchema),
@@ -37,6 +42,11 @@ export default function ManageWorkflowAreas() {
             reset({ name: '', icon: 'FolderOpen', storageFolderPath: '' });
         }
         setIsFormOpen(true);
+    };
+
+    const handleOpenOrderModal = (area: WorkflowArea) => {
+        setAreaToOrder(area);
+        setIsOrderModalOpen(true);
     };
 
     const handleDelete = async (id: string) => {
@@ -101,10 +111,13 @@ export default function ManageWorkflowAreas() {
                                             <TableCell className="font-medium">{area.name}</TableCell>
                                             <TableCell className="font-mono text-xs">{area.storageFolderPath || 'Padrão'}</TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" onClick={() => handleOpenForm(area)} className="hover:bg-muted">
+                                                <Button variant="ghost" size="icon" onClick={() => handleOpenOrderModal(area)} className="hover:bg-muted" title="Ordenar Workflows">
+                                                    <ListOrdered className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="ghost" size="icon" onClick={() => handleOpenForm(area)} className="hover:bg-muted" title="Editar Área">
                                                     <Edit className="h-4 w-4" />
                                                 </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(area.id)} className="hover:bg-muted" disabled={deleteWorkflowAreaMutation.isPending && deleteWorkflowAreaMutation.variables === area.id}>
+                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(area.id)} className="hover:bg-muted" disabled={deleteWorkflowAreaMutation.isPending && deleteWorkflowAreaMutation.variables === area.id} title="Excluir Área">
                                                     {deleteWorkflowAreaMutation.isPending && deleteWorkflowAreaMutation.variables === area.id ? (
                                                         <Loader2 className="h-4 w-4 animate-spin" />
                                                     ) : (
@@ -168,6 +181,15 @@ export default function ManageWorkflowAreas() {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            {areaToOrder && (
+                <OrderWorkflowsModal
+                    isOpen={isOrderModalOpen}
+                    onClose={() => setIsOrderModalOpen(false)}
+                    area={areaToOrder}
+                    allWorkflows={workflowDefinitions}
+                />
+            )}
         </>
     );
 }

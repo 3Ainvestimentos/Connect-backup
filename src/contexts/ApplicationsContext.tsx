@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
+import { useWorkflowAreas } from './WorkflowAreasContext';
 
 const workflowActionSchema = z.object({
   type: z.enum(['approval', 'acknowledgement', 'execution']),
@@ -74,9 +75,8 @@ export const workflowDefinitionSchema = z.object({
     icon: z.string().min(1, "Ícone é obrigatório."),
     areaId: z.string().min(1, "A área do workflow é obrigatória."),
     ownerEmail: z.string().email("O e-mail do proprietário é obrigatório."),
-    order: z.number().default(0),
-    slaRules: z.array(slaRuleSchema).optional().default([]),
     defaultSlaDays: z.coerce.number().min(0, "SLA padrão não pode ser negativo.").optional(),
+    slaRules: z.array(slaRuleSchema).optional().default([]),
     fields: z.array(formFieldSchema),
     routingRules: z.array(routingRuleSchema).optional().default([]),
     statuses: z.array(workflowStatusSchema).min(1, "Pelo menos um status é necessário."),
@@ -91,7 +91,7 @@ interface ApplicationsContextType {
   workflowDefinitions: WorkflowDefinition[];
   loading: boolean;
   addWorkflowDefinition: (definition: Omit<WorkflowDefinition, 'id'>) => Promise<WorkflowDefinition>;
-  updateWorkflowDefinition: (definition: WorkflowDefinition) => Promise<void>;
+  updateWorkflowDefinition: (definition: Partial<WorkflowDefinition> & { id: string }) => Promise<void>;
   deleteWorkflowDefinitionMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
@@ -100,69 +100,75 @@ const COLLECTION_NAME = 'workflowDefinitions';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { workflowAreas } = useWorkflowAreas();
     
   const { data: workflowDefinitions = [], isFetching } = useQuery<WorkflowDefinition[]>({
     queryKey: [COLLECTION_NAME],
-    // The query function is now just a placeholder. The real work is done in the effect below.
-    queryFn: async () => {
-        // We still need to return a promise that resolves to the initial data,
-        // otherwise the query remains in a 'loading' state.
-        // Let's use getCollection for the initial fetch for simplicity within useQuery.
-        // The listener will then provide the real-time updates.
-        return [];
+    queryFn: async () => [],
+    staleTime: Infinity,
+    select: (data) => {
+      const areaOrderMap = new Map<string, string[]>();
+      workflowAreas.forEach(area => {
+        if (area.workflowOrder) {
+          areaOrderMap.set(area.id, area.workflowOrder);
+        }
+      });
+      
+      const sortedData = [...data].sort((a, b) => {
+        const orderA = areaOrderMap.get(a.areaId)?.indexOf(a.id) ?? -1;
+        const orderB = areaOrderMap.get(b.areaId)?.indexOf(b.id) ?? -1;
+
+        if (orderA !== -1 && orderB !== -1) {
+          return orderA - orderB;
+        }
+        if (orderA !== -1) return -1;
+        if (orderB !== -1) return 1;
+
+        return a.name.localeCompare(b.name);
+      });
+
+      return sortedData.map(d => ({ 
+        ...d, 
+        fields: d.fields || [], 
+        routingRules: d.routingRules || [],
+        statuses: d.statuses || [],
+        slaRules: d.slaRules || [],
+        allowedUserIds: d.allowedUserIds || ['all'],
+      }));
     },
-    staleTime: Infinity, // The listener will handle updates, so we don't need react-query to refetch.
-    // Ensure fields, routingRules, and statuses are always arrays
-    select: (data) => data.map(d => ({ 
-      ...d, 
-      fields: d.fields || [], 
-      routingRules: d.routingRules || [],
-      statuses: d.statuses || [],
-      slaRules: d.slaRules || [],
-      allowedUserIds: d.allowedUserIds || ['all'],
-      order: d.order || 0,
-    })).sort((a,b) => a.order - b.order),
   });
   
-    // Effect to set up the real-time listener
     React.useEffect(() => {
         const unsubscribe = listenToCollection<WorkflowDefinition>(
             COLLECTION_NAME,
             (newData) => {
-                // When new data arrives, update the query cache.
                 queryClient.setQueryData([COLLECTION_NAME], newData);
             },
             (error) => {
                 console.error(error);
             }
         );
-        // Detach the listener when the component unmounts.
         return () => unsubscribe();
     }, [queryClient]);
 
   const addWorkflowDefinitionMutation = useMutation<WithId<Omit<WorkflowDefinition, 'id'>>, Error, Omit<WorkflowDefinition, 'id'>>({
     mutationFn: (definitionData) => addDocumentToCollection(COLLECTION_NAME, definitionData),
     onSuccess: () => {
-        // Invalidation is not strictly needed due to the listener, but it's good practice.
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
   
-  const updateWorkflowDefinitionMutation = useMutation<void, Error, WorkflowDefinition>({
+  const updateWorkflowDefinitionMutation = useMutation<void, Error, Partial<WorkflowDefinition> & { id: string }>({
     mutationFn: (updatedDefinition) => {
       const { id, ...data } = updatedDefinition;
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: (_, variables) => {
-        // No need to invalidate, listener will catch the update.
-    },
+    onSuccess: (_, variables) => {},
   });
 
   const deleteWorkflowDefinitionMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {
-      // No need to invalidate, listener will catch the update.
-    },
+    onSuccess: () => {},
   });
   
   const value = useMemo(() => ({

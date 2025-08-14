@@ -9,7 +9,8 @@ import * as z from 'zod';
 export const workflowAreaSchema = z.object({
     name: z.string().min(1, "O nome da área é obrigatório."),
     icon: z.string().min(1, "O ícone é obrigatório."),
-    storageFolderPath: z.string().min(1, "O caminho da pasta no Storage é obrigatório."), // ex: "financeiro/reembolsos"
+    storageFolderPath: z.string().min(1, "O caminho da pasta no Storage é obrigatório."),
+    workflowOrder: z.array(z.string()).optional(),
 });
 
 export type WorkflowArea = WithId<z.infer<typeof workflowAreaSchema>>;
@@ -18,7 +19,7 @@ interface WorkflowAreasContextType {
     workflowAreas: WorkflowArea[];
     loading: boolean;
     addWorkflowArea: (area: Omit<WorkflowArea, 'id'>) => Promise<WorkflowArea>;
-    updateWorkflowArea: (area: WorkflowArea) => Promise<void>;
+    updateWorkflowArea: (area: Partial<WorkflowArea> & { id: string }) => Promise<void>;
     deleteWorkflowAreaMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
@@ -30,9 +31,8 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
 
     const { data: workflowAreas = [], isFetching } = useQuery<WorkflowArea[]>({
         queryKey: [COLLECTION_NAME],
-        // Fetch the initial data from Firestore
         queryFn: () => getCollection<WorkflowArea>(COLLECTION_NAME),
-        staleTime: Infinity, // The listener will keep it fresh
+        staleTime: Infinity,
         select: (data) => data.sort((a, b) => a.name.localeCompare(b.name)),
     });
 
@@ -52,26 +52,17 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
 
     const addWorkflowAreaMutation = useMutation<WithId<Omit<WorkflowArea, 'id'>>, Error, Omit<WorkflowArea, 'id'>>({
         mutationFn: (areaData) => addDocumentToCollection(COLLECTION_NAME, areaData),
-        onSuccess: () => {
-            // Listener handles the update, no need to invalidate
-        },
     });
 
-    const updateWorkflowAreaMutation = useMutation<void, Error, WorkflowArea>({
+    const updateWorkflowAreaMutation = useMutation<void, Error, Partial<WorkflowArea> & { id: string }>({
         mutationFn: (updatedArea) => {
             const { id, ...data } = updatedArea;
             return updateDocumentInCollection(COLLECTION_NAME, id, data);
-        },
-        onSuccess: (_, variables) => {
-             // Listener handles the update, no need to invalidate
         },
     });
 
     const deleteWorkflowAreaMutation = useMutation<void, Error, string>({
         mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-        onSuccess: () => {
-             // Listener handles the update, no need to invalidate
-        },
     });
 
     const value = useMemo(() => ({

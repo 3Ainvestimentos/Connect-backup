@@ -55,7 +55,6 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             icon: 'FileText',
             areaId: '',
             ownerEmail: '',
-            order: 0,
             defaultSlaDays: undefined,
             slaRules: [],
             fields: [],
@@ -172,11 +171,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                         />
                                         {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
                                     </div>
-                                    <div>
-                                        <Label htmlFor="order">Ordem de Exibição</Label>
-                                        <Input id="order" type="number" {...register('order', { valueAsNumber: true })} />
-                                        {errors.order && <p className="text-sm text-destructive mt-1">{errors.order.message}</p>}
-                                    </div>
+                                    <div/>
                                  </div>
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <div>
