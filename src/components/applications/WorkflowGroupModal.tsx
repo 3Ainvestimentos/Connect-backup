@@ -52,11 +52,9 @@ export function WorkflowGroupModal({ open, onOpenChange, areaName, group, onWork
                     <Icon className="h-6 w-6 text-muted-foreground flex-shrink-0" />
                     <div className="flex-grow">
                         <p className="font-semibold font-body text-sm text-card-foreground">{workflow.name}</p>
-                        <div className="prose prose-sm dark:prose-invert text-xs text-muted-foreground">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {workflow.description}
-                            </ReactMarkdown>
-                        </div>
+                        {workflow.subtitle && (
+                            <p className="text-xs text-muted-foreground">{workflow.subtitle}</p>
+                        )}
                     </div>
                   </CardContent>
                 </Card>

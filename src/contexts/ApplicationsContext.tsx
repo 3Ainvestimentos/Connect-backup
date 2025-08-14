@@ -69,10 +69,12 @@ export const slaRuleSchema = z.object({
 
 export const workflowDefinitionSchema = z.object({
     name: z.string().min(1, "Nome da definição é obrigatório."),
+    subtitle: z.string().optional(),
     description: z.string().min(1, "Descrição é obrigatória."),
     icon: z.string().min(1, "Ícone é obrigatório."),
     areaId: z.string().min(1, "A área do workflow é obrigatória."),
     ownerEmail: z.string().email("O e-mail do proprietário é obrigatório."),
+    order: z.number().default(0),
     slaRules: z.array(slaRuleSchema).optional().default([]),
     defaultSlaDays: z.coerce.number().min(0, "SLA padrão não pode ser negativo.").optional(),
     fields: z.array(formFieldSchema),
@@ -98,16 +100,6 @@ const COLLECTION_NAME = 'workflowDefinitions';
 
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
-
-    const queryFn = () => new Promise<WithId<WorkflowDefinition>[]>((resolve, reject) => {
-        const unsubscribe = listenToCollection<WorkflowDefinition>(
-            COLLECTION_NAME,
-            (data) => resolve(data), // Resolve with the first batch of data
-            (error) => reject(error)
-        );
-        // This won't unsubscribe in this promise structure, but it's a way to get queryFn to work.
-        // A better approach would use queryClient.setQueryData inside the onData callback. Let's try that.
-    });
     
   const { data: workflowDefinitions = [], isFetching } = useQuery<WorkflowDefinition[]>({
     queryKey: [COLLECTION_NAME],
@@ -117,7 +109,6 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
         // otherwise the query remains in a 'loading' state.
         // Let's use getCollection for the initial fetch for simplicity within useQuery.
         // The listener will then provide the real-time updates.
-        // This is a common pattern.
         return [];
     },
     staleTime: Infinity, // The listener will handle updates, so we don't need react-query to refetch.
@@ -129,7 +120,8 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       statuses: d.statuses || [],
       slaRules: d.slaRules || [],
       allowedUserIds: d.allowedUserIds || ['all'],
-    })),
+      order: d.order || 0,
+    })).sort((a,b) => a.order - b.order),
   });
   
     // Effect to set up the real-time listener

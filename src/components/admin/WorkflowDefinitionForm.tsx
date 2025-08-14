@@ -50,10 +50,12 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
             allowedUserIds: definition.allowedUserIds || ['all'],
         } : {
             name: '',
+            subtitle: '',
             description: '',
             icon: 'FileText',
             areaId: '',
             ownerEmail: '',
+            order: 0,
             defaultSlaDays: undefined,
             slaRules: [],
             fields: [],
@@ -133,13 +135,23 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                             {/* Basic Info */}
                              <div className="space-y-4 p-4 border rounded-md bg-card">
                                 <h3 className="font-semibold text-lg">Informações Básicas</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="name">Nome do Workflow</Label>
-                                        <Input id="name" {...register('name')} />
-                                        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-                                    </div>
-                                    <div>
+                                <div>
+                                    <Label htmlFor="name">Nome do Workflow</Label>
+                                    <Input id="name" {...register('name')} />
+                                    {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                                </div>
+                                 <div>
+                                    <Label htmlFor="subtitle">Subtítulo (opcional, exibido no card)</Label>
+                                    <Input id="subtitle" {...register('subtitle')} />
+                                    {errors.subtitle && <p className="text-sm text-destructive mt-1">{errors.subtitle.message}</p>}
+                                </div>
+                                 <div>
+                                    <Label htmlFor="description">Descrição (Exibida ao usuário no formulário)</Label>
+                                    <Textarea id="description" {...register('description')} />
+                                    {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
+                                </div>
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <div>
                                         <Label htmlFor="icon">Ícone</Label>
                                         <Controller name="icon" control={control} render={({ field }) => {
                                                 const IconToShow = getIcon(field.value);
@@ -160,12 +172,12 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                                         />
                                         {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
                                     </div>
-                                </div>
-                                 <div>
-                                    <Label htmlFor="description">Descrição (Exibida ao usuário)</Label>
-                                    <Textarea id="description" {...register('description')} />
-                                    {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
-                                </div>
+                                    <div>
+                                        <Label htmlFor="order">Ordem de Exibição</Label>
+                                        <Input id="order" type="number" {...register('order', { valueAsNumber: true })} />
+                                        {errors.order && <p className="text-sm text-destructive mt-1">{errors.order.message}</p>}
+                                    </div>
+                                 </div>
                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <div>
                                         <Label htmlFor="areaId">Área do Workflow (Agrupamento)</Label>

@@ -23,7 +23,7 @@ import { ScrollArea } from '../ui/scroll-area';
 type SortKey = 'name' | 'areaId' | 'ownerEmail';
 
 export function WorkflowDefinitionsTab() {
-    const { workflowDefinitions, loading, deleteWorkflowDefinitionMutation, addWorkflowDefinition } = useApplications();
+    const { workflowDefinitions, loading, deleteWorkflowDefinitionMutation, addWorkflowDefinition, updateWorkflowDefinition } = useApplications();
     const { collaborators } = useCollaborators();
     const { workflowAreas } = useWorkflowAreas();
     
@@ -69,26 +69,38 @@ export function WorkflowDefinitionsTab() {
             items = items.filter(def => ownerFilter.includes(def.ownerEmail));
         }
 
-        items.sort((a, b) => {
-            let valA: string, valB: string;
+        // The sorting from the context already handles the 'order' field.
+        // If an explicit column sort is applied, it will override the default order.
+        if (sortKey) {
+            items.sort((a, b) => {
+                if (sortKey === 'name') {
+                    return sortDirection === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
+                }
+                if (sortKey === 'areaId') {
+                    return sortDirection === 'asc' ? getAreaName(a.areaId).localeCompare(getAreaName(b.areaId)) : getAreaName(b.areaId).localeCompare(getAreaName(a.areaId));
+                }
+                if (sortKey === 'ownerEmail') {
+                    return sortDirection === 'asc' ? getOwnerName(a.ownerEmail).localeCompare(getOwnerName(b.ownerEmail)) : getOwnerName(b.ownerEmail).localeCompare(getOwnerName(a.ownerEmail));
+                }
+                return 0;
+            });
+        }
 
-            if (sortKey === 'areaId') {
-                valA = getAreaName(a.areaId);
-                valB = getAreaName(b.areaId);
-            } else if (sortKey === 'ownerEmail') {
-                valA = getOwnerName(a.ownerEmail);
-                valB = getOwnerName(b.ownerEmail);
-            } else {
-                valA = a[sortKey];
-                valB = b[sortKey];
-            }
-            
-            const comparison = valA.localeCompare(valB, 'pt-BR', { sensitivity: 'base' });
-            return sortDirection === 'asc' ? comparison : -comparison;
-        });
 
         return items;
     }, [workflowDefinitions, searchTerm, areaFilter, ownerFilter, sortKey, sortDirection]);
+
+    const handleOrderChange = async (defId: string, newOrder: number) => {
+        const definition = workflowDefinitions.find(d => d.id === defId);
+        if (definition) {
+            try {
+                await updateWorkflowDefinition({ ...definition, order: newOrder });
+                toast({ title: "Ordem atualizada" });
+            } catch (error) {
+                toast({ title: "Erro ao atualizar ordem", variant: "destructive" });
+            }
+        }
+    };
 
 
     const handleSort = (key: SortKey) => {
@@ -284,6 +296,7 @@ export function WorkflowDefinitionsTab() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className="w-12">Ícone</TableHead>
+                                     <TableHead className="w-24">Ordem</TableHead>
                                     <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50">
                                         <div className="flex items-center gap-1">
                                             Nome
@@ -316,6 +329,15 @@ export function WorkflowDefinitionsTab() {
                                     return (
                                         <TableRow key={def.id}>
                                             <TableCell><Icon className="h-5 w-5 text-muted-foreground" /></TableCell>
+                                            <TableCell>
+                                                <Input 
+                                                    type="number" 
+                                                    defaultValue={def.order}
+                                                    onBlur={(e) => handleOrderChange(def.id, parseInt(e.target.value, 10) || 0)}
+                                                    className="w-20"
+                                                    aria-label={`Ordem do workflow ${def.name}`}
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-medium">{def.name}</TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className="flex items-center gap-1.5 w-fit">
