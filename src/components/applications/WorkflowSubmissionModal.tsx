@@ -145,7 +145,24 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
             <div className="relative">
-                <Input id={field.id} type="file" onChange={(e) => handleFileChange(field.id, e)} className="pl-10" disabled={isSubmitting}/>
+                <Controller
+                  name={field.id}
+                  control={control}
+                  rules={{ required: field.required && !fileFields[field.id] ? 'Este anexo é obrigatório.' : false }}
+                  render={({ field: { onChange, ...rest } }) => (
+                     <Input 
+                      id={field.id} 
+                      type="file" 
+                      onChange={(e) => {
+                        handleFileChange(field.id, e);
+                        onChange(e.target.files?.[0]);
+                      }} 
+                      className="pl-10" 
+                      disabled={isSubmitting}
+                      {...rest}
+                     />
+                  )}
+                />
                 <Paperclip className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
             {fileFields[field.id] && <p className="text-xs text-muted-foreground">Arquivo selecionado: {fileFields[field.id]?.name}</p>}
@@ -156,7 +173,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
-            <Controller name={field.id} control={control} rules={{ required: field.required }} render={({ field: controllerField }) => <Input id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
+            <Controller 
+              name={field.id} 
+              control={control} 
+              rules={{ required: field.required ? "Este campo é obrigatório" : false }} 
+              render={({ field: controllerField }) => <Input id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} 
+            />
             {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
         );
@@ -164,7 +186,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         return (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
-            <Controller name={field.id} control={control} rules={{ required: field.required }} render={({ field: controllerField }) => <Textarea id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} />
+            <Controller 
+              name={field.id} 
+              control={control} 
+              rules={{ required: field.required ? "Este campo é obrigatório" : false }} 
+              render={({ field: controllerField }) => <Textarea id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} 
+            />
             {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
         );
@@ -175,7 +202,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             <Controller
               name={field.id}
               control={control}
-              rules={{ required: field.required }}
+              rules={{ required: field.required ? "Este campo é obrigatório" : false }}
               render={({ field: controllerField }) => (
                 <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value} disabled={isSubmitting}>
                   <SelectTrigger id={field.id}><SelectValue placeholder={field.placeholder || 'Selecione...'} /></SelectTrigger>
@@ -195,7 +222,10 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             <Controller
               name={field.id}
               control={control}
-              rules={{ required: field.required }}
+              rules={{ 
+                required: field.required ? "Este campo é obrigatório" : false,
+                validate: (value) => !field.required || (value.from && value.to) || "Selecione a data de início e fim."
+              }}
               render={({ field: controllerField }) => (
                 <Popover>
                   <PopoverTrigger asChild>

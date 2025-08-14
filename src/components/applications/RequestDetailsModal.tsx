@@ -13,6 +13,9 @@ import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { useApplications } from '@/contexts/ApplicationsContext';
 import type { WorkflowRequest } from '@/contexts/WorkflowsContext';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 
 interface RequestDetailsModalProps {
   isOpen: boolean;
@@ -61,7 +64,12 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
         : 'Período inválido';
     }
 
-    return <p className="text-muted-foreground"><strong className="font-medium text-foreground">{fieldDef.label}:</strong> {displayValue?.toString()}</p>;
+    return (
+       <div className="prose prose-sm dark:prose-invert max-w-none">
+        <strong>{fieldDef.label}:</strong>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayValue?.toString() || ''}</ReactMarkdown>
+      </div>
+    )
   }
 
   const renderFormData = () => {
@@ -131,9 +139,9 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
                                 <Badge variant="secondary" className="font-semibold">{definition?.statuses.find(s => s.id === log.status)?.label || log.status}</Badge>
                                 {index !== request.history.length - 1 && <div className="w-px h-6 bg-border" />}
                             </div>
-                            <div className="pt-0.5">
+                            <div className="pt-0.5 prose prose-sm dark:prose-invert max-w-none">
                                 <p className="font-semibold">{log.userName} <span className="text-muted-foreground font-normal">({format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')})</span></p>
-                                <p className="text-muted-foreground">{log.notes}</p>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-muted-foreground">{log.notes}</ReactMarkdown>
                             </div>
                         </div>
                     ))}
