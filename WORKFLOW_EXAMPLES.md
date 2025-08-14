@@ -109,4 +109,97 @@ Este é um workflow completo para um processo de solicitação de reembolso, inc
 
 ---
 
+## 2. Alteração de Cargo / Remuneração / Time
+
+Este é um workflow de exemplo para um processo de RH mais complexo, destinado a líderes para solicitar alterações para seus liderados.
+
+**Arquivo:** `alteracao_cargo_remuneracao.json`
+
+```json
+{
+  "name": "TH - Alteração de Cargo / Remuneração / Time",
+  "description": "Formulário para líderes solicitarem alterações de cargo, remuneração ou time para um colaborador.",
+  "icon": "Users",
+  "areaId": "some_rh_area_id",
+  "ownerEmail": "rh@3a.com",
+  "allowedUserIds": ["lider1@3a.com", "lider2@3a.com"],
+  "defaultSlaDays": 10,
+  "fields": [
+    {
+      "id": "colaborador_afetado",
+      "label": "Colaborador",
+      "type": "select",
+      "required": true,
+      "options": ["colaborador1@3a.com", "colaborador2@3a.com"]
+    },
+    {
+      "id": "data_efetiva",
+      "label": "Data para Efetivação da Mudança",
+      "type": "date",
+      "required": true
+    },
+    {
+      "id": "tipo_alteracao",
+      "label": "Tipo de Alteração",
+      "type": "select",
+      "required": true,
+      "options": ["Alteração de Cargo", "Alteração de Remuneração", "Alteração de Time", "Alteração Múltipla"]
+    },
+    {
+      "id": "novo_cargo",
+      "label": "Novo Cargo (se aplicável)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "nova_remuneracao",
+      "label": "Nova Remuneração (Bruta Mensal)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "novo_time",
+      "label": "Novo Time ou Equipe (se aplicável)",
+      "type": "text",
+      "required": false
+    },
+    {
+      "id": "justificativa_completa",
+      "label": "Justificativa Detalhada para a Alteração",
+      "type": "textarea",
+      "required": true
+    }
+  ],
+  "statuses": [
+    {
+      "id": "analise_rh",
+      "label": "Análise do RH"
+    },
+    {
+      "id": "aguardando_aprovacao_diretoria",
+      "label": "Aguardando Aprovação da Diretoria",
+      "action": {
+        "type": "approval",
+        "label": "Solicitar Aprovação da Diretoria",
+        "approverIds": ["diretor.geral@3a.com"]
+      }
+    },
+    {
+      "id": "aprovado_aguardando_processamento",
+      "label": "Aprovado - Aguardando Processamento"
+    },
+    {
+      "id": "finalizado",
+      "label": "Finalizado"
+    },
+    {
+      "id": "rejeitado",
+      "label": "Rejeitado"
+    }
+  ]
+}
+```
+
+---
+
 *Observação: O campo `areaId` é um identificador único do Firestore para a "Área de Workflow" onde o processo será agrupado. Você pode encontrar o ID correto na tela de gerenciamento de áreas de workflow no painel de administração.*
