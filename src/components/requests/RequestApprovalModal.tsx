@@ -26,6 +26,7 @@ import { uploadFile } from '@/lib/firestore-service';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { RecipientSelectionModal } from '../admin/RecipientSelectionModal';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -62,6 +63,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const [attachment, setAttachment] = useState<File | null>(null);
   const [assignee, setAssignee] = useState<Collaborator | null>(null);
   const [isAssigneeModalOpen, setIsAssigneeModalOpen] = useState(false);
+  const [isActionRecipientModalOpen, setIsActionRecipientModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionType, setActionType] = useState<'statusChange' | 'assign' | 'comment' | 'requestAction' | 'actionResponse' | null>(null);
   const [targetStatus, setTargetStatus] = useState<WorkflowStatusDefinition | null>(null);
@@ -128,13 +130,27 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     const validActionRequests = actionRequestsForCurrentStatus.filter(ar => ar.userName !== 'Desconhecido');
     
     if (validActionRequests.length === 0) return false;
+    
+    // For approval, we need all valid approvers to have responded
+    if (currentStatusDefinition.action.type === 'approval') {
+        const preDefinedApprovers = currentStatusDefinition.action.approverIds || [];
+        const requiredApprovers = preDefinedApprovers.map(id => collaborators.find(c => c.id3a === id)).filter(Boolean);
 
-    if (currentStatusDefinition.action.type === 'execution') {
-      return false;
+        // If no approvers are defined, check if ANY action has been requested and is pending.
+        if (requiredApprovers.length === 0) {
+            return validActionRequests.some(ar => ar.status === 'pending');
+        }
+
+        // If approvers ARE pre-defined, check if all of them have responded
+        return !requiredApprovers.every(approver => 
+            validActionRequests.some(ar => ar.userId === approver?.id3a && ar.status !== 'pending')
+        );
     }
-
+    
+    // For other types, just check if any pending action exists
     return validActionRequests.some(ar => ar.status === 'pending');
-  }, [actionRequestsForCurrentStatus, currentStatusDefinition]);
+
+  }, [actionRequestsForCurrentStatus, currentStatusDefinition, collaborators]);
 
 
   useEffect(() => {
@@ -151,6 +167,65 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }, [request, collaborators, isOpen]);
 
   if (!request) return null;
+  
+  const handleRequestAction = async (recipientIds: string[]) => {
+    setActionType('requestAction');
+    if (!adminUser || !currentStatusDefinition?.action) {
+      toast({ title: "Erro", description: "Não foi possível identificar o solicitante ou a ação.", variant: "destructive" });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    const now = new Date();
+
+    const existingUserIds = new Set(actionRequestsForCurrentStatus.map(ar => ar.userId));
+    const newRecipients = recipientIds
+      .map(id => collaborators.find(c => c.id3a === id))
+      .filter((c): c is Collaborator => !!c && !existingUserIds.has(c.id3a));
+
+    if (newRecipients.length === 0) {
+      toast({ title: "Nenhuma ação necessária", description: "Todos os usuários selecionados já têm uma solicitação de ação pendente ou foram removidos.", variant: "default" });
+      setIsSubmitting(false);
+      setActionType(null);
+      return;
+    }
+
+    const newActionRequests = newRecipients.map(recipient => ({
+      userId: recipient.id3a,
+      userName: recipient.name,
+      status: 'pending' as const,
+      requestedAt: formatISO(now),
+    }));
+    
+    const historyNote = `Ação de "${currentStatusDefinition.action.label}" solicitada para ${newRecipients.map(r => r.name).join(', ')}.`;
+    const historyEntry: WorkflowHistoryLog = {
+      timestamp: formatISO(now),
+      status: request.status,
+      userId: adminUser.id3a,
+      userName: adminUser.name,
+      notes: historyNote,
+    };
+    
+    const requestUpdate = {
+        id: request.id,
+        lastUpdatedAt: formatISO(now),
+        actionRequests: {
+            ...request.actionRequests,
+            [request.status]: [...actionRequestsForCurrentStatus, ...newActionRequests],
+        },
+        history: [...request.history, historyEntry],
+    };
+
+    try {
+        await updateRequestAndNotify(requestUpdate, undefined, `Você tem uma nova ação pendente para a solicitação #${request.requestId}.`);
+        toast({ title: "Sucesso!", description: "Solicitação de ação enviada.", variant: 'success' });
+    } catch (error) {
+        toast({ title: "Erro", description: "Não foi possível solicitar a ação.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
+        setActionType(null);
+    }
+  };
 
   const handleActionResponse = async (response: 'approved' | 'rejected' | 'acknowledged' | 'executed') => {
     setActionType('actionResponse');
@@ -679,8 +754,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           </div>
           </ScrollArea>
 
-          <DialogFooter className="pt-4 flex-col sm:flex-row sm:justify-between gap-2">
-            <div className="flex-grow">
+          <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
+            <div className="flex-grow flex items-center gap-2">
                 {(canTakeAction && !currentUserActionRequest) && (
                      <TooltipProvider>
                       <Tooltip delayDuration={300}>
@@ -710,6 +785,17 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                       </Tooltip>
                     </TooltipProvider>
                 )}
+                {canTakeAction && currentStatusDefinition?.action?.type === 'acknowledgement' && (
+                    <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setIsActionRecipientModalOpen(true)}
+                        disabled={isSubmitting}
+                    >
+                        <Send className="mr-2 h-4 w-4"/>
+                        Solicitar Ciência
+                    </Button>
+                )}
             </div>
             <div className="flex gap-2 self-end">
                 <DialogClose asChild><Button variant="outline" className="hover:bg-muted">Fechar</Button></DialogClose>
@@ -727,6 +813,16 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
               setIsAssigneeModalOpen(false);
           }}
       />
+       <RecipientSelectionModal
+          isOpen={isActionRecipientModalOpen}
+          onClose={() => setIsActionRecipientModalOpen(false)}
+          allCollaborators={collaborators}
+          selectedIds={[]}
+          onConfirm={(ids) => {
+            handleRequestAction(ids);
+            setIsActionRecipientModalOpen(false);
+          }}
+       />
     </>
   );
 }
