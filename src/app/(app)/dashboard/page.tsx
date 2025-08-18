@@ -196,12 +196,12 @@ export default function DashboardV2Page() {
                 </div>
                 <div className="lg:col-span-1">
                     {quickLinks.length > 0 && (
-                        <Card className="shadow-sm w-full">
+                        <Card className="shadow-sm w-full h-full flex flex-col">
                             <CardHeader>
                                 <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
                                 <CardDescription>Acesse rapidamente sistemas e recursos externos.</CardDescription>
                             </CardHeader>
-                            <CardContent className="flex justify-center">
+                            <CardContent className="flex-grow flex justify-center items-center">
                                 <div className="flex justify-center flex-wrap gap-3">
                                 {quickLinks.map(link => (
                                     <a 
