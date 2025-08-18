@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -741,33 +742,19 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
                 {(canTakeAction && !currentUserActionRequest) && (
-                     <TooltipProvider>
-                      <Tooltip delayDuration={300}>
-                        <TooltipTrigger asChild>
-                          <div className="inline-block">
-                            <Button 
-                                key={nextStatus?.id || 'no-next-status'}
-                                className="bg-admin-primary hover:bg-admin-primary/90"
-                                onClick={() => nextStatus && handleGenericAction((c) => handleStatusChange(nextStatus, c))} 
-                                disabled={isSubmitting || hasPendingActions || !nextStatus}
-                                style={hasPendingActions ? { pointerEvents: 'none' } : {}}
-                            >
-                                {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus?.id) ? (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                    <MoveRight className="mr-2 h-4 w-4" />
-                                )}
-                                Mover para "{nextStatus?.label || 'Etapa Final'}"
-                            </Button>
-                          </div>
-                        </TooltipTrigger>
-                        {hasPendingActions && (
-                          <TooltipContent>
-                            <p>Aguardando ações pendentes para avançar.</p>
-                          </TooltipContent>
+                     <Button 
+                        key={nextStatus?.id || 'no-next-status'}
+                        className="bg-admin-primary hover:bg-admin-primary/90"
+                        onClick={() => nextStatus && handleGenericAction((c) => handleStatusChange(nextStatus, c))} 
+                        disabled={isSubmitting || !nextStatus}
+                    >
+                        {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus?.id) ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <MoveRight className="mr-2 h-4 w-4" />
                         )}
-                      </Tooltip>
-                    </TooltipProvider>
+                        Mover para "{nextStatus?.label || 'Etapa Final'}"
+                    </Button>
                 )}
                 {canTakeAction && currentStatusDefinition?.action?.type === 'acknowledgement' && (
                     <Button 
