@@ -187,22 +187,22 @@ export default function DashboardV2Page() {
         </section>
         
         <section className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                 <div className="lg:col-span-2 flex flex-col gap-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <GoogleCalendar />
-                        <GoogleDriveFiles />
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                 <div className="lg:col-span-2">
+                    <GoogleCalendar />
+                 </div>
+                 <div className="lg:col-span-2">
+                    <GoogleDriveFiles />
+                 </div>
                 <div className="lg:col-span-1">
                     {quickLinks.length > 0 && (
                         <Card className="shadow-sm w-full h-full flex flex-col">
                             <CardHeader>
                                 <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
-                                <CardDescription>Acesse rapidamente sistemas e recursos externos.</CardDescription>
+                                <CardDescription>Acesse sistemas e recursos.</CardDescription>
                             </CardHeader>
                             <CardContent className="flex-grow flex justify-center items-center">
-                                <div className="flex justify-center flex-wrap gap-3">
+                                <div className="flex flex-col items-center gap-3">
                                 {quickLinks.map(link => (
                                     <a 
                                         href={link.link} 
