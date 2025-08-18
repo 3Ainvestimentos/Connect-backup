@@ -187,6 +187,11 @@ export default function DashboardV2Page() {
         </section>
         
         <section className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <GoogleCalendar />
+                <GoogleDriveFiles />
+            </div>
+
             <Card className="shadow-sm flex flex-col w-full">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -233,11 +238,6 @@ export default function DashboardV2Page() {
                   )}
                 </CardContent>
             </Card>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <GoogleCalendar />
-                <GoogleDriveFiles />
-            </div>
 
             {quickLinks.length > 0 && (
                 <Card className="shadow-sm w-full">
