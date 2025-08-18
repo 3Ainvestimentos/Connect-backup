@@ -187,88 +187,91 @@ export default function DashboardV2Page() {
         </section>
         
         <section className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <GoogleCalendar />
-                <GoogleDriveFiles />
-            </div>
+            <GoogleCalendar />
 
-            <Card className="shadow-sm flex flex-col w-full">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="font-headline text-foreground text-xl">Mensagens</CardTitle>
-                      <CardDescription>Comunicados e alertas importantes direcionados a você.</CardDescription>
-                    </div>
-                    {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 min-h-[300px] relative">
-                  {userMessages.length > 0 ? (
-                      <div className="absolute inset-0">
-                          <ScrollArea className="h-full">
-                              <div className="space-y-4 p-6 pt-0">
-                                  {userMessages.map((msg) => {
-                                      const isRead = currentUserCollab ? msg.readBy.includes(currentUserCollab.id3a) : false;
-                                      return (
-                                      <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
-                                          <div className="flex justify-between items-start gap-2">
-                                              <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                  <Checkbox checked={!isRead} aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} className={cn("pointer-events-none mt-0.5 flex-shrink-0", { 'border-muted-foreground data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:border-muted-foreground': !isRead, 'border-input data-[state=checked]:bg-transparent': isRead })} />
-                                                  <p className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</p>
-                                              </div>
-                                              <span className="text-xs text-muted-foreground whitespace-nowrap pl-1 flex-shrink-0">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
-                                          </div>
-                                          <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
-                                            {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
-                                            {msg.content.length > 80 && <span className={cn("text-black ml-1 hover:underline", { 'font-semibold': !isRead, 'font-normal': isRead })} >Leia mais</span>}
-                                          </p>
-                                          <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
-                                      </div>
-                                  )})}
-                              </div>
-                          </ScrollArea>
-                      </div>
-                   ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-6">
-                          <MessageSquare className="h-10 w-10 mb-4" />
-                          <p className="text-sm text-muted-foreground font-body">
-                            Por enquanto nenhuma mensagem nova, {user?.displayName?.split(' ')[0]}!
-                          </p>
-                      </div>
-                  )}
-                </CardContent>
-            </Card>
-
-            {quickLinks.length > 0 && (
-                <Card className="shadow-sm w-full">
-                    <CardHeader>
-                        <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
-                        <CardDescription>Acesse rapidamente sistemas e recursos externos.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex justify-center">
-                        <div className="flex justify-center flex-wrap gap-3">
-                          {quickLinks.map(link => (
-                              <a 
-                                 href={link.link} 
-                                 key={link.id} 
-                                 target="_blank" 
-                                 rel="noopener noreferrer" 
-                                 className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-video w-32"
-                                 title={link.name || 'Link Rápido'}
-                               >
-                                  <Image
-                                      src={link.imageUrl}
-                                      alt={link.name || 'Quick Link'}
-                                      layout="fill"
-                                      objectFit="contain"
-                                      className="p-2"
-                                  />
-                              </a>
-                          ))}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                    <GoogleDriveFiles />
+                    <Card className="shadow-sm flex flex-col w-full">
+                        <CardHeader>
+                        <div className="flex justify-between items-start">
+                            <div>
+                            <CardTitle className="font-headline text-foreground text-xl">Mensagens</CardTitle>
+                            <CardDescription>Comunicados e alertas importantes direcionados a você.</CardDescription>
+                            </div>
+                            {unreadCount > 0 && (<Badge variant="secondary">{unreadLabel}</Badge>)}
                         </div>
-                    </CardContent>
-                </Card>
-            )}
+                        </CardHeader>
+                        <CardContent className="flex-1 min-h-[300px] relative">
+                        {userMessages.length > 0 ? (
+                            <div className="absolute inset-0">
+                                <ScrollArea className="h-full">
+                                    <div className="space-y-4 p-6 pt-0">
+                                        {userMessages.map((msg) => {
+                                            const isRead = currentUserCollab ? msg.readBy.includes(currentUserCollab.id3a) : false;
+                                            return (
+                                            <div key={msg.id} className="p-3 rounded-lg border bg-card flex flex-col gap-2 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleViewMessage(msg)}>
+                                                <div className="flex justify-between items-start gap-2">
+                                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                        <Checkbox checked={!isRead} aria-label={isRead ? "Mensagem lida" : "Mensagem não lida"} className={cn("pointer-events-none mt-0.5 flex-shrink-0", { 'border-muted-foreground data-[state=checked]:bg-muted-foreground/30 data-[state=checked]:border-muted-foreground': !isRead, 'border-input data-[state=checked]:bg-transparent': isRead })} />
+                                                        <p className={cn("font-body text-sm text-foreground truncate", { 'font-bold': !isRead })}>{msg.title}</p>
+                                                    </div>
+                                                    <span className="text-xs text-muted-foreground whitespace-nowrap pl-1 flex-shrink-0">{new Date(msg.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}</span>
+                                                </div>
+                                                <p className={cn("text-sm text-muted-foreground font-body pl-8", { 'font-bold text-foreground': !isRead, 'font-normal': isRead })}>
+                                                    {msg.content.length > 80 ? `${msg.content.substring(0, 80)}...` : msg.content}
+                                                    {msg.content.length > 80 && <span className={cn("text-black ml-1 hover:underline", { 'font-semibold': !isRead, 'font-normal': isRead })} >Leia mais</span>}
+                                                </p>
+                                                <div className="flex justify-end mt-auto"><Badge variant="outline" className="font-body">{msg.sender}</Badge></div>
+                                            </div>
+                                        )})}
+                                    </div>
+                                </ScrollArea>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-6">
+                                <MessageSquare className="h-10 w-10 mb-4" />
+                                <p className="text-sm text-muted-foreground font-body">
+                                    Por enquanto nenhuma mensagem nova, {user?.displayName?.split(' ')[0]}!
+                                </p>
+                            </div>
+                        )}
+                        </CardContent>
+                    </Card>
+                </div>
+                 {quickLinks.length > 0 && (
+                    <div className="lg:col-span-1">
+                        <Card className="shadow-sm w-full">
+                            <CardHeader>
+                                <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                                <CardDescription>Acesse rapidamente sistemas e recursos externos.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex justify-center">
+                                <div className="flex justify-center flex-wrap gap-3">
+                                {quickLinks.map(link => (
+                                    <a 
+                                        href={link.link} 
+                                        key={link.id} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-video w-32"
+                                        title={link.name || 'Link Rápido'}
+                                    >
+                                        <Image
+                                            src={link.imageUrl}
+                                            alt={link.name || 'Quick Link'}
+                                            layout="fill"
+                                            objectFit="contain"
+                                            className="p-2"
+                                        />
+                                    </a>
+                                ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </div>
         </section>
       </div>
 
