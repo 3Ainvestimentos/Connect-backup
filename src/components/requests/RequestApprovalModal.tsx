@@ -126,31 +126,12 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const hasPendingActions = useMemo(() => {
     if (!currentStatusDefinition?.action) return false;
     
-    // Filter out actions for users who are "Desconhecido" (Unknown)
     const validActionRequests = actionRequestsForCurrentStatus.filter(ar => ar.userName !== 'Desconhecido');
     
     if (validActionRequests.length === 0) return false;
     
-    // For approval, we need all valid approvers to have responded
-    if (currentStatusDefinition.action.type === 'approval') {
-        const preDefinedApprovers = currentStatusDefinition.action.approverIds || [];
-        const requiredApprovers = preDefinedApprovers.map(id => collaborators.find(c => c.id3a === id)).filter(Boolean);
-
-        // If no approvers are defined, check if ANY action has been requested and is pending.
-        if (requiredApprovers.length === 0) {
-            return validActionRequests.some(ar => ar.status === 'pending');
-        }
-
-        // If approvers ARE pre-defined, check if all of them have responded
-        return !requiredApprovers.every(approver => 
-            validActionRequests.some(ar => ar.userId === approver?.id3a && ar.status !== 'pending')
-        );
-    }
-    
-    // For other types, just check if any pending action exists
     return validActionRequests.some(ar => ar.status === 'pending');
-
-  }, [actionRequestsForCurrentStatus, currentStatusDefinition, collaborators]);
+  }, [actionRequestsForCurrentStatus, currentStatusDefinition]);
 
 
   useEffect(() => {
@@ -826,3 +807,4 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
