@@ -43,8 +43,8 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
         resolver: zodResolver(workflowDefinitionSchema),
         defaultValues: definition ? {
             ...definition,
-            fields: definition.fields.map(f => ({ ...f, options: f.options?.join(',') as any })),
-            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: r.notify.join(', ') })) : [],
+            fields: definition.fields.map(f => ({ ...f, options: Array.isArray(f.options) ? f.options.join(',') : f.options as any })),
+            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: Array.isArray(r.notify) ? r.notify.join(', ') : r.notify })) : [],
             statuses: definition.statuses?.length ? definition.statuses.map(s => ({...s, action: s.action || undefined })) : [{ id: 'pending', label: 'Pendente', action: undefined }],
             slaRules: definition.slaRules || [],
             allowedUserIds: definition.allowedUserIds || ['all'],
@@ -92,6 +92,10 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                 ...f,
                 options: f.type === 'select' ? (f.options as unknown as string)?.split(',').map(opt => opt.trim()).filter(Boolean) : [],
             })),
+             routingRules: data.routingRules?.map(r => ({
+                ...r,
+                notify: Array.isArray(r.notify) ? r.notify : (r.notify as string).split(',').map(s => s.trim()).filter(Boolean),
+            }))
         };
 
         try {

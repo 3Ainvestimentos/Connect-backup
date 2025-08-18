@@ -26,6 +26,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useRouter } from 'next/navigation';
 
 type DynamicFormData = { [key: string]: any };
 
@@ -42,6 +43,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
   const { workflowAreas } = useWorkflowAreas();
+  const router = useRouter();
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm<DynamicFormData>();
 
@@ -130,7 +132,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
 
     } catch (error) {
       console.error("Failed to submit workflow request:", error);
-      toast({ title: "Erro ao Enviar", description: error instanceof Error ? error.message : "Não foi possível enviar sua solicitação.", variant: "destructive" });
+      toast({ 
+        title: "Erro na Solicitação", 
+        description: "Houve um erro na sua solicitação. Por favor, contate o time de TI.", 
+        variant: "destructive" 
+      });
+      onOpenChange(false);
     } finally {
       setIsSubmitting(false);
     }
