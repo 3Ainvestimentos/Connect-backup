@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -208,7 +207,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   };
 
-  const handleActionResponse = async (response: 'approved' | 'rejected' | 'acknowledged' | 'executed') => {
+  const handleActionResponse = async (response: 'approved' | 'rejected' | 'acknowledged' | 'executed', currentComment: string) => {
     setActionType('actionResponse');
     setActionResponse(response);
     if (!user || !adminUser || !currentUserActionRequest) return;
@@ -218,7 +217,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     const actionDef = currentStatusDefinition?.action;
     
     if (response === 'executed' && actionDef?.type === 'execution') {
-        if (actionDef.commentRequired && !comment.trim()) {
+        if (actionDef.commentRequired && !currentComment.trim()) {
             toast({ title: "Erro de Validação", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
             setIsSubmitting(false);
             return;
@@ -247,8 +246,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         return;
     }
     
-    if (comment.trim()) {
-        historyNote += ` Comentário: ${comment}`;
+    if (currentComment.trim()) {
+        historyNote += ` Comentário: ${currentComment}`;
     }
     
     const updatedActionRequests = actionRequestsForCurrentStatus.map(ar => 
@@ -256,7 +255,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           ...ar, 
           status: response, 
           respondedAt: formatISO(now),
-          comment: comment || '',
+          comment: currentComment || '',
           attachmentUrl: attachmentUrl || '',
         } : ar
     );
@@ -287,7 +286,12 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   };
 
-  const handleStatusChange = async (newStatus: WorkflowStatusDefinition) => {
+  const handleGenericAction = async (actionFn: (currentComment: string) => Promise<void>) => {
+    const currentComment = (document.getElementById('comment') as HTMLTextAreaElement)?.value || '';
+    await actionFn(currentComment);
+  };
+
+  const handleStatusChange = async (newStatus: WorkflowStatusDefinition, currentComment: string) => {
     setActionType('statusChange');
     setTargetStatus(newStatus);
 
@@ -304,7 +308,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       status: newStatus.id,
       userId: adminUser.id3a,
       userName: adminUser.name,
-      notes: comment || `Status alterado para "${newStatus.label}".`,
+      notes: currentComment || `Status alterado para "${newStatus.label}".`,
     };
     
     const requestUpdate = {
@@ -314,7 +318,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       history: [...request.history, historyEntry],
     };
 
-    const notificationMessage = `O status da sua solicitação de '${request.type}' #${request.requestId} foi atualizado para "${newStatus.label}".\nObservações: ${comment || 'Nenhuma.'}`;
+    const notificationMessage = `O status da sua solicitação de '${request.type}' #${request.requestId} foi atualizado para "${newStatus.label}".\nObservações: ${currentComment || 'Nenhuma.'}`;
 
     try {
       await updateRequestAndNotify(requestUpdate, notificationMessage);
@@ -334,7 +338,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   };
 
-  const handleAssigneeChange = async () => {
+  const handleAssigneeChange = async (currentComment: string) => {
     setActionType('assign');
     if (!user || !adminUser || !assignee) {
       toast({ title: "Erro", description: "Usuário administrador ou colaborador selecionado não encontrado.", variant: "destructive" });
@@ -349,7 +353,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
     setIsSubmitting(true);
     const now = new Date();
-    const historyNote = `Solicitação atribuída a ${assignee.name}.` + (comment ? ` Comentário: ${comment}` : '');
+    const historyNote = `Solicitação atribuída a ${assignee.name}.` + (currentComment ? ` Comentário: ${currentComment}` : '');
 
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
@@ -381,9 +385,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   };
 
-  const handleAddComment = async () => {
+  const handleAddComment = async (currentComment: string) => {
     setActionType('comment');
-    if (!comment.trim()) {
+    if (!currentComment.trim()) {
         toast({ title: "Atenção", description: "O campo de comentário não pode estar vazio.", variant: "destructive" });
         return;
     }
@@ -400,7 +404,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         status: request.status,
         userId: adminUser.id3a,
         userName: adminUser.name,
-        notes: comment,
+        notes: currentComment,
     };
     
     const requestUpdate = {
@@ -409,7 +413,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         history: [...request.history, historyEntry],
     };
 
-    const notificationMessage = `Um novo comentário foi adicionado à sua solicitação '${request.type}' #${request.requestId} por ${adminUser.name}.\nComentário: ${comment}`;
+    const notificationMessage = `Um novo comentário foi adicionado à sua solicitação '${request.type}' #${request.requestId} por ${adminUser.name}.\nComentário: ${currentComment}`;
     
     try {
         await updateRequestAndNotify(requestUpdate, notificationMessage);
@@ -513,11 +517,11 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
          <div className="mt-4 pt-4 border-t">
           {actionDef?.type === 'approval' && (
             <div className="flex flex-wrap gap-2">
-                <Button variant="destructive" size="sm" onClick={() => handleActionResponse('rejected')} disabled={isSubmitting}>
+                <Button variant="destructive" size="sm" onClick={() => handleGenericAction((c) => handleActionResponse('rejected', c))} disabled={isSubmitting}>
                   {isSubmitting && actionResponse === 'rejected' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsDown className="mr-2 h-4 w-4" />}
                     Reprovar
                 </Button>
-                <Button className="bg-success hover:bg-success/90 text-success-foreground" size="sm" onClick={() => handleActionResponse('approved')} disabled={isSubmitting}>
+                <Button className="bg-success hover:bg-success/90 text-success-foreground" size="sm" onClick={() => handleGenericAction((c) => handleActionResponse('approved', c))} disabled={isSubmitting}>
                     {isSubmitting && actionResponse === 'approved' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ThumbsUp className="mr-2 h-4 w-4" />}
                     Aprovar
                 </Button>
@@ -527,20 +531,20 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
             <div className="w-full space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="execution_comment">Comentário {actionDef?.commentRequired && '*'}</Label>
-                    <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={actionDef?.commentPlaceholder || ''} />
+                    <Textarea id="execution_comment" defaultValue={comment} onChange={e => setComment(e.target.value)} placeholder={actionDef?.commentPlaceholder || ''} />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="execution_attachment">Anexo {actionDef?.attachmentRequired && '*'}</Label>
                     <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={actionDef?.attachmentPlaceholder || ''}/>
                 </div>
-                <Button className="w-full bg-admin-primary hover:bg-admin-primary/90" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
+                <Button className="w-full bg-admin-primary hover:bg-admin-primary/90" onClick={() => handleGenericAction((c) => handleActionResponse('executed', c))} disabled={isSubmitting}>
                     {isSubmitting && actionResponse === 'executed' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                     Confirmar Execução
                 </Button>
             </div>
           )}
           {actionDef?.type === 'acknowledgement' && (
-            <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => handleActionResponse('acknowledged')} disabled={isSubmitting}>
+            <Button className="bg-blue-600 hover:bg-blue-700" size="sm" onClick={() => handleGenericAction((c) => handleActionResponse('acknowledged', c))} disabled={isSubmitting}>
                 {isSubmitting && actionResponse === 'acknowledged' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                 Marcar como Ciente
             </Button>
@@ -637,7 +641,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             )}
                         </Button>
                          <Button 
-                            onClick={handleAssigneeChange} 
+                            onClick={() => handleGenericAction(handleAssigneeChange)} 
                             disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
                             className="bg-admin-primary hover:bg-admin-primary/90"
                         >
@@ -713,16 +717,15 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                     <div className="flex items-center gap-2 mt-1">
                         <Textarea
                             id="comment"
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
+                            defaultValue={comment}
                             placeholder="Deixe uma observação para o solicitante e para o histórico..."
                             disabled={isSubmitting}
                         />
                         {(isOwner || isAssignee) && (
                             <Button 
                                 variant="secondary" 
-                                onClick={handleAddComment} 
-                                disabled={isSubmitting || !comment.trim()}
+                                onClick={() => handleGenericAction(handleAddComment)}
+                                disabled={isSubmitting}
                                 className="h-full"
                             >
                                 {isSubmitting && actionType === 'comment' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
@@ -745,7 +748,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             <Button 
                                 key={nextStatus?.id || 'no-next-status'}
                                 className="bg-admin-primary hover:bg-admin-primary/90"
-                                onClick={() => nextStatus && handleStatusChange(nextStatus)} 
+                                onClick={() => nextStatus && handleGenericAction((c) => handleStatusChange(nextStatus, c))} 
                                 disabled={isSubmitting || hasPendingActions || !nextStatus}
                                 style={hasPendingActions ? { pointerEvents: 'none' } : {}}
                             >
@@ -807,4 +810,3 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
-
