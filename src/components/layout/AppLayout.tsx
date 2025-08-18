@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -311,7 +310,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
       if (typeof window === 'undefined') return;
 
-      const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+      const INACTIVITY_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
       let inactivityTimer: NodeJS.Timeout;
 
       const resetTimer = () => {
