@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Button } from '@/components/ui/button';
 import { CalendarEvent } from './GoogleCalendar';
 import { format, parseISO } from 'date-fns';
+import { toDate } from 'date-fns-tz';
 import { ptBR } from 'date-fns/locale';
 import { Calendar, Clock, AlignLeft, Video, MapPin, Users, User, Check, HelpCircle, X, ExternalLink } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
@@ -28,13 +29,30 @@ const getAttendeeIcon = (status: string) => {
     }
 }
 
+/**
+ * Converts a date string from Google Calendar API into a correct Date object,
+ * handling the "all-day" event timezone issue.
+ * @param dateStr The date string from the event (e.g., '2025-08-19' or '2025-08-19T10:00:00-03:00').
+ * @returns A JavaScript Date object.
+ */
+const parseEventDate = (dateStr: string): Date => {
+  // If the string does not contain 'T', it's an "all-day" event date like 'YYYY-MM-DD'.
+  if (!dateStr.includes('T')) {
+    // Interpret it as a UTC date to avoid timezone shifts.
+    return toDate(dateStr, { timeZone: 'UTC' });
+  }
+  // For datetime strings, parseISO handles them correctly.
+  return parseISO(dateStr);
+};
+
+
 export function GoogleEventDetailsModal({ isOpen, onClose, event }: GoogleEventDetailsModalProps) {
   if (!isOpen || !event) {
     return null;
   }
 
-  const startDate = parseISO(event.start.dateTime || event.start.date);
-  const endDate = parseISO(event.end.dateTime || event.end.date);
+  const startDate = parseEventDate(event.start.dateTime || event.start.date);
+  const endDate = parseEventDate(event.end.dateTime || event.end.date);
   const isAllDay = !event.start.dateTime;
 
   const formattedDate = format(startDate, 'PPPP', { locale: ptBR });

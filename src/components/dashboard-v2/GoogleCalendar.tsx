@@ -12,6 +12,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { GoogleEventDetailsModal } from './GoogleEventDetailsModal';
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
+import { toDate } from 'date-fns-tz';
 
 
 declare global {
@@ -36,6 +37,23 @@ export interface CalendarEvent {
   hangoutLink?: string;
   location?: string;
 }
+
+/**
+ * Converts a date string from Google Calendar API into a correct Date object,
+ * handling the "all-day" event timezone issue.
+ * @param dateStr The date string from the event (e.g., '2025-08-19' or '2025-08-19T10:00:00-03:00').
+ * @returns A JavaScript Date object.
+ */
+const parseEventDate = (dateStr: string): Date => {
+  // If the string does not contain 'T', it's an "all-day" event date like 'YYYY-MM-DD'.
+  if (!dateStr.includes('T')) {
+    // Interpret it as a UTC date to avoid timezone shifts.
+    return toDate(dateStr, { timeZone: 'UTC' });
+  }
+  // For datetime strings, parseISO handles them correctly.
+  return parseISO(dateStr);
+};
+
 
 export default function GoogleCalendar() {
   const { user, accessToken, signOut } = useAuth();
@@ -117,11 +135,11 @@ export default function GoogleCalendar() {
       });
   };
   
-  const eventDates = useMemo(() => events.map(e => new Date(e.start.dateTime || e.start.date)), [events]);
+  const eventDates = useMemo(() => events.map(e => parseEventDate(e.start.dateTime || e.start.date)), [events]);
   
   const eventsForSelectedDay = useMemo(() => {
     if (!selectedDate) return [];
-    return events.filter(e => isSameDay(new Date(e.start.dateTime || e.start.date), selectedDate));
+    return events.filter(e => isSameDay(parseEventDate(e.start.dateTime || e.start.date), selectedDate));
   }, [events, selectedDate]);
 
 
@@ -130,8 +148,8 @@ export default function GoogleCalendar() {
         return (
             <ul className="space-y-2 pr-4">
             {eventsForSelectedDay.map((event) => {
-                const startDate = new Date(event.start.dateTime || event.start.date);
-                const endDate = new Date(event.end.dateTime || event.end.date);
+                const startDate = parseEventDate(event.start.dateTime || event.start.date);
+                const endDate = parseEventDate(event.end.dateTime || event.end.date);
                 const isAllDay = !event.start.dateTime;
                 
                 const timeFormat = isAllDay 
