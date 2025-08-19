@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRankings, type RankingType, rankingSchema } from '@/contexts/RankingsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,6 +31,10 @@ export function ManageRankings() {
     });
     
     const watchRecipientIds = form.watch('recipientIds');
+
+    const collaboratorsWithAccess = useMemo(() => {
+        return collaborators.filter(c => c.permissions?.canViewRankings);
+    }, [collaborators]);
 
     const handleDialogOpen = (ranking: RankingType | null) => {
         setEditingRanking(ranking);
@@ -74,7 +78,7 @@ export function ManageRankings() {
     
     const getRecipientDescription = (ids: string[]) => {
         if (!ids || ids.length === 0) return 'Nenhum destinatário';
-        if (ids.includes('all')) return 'Todos os Colaboradores';
+        if (ids.includes('all')) return 'Todos os Colaboradores com Acesso';
         if (ids.length === 1) return '1 colaborador selecionado';
         return `${ids.length} colaboradores selecionados`;
     };
@@ -170,7 +174,7 @@ export function ManageRankings() {
              <RecipientSelectionModal
                 isOpen={isSelectionModalOpen}
                 onClose={() => setIsSelectionModalOpen(false)}
-                allCollaborators={collaborators}
+                allCollaborators={collaboratorsWithAccess}
                 selectedIds={watchRecipientIds}
                 onConfirm={(newIds) => {
                     form.setValue('recipientIds', newIds, { shouldValidate: true });
