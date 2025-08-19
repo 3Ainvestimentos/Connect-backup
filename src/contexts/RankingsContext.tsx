@@ -10,6 +10,7 @@ export const rankingSchema = z.object({
   name: z.string().min(1, "O nome da aba é obrigatório."),
   pdfUrl: z.string().url("A URL do PDF é obrigatória e deve ser um link válido."),
   order: z.number().default(0),
+  recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário.").default(['all']),
 });
 
 export type RankingType = WithId<z.infer<typeof rankingSchema>>;
@@ -32,14 +33,18 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: async () => [],
     staleTime: Infinity,
-    select: (data) => data.sort((a, b) => a.order - b.order),
+    select: (data) => data
+      .map(r => ({ ...r, recipientIds: r.recipientIds || ['all'] }))
+      .sort((a, b) => (a.order || 0) - (b.order || 0)),
   });
 
   React.useEffect(() => {
     const unsubscribe = listenToCollection<RankingType>(
       COLLECTION_NAME,
       (newData) => {
-        const sortedData = newData.sort((a, b) => (a.order || 0) - (b.order || 0));
+        const sortedData = newData
+          .map(r => ({ ...r, recipientIds: r.recipientIds || ['all'] }))
+          .sort((a, b) => (a.order || 0) - (b.order || 0));
         queryClient.setQueryData([COLLECTION_NAME], sortedData);
       },
       (error) => {

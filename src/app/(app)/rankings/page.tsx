@@ -1,6 +1,7 @@
+
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRankings } from '@/contexts/RankingsContext';
@@ -8,9 +9,26 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
 function RankingsPageContent() {
     const { rankings, loading } = useRankings();
+    const { user } = useAuth();
+    const { collaborators } = useCollaborators();
+
+    const visibleRankings = useMemo(() => {
+        if (!user || loading) return [];
+        const currentUser = collaborators.find(c => c.email === user.email);
+        if (!currentUser) return [];
+
+        return rankings.filter(ranking => {
+            if (ranking.recipientIds.includes('all')) {
+                return true;
+            }
+            return ranking.recipientIds.includes(currentUser.id3a);
+        });
+    }, [rankings, user, collaborators, loading]);
+
 
     if (loading) {
         return (
@@ -21,31 +39,31 @@ function RankingsPageContent() {
         )
     }
 
-    if (rankings.length === 0) {
+    if (visibleRankings.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center text-center text-muted-foreground h-64">
                 <Award className="h-12 w-12 mb-4" />
                 <h2 className="text-xl font-semibold text-foreground">Nenhum Documento Disponível</h2>
-                <p>Nenhum documento de ranking ou campanha foi cadastrado ainda.</p>
+                <p>Nenhum documento de ranking ou campanha foi liberado para você no momento.</p>
             </div>
         )
     }
 
     return (
-        <Tabs defaultValue={rankings[0]?.id} className="w-full flex-grow flex flex-col">
+        <Tabs defaultValue={visibleRankings[0]?.id} className="w-full flex-grow flex flex-col">
             <PageHeader
                 title="Rankings e Campanhas"
                 description="Acompanhe os resultados e materiais das campanhas vigentes."
                 actions={
                     <TabsList>
-                        {rankings.map(ranking => (
+                        {visibleRankings.map(ranking => (
                             <TabsTrigger key={ranking.id} value={ranking.id}>{ranking.name}</TabsTrigger>
                         ))}
                     </TabsList>
                 }
             />
             <div className="flex-grow">
-                {rankings.map(ranking => (
+                {visibleRankings.map(ranking => (
                     <TabsContent key={ranking.id} value={ranking.id} className="w-full h-full m-0">
                          <iframe
                             src={`${ranking.pdfUrl}#view=fitH`}

@@ -9,21 +9,28 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle, Edit, Trash2, Loader2, Award } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Award, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { RecipientSelectionModal } from './RecipientSelectionModal';
+import { Badge } from '../ui/badge';
 
 type RankingFormValues = z.infer<typeof rankingSchema>;
 
 export function ManageRankings() {
     const { rankings, addRanking, updateRanking, deleteRankingMutation, loading } = useRankings();
+    const { collaborators } = useCollaborators();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingRanking, setEditingRanking] = useState<RankingType | null>(null);
 
     const form = useForm<RankingFormValues>({
         resolver: zodResolver(rankingSchema),
-        defaultValues: { name: '', pdfUrl: '', order: 0 }
+        defaultValues: { name: '', pdfUrl: '', order: 0, recipientIds: ['all'] }
     });
+    
+    const watchRecipientIds = form.watch('recipientIds');
 
     const handleDialogOpen = (ranking: RankingType | null) => {
         setEditingRanking(ranking);
@@ -34,6 +41,7 @@ export function ManageRankings() {
                 name: '',
                 pdfUrl: '',
                 order: rankings.length > 0 ? Math.max(...rankings.map(r => r.order)) + 1 : 0,
+                recipientIds: ['all'],
             });
         }
         setIsDialogOpen(true);
@@ -63,52 +71,63 @@ export function ManageRankings() {
             toast({ title: "Erro ao salvar", description: (error as Error).message, variant: "destructive" });
         }
     };
+    
+    const getRecipientDescription = (ids: string[]) => {
+        if (!ids || ids.length === 0) return 'Nenhum destinatário';
+        if (ids.includes('all')) return 'Todos os Colaboradores';
+        if (ids.length === 1) return '1 colaborador selecionado';
+        return `${ids.length} colaboradores selecionados`;
+    };
 
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Gerenciar Rankings e Campanhas</CardTitle>
-                    <CardDescription>Adicione e organize os PDFs que aparecerão na página de Rankings.</CardDescription>
-                </div>
-                <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar PDF
-                </Button>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Ordem</TableHead>
-                                <TableHead>Nome da Aba</TableHead>
-                                <TableHead>URL do PDF</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {rankings.map(item => (
-                                <TableRow key={item.id}>
-                                    <TableCell>{item.order}</TableCell>
-                                    <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell className="text-xs text-muted-foreground truncate max-w-xs">{item.pdfUrl}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={deleteRankingMutation.isPending && deleteRankingMutation.variables === item.id} className="hover:bg-muted">
-                                            {deleteRankingMutation.isPending && deleteRankingMutation.variables === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
-                                        </Button>
-                                    </TableCell>
+        <>
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Gerenciar Rankings e Campanhas</CardTitle>
+                        <CardDescription>Adicione e organize os PDFs que aparecerão na página de Rankings.</CardDescription>
+                    </div>
+                    <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adicionar PDF
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    <div className="border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Ordem</TableHead>
+                                    <TableHead>Nome da Aba</TableHead>
+                                    <TableHead>Visibilidade</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
+                            </TableHeader>
+                            <TableBody>
+                                {rankings.map(item => (
+                                    <TableRow key={item.id}>
+                                        <TableCell>{item.order}</TableCell>
+                                        <TableCell className="font-medium">{item.name}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{getRecipientDescription(item.recipientIds)}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={deleteRankingMutation.isPending && deleteRankingMutation.variables === item.id} className="hover:bg-muted">
+                                                {deleteRankingMutation.isPending && deleteRankingMutation.variables === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
 
-             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{editingRanking ? 'Editar Documento' : 'Adicionar Documento'}</DialogTitle>
@@ -127,7 +146,15 @@ export function ManageRankings() {
                         <div>
                             <Label htmlFor="order">Ordem de Exibição</Label>
                             <Input id="order" type="number" {...form.register('order', { valueAsNumber: true })} disabled={form.formState.isSubmitting} />
-                             {form.formState.errors.order && <p className="text-sm text-destructive mt-1">{form.formState.errors.order.message}</p>}
+                            {form.formState.errors.order && <p className="text-sm text-destructive mt-1">{form.formState.errors.order.message}</p>}
+                        </div>
+                        <div>
+                            <Label>Visibilidade (Quem pode ver este documento?)</Label>
+                            <Button type="button" variant="outline" className="w-full justify-start text-left mt-2" onClick={() => setIsSelectionModalOpen(true)}>
+                               <Users className="mr-2 h-4 w-4" />
+                               <span>{getRecipientDescription(watchRecipientIds)}</span>
+                            </Button>
+                             {form.formState.errors.recipientIds && <p className="text-sm text-destructive mt-1">{form.formState.errors.recipientIds.message as string}</p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
@@ -139,6 +166,17 @@ export function ManageRankings() {
                     </form>
                 </DialogContent>
             </Dialog>
-        </Card>
+
+             <RecipientSelectionModal
+                isOpen={isSelectionModalOpen}
+                onClose={() => setIsSelectionModalOpen(false)}
+                allCollaborators={collaborators}
+                selectedIds={watchRecipientIds}
+                onConfirm={(newIds) => {
+                    form.setValue('recipientIds', newIds, { shouldValidate: true });
+                    setIsSelectionModalOpen(false);
+                }}
+            />
+        </>
     );
 }
