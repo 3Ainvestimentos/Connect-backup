@@ -128,7 +128,7 @@ const KanbanColumn = ({ column, cards }: { column: KanbanColumnType, cards: Kanb
                             </div>
                         </div>
                     ) : (
-                         <Button variant="ghost" className="w-full" onClick={() => setIsAddingCard(true)}>
+                         <Button variant="ghost" className="w-full hover:bg-admin-primary hover:text-admin-primary-foreground" onClick={() => setIsAddingCard(true)}>
                             <Plus className="h-4 w-4 mr-2"/> Adicionar Cartão
                         </Button>
                     )}
