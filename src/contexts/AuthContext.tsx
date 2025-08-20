@@ -12,7 +12,7 @@ import type { CollaboratorPermissions } from './CollaboratorsContext';
 import { useSystemSettings } from './SystemSettingsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 
-const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
+const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
 
 const scopes = [
   'https://www.googleapis.com/auth/calendar.readonly',

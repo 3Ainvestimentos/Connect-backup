@@ -192,7 +192,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
-  const isChatbotPage = pathname === '/chatbot';
+  
+  const isFullscreenPage = ['/chatbot', '/admin/strategic-panel'].includes(pathname);
+  
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -349,9 +351,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isChatbotPage} showDashboardButton={isChatbotPage} />
+      <Header userNav={<UserNav onProfileClick={() => setIsProfileModalOpen(true)} hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />} showSidebarTrigger={!isFullscreenPage} showDashboardButton={isFullscreenPage} />
       <div className="flex flex-1"> 
-        {!isChatbotPage && (
+        {!isFullscreenPage && (
           <Sidebar collapsible="icon" variant="sidebar"> 
             <SidebarContent className="flex-1 p-2">
               <SidebarMenu>
@@ -408,7 +410,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarFooter>
           </Sidebar>
         )}
-        <main className={cn("flex-1", !isChatbotPage && "md:ml-[var(--sidebar-width-icon)]")}>
+        <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
           {children}
         </main>
       </div>
