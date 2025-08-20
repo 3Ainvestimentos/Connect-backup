@@ -216,7 +216,7 @@ const AddColumnForm = ({ onAdd, onCancel }: { onAdd: (title: string) => void; on
 
 const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | null, isOpen: boolean, onClose: () => void }) => {
     const { user } = useAuth();
-    const { updateCard, deleteCard, addCommentToCard } = useKanban();
+    const { updateCard, deleteCardMutation, addCommentToCard } = useKanban();
     const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
@@ -236,9 +236,9 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
         }
     }, [card]);
     
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (card && window.confirm("Tem certeza que deseja excluir este cartão?")) {
-            deleteCard(card.id);
+            await deleteCardMutation.mutateAsync(card.id);
             onClose();
         }
     }
@@ -319,8 +319,8 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                                 <Edit className="mr-2 h-4 w-4"/> Editar
                             </Button>
                          )}
-                         <Button variant="destructive" size="icon" onClick={handleDelete} title="Excluir Cartão">
-                             <Trash2 className="h-4 w-4"/>
+                         <Button variant="destructive" size="icon" onClick={handleDelete} title="Excluir Cartão" disabled={deleteCardMutation.isPending}>
+                             {deleteCardMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4"/>}
                          </Button>
                     </div>
                 </DialogHeader>

@@ -57,7 +57,7 @@ interface KanbanContextType {
   deleteColumn: (id: string) => Promise<void>;
   addCard: (cardData: Omit<KanbanCardType, 'id' | 'order'>) => Promise<void>;
   updateCard: (id: string, cardData: Partial<Omit<KanbanCardType, 'id'>>) => Promise<void>;
-  deleteCard: (id: string) => Promise<void>;
+  deleteCardMutation: UseMutationResult<void, Error, string, unknown>;
   addCommentToCard: (cardId: string, comment: Omit<KanbanComment, 'id'>) => Promise<void>;
   moveCard: (cardId: string, sourceColumnId: string, destColumnId: string, newOrder: number) => Promise<void>;
   reorderColumn: (columnId: string, newOrder: number) => Promise<void>;
@@ -201,7 +201,7 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
     deleteColumn: (id) => deleteColumnMutation.mutateAsync(id).then(() => toast({title: "Coluna e seus cartões foram excluídos"})),
     addCard: (cardData) => addCardMutation.mutateAsync(cardData).then(() => toast({title: "Cartão adicionado"})),
     updateCard: (id, cardData) => updateCardMutation.mutateAsync({ id, data: cardData }),
-    deleteCard: (id) => deleteCardMutation.mutateAsync(id).then(() => toast({title: "Cartão excluído"})),
+    deleteCardMutation,
     addCommentToCard: (cardId, comment) => addCommentMutation.mutateAsync({ cardId, comment }),
     moveCard: (cardId, sourceColumnId, destColumnId, newOrder) => moveCardMutation.mutateAsync({ cardId, sourceColumnId, destColumnId, newOrder }),
     reorderColumn: (columnId, newOrder) => reorderColumnMutation.mutateAsync({ columnId, newOrder }),
