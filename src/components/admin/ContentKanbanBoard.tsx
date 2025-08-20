@@ -6,15 +6,21 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useKanban, KanbanColumnType, KanbanCardType } from '@/contexts/KanbanContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Plus, GripVertical, MoreHorizontal, Trash2, X } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { toast } from '@/hooks/use-toast';
+import { uploadFile } from '@/lib/firestore-service';
+import Image from 'next/image';
 
 const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
     const { updateColumn, deleteColumn } = useKanban();
@@ -68,15 +74,27 @@ const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
 }
 
 
-const KanbanCard = ({ card, index }: { card: KanbanCardType, index: number }) => {
+const KanbanCard = ({ card, index, onCardClick }: { card: KanbanCardType, index: number, onCardClick: (card: KanbanCardType) => void }) => {
     return (
         <Draggable draggableId={card.id} index={index}>
             {(provided) => (
-                <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} className="mb-2">
-                    <Card>
+                <div 
+                    ref={provided.innerRef} 
+                    {...provided.draggableProps} 
+                    {...provided.dragHandleProps} 
+                    className="mb-2"
+                    onClick={() => onCardClick(card)}
+                >
+                    <Card className="hover:bg-muted/80 cursor-pointer">
                         <CardContent className="p-3 text-sm">
                            {card.title}
                         </CardContent>
+                        {(card.content || card.mediaUrl) && (
+                            <CardFooter className="p-2 pt-0 flex items-center gap-2">
+                                {card.content && <FileText className="h-4 w-4 text-muted-foreground" />}
+                                {card.mediaUrl && <Paperclip className="h-4 w-4 text-muted-foreground" />}
+                            </CardFooter>
+                        )}
                     </Card>
                 </div>
             )}
@@ -84,7 +102,7 @@ const KanbanCard = ({ card, index }: { card: KanbanCardType, index: number }) =>
     )
 }
 
-const KanbanColumn = ({ column, cards }: { column: KanbanColumnType, cards: KanbanCardType[] }) => {
+const KanbanColumn = ({ column, cards, onCardClick }: { column: KanbanColumnType, cards: KanbanCardType[], onCardClick: (card: KanbanCardType) => void }) => {
     const { addCard } = useKanban();
     const [isAddingCard, setIsAddingCard] = useState(false);
     const [newCardTitle, setNewCardTitle] = useState('');
@@ -106,7 +124,7 @@ const KanbanColumn = ({ column, cards }: { column: KanbanColumnType, cards: Kanb
                     {(provided) => (
                         <ScrollArea className="flex-grow">
                             <div ref={provided.innerRef} {...provided.droppableProps} className="p-3 pt-0 min-h-[100px]">
-                                {cards.sort((a,b) => a.order - b.order).map((card, index) => <KanbanCard key={card.id} card={card} index={index} />)}
+                                {cards.sort((a,b) => a.order - b.order).map((card, index) => <KanbanCard key={card.id} card={card} index={index} onCardClick={onCardClick}/>)}
                                 {provided.placeholder}
                             </div>
                         </ScrollArea>
@@ -128,7 +146,7 @@ const KanbanColumn = ({ column, cards }: { column: KanbanColumnType, cards: Kanb
                             </div>
                         </div>
                     ) : (
-                         <Button variant="ghost" className="w-full hover:bg-admin-primary hover:text-admin-primary-foreground" onClick={() => setIsAddingCard(true)}>
+                         <Button variant="ghost" className="w-full hover:bg-green-500/20 hover:text-green-700" onClick={() => setIsAddingCard(true)}>
                             <Plus className="h-4 w-4 mr-2"/> Adicionar Cartão
                         </Button>
                     )}
@@ -165,9 +183,112 @@ const AddColumnForm = ({ onAdd, onCancel }: { onAdd: (title: string) => void; on
     );
 };
 
+const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | null, isOpen: boolean, onClose: () => void }) => {
+    const { updateCard, deleteCard } = useKanban();
+    const [title, setTitle] = useState('');
+    const [content, setContent] = useState('');
+    const [file, setFile] = useState<File | null>(null);
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (card) {
+            setTitle(card.title);
+            setContent(card.content || '');
+            setFile(null); // Reset file on new card
+        }
+    }, [card]);
+    
+    const handleDelete = () => {
+        if (card && window.confirm("Tem certeza que deseja excluir este cartão?")) {
+            deleteCard(card.id);
+            onClose();
+        }
+    }
+
+    const handleSave = async () => {
+        if (!card) return;
+        setIsSaving(true);
+        try {
+            let mediaUrl = card.mediaUrl;
+            let mediaType = card.mediaType;
+
+            if (file) {
+                mediaUrl = await uploadFile(file, `kanban_${card.id}`, file.name, 'kanban-attachments');
+                mediaType = file.type.startsWith('image/') ? 'image' : 'pdf';
+            }
+            
+            await updateCard(card.id, {
+                title,
+                content,
+                mediaUrl,
+                mediaType,
+            });
+            toast({ title: "Cartão salvo com sucesso!" });
+            onClose();
+        } catch (error) {
+            toast({ title: "Erro ao salvar", description: (error as Error).message, variant: "destructive" });
+        } finally {
+            setIsSaving(false);
+        }
+    }
+
+    if (!card) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle>Editar Cartão</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div>
+                        <Label htmlFor="card-title">Título</Label>
+                        <Input id="card-title" value={title} onChange={e => setTitle(e.target.value)} />
+                    </div>
+                    <div>
+                        <Label htmlFor="card-content">Descrição / Conteúdo</Label>
+                        <Textarea id="card-content" value={content} onChange={e => setContent(e.target.value)} rows={6} />
+                    </div>
+                     <div>
+                        <Label htmlFor="card-media">Anexo (PDF ou Imagem)</Label>
+                        <Input id="card-media" type="file" onChange={e => setFile(e.target.files?.[0] || null)} accept="image/*,.pdf" />
+                     </div>
+                     {card.mediaUrl && (
+                        <div className="mt-2">
+                            <p className="text-sm font-medium">Anexo Atual:</p>
+                             {card.mediaType === 'image' ? (
+                                <Image src={card.mediaUrl} alt="Anexo" width={200} height={200} className="rounded-md object-cover mt-1" />
+                             ) : (
+                                <a href={card.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                                    Visualizar PDF
+                                </a>
+                             )}
+                        </div>
+                     )}
+                </div>
+                <DialogFooter className="justify-between">
+                     <Button variant="destructive" onClick={handleDelete} disabled={isSaving}>
+                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Cartão
+                    </Button>
+                    <div className="flex gap-2">
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancelar</Button>
+                        </DialogClose>
+                        <Button onClick={handleSave} disabled={isSaving}>
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Salvar
+                        </Button>
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export function ContentKanbanBoard() {
   const { columns, cards, loading, addColumn, moveCard } = useKanban();
   const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const [editingCard, setEditingCard] = useState<KanbanCardType | null>(null);
 
   const handleDragEnd = (result: any) => {
     const { destination, source, draggableId } = result;
@@ -196,29 +317,37 @@ export function ContentKanbanBoard() {
   }
 
   return (
-    <div className="p-1">
-        <DragDropContext onDragEnd={handleDragEnd}>
-            <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
-                <div className="flex gap-4 p-4 items-start">
-                    {columns.map(column => (
-                        <KanbanColumn 
-                            key={column.id}
-                            column={column}
-                            cards={cards.filter(card => card.columnId === column.id)}
-                        />
-                    ))}
-                     <div className="w-72 flex-shrink-0">
-                        {isAddingColumn ? (
-                            <AddColumnForm onAdd={handleAddColumn} onCancel={() => setIsAddingColumn(false)} />
-                        ) : (
-                            <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setIsAddingColumn(true)}>
-                                <Plus className="mr-2 h-4 w-4"/> Adicionar nova coluna
-                            </Button>
-                        )}
-                     </div>
-                </div>
-            </ScrollArea>
-        </DragDropContext>
-    </div>
+    <>
+        <div className="p-1">
+            <DragDropContext onDragEnd={handleDragEnd}>
+                <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
+                    <div className="flex gap-4 p-4 items-start">
+                        {columns.map(column => (
+                            <KanbanColumn 
+                                key={column.id}
+                                column={column}
+                                cards={cards.filter(card => card.columnId === column.id)}
+                                onCardClick={(card) => setEditingCard(card)}
+                            />
+                        ))}
+                         <div className="w-72 flex-shrink-0">
+                            {isAddingColumn ? (
+                                <AddColumnForm onAdd={handleAddColumn} onCancel={() => setIsAddingColumn(false)} />
+                            ) : (
+                                <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setIsAddingColumn(true)}>
+                                    <Plus className="mr-2 h-4 w-4"/> Adicionar nova coluna
+                                </Button>
+                            )}
+                         </div>
+                    </div>
+                </ScrollArea>
+            </DragDropContext>
+        </div>
+         <CardDetailsModal 
+            card={editingCard}
+            isOpen={!!editingCard}
+            onClose={() => setEditingCard(null)}
+        />
+    </>
   );
 }

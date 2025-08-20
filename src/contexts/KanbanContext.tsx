@@ -22,8 +22,10 @@ export interface KanbanCardType {
   columnId: string;
   order: number;
   title: string;
-  tags?: string[];
   content?: string;
+  mediaUrl?: string;
+  mediaType?: 'image' | 'pdf';
+  tags?: string[];
   assignedTo?: string[]; // Array of collaborator IDs
   dueDate?: string; // ISO String
 }
@@ -182,7 +184,7 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
     updateColumn: (id, title) => updateColumnMutation.mutateAsync({ id, title }).then(() => toast({title: "Coluna atualizada"})),
     deleteColumn: (id) => deleteColumnMutation.mutateAsync(id).then(() => toast({title: "Coluna e seus cartões foram excluídos"})),
     addCard: (cardData) => addCardMutation.mutateAsync(cardData).then(() => toast({title: "Cartão adicionado"})),
-    updateCard: (id, cardData) => updateCardMutation.mutateAsync({ id, data: cardData }).then(() => toast({title: "Cartão atualizado"})),
+    updateCard: (id, cardData) => updateCardMutation.mutateAsync({ id, data: cardData }),
     deleteCard: (id) => deleteCardMutation.mutateAsync(id).then(() => toast({title: "Cartão excluído"})),
     moveCard: (cardId, sourceColumnId, destColumnId, newOrder) => moveCardMutation.mutateAsync({ cardId, sourceColumnId, destColumnId, newOrder }),
     reorderColumn: (columnId, newOrder) => reorderColumnMutation.mutateAsync({ columnId, newOrder }),
