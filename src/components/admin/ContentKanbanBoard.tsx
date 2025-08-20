@@ -7,7 +7,7 @@ import { useKanban, KanbanColumnType, KanbanCardType } from '@/contexts/KanbanCo
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2 } from 'lucide-react';
+import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2, Newspaper, File, FlaskConical, MessageSquare, Link, Vote, Award } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,6 +21,20 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { uploadFile } from '@/lib/firestore-service';
 import Image from 'next/image';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Badge } from '../ui/badge';
+import { getIcon } from '@/lib/icons';
+
+const contentTypes = [
+    { value: 'news', label: 'Notícias', icon: Newspaper },
+    { value: 'documents', label: 'Documentos', icon: File },
+    { value: 'labs', label: 'Labs', icon: FlaskConical },
+    { value: 'messages', label: 'Mensagens', icon: MessageSquare },
+    { value: 'quicklinks', label: 'Links Rápidos', icon: Link },
+    { value: 'polls', label: 'Pesquisas', icon: Vote },
+    { value: 'rankings', label: 'Rankings', icon: Award },
+];
+
 
 const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
     const { updateColumn, deleteColumn } = useKanban();
@@ -75,6 +89,9 @@ const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
 
 
 const KanbanCard = ({ card, index, onCardClick }: { card: KanbanCardType, index: number, onCardClick: (card: KanbanCardType) => void }) => {
+    const contentTypeInfo = contentTypes.find(ct => ct.value === card.contentType);
+    const Icon = contentTypeInfo ? contentTypeInfo.icon : FileText;
+
     return (
         <Draggable draggableId={card.id} index={index}>
             {(provided) => (
@@ -89,12 +106,18 @@ const KanbanCard = ({ card, index, onCardClick }: { card: KanbanCardType, index:
                         <CardContent className="p-3 text-sm">
                            {card.title}
                         </CardContent>
-                        {(card.content || card.mediaUrl) && (
-                            <CardFooter className="p-2 pt-0 flex items-center gap-2">
-                                {card.content && <FileText className="h-4 w-4 text-muted-foreground" />}
-                                {card.mediaUrl && <Paperclip className="h-4 w-4 text-muted-foreground" />}
-                            </CardFooter>
-                        )}
+                        <CardFooter className="p-2 pt-0 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                {card.content && <FileText className="h-4 w-4 text-muted-foreground" title="Contém descrição"/>}
+                                {card.mediaUrl && <Paperclip className="h-4 w-4 text-muted-foreground" title="Contém anexo"/>}
+                            </div>
+                            {contentTypeInfo && (
+                                <Badge variant="outline" className="flex items-center gap-1">
+                                    <Icon className="h-3 w-3" />
+                                    <span className="text-xs">{contentTypeInfo.label}</span>
+                                </Badge>
+                            )}
+                        </CardFooter>
                     </Card>
                 </div>
             )}
@@ -187,6 +210,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
     const { updateCard, deleteCard } = useKanban();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
+    const [contentType, setContentType] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -194,6 +218,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
         if (card) {
             setTitle(card.title);
             setContent(card.content || '');
+            setContentType(card.contentType || '');
             setFile(null); // Reset file on new card
         }
     }, [card]);
@@ -220,6 +245,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
             await updateCard(card.id, {
                 title,
                 content,
+                contentType,
                 mediaUrl,
                 mediaType,
             });
@@ -241,9 +267,29 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                     <DialogTitle>Editar Cartão</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                    <div>
-                        <Label htmlFor="card-title">Título</Label>
-                        <Input id="card-title" value={title} onChange={e => setTitle(e.target.value)} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="card-title">Título</Label>
+                            <Input id="card-title" value={title} onChange={e => setTitle(e.target.value)} />
+                        </div>
+                        <div>
+                            <Label htmlFor="content-type">Tipo de Conteúdo</Label>
+                             <Select value={contentType} onValueChange={setContentType}>
+                                <SelectTrigger id="content-type">
+                                    <SelectValue placeholder="Selecione um tipo..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {contentTypes.map(ct => (
+                                        <SelectItem key={ct.value} value={ct.value}>
+                                            <div className="flex items-center gap-2">
+                                                <ct.icon className="h-4 w-4" />
+                                                <span>{ct.label}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                     <div>
                         <Label htmlFor="card-content">Descrição / Conteúdo</Label>

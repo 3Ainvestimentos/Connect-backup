@@ -23,6 +23,7 @@ export interface KanbanCardType {
   order: number;
   title: string;
   content?: string;
+  contentType?: string;
   mediaUrl?: string;
   mediaType?: 'image' | 'pdf';
   tags?: string[];
