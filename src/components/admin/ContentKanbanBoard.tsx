@@ -321,7 +321,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                          )}
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="ml-2">
+                                <Button variant="ghost" size="icon" className="ml-2 hover:bg-destructive/10 hover:text-destructive">
                                     <MoreHorizontal className="h-4 w-4"/>
                                 </Button>
                             </DropdownMenuTrigger>
@@ -515,6 +515,3 @@ export function ContentKanbanBoard() {
     </>
   );
 }
-
-
-
