@@ -110,7 +110,7 @@ const KanbanCard = ({ card, index, onCardClick }: { card: KanbanCardType, index:
                     className="mb-2"
                     onClick={() => onCardClick(card)}
                 >
-                    <Card className="hover:bg-muted/80 cursor-pointer">
+                    <Card className="hover:bg-muted/80 cursor-pointer shadow-sm">
                         <CardContent className="p-3 text-sm">
                            {card.title}
                         </CardContent>
