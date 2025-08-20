@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -56,6 +57,7 @@ export const navItems = [
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false, permission: null },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
   { href: '/rankings', label: 'Rankings e Campanhas', icon: Award, external: false, permission: 'canViewRankings' },
+  { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false, permission: 'canViewBI' },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true, permission: null },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false, permission: null },
 ];
@@ -144,14 +146,6 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                   )}>
                       <ListTodo className="mr-2 h-4 w-4" />
                       <span>Minhas Tarefas/Ações</span>
-                  </Link>
-              </DropdownMenuItem>
-          )}
-          {permissions.canViewBI && (
-              <DropdownMenuItem asChild>
-                  <Link href="/bi" className="cursor-pointer font-body">
-                      <BarChart className="mr-2 h-4 w-4" />
-                      <span>Business Intelligence</span>
                   </Link>
               </DropdownMenuItem>
           )}
