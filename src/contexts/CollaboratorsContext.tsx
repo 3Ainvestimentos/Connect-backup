@@ -12,8 +12,8 @@ export interface CollaboratorPermissions {
   canViewTasks: boolean;
   canViewBI: boolean;
   canViewRankings: boolean;
-  canViewCRM?: boolean;
-  canViewStrategicPanel?: boolean;
+  canViewCRM: boolean;
+  canViewStrategicPanel: boolean;
 }
 
 export interface BILink {

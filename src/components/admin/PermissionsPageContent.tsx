@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { Shield, Loader2, Search, DollarSign, Award, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Loader2, Search, DollarSign, Award, Filter, ChevronDown, ChevronUp, Target, Briefcase } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
     { key: 'canViewBI', label: 'Business Intelligence' },
     { key: 'canViewRankings', label: 'Rankings' },
+    { key: 'canViewCRM', label: 'CRM Interno' },
+    { key: 'canViewStrategicPanel', label: 'Painel Estratégico' },
 ];
 
 function PermissionsTable() {
