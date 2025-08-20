@@ -320,7 +320,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                         <DialogClose asChild>
                             <Button variant="outline">Cancelar</Button>
                         </DialogClose>
-                        <Button onClick={handleSave} disabled={isSaving}>
+                        <Button onClick={handleSave} disabled={isSaving} className="bg-admin-primary hover:bg-admin-primary/90">
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                             Salvar
                         </Button>
