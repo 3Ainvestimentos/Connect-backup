@@ -15,6 +15,16 @@ import {
 } from '@/lib/firestore-service';
 import { getFirebaseApp } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
+import { arrayUnion } from 'firebase/firestore';
+
+
+export interface KanbanComment {
+    id: string;
+    userId: string;
+    userName: string;
+    content: string;
+    timestamp: string; // ISO string
+}
 
 // --- Types and Schemas ---
 export interface KanbanCardType {
@@ -29,6 +39,7 @@ export interface KanbanCardType {
   tags?: string[];
   assignedTo?: string[]; // Array of collaborator IDs
   dueDate?: string; // ISO String
+  comments?: KanbanComment[];
 }
 
 export interface KanbanColumnType {
@@ -47,6 +58,7 @@ interface KanbanContextType {
   addCard: (cardData: Omit<KanbanCardType, 'id' | 'order'>) => Promise<void>;
   updateCard: (id: string, cardData: Partial<Omit<KanbanCardType, 'id'>>) => Promise<void>;
   deleteCard: (id: string) => Promise<void>;
+  addCommentToCard: (cardId: string, comment: Omit<KanbanComment, 'id'>) => Promise<void>;
   moveCard: (cardId: string, sourceColumnId: string, destColumnId: string, newOrder: number) => Promise<void>;
   reorderColumn: (columnId: string, newOrder: number) => Promise<void>;
 }
@@ -109,11 +121,9 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
         const db = getFirestore(getFirebaseApp());
         const batch = writeBatch(db);
         
-        // Delete the column itself
         const columnRef = doc(db, COLUMNS_COLLECTION, columnId);
         batch.delete(columnRef);
 
-        // Delete all cards within that column
         const cardsToDelete = cards.filter(c => c.columnId === columnId);
         cardsToDelete.forEach(card => {
             const cardRef = doc(db, CARDS_COLLECTION, card.id);
@@ -128,7 +138,7 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: async (cardData) => {
       const cardsInColumn = cards.filter(c => c.columnId === cardData.columnId);
       const newOrder = cardsInColumn.length;
-      const newCard: Omit<KanbanCardType, 'id'> = { ...cardData, order: newOrder };
+      const newCard: Omit<KanbanCardType, 'id'> = { ...cardData, order: newOrder, comments: [] };
       await addDocumentToCollection(CARDS_COLLECTION, newCard);
     },
   });
@@ -140,23 +150,30 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
   const deleteCardMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(CARDS_COLLECTION, id),
   });
+  
+  const addCommentMutation = useMutation<void, Error, { cardId: string, comment: Omit<KanbanComment, 'id'> }>({
+    mutationFn: async ({ cardId, comment }) => {
+      const newComment = { ...comment, id: `comment_${Date.now()}` };
+      await updateDocumentInCollection(CARDS_COLLECTION, cardId, {
+        comments: arrayUnion(newComment)
+      });
+    },
+  });
+
 
   const moveCardMutation = useMutation<void, Error, { cardId: string, sourceColumnId: string, destColumnId: string, newOrder: number }>({
     mutationFn: async ({ cardId, sourceColumnId, destColumnId, newOrder }) => {
         const db = getFirestore(getFirebaseApp());
         const batch = writeBatch(db);
         
-        // Update the moved card
         const movedCardRef = doc(db, CARDS_COLLECTION, cardId);
         batch.update(movedCardRef, { columnId: destColumnId, order: newOrder });
 
-        // Update order of cards in the destination column
         cards.filter(c => c.columnId === destColumnId && c.order >= newOrder).forEach(card => {
             const cardRef = doc(db, CARDS_COLLECTION, card.id);
             batch.update(cardRef, { order: card.order + 1 });
         });
 
-        // Update order of cards in the source column
         cards.filter(c => c.columnId === sourceColumnId && c.order > cards.find(c => c.id === cardId)!.order).forEach(card => {
              const cardRef = doc(db, CARDS_COLLECTION, card.id);
              batch.update(cardRef, { order: card.order - 1 });
@@ -169,8 +186,6 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
   
    const reorderColumnMutation = useMutation<void, Error, { columnId: string, newOrder: number }>({
         mutationFn: async ({ columnId, newOrder }) => {
-            // Simplified logic: This would need a more complex batch write to shift other columns correctly.
-            // For now, we just update the one column's order. A full implementation would re-order siblings.
             await updateDocumentInCollection(COLUMNS_COLLECTION, columnId, { order: newOrder });
         },
         onSuccess: () => queryClient.invalidateQueries({ queryKey: [COLUMNS_COLLECTION] }),
@@ -187,9 +202,10 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
     addCard: (cardData) => addCardMutation.mutateAsync(cardData).then(() => toast({title: "Cartão adicionado"})),
     updateCard: (id, cardData) => updateCardMutation.mutateAsync({ id, data: cardData }),
     deleteCard: (id) => deleteCardMutation.mutateAsync(id).then(() => toast({title: "Cartão excluído"})),
+    addCommentToCard: (cardId, comment) => addCommentMutation.mutateAsync({ cardId, comment }),
     moveCard: (cardId, sourceColumnId, destColumnId, newOrder) => moveCardMutation.mutateAsync({ cardId, sourceColumnId, destColumnId, newOrder }),
     reorderColumn: (columnId, newOrder) => reorderColumnMutation.mutateAsync({ columnId, newOrder }),
-  }), [columns, cards, loadingColumns, loadingCards, addColumnMutation, updateColumnMutation, deleteColumnMutation, addCardMutation, updateCardMutation, deleteCardMutation, moveCardMutation, reorderColumnMutation]);
+  }), [columns, cards, loadingColumns, loadingCards, addColumnMutation, updateColumnMutation, deleteColumnMutation, addCardMutation, updateCardMutation, deleteCardMutation, addCommentMutation, moveCardMutation, reorderColumnMutation]);
 
   return (
     <KanbanContext.Provider value={value}>

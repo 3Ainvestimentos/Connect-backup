@@ -3,11 +3,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
-import { useKanban, KanbanColumnType, KanbanCardType } from '@/contexts/KanbanContext';
+import { useKanban, KanbanColumnType, KanbanCardType, KanbanComment } from '@/contexts/KanbanContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2, Newspaper, File, FlaskConical, MessageSquare, Link, Vote, Award } from 'lucide-react';
+import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2, Newspaper, File, FlaskConical, MessageSquare, Link, Vote, Award, MessageCircle, Send } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,6 +24,11 @@ import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import { getIcon } from '@/lib/icons';
+import { Separator } from '../ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { useAuth } from '@/contexts/AuthContext';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const contentTypes = [
     { value: 'news', label: 'Notícias', icon: Newspaper },
@@ -108,7 +113,7 @@ const KanbanCard = ({ card, index, onCardClick }: { card: KanbanCardType, index:
                         </CardContent>
                         <CardFooter className="p-2 pt-0 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                {card.content && <FileText className="h-4 w-4 text-muted-foreground" title="Contém descrição"/>}
+                                {card.comments && card.comments.length > 0 && <MessageCircle className="h-4 w-4 text-muted-foreground" title={`${card.comments.length} comentário(s)`}/>}
                                 {card.mediaUrl && <Paperclip className="h-4 w-4 text-muted-foreground" title="Contém anexo"/>}
                             </div>
                             {contentTypeInfo && (
@@ -207,12 +212,14 @@ const AddColumnForm = ({ onAdd, onCancel }: { onAdd: (title: string) => void; on
 };
 
 const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | null, isOpen: boolean, onClose: () => void }) => {
-    const { updateCard, deleteCard } = useKanban();
+    const { user } = useAuth();
+    const { updateCard, deleteCard, addCommentToCard } = useKanban();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [contentType, setContentType] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [newComment, setNewComment] = useState('');
 
     useEffect(() => {
         if (card) {
@@ -220,6 +227,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
             setContent(card.content || '');
             setContentType(card.contentType || '');
             setFile(null); // Reset file on new card
+            setNewComment('');
         }
     }, [card]);
     
@@ -227,6 +235,25 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
         if (card && window.confirm("Tem certeza que deseja excluir este cartão?")) {
             deleteCard(card.id);
             onClose();
+        }
+    }
+
+    const handleAddComment = async () => {
+        if (!card || !newComment.trim() || !user) return;
+        
+        const comment: Omit<KanbanComment, 'id'> = {
+            userId: user.uid,
+            userName: user.displayName || 'Usuário Desconhecido',
+            content: newComment,
+            timestamp: new Date().toISOString(),
+        }
+
+        try {
+            await addCommentToCard(card.id, comment);
+            setNewComment('');
+            toast({ title: "Comentário adicionado." });
+        } catch (error) {
+             toast({ title: "Erro ao comentar", description: (error as Error).message, variant: "destructive" });
         }
     }
 
@@ -262,58 +289,99 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-xl">
+            <DialogContent className="sm:max-w-2xl flex flex-col h-auto max-h-[90vh]">
                 <DialogHeader>
                     <DialogTitle>Editar Cartão</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="card-title">Título</Label>
-                            <Input id="card-title" value={title} onChange={e => setTitle(e.target.value)} />
-                        </div>
-                        <div>
-                            <Label htmlFor="content-type">Tipo de Conteúdo</Label>
-                             <Select value={contentType} onValueChange={setContentType}>
-                                <SelectTrigger id="content-type">
-                                    <SelectValue placeholder="Selecione um tipo..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {contentTypes.map(ct => (
-                                        <SelectItem key={ct.value} value={ct.value}>
-                                            <div className="flex items-center gap-2">
-                                                <ct.icon className="h-4 w-4" />
-                                                <span>{ct.label}</span>
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <div>
-                        <Label htmlFor="card-content">Descrição / Conteúdo</Label>
-                        <Textarea id="card-content" value={content} onChange={e => setContent(e.target.value)} rows={6} />
-                    </div>
-                     <div>
-                        <Label htmlFor="card-media">Anexo (PDF ou Imagem)</Label>
-                        <Input id="card-media" type="file" onChange={e => setFile(e.target.files?.[0] || null)} accept="image/*,.pdf" />
-                     </div>
-                     {card.mediaUrl && (
-                        <div className="mt-2">
-                            <p className="text-sm font-medium">Anexo Atual:</p>
-                             {card.mediaType === 'image' ? (
-                                <Image src={card.mediaUrl} alt="Anexo" width={200} height={200} className="rounded-md object-cover mt-1" />
-                             ) : (
-                                <a href={card.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                                    Visualizar PDF
-                                </a>
+                <div className="flex-grow min-h-0">
+                    <ScrollArea className="h-full pr-6">
+                        <div className="space-y-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <Label htmlFor="card-title">Título</Label>
+                                    <Input id="card-title" value={title} onChange={e => setTitle(e.target.value)} />
+                                </div>
+                                <div>
+                                    <Label htmlFor="content-type">Tipo de Conteúdo</Label>
+                                     <Select value={contentType} onValueChange={setContentType}>
+                                        <SelectTrigger id="content-type">
+                                            <SelectValue placeholder="Selecione um tipo..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {contentTypes.map(ct => (
+                                                <SelectItem key={ct.value} value={ct.value}>
+                                                    <div className="flex items-center gap-2">
+                                                        <ct.icon className="h-4 w-4" />
+                                                        <span>{ct.label}</span>
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div>
+                                <Label htmlFor="card-content">Descrição / Conteúdo</Label>
+                                <Textarea id="card-content" value={content} onChange={e => setContent(e.target.value)} rows={6} />
+                            </div>
+                             <div>
+                                <Label htmlFor="card-media">Anexo (PDF ou Imagem)</Label>
+                                <Input id="card-media" type="file" onChange={e => setFile(e.target.files?.[0] || null)} accept="image/*,.pdf" />
+                             </div>
+                             {card.mediaUrl && (
+                                <div className="mt-2">
+                                    <p className="text-sm font-medium">Anexo Atual:</p>
+                                     {card.mediaType === 'image' ? (
+                                        <Image src={card.mediaUrl} alt="Anexo" width={200} height={200} className="rounded-md object-cover mt-1" />
+                                     ) : (
+                                        <a href={card.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                                            Visualizar PDF
+                                        </a>
+                                     )}
+                                </div>
                              )}
+                            <Separator />
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2">Comentários</h3>
+                                <div className="space-y-4">
+                                    {card.comments && card.comments.length > 0 ? (
+                                        card.comments.map(comment => (
+                                            <div key={comment.id} className="flex items-start gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarFallback>{comment.userName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="w-full">
+                                                    <div className="flex items-baseline justify-between">
+                                                        <p className="font-semibold text-sm">{comment.userName}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true, locale: ptBR })}
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">{comment.content}</p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center py-4">Nenhum comentário ainda.</p>
+                                    )}
+                                </div>
+                                <div className="mt-4 flex items-start gap-2">
+                                    <Textarea 
+                                        placeholder="Adicionar um comentário..."
+                                        value={newComment}
+                                        onChange={e => setNewComment(e.target.value)}
+                                        rows={2}
+                                    />
+                                    <Button onClick={handleAddComment} size="icon" disabled={!newComment.trim()}>
+                                        <Send className="h-4 w-4"/>
+                                    </Button>
+                                </div>
+                            </div>
                         </div>
-                     )}
+                    </ScrollArea>
                 </div>
-                <DialogFooter className="justify-between">
-                     <Button variant="destructive" onClick={handleDelete} disabled={isSaving}>
+                <DialogFooter className="justify-between pt-4">
+                     <Button variant="ghost" onClick={handleDelete} disabled={isSaving} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
                         <Trash2 className="mr-2 h-4 w-4" /> Excluir Cartão
                     </Button>
                     <div className="flex gap-2">
