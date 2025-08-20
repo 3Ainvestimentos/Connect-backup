@@ -7,9 +7,9 @@ import { useKanban, KanbanColumnType, KanbanCardType, KanbanComment } from '@/co
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2, Newspaper, File, FlaskConical, MessageSquare, Link, Vote, Award, MessageCircle, Send } from 'lucide-react';
+import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2, Newspaper, File, FlaskConical, MessageSquare, Link, Vote, Award, MessageCircle, Send, Edit } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -29,6 +29,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const contentTypes = [
     { value: 'news', label: 'Notícias', icon: Newspaper },
@@ -214,6 +217,7 @@ const AddColumnForm = ({ onAdd, onCancel }: { onAdd: (title: string) => void; on
 const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | null, isOpen: boolean, onClose: () => void }) => {
     const { user } = useAuth();
     const { updateCard, deleteCard, addCommentToCard } = useKanban();
+    const [isEditing, setIsEditing] = useState(false);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [contentType, setContentType] = useState('');
@@ -226,8 +230,9 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
             setTitle(card.title);
             setContent(card.content || '');
             setContentType(card.contentType || '');
-            setFile(null); // Reset file on new card
+            setFile(null); 
             setNewComment('');
+            setIsEditing(false); // Default to view mode
         }
     }, [card]);
     
@@ -277,35 +282,77 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                 mediaType,
             });
             toast({ title: "Cartão salvo com sucesso!" });
-            onClose();
+            setIsEditing(false); // Return to view mode on successful save
         } catch (error) {
             toast({ title: "Erro ao salvar", description: (error as Error).message, variant: "destructive" });
         } finally {
             setIsSaving(false);
         }
     }
+    
+    const ViewField = ({ label, value }: { label: string, value: React.ReactNode }) => (
+        <div className="space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground">{label}</p>
+            <div className={cn("text-sm", !value && "text-muted-foreground italic")}>
+                {value || 'Não definido'}
+            </div>
+        </div>
+    );
+    
+    const contentTypeInfo = contentTypes.find(ct => ct.value === (isEditing ? contentType : card?.contentType));
 
     if (!card) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="sm:max-w-2xl flex flex-col h-auto max-h-[90vh]">
-                <DialogHeader>
-                    <DialogTitle>Editar Cartão</DialogTitle>
+                <DialogHeader className="flex flex-row items-center justify-between pr-14">
+                    <div className="flex-grow">
+                        <DialogTitle>{isEditing ? 'Editando Cartão' : card.title}</DialogTitle>
+                        <DialogDescription>
+                            {isEditing ? 'Modifique os detalhes e salve as alterações.' : 'Visualize os detalhes do cartão e adicione comentários.'}
+                        </DialogDescription>
+                    </div>
+                    <div className="flex-shrink-0">
+                         {!isEditing && (
+                             <Button onClick={() => setIsEditing(true)} size="sm">
+                                <Edit className="mr-2 h-4 w-4"/> Editar
+                            </Button>
+                         )}
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="ml-2">
+                                    <MoreHorizontal className="h-4 w-4"/>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4"/> Excluir Cartão
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                         </DropdownMenu>
+                    </div>
                 </DialogHeader>
                 <div className="flex-grow min-h-0">
-                    <ScrollArea className="h-full pr-6">
+                    <ScrollArea className="h-full pr-6 -mr-6">
                         <div className="space-y-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <Label htmlFor="card-title">Título</Label>
-                                    <Input id="card-title" value={title} onChange={e => setTitle(e.target.value)} />
+                                    <Input id="card-title" value={title} onChange={e => setTitle(e.target.value)} disabled={!isEditing} />
                                 </div>
                                 <div>
                                     <Label htmlFor="content-type">Tipo de Conteúdo</Label>
-                                     <Select value={contentType} onValueChange={setContentType}>
+                                     <Select value={contentType} onValueChange={setContentType} disabled={!isEditing}>
                                         <SelectTrigger id="content-type">
-                                            <SelectValue placeholder="Selecione um tipo..." />
+                                            <SelectValue placeholder="Selecione um tipo...">
+                                                 {contentTypeInfo ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <contentTypeInfo.icon className="h-4 w-4" />
+                                                        <span>{contentTypeInfo.label}</span>
+                                                    </div>
+                                                ) : 'Selecione um tipo...'}
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             {contentTypes.map(ct => (
@@ -322,22 +369,24 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                             </div>
                             <div>
                                 <Label htmlFor="card-content">Descrição / Conteúdo</Label>
-                                <Textarea id="card-content" value={content} onChange={e => setContent(e.target.value)} rows={6} />
+                                <Textarea id="card-content" value={content} onChange={e => setContent(e.target.value)} rows={6} disabled={!isEditing} />
                             </div>
-                             <div>
+                            <div>
                                 <Label htmlFor="card-media">Anexo (PDF ou Imagem)</Label>
-                                <Input id="card-media" type="file" onChange={e => setFile(e.target.files?.[0] || null)} accept="image/*,.pdf" />
-                             </div>
+                                <Input id="card-media" type="file" onChange={e => setFile(e.target.files?.[0] || null)} accept="image/*,.pdf" disabled={!isEditing}/>
+                            </div>
                              {card.mediaUrl && (
-                                <div className="mt-2">
+                                <div>
                                     <p className="text-sm font-medium">Anexo Atual:</p>
+                                    <div className="mt-2 p-2 border rounded-md max-h-48 overflow-auto">
                                      {card.mediaType === 'image' ? (
-                                        <Image src={card.mediaUrl} alt="Anexo" width={200} height={200} className="rounded-md object-cover mt-1" />
+                                        <Image src={card.mediaUrl} alt="Anexo" width={200} height={200} className="rounded-md object-cover" />
                                      ) : (
-                                        <a href={card.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                                            Visualizar PDF
+                                        <a href={card.mediaUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline flex items-center gap-2">
+                                            <FileText className="h-4 w-4"/> Visualizar PDF
                                         </a>
                                      )}
+                                     </div>
                                 </div>
                              )}
                             <Separator />
@@ -357,7 +406,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                                                             {formatDistanceToNow(new Date(comment.timestamp), { addSuffix: true, locale: ptBR })}
                                                         </p>
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md">{comment.content}</p>
+                                                    <div className="text-sm text-muted-foreground bg-muted/50 p-2 rounded-md whitespace-pre-wrap"><ReactMarkdown remarkPlugins={[remarkGfm]}>{comment.content}</ReactMarkdown></div>
                                                 </div>
                                             </div>
                                         ))
@@ -380,19 +429,20 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                         </div>
                     </ScrollArea>
                 </div>
-                <DialogFooter className="justify-between pt-4">
-                     <Button variant="ghost" onClick={handleDelete} disabled={isSaving} className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Cartão
-                    </Button>
-                    <div className="flex gap-2">
+                 <DialogFooter className="pt-4">
+                    {isEditing ? (
+                        <div className="flex justify-end gap-2 w-full">
+                            <Button variant="outline" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                            <Button onClick={handleSave} disabled={isSaving} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Salvar Alterações
+                            </Button>
+                        </div>
+                    ) : (
                         <DialogClose asChild>
-                            <Button variant="outline">Cancelar</Button>
+                            <Button variant="outline">Fechar</Button>
                         </DialogClose>
-                        <Button onClick={handleSave} disabled={isSaving} className="bg-admin-primary hover:bg-admin-primary/90">
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                            Salvar
-                        </Button>
-                    </div>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -465,3 +515,4 @@ export function ContentKanbanBoard() {
     </>
   );
 }
+
