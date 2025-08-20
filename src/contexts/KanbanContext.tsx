@@ -149,6 +149,9 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
   
   const deleteCardMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(CARDS_COLLECTION, id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [CARDS_COLLECTION] });
+    }
   });
   
   const addCommentMutation = useMutation<void, Error, { cardId: string, comment: Omit<KanbanComment, 'id'> }>({

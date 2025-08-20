@@ -82,7 +82,7 @@ const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
             )}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-destructive/10">
                         <MoreHorizontal className="h-4 w-4" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -177,7 +177,7 @@ const KanbanColumn = ({ column, cards, onCardClick }: { column: KanbanColumnType
                             </div>
                         </div>
                     ) : (
-                         <Button variant="ghost" className="w-full hover:bg-green-500/20 hover:text-green-700" onClick={() => setIsAddingCard(true)}>
+                         <Button variant="ghost" className="w-full hover:bg-green-500/20 text-green-700 dark:hover:text-green-400" onClick={() => setIsAddingCard(true)}>
                             <Plus className="h-4 w-4 mr-2"/> Adicionar Cartão
                         </Button>
                     )}
