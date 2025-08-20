@@ -313,24 +313,15 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                             {isEditing ? 'Modifique os detalhes e salve as alterações.' : 'Visualize os detalhes do cartão e adicione comentários.'}
                         </DialogDescription>
                     </div>
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 flex items-center gap-2">
                          {!isEditing && (
                              <Button onClick={() => setIsEditing(true)} size="sm" className="bg-admin-primary hover:bg-admin-primary/90">
                                 <Edit className="mr-2 h-4 w-4"/> Editar
                             </Button>
                          )}
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="ml-2 hover:bg-destructive/10 hover:text-destructive">
-                                    <MoreHorizontal className="h-4 w-4"/>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4"/> Excluir Cartão
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                         </DropdownMenu>
+                         <Button variant="destructive" size="icon" onClick={handleDelete} title="Excluir Cartão">
+                             <Trash2 className="h-4 w-4"/>
+                         </Button>
                     </div>
                 </DialogHeader>
                 <div className="flex-grow min-h-0">
