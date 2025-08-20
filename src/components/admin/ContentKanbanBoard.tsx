@@ -421,7 +421,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                                         onChange={e => setNewComment(e.target.value)}
                                         rows={2}
                                     />
-                                    <Button onClick={handleAddComment} size="icon" disabled={!newComment.trim()}>
+                                    <Button onClick={handleAddComment} size="icon" disabled={!newComment.trim()} className="bg-admin-primary hover:bg-admin-primary/90">
                                         <Send className="h-4 w-4"/>
                                     </Button>
                                 </div>
@@ -515,5 +515,6 @@ export function ContentKanbanBoard() {
     </>
   );
 }
+
 
 
