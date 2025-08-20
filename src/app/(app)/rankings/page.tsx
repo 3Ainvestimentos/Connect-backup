@@ -66,7 +66,7 @@ function RankingsPageContent() {
                 {visibleRankings.map(ranking => (
                     <TabsContent key={ranking.id} value={ranking.id} className="w-full h-full m-0">
                          <iframe
-                            src={`${ranking.pdfUrl}#view=fitH`}
+                            src={`${ranking.pdfUrl}#toolbar=0&view=fitH`}
                             title={ranking.name}
                             className="w-full h-full border-0 rounded-md"
                         />
