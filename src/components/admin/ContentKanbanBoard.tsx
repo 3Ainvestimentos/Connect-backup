@@ -315,7 +315,7 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
                     </div>
                     <div className="flex-shrink-0">
                          {!isEditing && (
-                             <Button onClick={() => setIsEditing(true)} size="sm">
+                             <Button onClick={() => setIsEditing(true)} size="sm" className="bg-admin-primary hover:bg-admin-primary/90">
                                 <Edit className="mr-2 h-4 w-4"/> Editar
                             </Button>
                          )}
@@ -515,4 +515,5 @@ export function ContentKanbanBoard() {
     </>
   );
 }
+
 
