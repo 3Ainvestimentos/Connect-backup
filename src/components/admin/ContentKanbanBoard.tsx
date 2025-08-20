@@ -1,13 +1,13 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useKanban, KanbanColumnType, KanbanCardType } from '@/contexts/KanbanContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Plus, GripVertical, MoreHorizontal, Trash2 } from 'lucide-react';
+import { Plus, GripVertical, MoreHorizontal, Trash2, X } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import {
   DropdownMenu,
@@ -101,8 +101,36 @@ const KanbanColumn = ({ column, cards }: { column: KanbanColumnType, cards: Kanb
     )
 }
 
+const AddColumnForm = ({ onAdd, onCancel }: { onAdd: (title: string) => void; onCancel: () => void; }) => {
+    const [title, setTitle] = useState('');
+    
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (title.trim()) {
+            onAdd(title.trim());
+            setTitle('');
+        }
+    }
+
+    return (
+        <form onSubmit={handleSubmit} className="p-3 bg-muted/60 rounded-lg space-y-2">
+            <Input 
+                autoFocus 
+                placeholder="Nome da nova coluna..." 
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+            />
+            <div className="flex items-center gap-2">
+                <Button type="submit" size="sm" className="bg-admin-primary hover:bg-admin-primary/90">Adicionar Coluna</Button>
+                <Button type="button" variant="ghost" size="icon" onClick={onCancel}><X className="h-4 w-4"/></Button>
+            </div>
+        </form>
+    );
+};
+
 export function ContentKanbanBoard() {
   const { columns, cards, loading, addColumn, moveCard } = useKanban();
+  const [isAddingColumn, setIsAddingColumn] = useState(false);
 
   const handleDragEnd = (result: any) => {
     const { destination, source, draggableId } = result;
@@ -121,11 +149,9 @@ export function ContentKanbanBoard() {
     moveCard(draggableId, source.droppableId, destination.droppableId, destination.index);
   };
   
-  const handleAddColumn = () => {
-    const title = prompt('Nome da nova coluna:');
-    if (title && title.trim()) {
-        addColumn(title.trim());
-    }
+  const handleAddColumn = (title: string) => {
+    addColumn(title);
+    setIsAddingColumn(false);
   }
 
   if (loading) {
@@ -136,7 +162,7 @@ export function ContentKanbanBoard() {
     <div className="p-1">
         <DragDropContext onDragEnd={handleDragEnd}>
             <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
-                <div className="flex gap-4 p-4">
+                <div className="flex gap-4 p-4 items-start">
                     {columns.map(column => (
                         <KanbanColumn 
                             key={column.id}
@@ -145,9 +171,13 @@ export function ContentKanbanBoard() {
                         />
                     ))}
                      <div className="w-72 flex-shrink-0">
-                        <Button variant="outline" className="w-full h-10 border-dashed" onClick={handleAddColumn}>
-                            <Plus className="mr-2 h-4 w-4"/> Adicionar nova coluna
-                        </Button>
+                        {isAddingColumn ? (
+                            <AddColumnForm onAdd={handleAddColumn} onCancel={() => setIsAddingColumn(false)} />
+                        ) : (
+                            <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setIsAddingColumn(true)}>
+                                <Plus className="mr-2 h-4 w-4"/> Adicionar nova coluna
+                            </Button>
+                        )}
                      </div>
                 </div>
             </ScrollArea>
