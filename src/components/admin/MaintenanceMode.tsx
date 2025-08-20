@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useSystemSettings, type SystemSettings } from '@/contexts/SystemSettingsContext';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Construction, Users, FileText, UserCheck } from 'lucide-react';
+import { Loader2, Construction, Users, FileText, UserCheck, Shield, Trash2, PlusCircle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
@@ -45,6 +45,93 @@ const privacySchema = z.object({
   privacyPolicyUrl: z.string().url("Por favor, insira uma URL válida.").or(z.literal('')),
 });
 type PrivacyFormValues = z.infer<typeof privacySchema>;
+
+
+function SuperAdminsCard() {
+  const { settings, loading, updateSystemSettings } = useSystemSettings();
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAddAdmin = async () => {
+    const emailToAdd = newAdminEmail.trim().toLowerCase();
+    if (!emailToAdd) return;
+    if (!z.string().email().safeParse(emailToAdd).success) {
+      toast({ title: 'E-mail inválido', variant: 'destructive' });
+      return;
+    }
+    if (settings.superAdminEmails.includes(emailToAdd)) {
+      toast({ title: 'Administrador já existe', variant: 'destructive' });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await updateSystemSettings({ superAdminEmails: [...settings.superAdminEmails, emailToAdd] });
+      toast({ title: 'Sucesso', description: `${emailToAdd} foi adicionado como Super Admin.` });
+      setNewAdminEmail('');
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Não foi possível adicionar o Super Admin.', variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  const handleRemoveAdmin = async (emailToRemove: string) => {
+    if (settings.superAdminEmails.length <= 1) {
+      toast({ title: 'Ação não permitida', description: 'Deve haver pelo menos um Super Admin.', variant: 'destructive' });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+        await updateSystemSettings({ superAdminEmails: settings.superAdminEmails.filter(email => email !== emailToRemove) });
+        toast({ title: 'Sucesso', description: `${emailToRemove} foi removido.` });
+    } catch (error) {
+        toast({ title: 'Erro', description: 'Não foi possível remover o Super Admin.', variant: 'destructive' });
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2"><Shield className="h-6 w-6"/> Gerenciar Super Admins</CardTitle>
+        <CardDescription>Adicione ou remova e-mails com permissão total de acesso ao sistema.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+            <Label>E-mails com acesso Super Admin</Label>
+            {loading ? <p>Carregando...</p> : (
+                <div className="space-y-2">
+                    {settings.superAdminEmails.map(email => (
+                        <div key={email} className="flex items-center justify-between p-2 border rounded-md bg-background">
+                            <span className="text-sm font-mono">{email}</span>
+                            <Button variant="ghost" size="icon" onClick={() => handleRemoveAdmin(email)} disabled={isSubmitting}>
+                                <Trash2 className="h-4 w-4 text-destructive"/>
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+         <div className="flex gap-2">
+            <Input 
+                type="email" 
+                placeholder="novo.admin@3a.com.br"
+                value={newAdminEmail}
+                onChange={(e) => setNewAdminEmail(e.target.value)}
+                disabled={isSubmitting}
+            />
+            <Button onClick={handleAddAdmin} disabled={isSubmitting || !newAdminEmail} className="bg-admin-primary hover:bg-admin-primary/90">
+                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                Adicionar
+            </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
 
 
 function MaintenanceCard() {
@@ -373,6 +460,7 @@ function LegalDocsCard() {
 export function MaintenanceMode() {
   return (
     <div className="space-y-6">
+      <SuperAdminsCard />
       <MaintenanceCard />
       <LegalDocsCard />
     </div>

@@ -12,8 +12,6 @@ import type { CollaboratorPermissions } from './CollaboratorsContext';
 import { useSystemSettings } from './SystemSettingsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 
-const SUPER_ADMIN_EMAILS = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
-
 const scopes = [
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/drive.readonly'
@@ -61,7 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         if (user) {
             const collaborator = collaborators.find(c => c.email === user.email);
-            const isSuper = !!user.email && SUPER_ADMIN_EMAILS.includes(user.email);
+            const isSuper = !!user.email && settings.superAdminEmails.includes(user.email);
             const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 
             if (settings.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
@@ -99,12 +97,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth, router, collaborators, loadingCollaborators, settings.maintenanceMode, settings.allowedUserIds]);
+  }, [auth, router, collaborators, loadingCollaborators, settings.maintenanceMode, settings.allowedUserIds, settings.superAdminEmails]);
 
 
   useEffect(() => {
-      if (user && !loadingCollaborators) {
-          const isSuper = !!user.email && SUPER_ADMIN_EMAILS.includes(user.email);
+      if (user && !loadingCollaborators && !loadingSettings) {
+          const isSuper = !!user.email && settings.superAdminEmails.includes(user.email);
           setIsSuperAdmin(isSuper);
 
           const currentUserCollab = collaborators.find(c => c.email === user.email);
@@ -130,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           
       }
-  }, [user, collaborators, loadingCollaborators]);
+  }, [user, collaborators, loadingCollaborators, loadingSettings, settings.superAdminEmails]);
 
   
   const signInWithGoogle = async () => {
@@ -144,7 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const email = result.user.email;
-      const isSuperAdminLogin = !!email && SUPER_ADMIN_EMAILS.includes(email);
+      const isSuperAdminLogin = !!email && settings.superAdminEmails.includes(email);
       const collaborator = collaborators.find(c => c.email === email);
       const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 

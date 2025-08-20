@@ -13,6 +13,7 @@ export interface SystemSettings {
   termsVersion: number;
   privacyPolicyUrl: string;
   privacyPolicyVersion: number;
+  superAdminEmails: string[];
 }
 
 interface SystemSettingsContextType {
@@ -34,6 +35,7 @@ const defaultSettings: SystemSettings = {
     termsVersion: 1,
     privacyPolicyUrl: '',
     privacyPolicyVersion: 1,
+    superAdminEmails: ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'],
 };
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {
