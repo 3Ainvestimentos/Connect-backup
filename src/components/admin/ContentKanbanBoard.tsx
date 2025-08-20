@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useKanban, KanbanColumnType, KanbanCardType } from '@/contexts/KanbanContext';
 import { Button } from '@/components/ui/button';
@@ -18,12 +18,14 @@ import {
 
 const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
     const { updateColumn, deleteColumn } = useKanban();
+    const [isEditing, setIsEditing] = useState(false);
+    const [title, setTitle] = useState(column.title);
 
     const handleRename = () => {
-        const newTitle = prompt('Novo nome da coluna:', column.title);
-        if (newTitle && newTitle.trim() !== '' && newTitle !== column.title) {
-            updateColumn(column.id, newTitle.trim());
+        if (title.trim() && title !== column.title) {
+            updateColumn(column.id, title.trim());
         }
+        setIsEditing(false);
     }
 
     const handleDelete = () => {
@@ -32,9 +34,24 @@ const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
         }
     }
     
+    useEffect(() => {
+        setTitle(column.title);
+    }, [column.title]);
+
     return (
         <CardHeader className="p-3 flex flex-row items-center justify-between">
-            <h3 className="font-semibold text-sm">{column.title}</h3>
+            {isEditing ? (
+                 <Input 
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onBlur={handleRename}
+                    onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+                    autoFocus
+                    className="h-8"
+                 />
+            ) : (
+                <h3 className="font-semibold text-sm cursor-pointer" onClick={() => setIsEditing(true)}>{column.title}</h3>
+            )}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-6 w-6">
@@ -42,7 +59,7 @@ const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                    <DropdownMenuItem onClick={handleRename}>Renomear</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setIsEditing(true)}>Renomear</DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDelete} className="text-destructive">Excluir</DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -69,11 +86,15 @@ const KanbanCard = ({ card, index }: { card: KanbanCardType, index: number }) =>
 
 const KanbanColumn = ({ column, cards }: { column: KanbanColumnType, cards: KanbanCardType[] }) => {
     const { addCard } = useKanban();
+    const [isAddingCard, setIsAddingCard] = useState(false);
+    const [newCardTitle, setNewCardTitle] = useState('');
+
 
     const handleAddCard = () => {
-        const title = prompt('Título do novo cartão:');
-        if (title && title.trim()) {
-            addCard({ title: title.trim(), columnId: column.id });
+        if (newCardTitle.trim()) {
+            addCard({ title: newCardTitle.trim(), columnId: column.id });
+            setNewCardTitle('');
+            setIsAddingCard(false);
         }
     }
 
@@ -92,9 +113,25 @@ const KanbanColumn = ({ column, cards }: { column: KanbanColumnType, cards: Kanb
                     )}
                 </Droppable>
                 <div className="p-3 mt-auto">
-                    <Button variant="ghost" className="w-full" onClick={handleAddCard}>
-                        <Plus className="h-4 w-4 mr-2"/> Adicionar Cartão
-                    </Button>
+                    {isAddingCard ? (
+                        <div className="space-y-2">
+                             <Input 
+                                autoFocus 
+                                placeholder="Título do novo cartão..." 
+                                value={newCardTitle}
+                                onChange={(e) => setNewCardTitle(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddCard()}
+                            />
+                            <div className="flex items-center gap-2">
+                                <Button onClick={handleAddCard} size="sm" className="bg-admin-primary hover:bg-admin-primary/90">Adicionar</Button>
+                                <Button variant="ghost" size="sm" onClick={() => setIsAddingCard(false)}>Cancelar</Button>
+                            </div>
+                        </div>
+                    ) : (
+                         <Button variant="ghost" className="w-full" onClick={() => setIsAddingCard(true)}>
+                            <Plus className="h-4 w-4 mr-2"/> Adicionar Cartão
+                        </Button>
+                    )}
                 </div>
             </Card>
         </div>
