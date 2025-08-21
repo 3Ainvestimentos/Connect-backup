@@ -165,87 +165,44 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
 
 
   const moveCardMutation = useMutation<void, Error, { cardId: string, sourceColumnId: string, destColumnId: string, newOrder: number }>({
-    onMutate: async ({ cardId, sourceColumnId, destColumnId, newOrder }) => {
-      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-      await queryClient.cancelQueries({ queryKey: [CARDS_COLLECTION] });
-      // Snapshot the previous value
-      const previousCards = queryClient.getQueryData<KanbanCardType[]>([CARDS_COLLECTION]);
-      if (!previousCards) return;
-
-      // Create new state optimistically
-      const newCards = [...previousCards];
-      const movedCard = newCards.find(c => c.id === cardId);
-      if (!movedCard) return { previousCards };
-
-      const oldOrder = movedCard.order;
-      
-      // Update card's column and temporary order
-      movedCard.columnId = destColumnId;
-      movedCard.order = newOrder;
-      
-      // Re-order source column (if different from destination)
-      if (sourceColumnId !== destColumnId) {
-        newCards
-          .filter(c => c.columnId === sourceColumnId && c.order > oldOrder)
-          .forEach(c => c.order--);
-      }
-      
-      // Re-order destination column
-      newCards
-        .filter(c => c.columnId === destColumnId && c.id !== cardId && c.order >= newOrder)
-        .forEach(c => c.order++);
-
-      // Optimistically update to the new state
-      queryClient.setQueryData<KanbanCardType[]>([CARDS_COLLECTION], newCards);
-
-      return { previousCards };
-    },
     mutationFn: async ({ cardId, sourceColumnId, destColumnId, newOrder }) => {
-        const db = getFirestore(getFirebaseApp());
-        const batch = writeBatch(db);
-        const allCards = queryClient.getQueryData<KanbanCardType[]>([CARDS_COLLECTION]) || cards;
-        
-        const movedCard = allCards.find(c => c.id === cardId);
-        if (!movedCard) throw new Error("Card not found");
+      const db = getFirestore(getFirebaseApp());
+      const batch = writeBatch(db);
 
-        const oldOrder = movedCard.order;
-        
-        // Update moved card
-        const movedCardRef = doc(db, CARDS_COLLECTION, cardId);
-        batch.update(movedCardRef, { columnId: destColumnId, order: newOrder });
+      const allCards = queryClient.getQueryData<KanbanCardType[]>([CARDS_COLLECTION]) || cards;
+      
+      const cardToMove = allCards.find(c => c.id === cardId);
+      if (!cardToMove) throw new Error("Card not found");
 
-        if (sourceColumnId === destColumnId) {
-          // Same column movement
-          if (newOrder < oldOrder) { // Moved up
-            allCards.filter(c => c.columnId === sourceColumnId && c.order >= newOrder && c.order < oldOrder)
-                    .forEach(c => batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order + 1 }));
-          } else { // Moved down
-            allCards.filter(c => c.columnId === sourceColumnId && c.order > oldOrder && c.order <= newOrder)
-                    .forEach(c => batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order - 1 }));
-          }
-        } else {
-          // Movement to a different column
-          // 1. Shift cards in the destination column
-          allCards.filter(c => c.columnId === destColumnId && c.order >= newOrder)
-                  .forEach(c => batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order + 1 }));
+      // Update the moved card itself
+      const cardRef = doc(db, CARDS_COLLECTION, cardId);
+      batch.update(cardRef, { columnId: destColumnId, order: newOrder });
 
-          // 2. Shift cards in the source column
-          allCards.filter(c => c.columnId === sourceColumnId && c.order > oldOrder)
-                  .forEach(c => batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order - 1 }));
-        }
+      // Adjust order in the destination column
+      allCards
+        .filter(c => c.columnId === destColumnId && c.order >= newOrder)
+        .forEach(c => {
+          batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order + 1 });
+        });
 
-        await batch.commit();
+      // Adjust order in the source column
+      if (sourceColumnId !== destColumnId) {
+        allCards
+          .filter(c => c.columnId === sourceColumnId && c.order > cardToMove.order)
+          .forEach(c => {
+            batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order - 1 });
+          });
+      }
+
+      await batch.commit();
     },
-    onError: (err, variables, context) => {
-        // Rollback on error
-        if (context?.previousCards) {
-            queryClient.setQueryData([CARDS_COLLECTION], context.previousCards);
-        }
-        toast({ title: 'Erro ao Mover', description: 'Não foi possível salvar a nova posição do cartão.', variant: 'destructive'});
-    },
-    onSettled: () => {
-        // Always refetch after error or success to ensure data consistency
+    onSuccess: () => {
+        // The listener will handle the UI update, but invalidating ensures consistency.
         queryClient.invalidateQueries({ queryKey: [CARDS_COLLECTION] });
+    },
+    onError: (err) => {
+        console.error("Failed to move card:", err);
+        toast({ title: 'Erro ao Mover', description: 'Não foi possível salvar a nova posição do cartão.', variant: 'destructive'});
     },
   });
   
@@ -286,4 +243,3 @@ export const useKanban = (): KanbanContextType => {
   }
   return context;
 };
-
