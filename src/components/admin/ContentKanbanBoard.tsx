@@ -2,8 +2,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useKanban, KanbanColumnType, KanbanCardType, KanbanComment } from '@/contexts/KanbanContext';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
@@ -12,12 +13,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from '@/hooks/use-toast';
 import { uploadFile } from '@/lib/firestore-service';
 import Image from 'next/image';
@@ -441,25 +436,74 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
 }
 
 export function ContentKanbanBoard() {
-  const { columns, cards, loading, addColumn, moveCard } = useKanban();
+  const { columns, cards, loading, addColumn, moveCardMutation } = useKanban();
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [editingCard, setEditingCard] = useState<KanbanCardType | null>(null);
+  const queryClient = useQueryClient();
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = async (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
-    if (!destination) {
-      return;
-    }
+    if (!destination) return;
+    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    
+    const allCards = queryClient.getQueryData<KanbanCardType[]>(['content_kanban_cards']) || cards;
+    const movedCard = allCards.find(c => c.id === draggableId);
+    if (!movedCard) return;
 
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
+    // --- Optimistic Update Logic ---
+    const previousCards = [...allCards];
+    
+    // Create new state for optimistic update
+    const newCardsState = allCards.filter(c => c.id !== draggableId);
+    let reorderedCards = [...newCardsState];
 
-    moveCard(draggableId, source.droppableId, destination.droppableId, destination.index);
+    // Remove from old position
+    const sourceColumnCards = reorderedCards
+      .filter(c => c.columnId === source.droppableId)
+      .sort((a,b) => a.order - b.order);
+      
+    // Insert into new position
+    const destColumnCards = reorderedCards
+      .filter(c => c.columnId === destination.droppableId)
+      .sort((a,b) => a.order - b.order);
+
+    const newOptimisticCard = { ...movedCard, columnId: destination.droppableId, order: destination.index };
+    destColumnCards.splice(destination.index, 0, newOptimisticCard);
+    
+    const finalOptimisticState = [
+        ...allCards.filter(c => c.id !== draggableId && c.columnId !== source.droppableId && c.columnId !== destination.droppableId),
+        ...sourceColumnCards.map((c, i) => ({...c, order: i})),
+        ...destColumnCards.map((c, i) => ({...c, order: i})),
+    ];
+    
+    queryClient.setQueryData(['content_kanban_cards'], finalOptimisticState);
+
+    // --- Firestore Update Logic ---
+    const updates: Partial<KanbanCardType> = { columnId: destination.droppableId, order: destination.index };
+    const reorderOperations: { cardId: string, newOrder: number }[] = [];
+
+    // Reorder destination column
+    destColumnCards.forEach((card, index) => {
+        if (card.order !== index) {
+            reorderOperations.push({ cardId: card.id, newOrder: index });
+        }
+    });
+    
+    // Reorder source column (if different)
+    if (source.droppableId !== destination.droppableId) {
+        sourceColumnCards.forEach((card, index) => {
+            if (card.order !== index) {
+                reorderOperations.push({ cardId: card.id, newOrder: index });
+            }
+        });
+    }
+    
+    try {
+        await moveCardMutation.mutateAsync({ cardId: draggableId, updates, reorderOperations });
+    } catch (error) {
+        queryClient.setQueryData(['content_kanban_cards'], previousCards);
+    }
   };
   
   const handleAddColumn = (title: string) => {

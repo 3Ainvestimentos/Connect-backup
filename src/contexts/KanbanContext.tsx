@@ -59,8 +59,7 @@ interface KanbanContextType {
   updateCard: (id: string, cardData: Partial<Omit<KanbanCardType, 'id'>>) => Promise<void>;
   deleteCardMutation: UseMutationResult<void, Error, string, unknown>;
   addCommentToCard: (cardId: string, comment: Omit<KanbanComment, 'id'>) => Promise<void>;
-  moveCard: (cardId: string, sourceColumnId: string, destColumnId: string, newOrder: number) => Promise<void>;
-  reorderColumn: (columnId: string, newOrder: number) => Promise<void>;
+  moveCardMutation: UseMutationResult<void, Error, { cardId: string; updates: Partial<KanbanCardType>; reorderOperations: { cardId: string; newOrder: number }[] }, unknown>;
 }
 
 const KanbanContext = createContext<KanbanContextType | undefined>(undefined);
@@ -164,55 +163,32 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
   });
 
 
-  const moveCardMutation = useMutation<void, Error, { cardId: string, sourceColumnId: string, destColumnId: string, newOrder: number }>({
-    mutationFn: async ({ cardId, sourceColumnId, destColumnId, newOrder }) => {
-      const db = getFirestore(getFirebaseApp());
-      const batch = writeBatch(db);
+  const moveCardMutation = useMutation<void, Error, { cardId: string, updates: Partial<KanbanCardType>, reorderOperations: { cardId: string, newOrder: number }[] }>({
+        mutationFn: async ({ cardId, updates, reorderOperations }) => {
+            const db = getFirestore(getFirebaseApp());
+            const batch = writeBatch(db);
+            
+            const cardRef = doc(db, CARDS_COLLECTION, cardId);
+            batch.update(cardRef, updates);
 
-      const allCards = queryClient.getQueryData<KanbanCardType[]>([CARDS_COLLECTION]) || cards;
-      
-      const cardToMove = allCards.find(c => c.id === cardId);
-      if (!cardToMove) throw new Error("Card not found");
+            reorderOperations.forEach(op => {
+                const opCardRef = doc(db, CARDS_COLLECTION, op.cardId);
+                batch.update(opCardRef, { order: op.newOrder });
+            });
 
-      // Update the moved card itself
-      const cardRef = doc(db, CARDS_COLLECTION, cardId);
-      batch.update(cardRef, { columnId: destColumnId, order: newOrder });
-
-      // Adjust order in the destination column
-      allCards
-        .filter(c => c.columnId === destColumnId && c.order >= newOrder)
-        .forEach(c => {
-          batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order + 1 });
-        });
-
-      // Adjust order in the source column
-      if (sourceColumnId !== destColumnId) {
-        allCards
-          .filter(c => c.columnId === sourceColumnId && c.order > cardToMove.order)
-          .forEach(c => {
-            batch.update(doc(db, CARDS_COLLECTION, c.id), { order: c.order - 1 });
-          });
-      }
-
-      await batch.commit();
-    },
-    onSuccess: () => {
-        // The listener will handle the UI update, but invalidating ensures consistency.
-        queryClient.invalidateQueries({ queryKey: [CARDS_COLLECTION] });
-    },
-    onError: (err) => {
-        console.error("Failed to move card:", err);
-        toast({ title: 'Erro ao Mover', description: 'Não foi possível salvar a nova posição do cartão.', variant: 'destructive'});
-    },
-  });
-  
-   const reorderColumnMutation = useMutation<void, Error, { columnId: string, newOrder: number }>({
-        mutationFn: async ({ columnId, newOrder }) => {
-            await updateDocumentInCollection(COLUMNS_COLLECTION, columnId, { order: newOrder });
+            await batch.commit();
         },
-        onSuccess: () => queryClient.invalidateQueries({ queryKey: [COLUMNS_COLLECTION] }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [CARDS_COLLECTION] });
+        },
+        onError: (err, newMove, context: any) => {
+             if (context?.previousCards) {
+                queryClient.setQueryData([CARDS_COLLECTION], context.previousCards);
+             }
+             toast({ title: 'Erro ao Mover', description: 'Não foi possível salvar a nova posição do cartão. O quadro foi revertido.', variant: 'destructive'});
+        },
     });
-
+  
 
   const value = useMemo(() => ({
     columns,
@@ -225,9 +201,8 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
     updateCard: (id, cardData) => updateCardMutation.mutateAsync({ id, data: cardData }),
     deleteCardMutation,
     addCommentToCard: (cardId, comment) => addCommentMutation.mutateAsync({ cardId, comment }),
-    moveCard: (cardId, sourceColumnId, destColumnId, newOrder) => moveCardMutation.mutateAsync({ cardId, sourceColumnId, destColumnId, newOrder }),
-    reorderColumn: (columnId, newOrder) => reorderColumnMutation.mutateAsync({ columnId, newOrder }),
-  }), [columns, cards, loadingColumns, loadingCards, addColumnMutation, updateColumnMutation, deleteColumnMutation, addCardMutation, updateCardMutation, deleteCardMutation, addCommentMutation, moveCardMutation, reorderColumnMutation]);
+    moveCardMutation,
+  }), [columns, cards, loadingColumns, loadingCards, addColumnMutation, updateColumnMutation, deleteColumnMutation, addCardMutation, updateCardMutation, deleteCardMutation, addCommentMutation, moveCardMutation]);
 
   return (
     <KanbanContext.Provider value={value}>
