@@ -2,15 +2,14 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useKanban, KanbanColumnType, KanbanCardType, KanbanComment } from '@/contexts/KanbanContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
-import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2, Newspaper, File, FlaskConical, MessageSquare, Link, Vote, Award, MessageCircle, Send, Edit } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Plus, MoreHorizontal, Trash2, X, FileText, Paperclip, Loader2, Newspaper, File, FlaskConical, MessageSquare, Link, Vote, Award, MessageCircle, Send, Edit, List } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
@@ -33,6 +32,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 
 const contentTypes = [
     { value: 'news', label: 'Notícias', icon: Newspaper },
@@ -44,176 +45,6 @@ const contentTypes = [
     { value: 'rankings', label: 'Rankings', icon: Award },
 ];
 
-
-const ColumnHeader = ({ column }: { column: KanbanColumnType }) => {
-    const { updateColumn, deleteColumn } = useKanban();
-    const [isEditing, setIsEditing] = useState(false);
-    const [title, setTitle] = useState(column.title);
-
-    const handleRename = () => {
-        if (title.trim() && title !== column.title) {
-            updateColumn(column.id, title.trim());
-        }
-        setIsEditing(false);
-    }
-
-    const handleDelete = () => {
-        if (window.confirm(`Tem certeza que deseja excluir a coluna "${column.title}" e todos os seus cartões?`)) {
-            deleteColumn(column.id);
-        }
-    }
-    
-    useEffect(() => {
-        setTitle(column.title);
-    }, [column.title]);
-
-    return (
-        <CardHeader className="p-3 flex flex-row items-center justify-between">
-            {isEditing ? (
-                 <Input 
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    onBlur={handleRename}
-                    onKeyDown={(e) => e.key === 'Enter' && handleRename()}
-                    autoFocus
-                    className="h-8"
-                 />
-            ) : (
-                <h3 className="font-semibold text-sm cursor-pointer" onClick={() => setIsEditing(true)}>{column.title}</h3>
-            )}
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-destructive/10">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setIsEditing(true)}>Renomear</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDelete} className="text-destructive">Excluir</DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </CardHeader>
-    )
-}
-
-
-const KanbanCard = ({ card, index, onCardClick }: { card: KanbanCardType, index: number, onCardClick: (card: KanbanCardType) => void }) => {
-    const contentTypeInfo = contentTypes.find(ct => ct.value === card.contentType);
-    const Icon = contentTypeInfo ? contentTypeInfo.icon : FileText;
-
-    return (
-        <Draggable draggableId={card.id} index={index}>
-            {(provided) => (
-                <div 
-                    ref={provided.innerRef} 
-                    {...provided.draggableProps} 
-                    {...provided.dragHandleProps} 
-                    className="mb-2"
-                    onClick={() => onCardClick(card)}
-                >
-                    <Card className="hover:bg-muted/80 cursor-pointer shadow-sm">
-                        <CardContent className="p-3 text-sm whitespace-pre-wrap break-words">
-                           {card.title}
-                        </CardContent>
-                        <CardFooter className="p-2 pt-0 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                {card.comments && card.comments.length > 0 && <MessageCircle className="h-4 w-4 text-muted-foreground" title={`${card.comments.length} comentário(s)`}/>}
-                                {card.mediaUrl && <Paperclip className="h-4 w-4 text-muted-foreground" title="Contém anexo"/>}
-                            </div>
-                            {contentTypeInfo && (
-                                <Badge variant="outline" className="flex items-center gap-1">
-                                    <Icon className="h-3 w-3" />
-                                    <span className="text-xs">{contentTypeInfo.label}</span>
-                                </Badge>
-                            )}
-                        </CardFooter>
-                    </Card>
-                </div>
-            )}
-        </Draggable>
-    )
-}
-
-const KanbanColumn = ({ column, cards, onCardClick }: { column: KanbanColumnType, cards: KanbanCardType[], onCardClick: (card: KanbanCardType) => void }) => {
-    const { addCard } = useKanban();
-    const [isAddingCard, setIsAddingCard] = useState(false);
-    const [newCardTitle, setNewCardTitle] = useState('');
-
-
-    const handleAddCard = () => {
-        if (newCardTitle.trim()) {
-            addCard({ title: newCardTitle.trim(), columnId: column.id });
-            setNewCardTitle('');
-            setIsAddingCard(false);
-        }
-    }
-
-    return (
-        <div className="w-72 flex-shrink-0">
-            <Card className="bg-muted/50 h-full flex flex-col">
-                <ColumnHeader column={column} />
-                <Droppable droppableId={column.id} type="card">
-                    {(provided) => (
-                        <ScrollArea className="flex-grow">
-                            <div ref={provided.innerRef} {...provided.droppableProps} className="p-3 pt-0 min-h-[100px]">
-                                {cards.sort((a,b) => a.order - b.order).map((card, index) => <KanbanCard key={card.id} card={card} index={index} onCardClick={onCardClick}/>)}
-                                {provided.placeholder}
-                            </div>
-                        </ScrollArea>
-                    )}
-                </Droppable>
-                <div className="p-3 mt-auto">
-                    {isAddingCard ? (
-                        <div className="space-y-2">
-                             <Input 
-                                autoFocus 
-                                placeholder="Título do novo cartão..." 
-                                value={newCardTitle}
-                                onChange={(e) => setNewCardTitle(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleAddCard()}
-                            />
-                            <div className="flex items-center gap-2">
-                                <Button onClick={handleAddCard} size="sm" className="bg-admin-primary hover:bg-admin-primary/90">Adicionar</Button>
-                                <Button variant="ghost" size="sm" onClick={() => setIsAddingCard(false)} className="hover:bg-destructive/10 hover:text-destructive">Cancelar</Button>
-                            </div>
-                        </div>
-                    ) : (
-                         <Button variant="ghost" className="w-full hover:bg-green-500/20 text-green-700 dark:hover:text-green-400" onClick={() => setIsAddingCard(true)}>
-                            <Plus className="h-4 w-4 mr-2"/> Adicionar Cartão
-                        </Button>
-                    )}
-                </div>
-            </Card>
-        </div>
-    )
-}
-
-const AddColumnForm = ({ onAdd, onCancel }: { onAdd: (title: string) => void; onCancel: () => void; }) => {
-    const [title, setTitle] = useState('');
-    
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (title.trim()) {
-            onAdd(title.trim());
-            setTitle('');
-        }
-    }
-
-    return (
-        <form onSubmit={handleSubmit} className="p-3 bg-muted/60 rounded-lg space-y-2">
-            <Input 
-                autoFocus 
-                placeholder="Nome da nova coluna..." 
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-            />
-            <div className="flex items-center gap-2">
-                <Button type="submit" size="sm" className="bg-admin-primary hover:bg-admin-primary/90">Adicionar Coluna</Button>
-                <Button type="button" variant="ghost" size="icon" onClick={onCancel}><X className="h-4 w-4"/></Button>
-            </div>
-        </form>
-    );
-};
 
 const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | null, isOpen: boolean, onClose: () => void }) => {
     const { user } = useAuth();
@@ -442,150 +273,83 @@ const CardDetailsModal = ({ card, isOpen, onClose }: { card: KanbanCardType | nu
 }
 
 export function ContentKanbanBoard() {
-  const { columns, cards, loading, addColumn, moveCardMutation } = useKanban();
-  const [isAddingColumn, setIsAddingColumn] = useState(false);
+  const { columns, cards, loading, addCard } = useKanban();
   const [editingCard, setEditingCard] = useState<KanbanCardType | null>(null);
-  const queryClient = useQueryClient();
-
-  const handleDragEnd = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-
-    if (!destination) {
-      return;
+  const [isAddingCard, setIsAddingCard] = useState(false);
+  const [newCardTitle, setNewCardTitle] = useState('');
+  
+  const handleAddCard = () => {
+    if (newCardTitle.trim() && columns.length > 0) {
+      addCard({ title: newCardTitle.trim(), columnId: columns[0].id });
+      setNewCardTitle('');
+      setIsAddingCard(false);
     }
-
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
-    
-    // --- Logic for reordering cards ---
-    const allCards = queryClient.getQueryData<KanbanCardType[]>(['content_kanban_cards']) || cards;
-    
-    // Cards in the source and destination columns
-    const sourceColumnCards = allCards
-      .filter(card => card.columnId === source.droppableId)
-      .sort((a, b) => a.order - b.order);
-      
-    const destColumnCards = allCards
-      .filter(card => card.columnId === destination.droppableId)
-      .sort((a, b) => a.order - b.order);
-
-    const movedCard = sourceColumnCards.find(card => card.id === draggableId);
-    if (!movedCard) return;
-
-    // --- Start Optimistic Update ---
-    const previousCards = [...allCards];
-    
-    // Temporarily remove the card
-    const tempCards = allCards.filter(c => c.id !== draggableId);
-
-    // Re-create the source column without the moved card
-    const newSourceColumn = tempCards
-      .filter(c => c.columnId === source.droppableId)
-      .map((c, index) => ({...c, order: index}));
-
-    // Create the destination column
-    let newDestColumn: KanbanCardType[];
-    if (source.droppableId === destination.droppableId) {
-        // Reordering within the same column
-        const reordered = Array.from(newSourceColumn);
-        reordered.splice(destination.index, 0, { ...movedCard, order: -1 }); // Temp order
-        newDestColumn = reordered.map((c, index) => ({ ...c, order: index }));
-    } else {
-        // Moving to a different column
-        const tempDestCards = tempCards.filter(c => c.columnId === destination.droppableId);
-        tempDestCards.splice(destination.index, 0, { ...movedCard, columnId: destination.droppableId, order: -1 }); // Temp order
-        newDestColumn = tempDestCards.map((c, index) => ({ ...c, order: index }));
-    }
-
-    // Combine all cards for the optimistic update
-    const optimisticState = allCards
-        .filter(c => c.columnId !== source.droppableId && c.columnId !== destination.droppableId)
-        .concat(source.droppableId === destination.droppableId ? [] : newSourceColumn)
-        .concat(newDestColumn);
-
-    queryClient.setQueryData(['content_kanban_cards'], optimisticState);
-    // --- End Optimistic Update ---
-
-
-    // --- Prepare backend update ---
-    const reorderOperations: { cardId: string; newOrder: number }[] = [];
-
-    if (source.droppableId === destination.droppableId) {
-        newDestColumn.forEach((card, index) => {
-            if (card.order !== index) {
-                reorderOperations.push({ cardId: card.id, newOrder: index });
-            }
-        });
-    } else {
-        newSourceColumn.forEach((card, index) => {
-            if (card.order !== index) {
-                reorderOperations.push({ cardId: card.id, newOrder: index });
-            }
-        });
-        newDestColumn.forEach((card, index) => {
-            reorderOperations.push({ cardId: card.id, newOrder: index });
-        });
-    }
-
-    const updates: Partial<KanbanCardType> = {
-        columnId: destination.droppableId,
-        order: destination.index,
-    };
-    
-    // Call the mutation
-    moveCardMutation.mutate({ cardId: draggableId, updates, reorderOperations }, {
-      onError: (err, variables, context) => {
-        // On error, revert to the previous state
-        queryClient.setQueryData(['content_kanban_cards'], previousCards);
-        toast({
-          title: "Erro ao Mover",
-          description: "Não foi possível salvar a nova posição do cartão. O quadro foi revertido.",
-          variant: "destructive"
-        });
-      },
-    });
   };
 
-  
-  const handleAddColumn = (title: string) => {
-    addColumn(title);
-    setIsAddingColumn(false);
+  const getColumnName = (columnId: string) => {
+    return columns.find(c => c.id === columnId)?.title || 'N/A';
+  }
+
+  const getContentTypeInfo = (contentTypeValue?: string) => {
+     return contentTypes.find(ct => ct.value === contentTypeValue);
   }
 
   if (loading) {
-      return <p>Carregando quadro...</p>
+      return <p>Carregando pautas...</p>
   }
 
   return (
     <>
         <div className="p-1">
-            <DragDropContext onDragEnd={handleDragEnd}>
-                <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
-                    <div className="flex gap-4 p-4 items-start">
-                        {columns.map(column => (
-                            <KanbanColumn 
-                                key={column.id}
-                                column={column}
-                                cards={cards.filter(card => card.columnId === column.id)}
-                                onCardClick={(card) => setEditingCard(card)}
-                            />
-                        ))}
-                         <div className="w-72 flex-shrink-0">
-                            {isAddingColumn ? (
-                                <AddColumnForm onAdd={handleAddColumn} onCancel={() => setIsAddingColumn(false)} />
-                            ) : (
-                                <Button variant="outline" className="w-full h-10 border-dashed" onClick={() => setIsAddingColumn(true)}>
-                                    <Plus className="mr-2 h-4 w-4"/> Adicionar nova coluna
-                                </Button>
-                            )}
-                         </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><List className="h-5 w-5"/>Pautas de Conteúdo</CardTitle>
+                    <CardDescription>
+                       Lista de todas as pautas. Clique em uma para ver os detalhes ou editar.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Título da Pauta</TableHead>
+                                    <TableHead>Tipo</TableHead>
+                                    <TableHead>Status (Coluna)</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {cards.map(card => {
+                                    const contentTypeInfo = getContentTypeInfo(card.contentType);
+                                    const Icon = contentTypeInfo ? contentTypeInfo.icon : FileText;
+                                    return (
+                                        <TableRow key={card.id}>
+                                            <TableCell className="font-medium">{card.title}</TableCell>
+                                            <TableCell>
+                                                {contentTypeInfo && (
+                                                    <Badge variant="outline" className="flex items-center gap-1 w-fit">
+                                                        <Icon className="h-3 w-3" />
+                                                        <span className="text-xs">{contentTypeInfo.label}</span>
+                                                    </Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                 <Badge variant="secondary">{getColumnName(card.columnId)}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="outline" size="sm" onClick={() => setEditingCard(card)}>
+                                                    Ver / Editar
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
                     </div>
-                </ScrollArea>
-            </DragDropContext>
+                </CardContent>
+            </Card>
         </div>
          <CardDetailsModal 
             card={editingCard}
