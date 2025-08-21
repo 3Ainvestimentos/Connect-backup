@@ -27,6 +27,12 @@ import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const contentTypes = [
     { value: 'news', label: 'Notícias', icon: Newspaper },
@@ -441,70 +447,109 @@ export function ContentKanbanBoard() {
   const [editingCard, setEditingCard] = useState<KanbanCardType | null>(null);
   const queryClient = useQueryClient();
 
-  const handleDragEnd = async (result: DropResult) => {
+  const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
 
-    if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    if (!destination) {
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
     
+    // --- Logic for reordering cards ---
     const allCards = queryClient.getQueryData<KanbanCardType[]>(['content_kanban_cards']) || cards;
-    const movedCard = allCards.find(c => c.id === draggableId);
+    
+    // Cards in the source and destination columns
+    const sourceColumnCards = allCards
+      .filter(card => card.columnId === source.droppableId)
+      .sort((a, b) => a.order - b.order);
+      
+    const destColumnCards = allCards
+      .filter(card => card.columnId === destination.droppableId)
+      .sort((a, b) => a.order - b.order);
+
+    const movedCard = sourceColumnCards.find(card => card.id === draggableId);
     if (!movedCard) return;
 
-    // --- Optimistic Update Logic ---
+    // --- Start Optimistic Update ---
     const previousCards = [...allCards];
     
-    // Create new state for optimistic update
-    const newCardsState = allCards.filter(c => c.id !== draggableId);
-    let reorderedCards = [...newCardsState];
+    // Temporarily remove the card
+    const tempCards = allCards.filter(c => c.id !== draggableId);
 
-    // Remove from old position
-    const sourceColumnCards = reorderedCards
+    // Re-create the source column without the moved card
+    const newSourceColumn = tempCards
       .filter(c => c.columnId === source.droppableId)
-      .sort((a,b) => a.order - b.order);
-      
-    // Insert into new position
-    const destColumnCards = reorderedCards
-      .filter(c => c.columnId === destination.droppableId)
-      .sort((a,b) => a.order - b.order);
+      .map((c, index) => ({...c, order: index}));
 
-    const newOptimisticCard = { ...movedCard, columnId: destination.droppableId, order: destination.index };
-    destColumnCards.splice(destination.index, 0, newOptimisticCard);
-    
-    const finalOptimisticState = [
-        ...allCards.filter(c => c.id !== draggableId && c.columnId !== source.droppableId && c.columnId !== destination.droppableId),
-        ...sourceColumnCards.map((c, i) => ({...c, order: i})),
-        ...destColumnCards.map((c, i) => ({...c, order: i})),
-    ];
-    
-    queryClient.setQueryData(['content_kanban_cards'], finalOptimisticState);
+    // Create the destination column
+    let newDestColumn: KanbanCardType[];
+    if (source.droppableId === destination.droppableId) {
+        // Reordering within the same column
+        const reordered = Array.from(newSourceColumn);
+        reordered.splice(destination.index, 0, { ...movedCard, order: -1 }); // Temp order
+        newDestColumn = reordered.map((c, index) => ({ ...c, order: index }));
+    } else {
+        // Moving to a different column
+        const tempDestCards = tempCards.filter(c => c.columnId === destination.droppableId);
+        tempDestCards.splice(destination.index, 0, { ...movedCard, columnId: destination.droppableId, order: -1 }); // Temp order
+        newDestColumn = tempDestCards.map((c, index) => ({ ...c, order: index }));
+    }
 
-    // --- Firestore Update Logic ---
-    const updates: Partial<KanbanCardType> = { columnId: destination.droppableId, order: destination.index };
-    const reorderOperations: { cardId: string, newOrder: number }[] = [];
+    // Combine all cards for the optimistic update
+    const optimisticState = allCards
+        .filter(c => c.columnId !== source.droppableId && c.columnId !== destination.droppableId)
+        .concat(source.droppableId === destination.droppableId ? [] : newSourceColumn)
+        .concat(newDestColumn);
 
-    // Reorder destination column
-    destColumnCards.forEach((card, index) => {
-        if (card.order !== index) {
-            reorderOperations.push({ cardId: card.id, newOrder: index });
-        }
-    });
-    
-    // Reorder source column (if different)
-    if (source.droppableId !== destination.droppableId) {
-        sourceColumnCards.forEach((card, index) => {
+    queryClient.setQueryData(['content_kanban_cards'], optimisticState);
+    // --- End Optimistic Update ---
+
+
+    // --- Prepare backend update ---
+    const reorderOperations: { cardId: string; newOrder: number }[] = [];
+
+    if (source.droppableId === destination.droppableId) {
+        newDestColumn.forEach((card, index) => {
             if (card.order !== index) {
                 reorderOperations.push({ cardId: card.id, newOrder: index });
             }
         });
+    } else {
+        newSourceColumn.forEach((card, index) => {
+            if (card.order !== index) {
+                reorderOperations.push({ cardId: card.id, newOrder: index });
+            }
+        });
+        newDestColumn.forEach((card, index) => {
+            reorderOperations.push({ cardId: card.id, newOrder: index });
+        });
     }
+
+    const updates: Partial<KanbanCardType> = {
+        columnId: destination.droppableId,
+        order: destination.index,
+    };
     
-    try {
-        await moveCardMutation.mutateAsync({ cardId: draggableId, updates, reorderOperations });
-    } catch (error) {
+    // Call the mutation
+    moveCardMutation.mutate({ cardId: draggableId, updates, reorderOperations }, {
+      onError: (err, variables, context) => {
+        // On error, revert to the previous state
         queryClient.setQueryData(['content_kanban_cards'], previousCards);
-    }
+        toast({
+          title: "Erro ao Mover",
+          description: "Não foi possível salvar a nova posição do cartão. O quadro foi revertido.",
+          variant: "destructive"
+        });
+      },
+    });
   };
+
   
   const handleAddColumn = (title: string) => {
     addColumn(title);
