@@ -168,23 +168,53 @@ export const KanbanProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: async ({ cardId, sourceColumnId, destColumnId, newOrder }) => {
         const db = getFirestore(getFirebaseApp());
         const batch = writeBatch(db);
-        
-        const movedCardRef = doc(db, CARDS_COLLECTION, cardId);
-        batch.update(movedCardRef, { columnId: destColumnId, order: newOrder });
 
-        cards.filter(c => c.columnId === destColumnId && c.order >= newOrder).forEach(card => {
-            const cardRef = doc(db, CARDS_COLLECTION, card.id);
-            batch.update(cardRef, { order: card.order + 1 });
-        });
+        const movedCard = cards.find(c => c.id === cardId);
+        if (!movedCard) return;
 
-        cards.filter(c => c.columnId === sourceColumnId && c.order > cards.find(c => c.id === cardId)!.order).forEach(card => {
-             const cardRef = doc(db, CARDS_COLLECTION, card.id);
-             batch.update(cardRef, { order: card.order - 1 });
-        });
+        // Same column move
+        if (sourceColumnId === destColumnId) {
+            const columnCards = cards
+                .filter(c => c.columnId === sourceColumnId && c.id !== cardId)
+                .sort((a, b) => a.order - b.order);
+
+            columnCards.splice(newOrder, 0, movedCard);
+
+            columnCards.forEach((card, index) => {
+                if (card.order !== index) {
+                    const cardRef = doc(db, CARDS_COLLECTION, card.id);
+                    batch.update(cardRef, { order: index });
+                }
+            });
+        } else {
+            // Different column move
+            // 1. Update the moved card's column and order
+            const movedCardRef = doc(db, CARDS_COLLECTION, cardId);
+            batch.update(movedCardRef, { columnId: destColumnId, order: newOrder });
+
+            // 2. Shift cards down in the destination column
+            cards
+                .filter(c => c.columnId === destColumnId && c.order >= newOrder)
+                .forEach(card => {
+                    const cardRef = doc(db, CARDS_COLLECTION, card.id);
+                    batch.update(cardRef, { order: card.order + 1 });
+                });
+
+            // 3. Shift cards up in the source column
+            cards
+                .filter(c => c.columnId === sourceColumnId && c.order > movedCard.order)
+                .forEach(card => {
+                    const cardRef = doc(db, CARDS_COLLECTION, card.id);
+                    batch.update(cardRef, { order: card.order - 1 });
+                });
+        }
 
         await batch.commit();
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [CARDS_COLLECTION] }),
+    onSuccess: () => {
+      // Invalidate the query to refetch and ensure UI is in sync.
+      queryClient.invalidateQueries({ queryKey: [CARDS_COLLECTION] });
+    },
   });
   
    const reorderColumnMutation = useMutation<void, Error, { columnId: string, newOrder: number }>({
