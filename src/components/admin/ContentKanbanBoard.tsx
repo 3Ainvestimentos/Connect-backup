@@ -173,7 +173,7 @@ const KanbanColumn = ({ column, cards, onCardClick }: { column: KanbanColumnType
                             />
                             <div className="flex items-center gap-2">
                                 <Button onClick={handleAddCard} size="sm" className="bg-admin-primary hover:bg-admin-primary/90">Adicionar</Button>
-                                <Button variant="ghost" size="sm" onClick={() => setIsAddingCard(false)}>Cancelar</Button>
+                                <Button variant="ghost" size="sm" onClick={() => setIsAddingCard(false)} className="hover:bg-destructive/10 hover:text-destructive">Cancelar</Button>
                             </div>
                         </div>
                     ) : (
