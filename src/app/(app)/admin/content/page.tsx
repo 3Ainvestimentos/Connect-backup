@@ -12,10 +12,9 @@ import { ManageMessages } from '@/components/admin/ManageMessages';
 import { ManageQuickLinks } from '@/components/admin/ManageQuickLinks';
 import { ManagePolls } from '@/components/admin/ManagePolls';
 import { ManageRankings } from '@/components/admin/ManageRankings';
-import { ContentKanbanBoard } from '@/components/admin/ContentKanbanBoard';
 
 export default function AdminContentPage() {
-    const [activeTab, setActiveTab] = useState("kanban");
+    const [activeTab, setActiveTab] = useState("news");
 
     return (
         <AdminGuard>
@@ -25,8 +24,7 @@ export default function AdminContentPage() {
                     description="Gerencie as informações dinâmicas da intranet."
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
-                        <TabsTrigger value="kanban">Quadro</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="labs">Labs</TabsTrigger>
@@ -35,9 +33,6 @@ export default function AdminContentPage() {
                         <TabsTrigger value="polls">Pesquisas</TabsTrigger>
                         <TabsTrigger value="rankings">Rankings</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="kanban">
-                        <ContentKanbanBoard />
-                    </TabsContent>
                     <TabsContent value="news">
                         <ManageNews />
                     </TabsContent>
