@@ -6,6 +6,8 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 
+export type NewsStatus = 'draft' | 'approved' | 'published';
+
 export interface NewsItemType {
   id: string;
   title: string;
@@ -19,13 +21,15 @@ export interface NewsItemType {
   highlightType?: 'large' | 'small';
   link?: string;
   order: number;
+  status: NewsStatus;
 }
 
 interface NewsContextType {
   newsItems: NewsItemType[];
   loading: boolean;
-  addNewsItem: (item: Omit<NewsItemType, 'id'>) => Promise<WithId<Omit<NewsItemType, 'id'>>>;
+  addNewsItem: (item: Omit<NewsItemType, 'id' | 'status'>) => Promise<WithId<Omit<NewsItemType, 'id' | 'status'>>>;
   updateNewsItem: (item: Partial<NewsItemType> & { id: string }) => Promise<void>;
+  updateNewsStatus: (id: string, status: NewsStatus) => Promise<void>;
   deleteNewsItemMutation: UseMutationResult<void, Error, string, unknown>;
   toggleNewsHighlight: (id: string) => void;
   updateHighlightType: (id: string, type: 'large' | 'small') => void;
@@ -41,7 +45,11 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: async () => [], // The listener will populate the data
     staleTime: Infinity,
-    select: (data) => data.sort((a, b) => (a.order || 0) - (b.order || 0)),
+    select: (data) => data.map(item => ({
+      ...item,
+      order: item.order ?? 0,
+      status: item.status || 'published', // Fallback for old items
+    })).sort((a, b) => a.order - b.order),
   });
 
   React.useEffect(() => {
@@ -50,7 +58,8 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
       (newData) => {
         const processedData = newData.map(item => ({
           ...item,
-          order: item.order ?? 0, // Ensure order exists
+          order: item.order ?? 0,
+          status: item.status || 'published',
         })).sort((a, b) => a.order - b.order);
         queryClient.setQueryData([COLLECTION_NAME], processedData);
       },
@@ -64,8 +73,12 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
     mutationFn: (itemData) => {
         const currentMaxOrder = newsItems.reduce((max, item) => Math.max(max, item.order || 0), 0);
-        const dataWithOrder = { ...itemData, order: currentMaxOrder + 1 };
-        return addDocumentToCollection(COLLECTION_NAME, dataWithOrder);
+        const dataWithDefaults = { 
+            ...itemData, 
+            status: 'draft' as NewsStatus,
+            order: currentMaxOrder + 1 
+        };
+        return addDocumentToCollection(COLLECTION_NAME, dataWithDefaults);
     },
     onSuccess: () => {},
   });
@@ -83,9 +96,23 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     onSuccess: () => {},
   });
 
+  const updateNewsStatus = useCallback(async (id: string, status: NewsStatus) => {
+    await updateNewsItemMutation.mutateAsync({ id, status });
+  }, [updateNewsItemMutation]);
+
+
   const toggleNewsHighlight = useCallback((id: string) => {
     const targetNews = newsItems.find(n => n.id === id);
     if (!targetNews) return;
+
+    if (targetNews.status !== 'published') {
+      toast({
+        title: "Ação não permitida",
+        description: "Apenas notícias publicadas podem ser colocadas em destaque.",
+        variant: "destructive"
+      });
+      return;
+    }
 
     const currentlyActiveCount = newsItems.filter(n => n.isHighlight && n.id !== id).length;
     if (!targetNews.isHighlight && currentlyActiveCount >= 3) {
@@ -128,7 +155,8 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     deleteNewsItemMutation,
     toggleNewsHighlight,
     updateHighlightType,
-  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType]);
+    updateNewsStatus,
+  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus]);
 
   return (
     <NewsContext.Provider value={value}>

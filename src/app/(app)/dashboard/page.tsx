@@ -86,7 +86,7 @@ export default function DashboardV2Page() {
     return `${unreadCount} mensagens não lidas`;
   }, [unreadCount]);
 
-  const activeHighlights = useMemo(() => newsItems.filter(item => item.isHighlight), [newsItems]);
+  const activeHighlights = useMemo(() => newsItems.filter(item => item.isHighlight && item.status === 'published'), [newsItems]);
 
   const largeHighlight = useMemo(() => activeHighlights.find(h => h.highlightType === 'large'), [activeHighlights]);
   const smallHighlights = useMemo(() => activeHighlights.filter(h => h.highlightType === 'small' || !h.highlightType).slice(0, 2), [activeHighlights]);
