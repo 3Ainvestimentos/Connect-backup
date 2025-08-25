@@ -1,4 +1,3 @@
-
 import {
   LucideIcon,
   UserCircle,
@@ -107,6 +106,9 @@ import {
   Zap,
 } from 'lucide-react';
 
+// This file should remain a server-side utility to avoid circular dependencies.
+// Do not add "use client" here.
+
 export const iconMap: Record<string, LucideIcon> = {
   UserCircle,
   Briefcase,
@@ -213,8 +215,6 @@ export const iconMap: Record<string, LucideIcon> = {
   Wrench,
   Zap,
 };
-
-export const iconList = Object.keys(iconMap).sort();
 
 export const getIcon = (name: string): LucideIcon => {
     return iconMap[name] || HelpCircle; // Return HelpCircle as a fallback

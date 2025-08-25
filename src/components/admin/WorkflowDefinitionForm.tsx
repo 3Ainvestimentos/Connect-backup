@@ -15,7 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User, ShieldCheck, Users, FolderOpen } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
-import { iconList, getIcon } from '@/lib/icons';
+import { getIcon } from '@/lib/icons';
+import { iconList } from '@/lib/icon-list';
 import { Switch } from '../ui/switch';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
