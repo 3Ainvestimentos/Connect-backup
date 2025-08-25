@@ -745,7 +745,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         key={nextStatus?.id || 'no-next-status'}
                         className="bg-admin-primary hover:bg-admin-primary/90"
                         onClick={() => nextStatus && handleGenericAction((c) => handleStatusChange(nextStatus, c))} 
-                        disabled={isSubmitting || !nextStatus}
+                        disabled={isSubmitting || !nextStatus || hasPendingActions}
                     >
                         {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus?.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -797,4 +797,3 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   );
 }
 
-```
