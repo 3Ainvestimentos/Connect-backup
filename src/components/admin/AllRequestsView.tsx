@@ -11,13 +11,15 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ListChecks, User, Search, FileDown, ChevronUp, ChevronDown, Archive, Eye } from 'lucide-react';
+import { ListChecks, User, Search, FileDown, ChevronUp, ChevronDown, Archive, Eye, Filter } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import Papa from 'papaparse';
 import { cn } from '@/lib/utils';
 import { RequestApprovalModal } from '../requests/RequestApprovalModal';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { ScrollArea } from '../ui/scroll-area';
 
 type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | 'isArchived' | '';
 type SortDirection = 'asc' | 'desc';
@@ -31,6 +33,12 @@ export function AllRequestsView() {
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [showArchived, setShowArchived] = useState(false);
     const [viewingRequest, setViewingRequest] = useState<WorkflowRequest | null>(null);
+    const [ownerFilter, setOwnerFilter] = useState<string[]>([]);
+
+    const uniqueOwners = useMemo(() => {
+        const ownerEmails = new Set(requests.map(req => req.ownerEmail));
+        return collaborators.filter(c => ownerEmails.has(c.email));
+    }, [requests, collaborators]);
 
     const filteredAndSortedRequests = useMemo(() => {
         let items = [...requests];
@@ -50,6 +58,10 @@ export function AllRequestsView() {
             );
         }
         
+        if (ownerFilter.length > 0) {
+            items = items.filter(req => ownerFilter.includes(req.ownerEmail));
+        }
+
         if (sortKey) {
             items.sort((a, b) => {
                 let valA: any, valB: any;
@@ -92,7 +104,7 @@ export function AllRequestsView() {
         }
 
         return items;
-    }, [requests, searchTerm, sortKey, sortDirection, showArchived]);
+    }, [requests, searchTerm, sortKey, sortDirection, showArchived, ownerFilter]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -103,6 +115,12 @@ export function AllRequestsView() {
         }
     };
     
+    const handleOwnerFilterChange = (email: string) => {
+        setOwnerFilter(prev => 
+            prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]
+        );
+    };
+
     const getStatusLabel = (request: WorkflowRequest) => {
         const definition = workflowDefinitions.find(d => d.name === request.type);
         const status = definition?.statuses.find(s => s.id === request.status);
@@ -177,7 +195,7 @@ export function AllRequestsView() {
                                 {filteredAndSortedRequests.length} solicitação(ões) encontrada(s) em todo o sistema.
                             </CardDescription>
                         </div>
-                        <div className="flex w-full sm:w-auto gap-2">
+                        <div className="flex w-full sm:w-auto flex-wrap gap-2">
                             <div className="relative flex-grow">
                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                  <Input 
@@ -187,6 +205,29 @@ export function AllRequestsView() {
                                     className="pl-10 w-full"
                                 />
                             </div>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline">
+                                        <Filter className="mr-2 h-4 w-4" />
+                                        Proprietário
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuLabel>Filtrar por Proprietário</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <ScrollArea className="max-h-60">
+                                        {uniqueOwners.map(owner => (
+                                            <DropdownMenuCheckboxItem
+                                                key={owner.id}
+                                                checked={ownerFilter.includes(owner.email)}
+                                                onCheckedChange={() => handleOwnerFilterChange(owner.email)}
+                                            >
+                                                {owner.name}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </ScrollArea>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button 
                                 variant="outline"
                                 onClick={() => setShowArchived(!showArchived)}
