@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Star, Eye } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Star, Eye, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -262,7 +263,7 @@ export function ManageNews() {
                           <div className="mt-4">
                             <Button variant="outline" asChild>
                               <a href={previewingNews.link} target="_blank" rel="noopener noreferrer">
-                                <Link className="mr-2 h-4 w-4" />
+                                <LinkIcon className="mr-2 h-4 w-4" />
                                 Acessar Link
                               </a>
                             </Button>
