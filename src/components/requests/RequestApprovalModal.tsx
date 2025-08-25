@@ -218,10 +218,12 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (response === 'executed' && actionDef?.type === 'execution') {
         if (actionDef.commentRequired && !comment.trim()) {
             toast({ title: "Erro de Validação", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
+            setActionResponse(null); // Reset for next attempt
             return;
         }
         if (actionDef.attachmentRequired && !attachment) {
             toast({ title: "Erro de Validação", description: "O anexo é obrigatório para esta ação.", variant: "destructive" });
+            setActionResponse(null);
             return;
         }
     }
@@ -242,6 +244,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     } catch (e) {
         toast({ title: "Erro de Upload", description: "Não foi possível enviar o anexo. A ação foi cancelada.", variant: "destructive"});
         setIsSubmitting(false);
+        setActionType(null);
+        setActionResponse(null);
         return;
     }
     
@@ -735,7 +739,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
-                {(canTakeAction) && (
+                {canTakeAction && (
                      <Button 
                         key={nextStatus?.id || 'no-next-status'}
                         className="bg-admin-primary hover:bg-admin-primary/90"
