@@ -213,22 +213,21 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     setActionResponse(response);
     if (!user || !adminUser || !currentUserActionRequest) return;
     
-    setIsSubmitting(true);
-    
     const actionDef = currentStatusDefinition?.action;
     
+    // Perform validation before setting submitting state
     if (response === 'executed' && actionDef?.type === 'execution') {
         if (actionDef.commentRequired && !currentComment.trim()) {
             toast({ title: "Erro de Validação", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
+            return; // Exit before setting submitting state
         }
         if (actionDef.attachmentRequired && !attachment) {
             toast({ title: "Erro de Validação", description: "O anexo é obrigatório para esta ação.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
+            return; // Exit before setting submitting state
         }
     }
+    
+    setIsSubmitting(true);
     
     const now = new Date();
     const actionLabel = actionStatusPastTense[response] || 'Processada';
@@ -756,7 +755,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         Mover para "{nextStatus?.label || 'Etapa Final'}"
                     </Button>
                 )}
-                {canTakeAction && currentStatusDefinition?.action?.type === 'acknowledgement' && (
+                {canTakeAction && currentStatusDefinition?.action?.type && (
                     <Button 
                         variant="outline" 
                         size="sm"
@@ -764,7 +763,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         disabled={isSubmitting}
                     >
                         <Send className="mr-2 h-4 w-4"/>
-                        Solicitar Ciência
+                        Solicitar Ação
                     </Button>
                 )}
             </div>
@@ -797,3 +796,5 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
+```
