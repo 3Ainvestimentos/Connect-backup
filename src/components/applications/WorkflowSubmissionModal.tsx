@@ -156,7 +156,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                   name={field.id}
                   control={control}
                   rules={{ required: field.required && !fileFields[field.id] ? 'Este anexo é obrigatório.' : false }}
-                  render={({ field: { onChange, ...rest } }) => (
+                  render={({ field: { onChange, value, ...rest } }) => ( // We destructure `value` here to exclude it from `rest`
                      <Input 
                       id={field.id} 
                       type="file" 
@@ -166,7 +166,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                       }} 
                       className="pl-10" 
                       disabled={isSubmitting}
-                      {...rest}
+                      {...rest} // Pass the rest of the props without `value`
                      />
                   )}
                 />
