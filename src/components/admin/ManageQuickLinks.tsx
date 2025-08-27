@@ -94,7 +94,7 @@ export function ManageQuickLinks() {
         try {
             let imageUrl = typeof data.imageUrl === 'string' ? data.imageUrl : '';
             if (data.imageUrl instanceof File) {
-                imageUrl = await uploadFile(data.imageUrl, `quicklink_${Date.now()}`, data.imageUrl.name, STORAGE_PATH_QUICKLINKS);
+                imageUrl = await uploadFile(data.imageUrl, STORAGE_PATH_QUICKLINKS);
             }
 
             const submissionData = { ...data, imageUrl };

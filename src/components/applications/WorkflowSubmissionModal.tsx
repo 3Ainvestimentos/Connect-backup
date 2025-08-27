@@ -98,7 +98,10 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
 
         const fileUploadPromises = Object.entries(fileFields).map(([fieldId, file]) => {
             if (file) {
-                return uploadFile(file, newRequest.id, file.name, storagePath);
+                if (!storagePath) {
+                    throw new Error(`A área de workflow para "${workflowDefinition.name}" não tem uma pasta de armazenamento configurada.`);
+                }
+                return uploadFile(file, storagePath);
             }
             return Promise.resolve(null);
         });
@@ -156,7 +159,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                   name={field.id}
                   control={control}
                   rules={{ required: field.required && !fileFields[field.id] ? 'Este anexo é obrigatório.' : false }}
-                  render={({ field: { onChange, value, ...rest } }) => ( // We destructure `value` here to exclude it from `rest`
+                  render={({ field: { onChange, ...rest } }) => ( 
                      <Input 
                       id={field.id} 
                       type="file" 
@@ -166,7 +169,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                       }} 
                       className="pl-10" 
                       disabled={isSubmitting}
-                      {...rest} // Pass the rest of the props without `value`
+                      {...rest} 
                      />
                   )}
                 />

@@ -72,7 +72,7 @@ export function ManageRankings() {
         try {
             let pdfUrl = typeof data.pdfUrl === 'string' ? data.pdfUrl : '';
             if (data.pdfUrl instanceof File) {
-                pdfUrl = await uploadFile(data.pdfUrl, `ranking_${Date.now()}`, data.pdfUrl.name, STORAGE_PATH_RANKINGS);
+                pdfUrl = await uploadFile(data.pdfUrl, STORAGE_PATH_RANKINGS);
             }
 
             const submissionData = { ...data, pdfUrl };

@@ -52,7 +52,7 @@ export function ManageNews() {
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
 
-    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<NewsFormValues>({
+    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
     });
     
@@ -110,10 +110,10 @@ export function ManageNews() {
             let videoUrl = typeof data.videoUrl === 'string' ? data.videoUrl : '';
 
             if (data.imageUrl instanceof File) {
-                imageUrl = await uploadFile(data.imageUrl, `news_${Date.now()}`, data.imageUrl.name, STORAGE_PATH_NEWS);
+                imageUrl = await uploadFile(data.imageUrl, STORAGE_PATH_NEWS);
             }
             if (data.videoUrl instanceof File) {
-                videoUrl = await uploadFile(data.videoUrl, `news_video_${Date.now()}`, data.videoUrl.name, STORAGE_PATH_NEWS);
+                videoUrl = await uploadFile(data.videoUrl, STORAGE_PATH_NEWS);
             }
 
             const submissionData = { ...data, imageUrl, videoUrl: videoUrl || undefined };
@@ -305,27 +305,27 @@ export function ManageNews() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
                             <div>
                                 <Label htmlFor="title">Título</Label>
-                                <Input id="title" {...register('title')} disabled={isFormSubmitting}/>
+                                <Input id="title" {...register('title')} disabled={isSubmitting}/>
                                 {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="snippet">Snippet (texto curto para o card)</Label>
-                                <Textarea id="snippet" {...register('snippet')} disabled={isFormSubmitting} rows={3}/>
+                                <Textarea id="snippet" {...register('snippet')} disabled={isSubmitting} rows={3}/>
                                 {errors.snippet && <p className="text-sm text-destructive mt-1">{errors.snippet.message}</p>}
                             </div>
                              <div>
                                 <Label htmlFor="content">Conteúdo Completo (para o modal)</Label>
-                                <Textarea id="content" {...register('content')} disabled={isFormSubmitting} rows={7}/>
+                                <Textarea id="content" {...register('content')} disabled={isSubmitting} rows={7}/>
                                 {errors.content && <p className="text-sm text-destructive mt-1">{errors.content.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="category">Categoria</Label>
-                                <Input id="category" {...register('category')} disabled={isFormSubmitting}/>
+                                <Input id="category" {...register('category')} disabled={isSubmitting}/>
                                 {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="date">Data</Label>
-                                <Input id="date" type="date" {...register('date')} disabled={isFormSubmitting}/>
+                                <Input id="date" type="date" {...register('date')} disabled={isSubmitting}/>
                                 {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
                             </div>
                             <div>
@@ -337,7 +337,7 @@ export function ManageNews() {
                                             type="file"
                                             accept="image/*"
                                             onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                            disabled={isFormSubmitting}
+                                            disabled={isSubmitting}
                                         />
                                         {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
                                         {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Nova imagem selecionada: {field.value.name}</p>}
@@ -354,7 +354,7 @@ export function ManageNews() {
                                             type="file"
                                             accept="video/*"
                                             onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                            disabled={isFormSubmitting}
+                                            disabled={isSubmitting}
                                         />
                                         {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Vídeo atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Vídeo</a></p>}
                                         {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Novo vídeo selecionado: {field.value.name}</p>}
@@ -364,16 +364,16 @@ export function ManageNews() {
                             </div>
                             <div>
                                 <Label htmlFor="link">URL do Link (opcional)</Label>
-                                <Input id="link" {...register('link')} placeholder="https://..." disabled={isFormSubmitting}/>
+                                <Input id="link" {...register('link')} placeholder="https://..." disabled={isSubmitting}/>
                                 {errors.link && <p className="text-sm text-destructive mt-1">{errors.link.message}</p>}
                             </div>
                             
                             <DialogFooter className="pt-4">
                                 <DialogClose asChild>
-                                    <Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button>
+                                    <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                                 </DialogClose>
-                                <Button type="submit" disabled={isFormSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                    {isFormSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                    {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Salvar
                                 </Button>
                             </DialogFooter>

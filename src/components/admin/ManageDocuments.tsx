@@ -75,7 +75,7 @@ export function ManageDocuments() {
 
             if (data.downloadUrl instanceof File) {
                 const file = data.downloadUrl;
-                downloadUrl = await uploadFile(file, `doc_${Date.now()}`, file.name, STORAGE_PATH_DOCS);
+                downloadUrl = await uploadFile(file, STORAGE_PATH_DOCS);
                 size = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
                 lastModified = new Date().toISOString();
             }
