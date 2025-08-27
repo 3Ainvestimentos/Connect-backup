@@ -95,12 +95,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         const newRequest = await addRequest(initialRequestPayload);
 
         const storagePath = workflowArea?.storageFolderPath;
+        if (!storagePath) {
+          throw new Error(`A área de workflow para "${workflowDefinition.name}" não tem uma pasta de armazenamento configurada.`);
+        }
 
         const fileUploadPromises = Object.entries(fileFields).map(([fieldId, file]) => {
             if (file) {
-                if (!storagePath) {
-                    throw new Error(`A área de workflow para "${workflowDefinition.name}" não tem uma pasta de armazenamento configurada.`);
-                }
                 return uploadFile(file, storagePath);
             }
             return Promise.resolve(null);
@@ -137,12 +137,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       console.error("Failed to submit workflow request:", error);
       toast({ 
         title: "Erro na Solicitação", 
-        description: "Houve um erro na sua solicitação. Por favor, contate o time de TI.", 
+        description: error instanceof Error ? error.message : "Houve um erro na sua solicitação. Por favor, contate o time de TI.", 
         variant: "destructive" 
       });
       onOpenChange(false);
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(true);
     }
   };
 
@@ -159,7 +159,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                   name={field.id}
                   control={control}
                   rules={{ required: field.required && !fileFields[field.id] ? 'Este anexo é obrigatório.' : false }}
-                  render={({ field: { onChange, ...rest } }) => ( 
+                  render={({ field: { onChange, value, ...rest } }) => ( // Destructure value out
                      <Input 
                       id={field.id} 
                       type="file" 
