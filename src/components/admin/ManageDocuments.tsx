@@ -22,7 +22,6 @@ const documentSchema = z.object({
     name: z.string().min(1, "Nome é obrigatório"),
     category: z.string().min(1, "Categoria é obrigatória"),
     type: z.string().min(1, "Tipo é obrigatório"),
-    downloadUrl: z.union([z.instanceof(File), z.string().url("URL de download inválida")]),
     dataAiHint: z.string().optional(),
 });
 
@@ -33,13 +32,16 @@ export function ManageDocuments() {
     const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
+    const [documentFile, setDocumentFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<DocumentFormValues>({
+    const { register, handleSubmit, reset, control, formState: { errors } } = useForm<DocumentFormValues>({
         resolver: zodResolver(documentSchema),
     });
 
     const handleDialogOpen = (doc: DocumentType | null) => {
         setEditingDocument(doc);
+        setDocumentFile(null);
         if (doc) {
             reset(doc);
         } else {
@@ -48,7 +50,6 @@ export function ManageDocuments() {
                 name: '',
                 category: '',
                 type: '',
-                downloadUrl: '',
                 dataAiHint: '',
             });
         }
@@ -68,15 +69,21 @@ export function ManageDocuments() {
     };
     
     const onSubmit = async (data: DocumentFormValues) => {
+        setIsSubmitting(true);
         try {
-            let downloadUrl = typeof data.downloadUrl === 'string' ? data.downloadUrl : '';
+            let downloadUrl = editingDocument?.downloadUrl || '';
             let size = editingDocument?.size || '0 MB';
             let lastModified = editingDocument?.lastModified || new Date().toISOString();
 
-            if (data.downloadUrl instanceof File) {
-                const file = data.downloadUrl;
-                downloadUrl = await uploadFile(file, STORAGE_PATH_DOCS);
-                size = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            if (!editingDocument && !documentFile) {
+                 toast({ title: "Erro de Validação", description: "O arquivo é obrigatório.", variant: "destructive" });
+                 setIsSubmitting(false);
+                 return;
+            }
+
+            if (documentFile) {
+                downloadUrl = await uploadFile(documentFile, STORAGE_PATH_DOCS);
+                size = `${(documentFile.size / (1024 * 1024)).toFixed(2)} MB`;
                 lastModified = new Date().toISOString();
             }
 
@@ -96,6 +103,8 @@ export function ManageDocuments() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar o documento.",
                 variant: "destructive"
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
@@ -155,41 +164,36 @@ export function ManageDocuments() {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nome do Arquivo</Label>
-                            <Input id="name" {...register('name')} disabled={isFormSubmitting}/>
+                            <Input id="name" {...register('name')} disabled={isSubmitting}/>
                             {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="category">Categoria</Label>
-                            <Input id="category" {...register('category')} disabled={isFormSubmitting}/>
+                            <Input id="category" {...register('category')} disabled={isSubmitting}/>
                             {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="type">Tipo (ex: pdf, docx)</Label>
-                            <Input id="type" {...register('type')} disabled={isFormSubmitting}/>
+                            <Input id="type" {...register('type')} disabled={isSubmitting}/>
                             {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="downloadUrl">Arquivo</Label>
-                            <Controller name="downloadUrl" control={control} render={({ field }) => (
-                                <>
-                                    <Input
-                                        id="downloadUrl"
-                                        type="file"
-                                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                        disabled={isFormSubmitting}
-                                    />
-                                    {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Arquivo atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Arquivo</a></p>}
-                                    {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Novo arquivo selecionado: {field.value.name}</p>}
-                                </>
-                            )} />
-                            {errors.downloadUrl && <p className="text-sm text-destructive mt-1">{errors.downloadUrl.message as string}</p>}
+                            <Label htmlFor="downloadUrl">Arquivo {editingDocument ? '(Opcional: substituir)' : '*'}</Label>
+                            <Input
+                                id="downloadUrl"
+                                type="file"
+                                onChange={(e) => setDocumentFile(e.target.files ? e.target.files[0] : null)}
+                                disabled={isSubmitting}
+                            />
+                            {documentFile && <p className="text-xs text-muted-foreground mt-1">Novo arquivo selecionado: {documentFile.name}</p>}
+                            {!documentFile && editingDocument?.downloadUrl && <p className="text-xs text-muted-foreground mt-1">Arquivo atual: <a href={editingDocument.downloadUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Arquivo</a></p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
-                                <Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button>
+                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                             </DialogClose>
-                            <Button type="submit" disabled={isFormSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {isFormSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>

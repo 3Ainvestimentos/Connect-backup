@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNews } from '@/contexts/NewsContext';
 import type { NewsItemType, NewsStatus } from '@/contexts/NewsContext';
 import { Button } from '@/components/ui/button';
@@ -30,8 +30,6 @@ const newsSchema = z.object({
     content: z.string().min(10, "Conteúdo completo deve ter no mínimo 10 caracteres"),
     category: z.string().min(1, "Categoria é obrigatória"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
-    imageUrl: z.union([z.instanceof(File), z.string().url("URL da imagem inválida").or(z.literal("")), z.null()]),
-    videoUrl: z.union([z.instanceof(File), z.string().url("URL do vídeo inválida").optional().or(z.literal("")), z.null()]),
     link: z.string().optional(),
 });
 
@@ -51,8 +49,12 @@ export function ManageNews() {
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
+    
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [videoFile, setVideoFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
+    const { register, handleSubmit, reset, control, formState: { errors } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
     });
     
@@ -67,11 +69,13 @@ export function ManageNews() {
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
+        setImageFile(null);
+        setVideoFile(null);
         if (newsItem) {
             const formattedNews = {
               ...newsItem,
               date: new Date(newsItem.date).toISOString().split('T')[0],
-              videoUrl: newsItem.videoUrl || null,
+              videoUrl: newsItem.videoUrl || '',
             };
             reset(formattedNews);
         } else {
@@ -82,8 +86,6 @@ export function ManageNews() {
                 content: '',
                 category: '',
                 date: new Date().toISOString().split('T')[0],
-                imageUrl: null,
-                videoUrl: null,
                 link: '',
             });
         }
@@ -105,15 +107,22 @@ export function ManageNews() {
     };
     
     const onSubmit = async (data: NewsFormValues) => {
+        setIsSubmitting(true);
         try {
-            let imageUrl = typeof data.imageUrl === 'string' ? data.imageUrl : '';
-            let videoUrl = typeof data.videoUrl === 'string' ? data.videoUrl : '';
+            let imageUrl = editingNews?.imageUrl || '';
+            let videoUrl = editingNews?.videoUrl || '';
 
-            if (data.imageUrl instanceof File) {
-                imageUrl = await uploadFile(data.imageUrl, STORAGE_PATH_NEWS);
+            if (!editingNews && !imageFile) {
+                toast({ title: "Erro de Validação", description: "A imagem principal é obrigatória para uma nova notícia.", variant: "destructive" });
+                setIsSubmitting(false);
+                return;
             }
-            if (data.videoUrl instanceof File) {
-                videoUrl = await uploadFile(data.videoUrl, STORAGE_PATH_NEWS);
+            
+            if (imageFile) {
+                imageUrl = await uploadFile(imageFile, STORAGE_PATH_NEWS);
+            }
+            if (videoFile) {
+                videoUrl = await uploadFile(videoFile, STORAGE_PATH_NEWS);
             }
 
             const submissionData = { ...data, imageUrl, videoUrl: videoUrl || undefined };
@@ -133,6 +142,8 @@ export function ManageNews() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar a notícia.",
                 variant: "destructive"
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
@@ -329,38 +340,28 @@ export function ManageNews() {
                                 {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
                             </div>
                             <div>
-                                <Label htmlFor="imageUrl">Imagem Principal</Label>
-                                <Controller name="imageUrl" control={control} render={({ field }) => (
-                                    <>
-                                        <Input
-                                            id="imageUrl"
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                            disabled={isSubmitting}
-                                        />
-                                        {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
-                                        {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Nova imagem selecionada: {field.value.name}</p>}
-                                    </>
-                                )} />
-                                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message as string}</p>}
+                                <Label htmlFor="imageUrl">Imagem Principal {editingNews ? '(Opcional: substituir)' : '*'}</Label>
+                                <Input
+                                    id="imageUrl"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+                                    disabled={isSubmitting}
+                                />
+                                {imageFile && <p className="text-xs text-muted-foreground mt-1">Nova imagem: {imageFile.name}</p>}
+                                {!imageFile && editingNews?.imageUrl && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={editingNews.imageUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
                             </div>
                             <div>
                                 <Label htmlFor="videoUrl">Vídeo (Opcional)</Label>
-                                <Controller name="videoUrl" control={control} render={({ field }) => (
-                                    <>
-                                        <Input
-                                            id="videoUrl"
-                                            type="file"
-                                            accept="video/*"
-                                            onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                            disabled={isSubmitting}
-                                        />
-                                        {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Vídeo atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Vídeo</a></p>}
-                                        {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Novo vídeo selecionado: {field.value.name}</p>}
-                                    </>
-                                )} />
-                                {errors.videoUrl && <p className="text-sm text-destructive mt-1">{errors.videoUrl.message as string}</p>}
+                                <Input
+                                    id="videoUrl"
+                                    type="file"
+                                    accept="video/*"
+                                    onChange={(e) => setVideoFile(e.target.files ? e.target.files[0] : null)}
+                                    disabled={isSubmitting}
+                                />
+                                {videoFile && <p className="text-xs text-muted-foreground mt-1">Novo vídeo: {videoFile.name}</p>}
+                                {!videoFile && editingNews?.videoUrl && <p className="text-xs text-muted-foreground mt-1">Vídeo atual: <a href={editingNews.videoUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Vídeo</a></p>}
                             </div>
                             <div>
                                 <Label htmlFor="link">URL do Link (opcional)</Label>

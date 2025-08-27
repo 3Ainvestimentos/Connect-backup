@@ -22,10 +22,7 @@ import { Switch } from '../ui/switch';
 import Image from 'next/image';
 import { uploadFile } from '@/lib/firestore-service';
 
-const formSchema = quickLinkSchema.extend({
-    imageUrl: z.union([z.instanceof(File), z.string().url("Por favor, insira uma URL de imagem válida.")]),
-});
-
+const formSchema = quickLinkSchema;
 type QuickLinkFormValues = z.infer<typeof formSchema>;
 const STORAGE_PATH_QUICKLINKS = "Imagens institucionais (logos e etc)";
 
@@ -35,12 +32,13 @@ export function ManageQuickLinks() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingLink, setEditingLink] = useState<QuickLinkType | null>(null);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<QuickLinkFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: '',
-            imageUrl: '',
             link: '',
             isUserSpecific: false,
             recipientIds: ['all'],
@@ -53,12 +51,12 @@ export function ManageQuickLinks() {
 
     const handleDialogOpen = (link: QuickLinkType | null) => {
         setEditingLink(link);
+        setImageFile(null);
         if (link) {
             form.reset(link);
         } else {
             form.reset({
                 name: '',
-                imageUrl: '',
                 link: '',
                 isUserSpecific: false,
                 recipientIds: ['all'],
@@ -91,10 +89,17 @@ export function ManageQuickLinks() {
     };
     
     const onSubmit = async (data: QuickLinkFormValues) => {
+        setIsSubmitting(true);
         try {
-            let imageUrl = typeof data.imageUrl === 'string' ? data.imageUrl : '';
-            if (data.imageUrl instanceof File) {
-                imageUrl = await uploadFile(data.imageUrl, STORAGE_PATH_QUICKLINKS);
+            let imageUrl = editingLink?.imageUrl || '';
+            if (!editingLink && !imageFile) {
+                toast({ title: "Erro de Validação", description: "A imagem é obrigatória.", variant: "destructive" });
+                setIsSubmitting(false);
+                return;
+            }
+
+            if (imageFile) {
+                imageUrl = await uploadFile(imageFile, STORAGE_PATH_QUICKLINKS);
             }
 
             const submissionData = { ...data, imageUrl };
@@ -114,6 +119,8 @@ export function ManageQuickLinks() {
                 description: (error as Error).message,
                 variant: "destructive" 
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -201,31 +208,26 @@ export function ManageQuickLinks() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nome do Link (Opcional)</Label>
-                            <Input id="name" {...form.register('name')} disabled={form.formState.isSubmitting}/>
+                            <Input id="name" {...form.register('name')} disabled={isSubmitting}/>
                             {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
 
                         <div>
-                            <Label htmlFor="imageUrl">Imagem</Label>
-                            <Controller name="imageUrl" control={form.control} render={({ field }) => (
-                                <>
-                                    <Input
-                                        id="imageUrl"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                        disabled={form.formState.isSubmitting}
-                                    />
-                                    {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
-                                    {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Nova imagem selecionada: {field.value.name}</p>}
-                                </>
-                            )} />
-                            {form.formState.errors.imageUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.imageUrl.message as string}</p>}
+                            <Label htmlFor="imageUrl">Imagem {editingLink ? '(Opcional: substituir)' : '*'}</Label>
+                            <Input
+                                id="imageUrl"
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+                                disabled={isSubmitting}
+                            />
+                            {imageFile && <p className="text-xs text-muted-foreground mt-1">Nova imagem selecionada: {imageFile.name}</p>}
+                            {!imageFile && editingLink?.imageUrl && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={editingLink.imageUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
                         </div>
 
                         <div>
                             <Label htmlFor="link">URL do Link de Destino</Label>
-                            <Input id="link" {...form.register('link')} disabled={form.formState.isSubmitting}/>
+                            <Input id="link" {...form.register('link')} disabled={isSubmitting}/>
                             {form.formState.errors.link && <p className="text-sm text-destructive mt-1">{form.formState.errors.link.message}</p>}
                         </div>
                         
@@ -258,9 +260,9 @@ export function ManageQuickLinks() {
                         </div>
                         
                         <DialogFooter className="mt-6">
-                            <DialogClose asChild><Button type="button" variant="outline" disabled={form.formState.isSubmitting}>Cancelar</Button></DialogClose>
-                            <Button type="submit" disabled={form.formState.isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>

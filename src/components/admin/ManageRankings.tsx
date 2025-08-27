@@ -18,10 +18,7 @@ import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { Badge } from '../ui/badge';
 import { uploadFile } from '@/lib/firestore-service';
 
-const formSchema = rankingSchema.extend({
-    pdfUrl: z.union([z.instanceof(File), z.string().url("A URL do PDF é obrigatória e deve ser um link válido.")]),
-});
-
+const formSchema = rankingSchema;
 type RankingFormValues = z.infer<typeof formSchema>;
 const STORAGE_PATH_RANKINGS = "Rankings e Campanhas";
 
@@ -31,10 +28,12 @@ export function ManageRankings() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingRanking, setEditingRanking] = useState<RankingType | null>(null);
+    const [pdfFile, setPdfFile] = useState<File | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<RankingFormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: { name: '', pdfUrl: '', order: 0, recipientIds: ['all'] }
+        defaultValues: { name: '', order: 0, recipientIds: ['all'] }
     });
     
     const watchRecipientIds = form.watch('recipientIds');
@@ -45,12 +44,12 @@ export function ManageRankings() {
 
     const handleDialogOpen = (ranking: RankingType | null) => {
         setEditingRanking(ranking);
+        setPdfFile(null);
         if (ranking) {
             form.reset(ranking);
         } else {
             form.reset({
                 name: '',
-                pdfUrl: '',
                 order: rankings.length > 0 ? Math.max(...rankings.map(r => r.order)) + 1 : 0,
                 recipientIds: ['all'],
             });
@@ -69,10 +68,18 @@ export function ManageRankings() {
     };
     
     const onSubmit = async (data: RankingFormValues) => {
+        setIsSubmitting(true);
         try {
-            let pdfUrl = typeof data.pdfUrl === 'string' ? data.pdfUrl : '';
-            if (data.pdfUrl instanceof File) {
-                pdfUrl = await uploadFile(data.pdfUrl, STORAGE_PATH_RANKINGS);
+            let pdfUrl = editingRanking?.pdfUrl || '';
+            
+            if (!editingRanking && !pdfFile) {
+                toast({ title: "Erro de Validação", description: "O arquivo PDF é obrigatório.", variant: "destructive" });
+                setIsSubmitting(false);
+                return;
+            }
+
+            if (pdfFile) {
+                pdfUrl = await uploadFile(pdfFile, STORAGE_PATH_RANKINGS);
             }
 
             const submissionData = { ...data, pdfUrl };
@@ -87,6 +94,8 @@ export function ManageRankings() {
             setIsDialogOpen(false);
         } catch (error) {
             toast({ title: "Erro ao salvar", description: (error as Error).message, variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
         }
     };
     
@@ -153,29 +162,24 @@ export function ManageRankings() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nome da Aba</Label>
-                            <Input id="name" {...register('name')} disabled={form.formState.isSubmitting} />
+                            <Input id="name" {...register('name')} disabled={isSubmitting} />
                             {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="pdfUrl">Arquivo PDF</Label>
-                            <Controller name="pdfUrl" control={form.control} render={({ field }) => (
-                                <>
-                                    <Input
-                                        id="pdfUrl"
-                                        type="file"
-                                        accept=".pdf"
-                                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
-                                        disabled={form.formState.isSubmitting}
-                                    />
-                                    {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">PDF atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver PDF</a></p>}
-                                    {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Novo arquivo selecionado: {field.value.name}</p>}
-                                </>
-                            )} />
-                            {form.formState.errors.pdfUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.pdfUrl.message as string}</p>}
+                            <Label htmlFor="pdfUrl">Arquivo PDF {editingRanking ? '(Opcional: substituir)' : '*'}</Label>
+                            <Input
+                                id="pdfUrl"
+                                type="file"
+                                accept=".pdf"
+                                onChange={(e) => setPdfFile(e.target.files ? e.target.files[0] : null)}
+                                disabled={isSubmitting}
+                            />
+                            {pdfFile && <p className="text-xs text-muted-foreground mt-1">Novo PDF: {pdfFile.name}</p>}
+                            {!pdfFile && editingRanking?.pdfUrl && <p className="text-xs text-muted-foreground mt-1">PDF atual: <a href={editingRanking.pdfUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver PDF</a></p>}
                         </div>
                         <div>
                             <Label htmlFor="order">Ordem de Exibição</Label>
-                            <Input id="order" type="number" {...register('order', { valueAsNumber: true })} disabled={form.formState.isSubmitting} />
+                            <Input id="order" type="number" {...register('order', { valueAsNumber: true })} disabled={isSubmitting} />
                             {form.formState.errors.order && <p className="text-sm text-destructive mt-1">{form.formState.errors.order.message}</p>}
                         </div>
                         <div>
@@ -187,9 +191,9 @@ export function ManageRankings() {
                              {form.formState.errors.recipientIds && <p className="text-sm text-destructive mt-1">{form.formState.errors.recipientIds.message as string}</p>}
                         </div>
                         <DialogFooter>
-                            <DialogClose asChild><Button type="button" variant="outline">Cancelar</Button></DialogClose>
-                            <Button type="submit" className="bg-admin-primary hover:bg-admin-primary/90" disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
+                            <Button type="submit" className="bg-admin-primary hover:bg-admin-primary/90" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar
                             </Button>
                         </DialogFooter>
