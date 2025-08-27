@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2, Award, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
@@ -152,7 +153,7 @@ export function ManageRankings() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nome da Aba</Label>
-                            <Input id="name" {...form.register('name')} disabled={form.formState.isSubmitting} />
+                            <Input id="name" {...register('name')} disabled={form.formState.isSubmitting} />
                             {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
                         <div>
@@ -174,7 +175,7 @@ export function ManageRankings() {
                         </div>
                         <div>
                             <Label htmlFor="order">Ordem de Exibição</Label>
-                            <Input id="order" type="number" {...form.register('order', { valueAsNumber: true })} disabled={form.formState.isSubmitting} />
+                            <Input id="order" type="number" {...register('order', { valueAsNumber: true })} disabled={form.formState.isSubmitting} />
                             {form.formState.errors.order && <p className="text-sm text-destructive mt-1">{form.formState.errors.order.message}</p>}
                         </div>
                         <div>
