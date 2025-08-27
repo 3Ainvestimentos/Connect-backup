@@ -56,79 +56,82 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            const collaborator = collaborators.find(c => c.email === user.email);
-            const isSuper = !!user.email && settings.superAdminEmails.includes(user.email);
-            const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
-
-            if (settings.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
-                 await firebaseSignOut(auth);
-                 setUser(null);
-                 setAccessToken(null);
-            } else if (!collaborator && collaborators.length > 0 && !isSuper) { 
-                await firebaseSignOut(auth);
-                toast({
-                    title: "Acesso Negado",
-                    description: "Este e-mail não está na lista de colaboradores autorizados.",
-                    variant: "destructive"
-                });
-                setUser(null);
-                setAccessToken(null);
-                router.push('/login');
-            } else if (collaborator || isSuper) {
-                setUser(user);
-            } else if (collaborators.length === 0 && !loadingCollaborators) {
-                 await firebaseSignOut(auth);
-                 toast({
-                    title: "Erro de Configuração",
-                    description: "Não foi possível carregar a lista de colaboradores. Acesso negado.",
-                    variant: "destructive"
-                });
-                setUser(null);
-                setAccessToken(null);
-                router.push('/login');
-            }
-        } else {
-            setUser(null);
-            setAccessToken(null);
-        }
-        setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setLoading(false); 
     });
-
     return () => unsubscribe();
-  }, [auth, router, collaborators, loadingCollaborators, settings.maintenanceMode, settings.allowedUserIds, settings.superAdminEmails]);
+  }, [auth]);
 
 
   useEffect(() => {
-      if (user && !loadingCollaborators && !loadingSettings) {
-          const isSuper = !!user.email && settings.superAdminEmails.includes(user.email);
-          setIsSuperAdmin(isSuper);
+    // Wait until firebase auth state and all dependent data is loaded
+    if (loading || loadingCollaborators || loadingSettings) {
+      return;
+    }
 
-          const currentUserCollab = collaborators.find(c => c.email === user.email);
-          const userPermissions = currentUserCollab?.permissions || {};
-          
-          if (isSuper) {
-              const allPermissions: CollaboratorPermissions = {
-                  canManageWorkflows: true,
-                  canManageRequests: true,
-                  canManageContent: true,
-                  canViewTasks: true,
-                  canViewBI: true,
-                  canViewRankings: true,
-                  canViewCRM: true,
-                  canViewStrategicPanel: true,
-              };
-              setPermissions(allPermissions);
-              setIsAdmin(true);
-          } else {
-              setPermissions(userPermissions);
-              const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
-              setIsAdmin(hasAnyPermission);
-          }
-          
-      }
-  }, [user, collaborators, loadingCollaborators, loadingSettings, settings.superAdminEmails]);
+    if (user) {
+        const collaborator = collaborators.find(c => c.email === user.email);
+        const isSuper = !!user.email && settings.superAdminEmails.includes(user.email);
+        const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
+
+        if (settings.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
+             firebaseSignOut(auth); // This will trigger the onAuthStateChanged listener to set user to null
+             return;
+        }
+
+        if (!collaborator && !isSuper) {
+            firebaseSignOut(auth);
+            toast({
+                title: "Acesso Negado",
+                description: "Este e-mail não está na lista de colaboradores autorizados.",
+                variant: "destructive"
+            });
+            router.push('/login');
+            return;
+        }
+
+        // --- User is valid, set permissions ---
+        setIsSuperAdmin(isSuper);
+        const currentUserCollab = collaborator;
+        const userPermissions = currentUserCollab?.permissions || {};
+        
+        if (isSuper) {
+            const allPermissions: CollaboratorPermissions = {
+                canManageWorkflows: true,
+                canManageRequests: true,
+                canManageContent: true,
+                canViewTasks: true,
+                canViewBI: true,
+                canViewRankings: true,
+                canViewCRM: true,
+                canViewStrategicPanel: true,
+            };
+            setPermissions(allPermissions);
+            setIsAdmin(true);
+        } else {
+            setPermissions(userPermissions);
+            const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
+            setIsAdmin(hasAnyPermission);
+        }
+
+    } else {
+      // No user is logged in
+      setIsAdmin(false);
+      setIsSuperAdmin(false);
+      setPermissions({
+        canManageWorkflows: false,
+        canManageRequests: false,
+        canManageContent: false,
+        canViewTasks: false,
+        canViewBI: false,
+        canViewRankings: false,
+        canViewCRM: false,
+        canViewStrategicPanel: false,
+      });
+    }
+
+  }, [user, loading, collaborators, loadingCollaborators, settings, loadingSettings, auth, router]);
 
   
   const signInWithGoogle = async () => {
