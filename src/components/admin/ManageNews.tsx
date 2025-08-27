@@ -30,8 +30,8 @@ const newsSchema = z.object({
     content: z.string().min(10, "Conteúdo completo deve ter no mínimo 10 caracteres"),
     category: z.string().min(1, "Categoria é obrigatória"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
-    imageUrl: z.union([z.instanceof(File), z.string().url("URL da imagem inválida").or(z.literal(""))]),
-    videoUrl: z.union([z.instanceof(File), z.string().url("URL do vídeo inválida").optional().or(z.literal(""))]),
+    imageUrl: z.union([z.instanceof(File), z.string().url("URL da imagem inválida").or(z.literal("")), z.null()]),
+    videoUrl: z.union([z.instanceof(File), z.string().url("URL do vídeo inválida").optional().or(z.literal("")), z.null()]),
     link: z.string().optional(),
 });
 
@@ -71,7 +71,7 @@ export function ManageNews() {
             const formattedNews = {
               ...newsItem,
               date: new Date(newsItem.date).toISOString().split('T')[0],
-              videoUrl: newsItem.videoUrl || '',
+              videoUrl: newsItem.videoUrl || null,
             };
             reset(formattedNews);
         } else {
@@ -82,8 +82,8 @@ export function ManageNews() {
                 content: '',
                 category: '',
                 date: new Date().toISOString().split('T')[0],
-                imageUrl: '',
-                videoUrl: '',
+                imageUrl: null,
+                videoUrl: null,
                 link: '',
             });
         }
