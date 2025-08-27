@@ -142,7 +142,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       });
       onOpenChange(false);
     } finally {
-      setIsSubmitting(true);
+      setIsSubmitting(false);
     }
   };
 
