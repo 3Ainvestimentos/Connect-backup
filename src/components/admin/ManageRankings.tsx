@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PlusCircle, Edit, Trash2, Loader2, Award, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
@@ -15,8 +15,14 @@ import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { Badge } from '../ui/badge';
+import { uploadFile } from '@/lib/firestore-service';
 
-type RankingFormValues = z.infer<typeof rankingSchema>;
+const formSchema = rankingSchema.extend({
+    pdfUrl: z.union([z.instanceof(File), z.string().url("A URL do PDF é obrigatória e deve ser um link válido.")]),
+});
+
+type RankingFormValues = z.infer<typeof formSchema>;
+const STORAGE_PATH_RANKINGS = "Rankings e Campanhas";
 
 export function ManageRankings() {
     const { rankings, addRanking, updateRanking, deleteRankingMutation, loading } = useRankings();
@@ -26,7 +32,7 @@ export function ManageRankings() {
     const [editingRanking, setEditingRanking] = useState<RankingType | null>(null);
 
     const form = useForm<RankingFormValues>({
-        resolver: zodResolver(rankingSchema),
+        resolver: zodResolver(formSchema),
         defaultValues: { name: '', pdfUrl: '', order: 0, recipientIds: ['all'] }
     });
     
@@ -63,11 +69,18 @@ export function ManageRankings() {
     
     const onSubmit = async (data: RankingFormValues) => {
         try {
+            let pdfUrl = typeof data.pdfUrl === 'string' ? data.pdfUrl : '';
+            if (data.pdfUrl instanceof File) {
+                pdfUrl = await uploadFile(data.pdfUrl, `ranking_${Date.now()}`, data.pdfUrl.name, STORAGE_PATH_RANKINGS);
+            }
+
+            const submissionData = { ...data, pdfUrl };
+
             if (editingRanking) {
-                await updateRanking({ ...data, id: editingRanking.id });
+                await updateRanking({ ...submissionData, id: editingRanking.id });
                 toast({ title: "Ranking atualizado com sucesso." });
             } else {
-                await addRanking(data);
+                await addRanking(submissionData);
                 toast({ title: "Ranking adicionado com sucesso." });
             }
             setIsDialogOpen(false);
@@ -143,9 +156,21 @@ export function ManageRankings() {
                             {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="pdfUrl">URL do PDF</Label>
-                            <Input id="pdfUrl" {...form.register('pdfUrl')} disabled={form.formState.isSubmitting} placeholder="https://firebasestorage.googleapis.com/..." />
-                            {form.formState.errors.pdfUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.pdfUrl.message}</p>}
+                            <Label htmlFor="pdfUrl">Arquivo PDF</Label>
+                            <Controller name="pdfUrl" control={form.control} render={({ field }) => (
+                                <>
+                                    <Input
+                                        id="pdfUrl"
+                                        type="file"
+                                        accept=".pdf"
+                                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                                        disabled={form.formState.isSubmitting}
+                                    />
+                                    {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">PDF atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver PDF</a></p>}
+                                    {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Novo arquivo selecionado: {field.value.name}</p>}
+                                </>
+                            )} />
+                            {form.formState.errors.pdfUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.pdfUrl.message as string}</p>}
                         </div>
                         <div>
                             <Label htmlFor="order">Ordem de Exibição</Label>

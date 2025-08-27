@@ -21,9 +21,9 @@ export type WithId<T> = T & { id: string };
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
 export const uploadFile = async (file: File, requestId: string, fileName: string, storagePath?: string): Promise<string> => {
-    const basePath = storagePath || 'workflow-attachments';
+    const basePath = storagePath || 'uncategorized-uploads';
     // Standardized file name to prevent conflicts
-    const standardizedFileName = `${requestId}-${fileName.replace(/\s+/g, '_')}`;
+    const standardizedFileName = `${Date.now()}-${fileName.replace(/\s+/g, '_')}`;
     const filePath = `${basePath}/${standardizedFileName}`;
     const storageRef = ref(storage, filePath);
     try {

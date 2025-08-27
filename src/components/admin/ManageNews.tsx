@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Star, Eye, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Star, Eye, Link as LinkIcon, UploadCloud, Paperclip } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
+import { uploadFile } from '@/lib/firestore-service';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -30,8 +30,8 @@ const newsSchema = z.object({
     content: z.string().min(10, "Conteúdo completo deve ter no mínimo 10 caracteres"),
     category: z.string().min(1, "Categoria é obrigatória"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
-    imageUrl: z.string().url("URL da imagem inválida").or(z.literal("")),
-    videoUrl: z.string().url("URL do vídeo inválida").optional().or(z.literal('')),
+    imageUrl: z.union([z.instanceof(File), z.string().url("URL da imagem inválida").or(z.literal(""))]),
+    videoUrl: z.union([z.instanceof(File), z.string().url("URL do vídeo inválida").optional().or(z.literal(""))]),
     link: z.string().optional(),
 });
 
@@ -42,6 +42,8 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
   approved: { label: 'Aprovado', color: 'bg-blue-500' },
   published: { label: 'Publicado', color: 'bg-green-500' },
 };
+
+const STORAGE_PATH_NEWS = "Destaques e notícias";
 
 export function ManageNews() {
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus } = useNews();
@@ -80,7 +82,7 @@ export function ManageNews() {
                 content: '',
                 category: '',
                 date: new Date().toISOString().split('T')[0],
-                imageUrl: 'https://placehold.co/300x200.png',
+                imageUrl: '',
                 videoUrl: '',
                 link: '',
             });
@@ -104,11 +106,23 @@ export function ManageNews() {
     
     const onSubmit = async (data: NewsFormValues) => {
         try {
+            let imageUrl = typeof data.imageUrl === 'string' ? data.imageUrl : '';
+            let videoUrl = typeof data.videoUrl === 'string' ? data.videoUrl : '';
+
+            if (data.imageUrl instanceof File) {
+                imageUrl = await uploadFile(data.imageUrl, `news_${Date.now()}`, data.imageUrl.name, STORAGE_PATH_NEWS);
+            }
+            if (data.videoUrl instanceof File) {
+                videoUrl = await uploadFile(data.videoUrl, `news_video_${Date.now()}`, data.videoUrl.name, STORAGE_PATH_NEWS);
+            }
+
+            const submissionData = { ...data, imageUrl, videoUrl: videoUrl || undefined };
+
             if (editingNews) {
-                await updateNewsItem({ id: editingNews.id, ...data, videoUrl: data.videoUrl || undefined });
+                await updateNewsItem({ id: editingNews.id, ...submissionData });
                 toast({ title: "Notícia atualizada com sucesso." });
             } else {
-                await addNewsItem({ ...data, isHighlight: false, highlightType: 'small', videoUrl: data.videoUrl || undefined, order: 0 });
+                await addNewsItem({ ...submissionData, isHighlight: false, highlightType: 'small', order: 0 });
                 toast({ title: "Notícia criada como rascunho." });
             }
             setIsDialogOpen(false);
@@ -315,16 +329,38 @@ export function ManageNews() {
                                 {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
                             </div>
                             <div>
-                                <Label htmlFor="imageUrl">URL da Imagem</Label>
-                                <Input id="imageUrl" {...register('imageUrl')} placeholder="https://placehold.co/300x200.png" disabled={isFormSubmitting}/>
-                                <p className="text-xs text-muted-foreground mt-1">Este campo é usado como fallback se nenhuma URL de vídeo for fornecida.</p>
-                                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
+                                <Label htmlFor="imageUrl">Imagem Principal</Label>
+                                <Controller name="imageUrl" control={control} render={({ field }) => (
+                                    <>
+                                        <Input
+                                            id="imageUrl"
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                                            disabled={isFormSubmitting}
+                                        />
+                                        {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
+                                        {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Nova imagem selecionada: {field.value.name}</p>}
+                                    </>
+                                )} />
+                                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message as string}</p>}
                             </div>
                             <div>
-                                <Label htmlFor="videoUrl">URL do Vídeo (Opcional)</Label>
-                                <Input id="videoUrl" {...register('videoUrl')} placeholder="https://storage.googleapis.com/.../video.mp4" disabled={isFormSubmitting}/>
-                                <p className="text-xs text-muted-foreground mt-1">Se preenchido, o vídeo será exibido em vez da imagem.</p>
-                                {errors.videoUrl && <p className="text-sm text-destructive mt-1">{errors.videoUrl.message}</p>}
+                                <Label htmlFor="videoUrl">Vídeo (Opcional)</Label>
+                                <Controller name="videoUrl" control={control} render={({ field }) => (
+                                    <>
+                                        <Input
+                                            id="videoUrl"
+                                            type="file"
+                                            accept="video/*"
+                                            onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                                            disabled={isFormSubmitting}
+                                        />
+                                        {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Vídeo atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Vídeo</a></p>}
+                                        {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Novo vídeo selecionado: {field.value.name}</p>}
+                                    </>
+                                )} />
+                                {errors.videoUrl && <p className="text-sm text-destructive mt-1">{errors.videoUrl.message as string}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="link">URL do Link (opcional)</Label>

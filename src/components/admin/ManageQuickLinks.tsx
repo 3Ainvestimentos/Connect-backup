@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
@@ -19,8 +19,14 @@ import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { Switch } from '../ui/switch';
 import Image from 'next/image';
+import { uploadFile } from '@/lib/firestore-service';
 
-type QuickLinkFormValues = z.infer<typeof quickLinkSchema>;
+const formSchema = quickLinkSchema.extend({
+    imageUrl: z.union([z.instanceof(File), z.string().url("Por favor, insira uma URL de imagem válida.")]),
+});
+
+type QuickLinkFormValues = z.infer<typeof formSchema>;
+const STORAGE_PATH_QUICKLINKS = "Imagens institucionais (logos e etc)";
 
 export function ManageQuickLinks() {
     const { quickLinks, addQuickLink, updateQuickLink, deleteQuickLinkMutation, loading } = useQuickLinks();
@@ -30,7 +36,7 @@ export function ManageQuickLinks() {
     const [editingLink, setEditingLink] = useState<QuickLinkType | null>(null);
 
     const form = useForm<QuickLinkFormValues>({
-        resolver: zodResolver(quickLinkSchema),
+        resolver: zodResolver(formSchema),
         defaultValues: {
             name: '',
             imageUrl: '',
@@ -85,11 +91,18 @@ export function ManageQuickLinks() {
     
     const onSubmit = async (data: QuickLinkFormValues) => {
         try {
+            let imageUrl = typeof data.imageUrl === 'string' ? data.imageUrl : '';
+            if (data.imageUrl instanceof File) {
+                imageUrl = await uploadFile(data.imageUrl, `quicklink_${Date.now()}`, data.imageUrl.name, STORAGE_PATH_QUICKLINKS);
+            }
+
+            const submissionData = { ...data, imageUrl };
+
             if (editingLink) {
-                await updateQuickLink({ ...data, id: editingLink.id });
+                await updateQuickLink({ ...submissionData, id: editingLink.id });
                 toast({ title: "Link Rápido atualizado com sucesso." });
             } else {
-                await addQuickLink(data);
+                await addQuickLink(submissionData);
                 toast({ title: "Link Rápido adicionado com sucesso." });
             }
             setIsFormOpen(false);
@@ -192,9 +205,21 @@ export function ManageQuickLinks() {
                         </div>
 
                         <div>
-                            <Label htmlFor="imageUrl">URL da Imagem</Label>
-                            <Input id="imageUrl" {...form.register('imageUrl')} placeholder="https://..." disabled={form.formState.isSubmitting}/>
-                            {form.formState.errors.imageUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.imageUrl.message}</p>}
+                            <Label htmlFor="imageUrl">Imagem</Label>
+                            <Controller name="imageUrl" control={form.control} render={({ field }) => (
+                                <>
+                                    <Input
+                                        id="imageUrl"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                                        disabled={form.formState.isSubmitting}
+                                    />
+                                    {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
+                                    {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Nova imagem selecionada: {field.value.name}</p>}
+                                </>
+                            )} />
+                            {form.formState.errors.imageUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.imageUrl.message as string}</p>}
                         </div>
 
                         <div>

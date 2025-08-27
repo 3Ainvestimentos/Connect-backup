@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState } from 'react';
 import { useDocuments } from '@/contexts/DocumentsContext';
@@ -7,53 +8,46 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { uploadFile } from '@/lib/firestore-service';
 
 const documentSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Nome é obrigatório"),
     category: z.string().min(1, "Categoria é obrigatória"),
     type: z.string().min(1, "Tipo é obrigatório"),
-    size: z.string().min(1, "Tamanho é obrigatório"),
-    lastModified: z.string().min(1, "Data é obrigatória"),
-    downloadUrl: z.string().url("URL de download inválida"),
+    downloadUrl: z.union([z.instanceof(File), z.string().url("URL de download inválida")]),
     dataAiHint: z.string().optional(),
 });
 
 type DocumentFormValues = z.infer<typeof documentSchema>;
+const STORAGE_PATH_DOCS = "Documentos e materiais";
 
 export function ManageDocuments() {
     const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
-    const queryClient = useQueryClient();
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<DocumentFormValues>({
+    const { register, handleSubmit, reset, control, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<DocumentFormValues>({
         resolver: zodResolver(documentSchema),
     });
 
     const handleDialogOpen = (doc: DocumentType | null) => {
         setEditingDocument(doc);
         if (doc) {
-            const formattedDoc = {
-              ...doc,
-              lastModified: new Date(doc.lastModified).toISOString().split('T')[0],
-            };
-            reset(formattedDoc);
+            reset(doc);
         } else {
             reset({
                 id: undefined,
                 name: '',
                 category: '',
-                type: 'pdf',
-                size: '1MB',
-                lastModified: new Date().toISOString().split('T')[0],
+                type: '',
                 downloadUrl: '',
                 dataAiHint: '',
             });
@@ -64,44 +58,38 @@ export function ManageDocuments() {
     const handleDelete = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja excluir este documento?")) return;
         
-        const { id: toastId, update } = toast({
-            title: "Diagnóstico de Exclusão",
-            description: "1. Iniciando exclusão...",
-            variant: "default",
-        });
-
         try {
-            update({ description: "2. Acionando a função de exclusão..." });
             await deleteDocumentMutation.mutateAsync(id);
-
-            update({
-                title: "Sucesso!",
-                description: "3. Exclusão concluída. Atualizando a lista.",
-            });
-
+            toast({ title: "Sucesso!", description: "Documento excluído." });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-            update({
-                title: "Falha na Exclusão",
-                description: `3. Erro: ${errorMessage}`,
-                variant: "destructive",
-            });
-            console.error("Falha detalhada ao excluir:", error);
+            toast({ title: "Falha na Exclusão", description: errorMessage, variant: "destructive" });
         }
     };
     
     const onSubmit = async (data: DocumentFormValues) => {
         try {
+            let downloadUrl = typeof data.downloadUrl === 'string' ? data.downloadUrl : '';
+            let size = editingDocument?.size || '0 MB';
+            let lastModified = editingDocument?.lastModified || new Date().toISOString();
+
+            if (data.downloadUrl instanceof File) {
+                const file = data.downloadUrl;
+                downloadUrl = await uploadFile(file, `doc_${Date.now()}`, file.name, STORAGE_PATH_DOCS);
+                size = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+                lastModified = new Date().toISOString();
+            }
+
+            const submissionData = { ...data, downloadUrl, size, lastModified };
+
             if (editingDocument) {
-                await updateDocument({ ...data, id: editingDocument.id } as DocumentType);
+                await updateDocument({ ...submissionData, id: editingDocument.id } as DocumentType);
                 toast({ title: "Documento atualizado com sucesso." });
             } else {
-                const { id, ...dataWithoutId } = data;
-                await addDocument(dataWithoutId);
+                await addDocument(submissionData as Omit<DocumentType, 'id'>);
                 toast({ title: "Documento adicionado com sucesso." });
             }
             setIsDialogOpen(false);
-            setEditingDocument(null);
         } catch (error) {
              toast({
                 title: "Erro ao salvar",
@@ -175,25 +163,26 @@ export function ManageDocuments() {
                             <Input id="category" {...register('category')} disabled={isFormSubmitting}/>
                             {errors.category && <p className="text-sm text-destructive mt-1">{errors.category.message}</p>}
                         </div>
-                         <div>
+                        <div>
                             <Label htmlFor="type">Tipo (ex: pdf, docx)</Label>
                             <Input id="type" {...register('type')} disabled={isFormSubmitting}/>
                             {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
                         </div>
-                         <div>
-                            <Label htmlFor="size">Tamanho (ex: 2.5MB)</Label>
-                            <Input id="size" {...register('size')} disabled={isFormSubmitting}/>
-                            {errors.size && <p className="text-sm text-destructive mt-1">{errors.size.message}</p>}
-                        </div>
                         <div>
-                            <Label htmlFor="lastModified">Data de Modificação</Label>
-                            <Input id="lastModified" type="date" {...register('lastModified')} disabled={isFormSubmitting}/>
-                            {errors.lastModified && <p className="text-sm text-destructive mt-1">{errors.lastModified.message}</p>}
-                        </div>
-                        <div>
-                            <Label htmlFor="downloadUrl">URL de Download</Label>
-                            <Input id="downloadUrl" {...register('downloadUrl')} placeholder="https://..." disabled={isFormSubmitting}/>
-                            {errors.downloadUrl && <p className="text-sm text-destructive mt-1">{errors.downloadUrl.message}</p>}
+                            <Label htmlFor="downloadUrl">Arquivo</Label>
+                            <Controller name="downloadUrl" control={control} render={({ field }) => (
+                                <>
+                                    <Input
+                                        id="downloadUrl"
+                                        type="file"
+                                        onChange={(e) => field.onChange(e.target.files ? e.target.files[0] : null)}
+                                        disabled={isFormSubmitting}
+                                    />
+                                    {typeof field.value === 'string' && field.value && <p className="text-xs text-muted-foreground mt-1">Arquivo atual: <a href={field.value} target="_blank" rel="noopener noreferrer" className="underline">Ver Arquivo</a></p>}
+                                    {field.value instanceof File && <p className="text-xs text-muted-foreground mt-1">Novo arquivo selecionado: {field.value.name}</p>}
+                                </>
+                            )} />
+                            {errors.downloadUrl && <p className="text-sm text-destructive mt-1">{errors.downloadUrl.message as string}</p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>
