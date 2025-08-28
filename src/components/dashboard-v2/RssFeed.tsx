@@ -31,7 +31,8 @@ interface FeedItem {
 
 // 2. Definir a função de busca e parsing
 const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
-  const PROXY_URL = 'https://api.allorigins.win/raw?url=';
+  // URL da sua nova Cloud Function. Substitua 'your-project-id' e 'your-region' pelos seus valores.
+  const PROXY_URL = `https://rssproxy-k5q5p2x37a-uc.a.run.app?url=`;
   const parser = new Parser();
   
   // Buscar todos os feeds em paralelo
