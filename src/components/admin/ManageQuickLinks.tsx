@@ -43,6 +43,7 @@ export function ManageQuickLinks() {
             isUserSpecific: false,
             recipientIds: ['all'],
             order: 0,
+            imageUrl: '',
         }
     });
 
@@ -61,6 +62,7 @@ export function ManageQuickLinks() {
                 isUserSpecific: false,
                 recipientIds: ['all'],
                 order: quickLinks.length > 0 ? Math.max(...quickLinks.map(l => l.order)) + 1 : 0,
+                imageUrl: '',
             });
         }
         setIsFormOpen(true);
@@ -116,7 +118,7 @@ export function ManageQuickLinks() {
         } catch (error) {
             toast({ 
                 title: "Erro ao salvar", 
-                description: (error as Error).message,
+                description: error instanceof Error ? error.message : "Não foi possível salvar o link.",
                 variant: "destructive" 
             });
         } finally {

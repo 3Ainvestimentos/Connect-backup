@@ -8,7 +8,7 @@ import * as z from 'zod';
 
 export const rankingSchema = z.object({
   name: z.string().min(1, "O nome da aba é obrigatório."),
-  pdfUrl: z.string().url("A URL do PDF é obrigatória e deve ser um link válido."),
+  pdfUrl: z.string().min(1, "A URL do PDF é obrigatória."),
   order: z.number().default(0),
   recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário.").default(['all']),
 });
@@ -19,7 +19,7 @@ interface RankingsContextType {
   rankings: RankingType[];
   loading: boolean;
   addRanking: (ranking: Omit<RankingType, 'id'>) => Promise<RankingType>;
-  updateRanking: (ranking: RankingType) => Promise<void>;
+  updateRanking: (ranking: Partial<RankingType> & { id: string }) => Promise<void>;
   deleteRankingMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
@@ -61,7 +61,7 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const updateRankingMutation = useMutation<void, Error, RankingType>({
+  const updateRankingMutation = useMutation<void, Error, Partial<RankingType> & { id: string }>({
     mutationFn: (updatedRanking) => {
       const { id, ...data } = updatedRanking;
       return updateDocumentInCollection(COLLECTION_NAME, id, data);

@@ -30,7 +30,7 @@ const newsSchema = z.object({
     content: z.string().min(10, "Conteúdo completo deve ter no mínimo 10 caracteres"),
     category: z.string().min(1, "Categoria é obrigatória"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
-    link: z.string().optional(),
+    link: z.string().url("URL inválida").optional().or(z.literal('')),
 });
 
 type NewsFormValues = z.infer<typeof newsSchema>;
@@ -75,7 +75,7 @@ export function ManageNews() {
             const formattedNews = {
               ...newsItem,
               date: new Date(newsItem.date).toISOString().split('T')[0],
-              videoUrl: newsItem.videoUrl || '',
+              link: newsItem.link || '',
             };
             reset(formattedNews);
         } else {
@@ -135,7 +135,6 @@ export function ManageNews() {
                 toast({ title: "Notícia criada como rascunho." });
             }
             setIsDialogOpen(false);
-            setEditingNews(null);
         } catch (error) {
              toast({
                 title: "Erro ao salvar",

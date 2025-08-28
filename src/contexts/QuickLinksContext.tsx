@@ -9,7 +9,7 @@ import type { Collaborator } from './CollaboratorsContext';
 
 export const quickLinkSchema = z.object({
   name: z.string().optional(),
-  imageUrl: z.string().url("Por favor, insira uma URL de imagem válida."),
+  imageUrl: z.string().min(1, "A URL da imagem é obrigatória."),
   link: z.string().min(1, "URL do Link é obrigatória.").refine(value => {
     try {
       new URL(value.includes('{') ? value.replace(/\{.*\}/, 'placeholder') : value);
@@ -30,7 +30,7 @@ interface QuickLinksContextType {
   quickLinks: QuickLinkType[];
   loading: boolean;
   addQuickLink: (link: Omit<QuickLinkType, 'id'>) => Promise<QuickLinkType>;
-  updateQuickLink: (link: QuickLinkType) => Promise<void>;
+  updateQuickLink: (link: Partial<QuickLinkType> & { id: string }) => Promise<void>;
   deleteQuickLinkMutation: UseMutationResult<void, Error, string, unknown>;
   getVisibleLinksForUser: (user: Collaborator | null, allCollaborators: Collaborator[]) => QuickLinkType[];
 }
@@ -98,7 +98,7 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const updateQuickLinkMutation = useMutation<void, Error, QuickLinkType>({
+  const updateQuickLinkMutation = useMutation<void, Error, Partial<QuickLinkType> & { id: string }>({
     mutationFn: (updatedLink) => {
       const { id, ...data } = updatedLink;
       return updateDocumentInCollection(COLLECTION_NAME, id, data);

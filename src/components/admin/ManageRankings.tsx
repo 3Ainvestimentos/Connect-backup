@@ -33,7 +33,7 @@ export function ManageRankings() {
 
     const form = useForm<RankingFormValues>({
         resolver: zodResolver(formSchema),
-        defaultValues: { name: '', order: 0, recipientIds: ['all'] }
+        defaultValues: { name: '', order: 0, recipientIds: ['all'], pdfUrl: '' }
     });
     
     const watchRecipientIds = form.watch('recipientIds');
@@ -52,6 +52,7 @@ export function ManageRankings() {
                 name: '',
                 order: rankings.length > 0 ? Math.max(...rankings.map(r => r.order)) + 1 : 0,
                 recipientIds: ['all'],
+                pdfUrl: '',
             });
         }
         setIsDialogOpen(true);
@@ -93,7 +94,7 @@ export function ManageRankings() {
             }
             setIsDialogOpen(false);
         } catch (error) {
-            toast({ title: "Erro ao salvar", description: (error as Error).message, variant: "destructive" });
+            toast({ title: "Erro ao salvar", description: error instanceof Error ? error.message : "Não foi possível salvar o documento.", variant: "destructive" });
         } finally {
             setIsSubmitting(false);
         }
@@ -162,7 +163,7 @@ export function ManageRankings() {
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <div>
                             <Label htmlFor="name">Nome da Aba</Label>
-                            <Input id="name" {...register('name')} disabled={isSubmitting} />
+                            <Input id="name" {...form.register('name')} disabled={isSubmitting} />
                             {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
                         <div>
@@ -179,7 +180,7 @@ export function ManageRankings() {
                         </div>
                         <div>
                             <Label htmlFor="order">Ordem de Exibição</Label>
-                            <Input id="order" type="number" {...register('order', { valueAsNumber: true })} disabled={isSubmitting} />
+                            <Input id="order" type="number" {...form.register('order', { valueAsNumber: true })} disabled={isSubmitting} />
                             {form.formState.errors.order && <p className="text-sm text-destructive mt-1">{form.formState.errors.order.message}</p>}
                         </div>
                         <div>
