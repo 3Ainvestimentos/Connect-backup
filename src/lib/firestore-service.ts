@@ -20,7 +20,8 @@ export type WithId<T> = T & { id: string };
  */
 export const uploadFile = async (file: File, storagePath: string): Promise<string> => {
     // Standardized file name to prevent conflicts and ensure uniqueness
-    const standardizedFileName = `${Date.now()}-${file.name.replace(/\s+/g, '_')}`;
+    // Use encodeURIComponent to handle special characters safely in filenames.
+    const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
     const filePath = `${storagePath}/${standardizedFileName}`;
     const storageRef = ref(storage, filePath);
     try {
