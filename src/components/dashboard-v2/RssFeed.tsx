@@ -99,7 +99,7 @@ export default function RssFeed() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
-                <Card className="h-full flex flex-col hover:border-header transition-colors">
+                <Card className="h-full flex flex-col hover:border-header transition-colors w-full">
                   <CardHeader>
                     <CardTitle className="font-headline text-base leading-tight break-words group-hover:underline">{item.title}</CardTitle>
                   </CardHeader>
