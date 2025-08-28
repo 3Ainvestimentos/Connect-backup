@@ -31,7 +31,11 @@ interface FeedItem {
 
 // 2. Definir a função de busca e parsing
 const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
-  // URL da sua nova Cloud Function. Substitua 'your-project-id' e 'your-region' pelos seus valores.
+  // URL da nossa Cloud Function que atua como proxy.
+  // IMPORTANTE: Este deve ser o URL correto para sua função. A estrutura comum é:
+  // `https://<region>-<project-id>.cloudfunctions.net/<functionName>?url=`
+  // Ou para o emulador: `http://localhost:5001/<project-id>/<region>/<functionName>?url=`
+  // O URL abaixo é um exemplo genérico para uma função implantada.
   const PROXY_URL = `https://rssproxy-k5q5p2x37a-uc.a.run.app?url=`;
   const parser = new Parser();
   
