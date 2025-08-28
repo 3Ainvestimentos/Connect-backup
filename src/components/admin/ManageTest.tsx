@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { uploadFile } from '@/lib/firestore-service';
 import { Loader2, UploadCloud, FileCheck } from 'lucide-react';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getFirebaseApp } from '@/lib/firebase';
 
 const STORAGE_PATH_TEST = "Teste";
 
@@ -37,23 +38,34 @@ export function ManageTest() {
 
         setIsUploading(true);
         const { id: toastId, update } = toast({
-            title: "Upload em Progresso",
+            title: "Diagnóstico de Upload",
             description: "1. Iniciando...",
             duration: 999999, // Persist until updated
         });
 
         try {
-            update({ id: toastId, description: `2. Enviando o arquivo "${file.name}" para o Storage...` });
+            update({ id: toastId, description: "2. Obtendo instância do Storage..." });
+            const storage = getStorage(getFirebaseApp());
+
+            const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
+            const filePath = `${STORAGE_PATH_TEST}/${standardizedFileName}`;
             
-            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST);
+            update({ id: toastId, description: `3. Criando referência para: ${filePath}` });
+            const storageRef = ref(storage, filePath);
+
+            update({ id: toastId, description: "4. Enviando bytes do arquivo (uploadBytes)..." });
+            const snapshot = await uploadBytes(storageRef, file);
             
+            update({ id: toastId, description: "5. Upload concluído. Obtendo URL de download..." });
+            const downloadUrl = await getDownloadURL(snapshot.ref);
+
             setUploadedUrl(downloadUrl);
             update({
                 id: toastId,
                 title: "Upload Concluído com Sucesso!",
                 description: `URL: ${downloadUrl}`,
                 variant: "success",
-                duration: 10000, // Show for 10 seconds
+                duration: 10000,
             });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
@@ -61,7 +73,7 @@ export function ManageTest() {
             update({
                 id: toastId,
                 title: "Falha no Upload",
-                description: `Ocorreu um erro: ${errorMessage}`,
+                description: `Ocorreu um erro na etapa final do diagnóstico: ${errorMessage}`,
                 variant: "destructive",
                 duration: 15000,
             });
