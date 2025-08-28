@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { uploadFile } from '@/lib/firestore-service';
 import { Loader2, UploadCloud, FileCheck } from 'lucide-react';
 
@@ -16,6 +16,7 @@ export function ManageTest() {
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+    const { toast } = useToast();
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
@@ -35,27 +36,35 @@ export function ManageTest() {
         }
 
         setIsUploading(true);
-        toast({
-            title: "Iniciando Upload",
-            description: `Enviando o arquivo "${file.name}"...`,
+        const { id: toastId, update } = toast({
+            title: "Upload em Progresso",
+            description: "1. Iniciando...",
+            duration: 999999, // Persist until updated
         });
 
         try {
+            update({ id: toastId, description: `2. Enviando o arquivo "${file.name}" para o Storage...` });
+            
             const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST);
+            
             setUploadedUrl(downloadUrl);
-            toast({
+            update({
+                id: toastId,
                 title: "Upload Concluído com Sucesso!",
                 description: `URL: ${downloadUrl}`,
                 variant: "success",
+                duration: 10000, // Show for 10 seconds
             });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-            toast({
+            console.error("Upload failed:", error);
+            update({
+                id: toastId,
                 title: "Falha no Upload",
                 description: `Ocorreu um erro: ${errorMessage}`,
                 variant: "destructive",
+                duration: 15000,
             });
-            console.error("Upload failed:", error);
         } finally {
             setIsUploading(false);
         }
@@ -72,9 +81,9 @@ export function ManageTest() {
             <CardContent className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="test-file-input">Selecionar Arquivo</Label>
-                    <Input id="test-file-input" type="file" onChange={handleFileChange} />
+                    <Input id="test-file-input" type="file" onChange={handleFileChange} disabled={isUploading} />
                 </div>
-                <Button onClick={handleUpload} disabled={isUploading}>
+                <Button onClick={handleUpload} disabled={isUploading || !file}>
                     {isUploading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -88,12 +97,12 @@ export function ManageTest() {
                         <div className="flex items-start gap-3">
                             <FileCheck className="h-5 w-5 text-green-600 mt-1" />
                             <div>
-                                <p className="font-semibold text-green-800">Arquivo enviado com sucesso!</p>
+                                <p className="font-semibold text-green-800 dark:text-green-300">Arquivo enviado com sucesso!</p>
                                 <a 
                                     href={uploadedUrl} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="text-xs text-green-700 break-all underline hover:text-green-900"
+                                    className="text-xs text-green-700 dark:text-green-400 break-all underline hover:text-green-900 dark:hover:text-green-200"
                                 >
                                     {uploadedUrl}
                                 </a>
