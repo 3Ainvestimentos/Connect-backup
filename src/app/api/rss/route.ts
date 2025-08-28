@@ -13,6 +13,7 @@ const getCategoryFromUrl = (url: string): string => {
     if (url.includes('mercados')) return 'Mercados';
     if (url.includes('economia')) return 'Economia';
     if (url.includes('business')) return 'Business';
+    if (url.includes('mundo')) return 'Mundo';
     return 'Notícias';
 };
 

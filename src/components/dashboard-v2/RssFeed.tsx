@@ -24,6 +24,7 @@ const feedUrls = [
   'https://www.infomoney.com.br/mercados/rss',
   'https://www.infomoney.com.br/economia/rss',
   'https://www.infomoney.com.br/business/rss',
+  'https://www.infomoney.com.br/mundo/rss',
 ];
 
 const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
