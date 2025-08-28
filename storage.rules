@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// As regras abaixo garantem que o Storage do Firebase seja seguro,
+// mas permita as operações necessárias para a aplicação.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+
+      // Permite que qualquer pessoa leia os arquivos.
+      // Isso é necessário para que recursos públicos como o vídeo da tela de login
+      // possam ser carregados pelo navegador sem que o usuário esteja autenticado.
+      allow read;
+
+      // Permite a criação de novos arquivos (upload) apenas se o usuário estiver autenticado.
+      // A condição `request.auth != null` verifica se há um usuário logado na sessão.
+      allow create: if request.auth != null;
+      
+      // Permite a atualização e exclusão de arquivos existentes apenas por usuários autenticados.
+      // É uma boa prática separar as permissões de criação e atualização.
+      allow update, delete: if request.auth != null;
+    }
+  }
+}
