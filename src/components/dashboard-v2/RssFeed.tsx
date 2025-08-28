@@ -11,6 +11,7 @@ import { Rss, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // 1. Definir as URLs dos feeds
 const feedUrls = [
@@ -66,6 +67,7 @@ const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
 };
 
 export default function RssFeed() {
+  const { theme } = useTheme();
   // 3. Usar o useQuery para gerenciar o estado
   const { data: items, isLoading, isError } = useQuery<FeedItem[], Error>({
     queryKey: ['rssFeeds', feedUrls],
@@ -74,6 +76,10 @@ export default function RssFeed() {
     refetchInterval: 1000 * 60 * 60, // 1 hora
     refetchOnWindowFocus: false,
   });
+
+  const logoUrl = theme === 'dark'
+    ? 'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Finfomoney-logo%20branca.png?alt=media&token=4cc683ae-8d98-4ba8-bfa2-e965c8ae478f'
+    : 'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Finfomoney-logo.png?alt=media&token=f94a25f3-116e-4b11-82db-5e65ecec3c6c';
 
   const renderSkeleton = () => (
     <div className="flex space-x-4">
@@ -95,7 +101,7 @@ export default function RssFeed() {
       <CardHeader>
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-                <Image src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2FInfoMoney-logo.png?alt=media&token=c19c3230-0d94-411a-b52b-232115162464" alt="InfoMoney Logo" width={150} height={40} />
+                <Image src={logoUrl} alt="InfoMoney Logo" width={150} height={40} />
             </div>
             <CardDescription>Feed de Notícias Externo</CardDescription>
         </div>
