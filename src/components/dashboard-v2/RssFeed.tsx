@@ -17,7 +17,6 @@ interface FeedItem {
   link: string;
   contentSnippet?: string;
   isoDate?: string;
-  creator?: string;
   sourceCategory?: string;
 }
 
@@ -123,7 +122,7 @@ export default function RssFeed() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
-                <Card className="h-full flex flex-col w-full transition-colors hover:border-header">
+                <Card className="h-full flex flex-col w-full transition-colors">
                   <CardHeader>
                     <CardTitle className="font-headline text-base leading-tight group-hover:underline break-words">{item.title}</CardTitle>
                   </CardHeader>
@@ -142,14 +141,14 @@ export default function RssFeed() {
       </CardContent>
        <CardFooter className="flex justify-center items-center pt-4 border-t">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={handlePrevPage} disabled={currentPage === 1} className="h-8 w-8">
+          <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1} className="h-8 w-8">
             <ChevronLeft className="h-4 w-4" />
              <span className="sr-only">Anterior</span>
           </Button>
           <span className="text-xs text-muted-foreground font-mono">
             {currentPage} / {totalPages}
           </span>
-          <Button variant="outline" size="icon" onClick={handleNextPage} disabled={currentPage === totalPages} className="h-8 w-8">
+          <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages} className="h-8 w-8">
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Próxima</span>
           </Button>
