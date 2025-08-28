@@ -84,30 +84,32 @@ export default function RssFeed() {
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && items && (
-          <Carousel opts={{ align: "start", loop: true }} className="w-full px-10">
-            <CarouselContent className="-ml-4">
-              {items.map((item, index) => (
-                <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                  <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full">
-                    <Card className="h-full flex flex-col hover:border-primary transition-colors">
-                      <CardHeader>
-                        <CardTitle className="font-headline text-base line-clamp-3">{item.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex-grow">
-                        <p className="text-sm text-muted-foreground line-clamp-4">{item.contentSnippet}</p>
-                      </CardContent>
-                      <CardFooter className="flex justify-between items-center text-xs text-muted-foreground border-t pt-3 mt-auto">
-                        <span>{item.creator || 'InfoMoney'}</span>
-                        <span>{item.isoDate ? format(new Date(item.isoDate), "dd MMM, yyyy", { locale: ptBR }) : ''}</span>
-                      </CardFooter>
-                    </Card>
-                  </a>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
+          <div className="relative px-10">
+            <Carousel opts={{ align: "start", loop: true }} className="w-full">
+              <CarouselContent className="-ml-4">
+                {items.map((item, index) => (
+                  <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full">
+                      <Card className="h-full flex flex-col hover:border-primary transition-colors">
+                        <CardHeader>
+                          <CardTitle className="font-headline text-base line-clamp-3">{item.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                          <p className="text-sm text-muted-foreground line-clamp-4">{item.contentSnippet}</p>
+                        </CardContent>
+                        <CardFooter className="flex justify-between items-center text-xs text-muted-foreground border-t pt-3 mt-auto">
+                          <span>{item.creator || 'InfoMoney'}</span>
+                          <span>{item.isoDate ? format(new Date(item.isoDate), "dd MMM, yyyy", { locale: ptBR }) : ''}</span>
+                        </CardFooter>
+                      </Card>
+                    </a>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          </div>
         )}
       </CardContent>
     </Card>
