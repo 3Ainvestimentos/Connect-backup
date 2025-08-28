@@ -16,11 +16,9 @@ import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { Badge } from '../ui/badge';
-import { uploadFile } from '@/lib/firestore-service';
 
 const formSchema = rankingSchema;
 type RankingFormValues = z.infer<typeof formSchema>;
-const STORAGE_PATH_RANKINGS = "Rankings e Campanhas";
 
 export function ManageRankings() {
     const { rankings, addRanking, updateRanking, deleteRankingMutation, loading } = useRankings();
@@ -28,14 +26,13 @@ export function ManageRankings() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingRanking, setEditingRanking] = useState<RankingType | null>(null);
-    const [pdfFile, setPdfFile] = useState<File | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<RankingFormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: { name: '', order: 0, recipientIds: ['all'], pdfUrl: '' }
     });
     
+    const { formState: { isSubmitting } } = form;
     const watchRecipientIds = form.watch('recipientIds');
 
     const collaboratorsWithAccess = useMemo(() => {
@@ -44,7 +41,6 @@ export function ManageRankings() {
 
     const handleDialogOpen = (ranking: RankingType | null) => {
         setEditingRanking(ranking);
-        setPdfFile(null);
         if (ranking) {
             form.reset(ranking);
         } else {
@@ -69,34 +65,17 @@ export function ManageRankings() {
     };
     
     const onSubmit = async (data: RankingFormValues) => {
-        setIsSubmitting(true);
         try {
-            let pdfUrl = editingRanking?.pdfUrl || '';
-            
-            if (!editingRanking && !pdfFile) {
-                toast({ title: "Erro de Validação", description: "O arquivo PDF é obrigatório.", variant: "destructive" });
-                setIsSubmitting(false);
-                return;
-            }
-
-            if (pdfFile) {
-                pdfUrl = await uploadFile(pdfFile, STORAGE_PATH_RANKINGS);
-            }
-
-            const submissionData = { ...data, pdfUrl };
-
             if (editingRanking) {
-                await updateRanking({ ...submissionData, id: editingRanking.id });
+                await updateRanking({ ...data, id: editingRanking.id });
                 toast({ title: "Ranking atualizado com sucesso." });
             } else {
-                await addRanking(submissionData);
+                await addRanking(data);
                 toast({ title: "Ranking adicionado com sucesso." });
             }
             setIsDialogOpen(false);
         } catch (error) {
             toast({ title: "Erro ao salvar", description: error instanceof Error ? error.message : "Não foi possível salvar o documento.", variant: "destructive" });
-        } finally {
-            setIsSubmitting(false);
         }
     };
     
@@ -167,16 +146,9 @@ export function ManageRankings() {
                             {form.formState.errors.name && <p className="text-sm text-destructive mt-1">{form.formState.errors.name.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="pdfUrl">Arquivo PDF {editingRanking ? '(Opcional: substituir)' : '*'}</Label>
-                            <Input
-                                id="pdfUrl"
-                                type="file"
-                                accept=".pdf"
-                                onChange={(e) => setPdfFile(e.target.files ? e.target.files[0] : null)}
-                                disabled={isSubmitting}
-                            />
-                            {pdfFile && <p className="text-xs text-muted-foreground mt-1">Novo PDF: {pdfFile.name}</p>}
-                            {!pdfFile && editingRanking?.pdfUrl && <p className="text-xs text-muted-foreground mt-1">PDF atual: <a href={editingRanking.pdfUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver PDF</a></p>}
+                            <Label htmlFor="pdfUrl">URL Pública do Arquivo PDF</Label>
+                            <Input id="pdfUrl" {...form.register('pdfUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                            {form.formState.errors.pdfUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.pdfUrl.message}</p>}
                         </div>
                         <div>
                             <Label htmlFor="order">Ordem de Exibição</Label>

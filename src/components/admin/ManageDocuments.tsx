@@ -14,33 +14,30 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { uploadFile } from '@/lib/firestore-service';
 
 const documentSchema = z.object({
     id: z.string().optional(),
     name: z.string().min(1, "Nome é obrigatório"),
     category: z.string().min(1, "Categoria é obrigatória"),
     type: z.string().min(1, "Tipo é obrigatório"),
+    size: z.string().min(1, "Tamanho é obrigatório."),
+    downloadUrl: z.string().url("URL para download é obrigatória e deve ser um link válido."),
     dataAiHint: z.string().optional(),
 });
 
 type DocumentFormValues = z.infer<typeof documentSchema>;
-const STORAGE_PATH_DOCS = "Documentos e materiais";
 
 export function ManageDocuments() {
     const { documents, addDocument, updateDocument, deleteDocumentMutation } = useDocuments();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingDocument, setEditingDocument] = useState<DocumentType | null>(null);
-    const [documentFile, setDocumentFile] = useState<File | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { register, handleSubmit, reset, formState: { errors } } = useForm<DocumentFormValues>({
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<DocumentFormValues>({
         resolver: zodResolver(documentSchema),
     });
 
     const handleDialogOpen = (doc: DocumentType | null) => {
         setEditingDocument(doc);
-        setDocumentFile(null);
         if (doc) {
             reset(doc);
         } else {
@@ -49,6 +46,8 @@ export function ManageDocuments() {
                 name: '',
                 category: '',
                 type: '',
+                size: '',
+                downloadUrl: '',
                 dataAiHint: '',
             });
         }
@@ -68,25 +67,8 @@ export function ManageDocuments() {
     };
     
     const onSubmit = async (data: DocumentFormValues) => {
-        setIsSubmitting(true);
         try {
-            let downloadUrl = editingDocument?.downloadUrl || '';
-            let size = editingDocument?.size || '0 MB';
-            let lastModified = editingDocument?.lastModified || new Date().toISOString();
-
-            if (!editingDocument && !documentFile) {
-                 toast({ title: "Erro de Validação", description: "O arquivo é obrigatório.", variant: "destructive" });
-                 setIsSubmitting(false);
-                 return;
-            }
-
-            if (documentFile) {
-                downloadUrl = await uploadFile(documentFile, STORAGE_PATH_DOCS);
-                size = `${(documentFile.size / (1024 * 1024)).toFixed(2)} MB`;
-                lastModified = new Date().toISOString();
-            }
-
-            const submissionData = { ...data, downloadUrl, size, lastModified };
+            const submissionData = { ...data, lastModified: new Date().toISOString() };
 
             if (editingDocument) {
                 await updateDocument({ ...submissionData, id: editingDocument.id } as DocumentType);
@@ -102,8 +84,6 @@ export function ManageDocuments() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar o documento.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
     
@@ -177,15 +157,14 @@ export function ManageDocuments() {
                             {errors.type && <p className="text-sm text-destructive mt-1">{errors.type.message}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="downloadUrl">Arquivo {editingDocument ? '(Opcional: substituir)' : '*'}</Label>
-                            <Input
-                                id="downloadUrl"
-                                type="file"
-                                onChange={(e) => setDocumentFile(e.target.files ? e.target.files[0] : null)}
-                                disabled={isSubmitting}
-                            />
-                            {documentFile && <p className="text-xs text-muted-foreground mt-1">Novo arquivo selecionado: {documentFile.name}</p>}
-                            {!documentFile && editingDocument?.downloadUrl && <p className="text-xs text-muted-foreground mt-1">Arquivo atual: <a href={editingDocument.downloadUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Arquivo</a></p>}
+                            <Label htmlFor="size">Tamanho (ex: 2.5 MB)</Label>
+                            <Input id="size" {...register('size')} disabled={isSubmitting}/>
+                            {errors.size && <p className="text-sm text-destructive mt-1">{errors.size.message}</p>}
+                        </div>
+                         <div>
+                            <Label htmlFor="downloadUrl">URL Pública do Arquivo</Label>
+                            <Input id="downloadUrl" {...register('downloadUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                            {errors.downloadUrl && <p className="text-sm text-destructive mt-1">{errors.downloadUrl.message}</p>}
                         </div>
                         <DialogFooter>
                             <DialogClose asChild>

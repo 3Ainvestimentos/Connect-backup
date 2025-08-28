@@ -14,17 +14,14 @@ import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2, Users, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { Switch } from '../ui/switch';
 import Image from 'next/image';
-import { uploadFile } from '@/lib/firestore-service';
 
 const formSchema = quickLinkSchema;
 type QuickLinkFormValues = z.infer<typeof formSchema>;
-const STORAGE_PATH_QUICKLINKS = "Imagens institucionais (logos e etc)";
 
 export function ManageQuickLinks() {
     const { quickLinks, addQuickLink, updateQuickLink, deleteQuickLinkMutation, loading } = useQuickLinks();
@@ -32,8 +29,6 @@ export function ManageQuickLinks() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
     const [editingLink, setEditingLink] = useState<QuickLinkType | null>(null);
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<QuickLinkFormValues>({
         resolver: zodResolver(formSchema),
@@ -47,12 +42,12 @@ export function ManageQuickLinks() {
         }
     });
 
+    const { formState: { isSubmitting } } = form;
     const watchRecipientIds = form.watch('recipientIds');
     const watchIsUserSpecific = form.watch('isUserSpecific');
 
     const handleDialogOpen = (link: QuickLinkType | null) => {
         setEditingLink(link);
-        setImageFile(null);
         if (link) {
             form.reset(link);
         } else {
@@ -91,26 +86,12 @@ export function ManageQuickLinks() {
     };
     
     const onSubmit = async (data: QuickLinkFormValues) => {
-        setIsSubmitting(true);
         try {
-            let imageUrl = editingLink?.imageUrl || '';
-            if (!editingLink && !imageFile) {
-                toast({ title: "Erro de Validação", description: "A imagem é obrigatória.", variant: "destructive" });
-                setIsSubmitting(false);
-                return;
-            }
-
-            if (imageFile) {
-                imageUrl = await uploadFile(imageFile, STORAGE_PATH_QUICKLINKS);
-            }
-
-            const submissionData = { ...data, imageUrl };
-
             if (editingLink) {
-                await updateQuickLink({ ...submissionData, id: editingLink.id });
+                await updateQuickLink({ ...data, id: editingLink.id });
                 toast({ title: "Link Rápido atualizado com sucesso." });
             } else {
-                await addQuickLink(submissionData);
+                await addQuickLink(data);
                 toast({ title: "Link Rápido adicionado com sucesso." });
             }
             setIsFormOpen(false);
@@ -121,8 +102,6 @@ export function ManageQuickLinks() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar o link.",
                 variant: "destructive" 
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
 
@@ -215,16 +194,9 @@ export function ManageQuickLinks() {
                         </div>
 
                         <div>
-                            <Label htmlFor="imageUrl">Imagem {editingLink ? '(Opcional: substituir)' : '*'}</Label>
-                            <Input
-                                id="imageUrl"
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
-                                disabled={isSubmitting}
-                            />
-                            {imageFile && <p className="text-xs text-muted-foreground mt-1">Nova imagem selecionada: {imageFile.name}</p>}
-                            {!imageFile && editingLink?.imageUrl && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={editingLink.imageUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
+                            <Label htmlFor="imageUrl">URL da Imagem</Label>
+                            <Input id="imageUrl" {...form.register('imageUrl')} placeholder="Cole a URL pública da imagem aqui..." disabled={isSubmitting}/>
+                            {form.formState.errors.imageUrl && <p className="text-sm text-destructive mt-1">{form.formState.errors.imageUrl.message}</p>}
                         </div>
 
                         <div>

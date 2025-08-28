@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Star, Eye, Link as LinkIcon, UploadCloud, Paperclip } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Star, Eye, Link as LinkIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -21,7 +21,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
-import { uploadFile } from '@/lib/firestore-service';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -30,7 +29,9 @@ const newsSchema = z.object({
     content: z.string().min(10, "Conteúdo completo deve ter no mínimo 10 caracteres"),
     category: z.string().min(1, "Categoria é obrigatória"),
     date: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Data inválida" }),
-    link: z.string().url("URL inválida").optional().or(z.literal('')),
+    imageUrl: z.string().url("URL da imagem principal inválida."),
+    videoUrl: z.string().url("URL do vídeo inválida.").optional().or(z.literal('')),
+    link: z.string().url("URL do link inválida").optional().or(z.literal('')),
 });
 
 type NewsFormValues = z.infer<typeof newsSchema>;
@@ -41,20 +42,14 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
   published: { label: 'Publicado', color: 'bg-green-500' },
 };
 
-const STORAGE_PATH_NEWS = "Destaques e notícias";
-
 export function ManageNews() {
     const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
-    
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { register, handleSubmit, reset, control, formState: { errors } } = useForm<NewsFormValues>({
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
     });
     
@@ -69,13 +64,12 @@ export function ManageNews() {
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
-        setImageFile(null);
-        setVideoFile(null);
         if (newsItem) {
             const formattedNews = {
               ...newsItem,
               date: new Date(newsItem.date).toISOString().split('T')[0],
               link: newsItem.link || '',
+              videoUrl: newsItem.videoUrl || '',
             };
             reset(formattedNews);
         } else {
@@ -86,6 +80,8 @@ export function ManageNews() {
                 content: '',
                 category: '',
                 date: new Date().toISOString().split('T')[0],
+                imageUrl: '',
+                videoUrl: '',
                 link: '',
             });
         }
@@ -107,26 +103,9 @@ export function ManageNews() {
     };
     
     const onSubmit = async (data: NewsFormValues) => {
-        setIsSubmitting(true);
+        const submissionData = { ...data };
+
         try {
-            let imageUrl = editingNews?.imageUrl || '';
-            let videoUrl = editingNews?.videoUrl || '';
-
-            if (!editingNews && !imageFile) {
-                toast({ title: "Erro de Validação", description: "A imagem principal é obrigatória para uma nova notícia.", variant: "destructive" });
-                setIsSubmitting(false);
-                return;
-            }
-            
-            if (imageFile) {
-                imageUrl = await uploadFile(imageFile, STORAGE_PATH_NEWS);
-            }
-            if (videoFile) {
-                videoUrl = await uploadFile(videoFile, STORAGE_PATH_NEWS);
-            }
-
-            const submissionData = { ...data, imageUrl, videoUrl: videoUrl || undefined };
-
             if (editingNews) {
                 await updateNewsItem({ id: editingNews.id, ...submissionData });
                 toast({ title: "Notícia atualizada com sucesso." });
@@ -141,8 +120,6 @@ export function ManageNews() {
                 description: error instanceof Error ? error.message : "Não foi possível salvar a notícia.",
                 variant: "destructive"
             });
-        } finally {
-            setIsSubmitting(false);
         }
     };
     
@@ -338,29 +315,15 @@ export function ManageNews() {
                                 <Input id="date" type="date" {...register('date')} disabled={isSubmitting}/>
                                 {errors.date && <p className="text-sm text-destructive mt-1">{errors.date.message}</p>}
                             </div>
-                            <div>
-                                <Label htmlFor="imageUrl">Imagem Principal {editingNews ? '(Opcional: substituir)' : '*'}</Label>
-                                <Input
-                                    id="imageUrl"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
-                                    disabled={isSubmitting}
-                                />
-                                {imageFile && <p className="text-xs text-muted-foreground mt-1">Nova imagem: {imageFile.name}</p>}
-                                {!imageFile && editingNews?.imageUrl && <p className="text-xs text-muted-foreground mt-1">Imagem atual: <a href={editingNews.imageUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Imagem</a></p>}
+                             <div>
+                                <Label htmlFor="imageUrl">URL da Imagem Principal</Label>
+                                <Input id="imageUrl" {...register('imageUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                                {errors.imageUrl && <p className="text-sm text-destructive mt-1">{errors.imageUrl.message}</p>}
                             </div>
                             <div>
-                                <Label htmlFor="videoUrl">Vídeo (Opcional)</Label>
-                                <Input
-                                    id="videoUrl"
-                                    type="file"
-                                    accept="video/*"
-                                    onChange={(e) => setVideoFile(e.target.files ? e.target.files[0] : null)}
-                                    disabled={isSubmitting}
-                                />
-                                {videoFile && <p className="text-xs text-muted-foreground mt-1">Novo vídeo: {videoFile.name}</p>}
-                                {!videoFile && editingNews?.videoUrl && <p className="text-xs text-muted-foreground mt-1">Vídeo atual: <a href={editingNews.videoUrl} target="_blank" rel="noopener noreferrer" className="underline">Ver Vídeo</a></p>}
+                                <Label htmlFor="videoUrl">URL do Vídeo (Opcional)</Label>
+                                <Input id="videoUrl" {...register('videoUrl')} placeholder="https://..." disabled={isSubmitting}/>
+                                {errors.videoUrl && <p className="text-sm text-destructive mt-1">{errors.videoUrl.message}</p>}
                             </div>
                             <div>
                                 <Label htmlFor="link">URL do Link (opcional)</Label>
