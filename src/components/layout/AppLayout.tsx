@@ -70,6 +70,10 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   if (!user) return null;
 
   const hasAnyNotification = hasPendingRequests || hasPendingTasks;
+  
+  const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel;
+  const hasAdminPanels = permissions.canManageContent || permissions.canManageWorkflows || isSuperAdmin;
+
 
   return (
     <DropdownMenu>
@@ -126,38 +130,44 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
             </DropdownMenuPortal>
         </DropdownMenuSub>
         
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Ferramentas</DropdownMenuLabel>
-          <DropdownMenuItem asChild>
-           <Link href="/requests" className={cn(
-              "cursor-pointer font-body",
-              hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-            )}>
-              <Mailbox className="mr-2 h-4 w-4" />
-              <span>Gestão de Solicitações</span>
-            </Link>
-          </DropdownMenuItem>
-          {permissions.canViewTasks && (
-              <DropdownMenuItem asChild>
-                  <Link href="/me/tasks" className={cn(
-                    "cursor-pointer font-body",
-                    hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-                  )}>
-                      <ListTodo className="mr-2 h-4 w-4" />
-                      <span>Minhas Tarefas/Ações</span>
-                  </Link>
-              </DropdownMenuItem>
-          )}
-          {permissions.canViewCRM && (
-            <DropdownMenuItem asChild><Link href="/admin/crm" className="cursor-pointer font-body"><Briefcase className="mr-2 h-4 w-4" /><span>CRM Interno</span></Link></DropdownMenuItem>
-          )}
-          {permissions.canViewStrategicPanel && (
-            <DropdownMenuItem asChild><Link href="/admin/strategic-panel" className="cursor-pointer font-body"><Target className="mr-2 h-4 w-4" /><span>Painel Estratégico</span></Link></DropdownMenuItem>
-          )}
-        </DropdownMenuGroup>
+        {hasTools && <DropdownMenuSeparator />}
         
-        {isAdmin && (
+        {hasTools && (
+            <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Ferramentas</DropdownMenuLabel>
+              {permissions.canManageRequests && (
+                <DropdownMenuItem asChild>
+                <Link href="/requests" className={cn(
+                    "cursor-pointer font-body",
+                    hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+                    )}>
+                    <Mailbox className="mr-2 h-4 w-4" />
+                    <span>Gestão de Solicitações</span>
+                    </Link>
+                </DropdownMenuItem>
+              )}
+            {permissions.canViewTasks && (
+                <DropdownMenuItem asChild>
+                    <Link href="/me/tasks" className={cn(
+                        "cursor-pointer font-body",
+                        hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
+                    )}>
+                        <ListTodo className="mr-2 h-4 w-4" />
+                        <span>Minhas Tarefas/Ações</span>
+                    </Link>
+                </DropdownMenuItem>
+            )}
+            {permissions.canViewCRM && (
+                <DropdownMenuItem asChild><Link href="/admin/crm" className="cursor-pointer font-body"><Briefcase className="mr-2 h-4 w-4" /><span>CRM Interno</span></Link></DropdownMenuItem>
+            )}
+            {permissions.canViewStrategicPanel && (
+                <DropdownMenuItem asChild><Link href="/admin/strategic-panel" className="cursor-pointer font-body"><Target className="mr-2 h-4 w-4" /><span>Painel Estratégico</span></Link></DropdownMenuItem>
+            )}
+            </DropdownMenuGroup>
+        )}
+        
+        
+        {hasAdminPanels && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
