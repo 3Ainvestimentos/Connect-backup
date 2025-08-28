@@ -9,6 +9,8 @@ import { cleanDataForFirestore } from './data-sanitizer';
 // This must be imported here to use the type.
 import type { UploadTaskSnapshot } from "firebase/storage";
 
+const db = getFirestore(getFirebaseApp());
+
 export type WithId<T> = T & { id: string };
 
 interface UploadOptions {
@@ -30,6 +32,12 @@ export const uploadFile = (
   options: UploadOptions = {}
 ): Promise<string> => {
     const { addLog = () => {}, fileName } = options;
+    const log = (message: string) => {
+        // This check prevents logs from appearing in the server console during build
+        if (typeof window !== 'undefined') {
+            addLog(message);
+        }
+    };
     
     return new Promise((resolve, reject) => {
         try {
