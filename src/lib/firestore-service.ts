@@ -3,73 +3,92 @@
 import { getFirebaseApp } from './firebase'; // Import the initialized app function
 import { getFirestore, writeBatch, onSnapshot } from "firebase/firestore";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction, query, where, Query } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getStorage, ref, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { cleanDataForFirestore } from './data-sanitizer';
 
-// Initialize Firestore with the app instance
-const app = getFirebaseApp();
-const db = getFirestore(app);
+// This must be imported here to use the type.
+import type { UploadTaskSnapshot } from "firebase/storage";
 
 export type WithId<T> = T & { id: string };
 
 interface UploadOptions {
   addLog?: (log: string) => void;
+  fileName?: string;
 }
 
 /**
  * Uploads a file to a specified path in Firebase Storage, with detailed logging.
+ * Uses uploadBytesResumable to provide progress feedback.
  * @param file The file to upload.
- * @param storagePath The base path in Storage where the file should be saved (e.g., 'Destaques e notícias').
- * @param fileName An optional, specific name for the file.
- * @param options An optional object containing a logging function.
+ * @param storagePath The base path in Storage where the file should be saved.
+ * @param options An optional object containing a logging function and a specific file name.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
-export const uploadFile = async (
+export const uploadFile = (
   file: File,
   storagePath: string,
-  fileName?: string,
   options: UploadOptions = {}
 ): Promise<string> => {
-    const { addLog } = options;
-    const noOpLog = () => {}; // A no-operation function if addLog is not provided
-    const log = addLog || noOpLog;
+    const { addLog = () => {}, fileName } = options;
+    
+    return new Promise((resolve, reject) => {
+        try {
+            log("3. Entrando em uploadFile...");
+            
+            const currentApp = getFirebaseApp();
+            const storage = getStorage(currentApp);
 
-    try {
-        log("3. Entrando em uploadFile...");
-        
-        // CRITICAL FIX: Get a fresh instance of the app and storage inside the function
-        // This ensures the correct context, especially for authentication, is used for the operation.
-        const currentApp = getFirebaseApp();
-        const storage = getStorage(currentApp);
+            const standardizedFileName = `${Date.now()}-${encodeURIComponent(
+              (fileName || file.name).replace(/\s+/g, '_')
+            )}`;
 
-        const standardizedFileName = `${Date.now()}-${encodeURIComponent(
-          (fileName || file.name).replace(/\s+/g, '_')
-        )}`;
+            const filePath = `${storagePath}/${standardizedFileName}`;
+            log(`4. Caminho do arquivo definido como: ${filePath}`);
 
-        const filePath = `${storagePath}/${standardizedFileName}`;
-        log(`4. Caminho do arquivo definido como: ${filePath}`);
+            log("5. Criando referência do Storage...");
+            const storageRef = ref(storage, filePath);
+            
+            log(`6. Referência criada. Path: ${storageRef.fullPath}, Bucket: ${storageRef.bucket}`);
+            log(`6.1. Detalhes do arquivo: Nome - ${file.name}, Tamanho - ${file.size} bytes, Tipo - ${file.type}`);
+            
+            log("7. Chamando uploadBytesResumable...");
+            const uploadTask = uploadBytesResumable(storageRef, file);
 
-        log("5. Criando referência do Storage...");
-        const storageRef = ref(storage, filePath);
-        
-        log(`6. Referência criada. Path: ${storageRef.fullPath}, Bucket: ${storageRef.bucket}`);
-        log(`6.1. Detalhes do arquivo: Nome - ${file.name}, Tamanho - ${file.size} bytes, Tipo - ${file.type}`);
-        
-        log("7. Chamando uploadBytes...");
-        const snapshot = await uploadBytes(storageRef, file);
-        log("8. uploadBytes concluído. Chamando getDownloadURL...");
-        
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-        log("9. getDownloadURL concluído.");
-        
-        return downloadUrl;
+            // Listen for state changes, errors, and completion of the upload.
+            uploadTask.on('state_changed', 
+                (snapshot: UploadTaskSnapshot) => {
+                    // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    log(`Progresso do Upload: ${progress.toFixed(2)}% (${snapshot.state})`);
+                }, 
+                (error) => {
+                    // Handle unsuccessful uploads
+                    const errorMessage = error.code ? `Código: ${error.code} - ${error.message}` : error.message;
+                    log(`ERRO no upload: ${errorMessage}`);
+                    console.error("Upload Error Details:", error);
+                    reject(new Error(`Falha no upload: ${error.code}`));
+                }, 
+                () => {
+                    // Handle successful uploads on complete
+                    log("Upload concluído com sucesso. Obtendo URL de download...");
+                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                        log("URL de download obtida com sucesso.");
+                        resolve(downloadURL);
+                    }).catch(error => {
+                        const errorMessage = error.code ? `Código: ${error.code} - ${error.message}` : error.message;
+                        log(`ERRO ao obter URL de download: ${errorMessage}`);
+                        reject(new Error(`Falha ao obter URL de download: ${error.code}`));
+                    });
+                }
+            );
 
-    } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        log(`ERRO na função uploadFile: ${errorMessage}`);
-        console.error("Error uploading file:", error);
-        throw new Error("Não foi possível carregar o arquivo.");
-    }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            log(`ERRO na função uploadFile: ${errorMessage}`);
+            console.error("Error setting up upload:", error);
+            reject(new Error("Não foi possível iniciar o upload do arquivo."));
+        }
+    });
 };
 
 

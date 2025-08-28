@@ -50,9 +50,9 @@ export function ManageTest() {
         try {
             addLog("2. Chamando a função uploadFile...");
             // Pass the addLog function inside the options object
-            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST, undefined, { addLog });
+            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST, { addLog });
             
-            addLog("10. SUCESSO! URL recebida no componente.");
+            addLog("Upload bem-sucedido! URL recebida no componente.");
             setUploadedUrl(downloadUrl);
             
             toast({
@@ -61,15 +61,15 @@ export function ManageTest() {
             });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-            addLog(`ERRO: ${errorMessage}`);
-            console.error("Upload failed:", error);
+            addLog(`ERRO FINAL no componente: ${errorMessage}`);
+            console.error("Upload failed in component:", error);
             toast({
                 title: "Falha no Upload",
                 description: `Ocorreu um erro: ${errorMessage}`,
                 variant: "destructive",
             });
         } finally {
-            addLog("11. Processo finalizado no componente.");
+            addLog("Processo finalizado no componente.");
             setIsUploading(false);
         }
     };
