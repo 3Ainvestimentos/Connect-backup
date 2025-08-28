@@ -12,6 +12,7 @@ import { ManageMessages } from '@/components/admin/ManageMessages';
 import { ManageQuickLinks } from '@/components/admin/ManageQuickLinks';
 import { ManagePolls } from '@/components/admin/ManagePolls';
 import { ManageRankings } from '@/components/admin/ManageRankings';
+import { ManageTest } from '@/components/admin/ManageTest';
 
 export default function AdminContentPage() {
     const [activeTab, setActiveTab] = useState("news");
@@ -24,7 +25,7 @@ export default function AdminContentPage() {
                     description="Gerencie as informações dinâmicas da intranet."
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="labs">Labs</TabsTrigger>
@@ -32,6 +33,7 @@ export default function AdminContentPage() {
                         <TabsTrigger value="quicklinks">Links Rápidos</TabsTrigger>
                         <TabsTrigger value="polls">Pesquisas</TabsTrigger>
                         <TabsTrigger value="rankings">Rankings</TabsTrigger>
+                        <TabsTrigger value="test">TESTE</TabsTrigger>
                     </TabsList>
                     <TabsContent value="news">
                         <ManageNews />
@@ -53,6 +55,9 @@ export default function AdminContentPage() {
                     </TabsContent>
                      <TabsContent value="rankings">
                         <ManageRankings />
+                    </TabsContent>
+                    <TabsContent value="test">
+                        <ManageTest />
                     </TabsContent>
                 </Tabs>
             </div>
