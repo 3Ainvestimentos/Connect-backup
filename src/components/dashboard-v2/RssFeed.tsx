@@ -32,11 +32,7 @@ interface FeedItem {
 // 2. Definir a função de busca e parsing
 const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
   // URL da nossa Cloud Function que atua como proxy.
-  // IMPORTANTE: Este deve ser o URL correto para sua função. A estrutura comum é:
-  // `https://<region>-<project-id>.cloudfunctions.net/<functionName>?url=`
-  // Ou para o emulador: `http://localhost:5001/<project-id>/<region>/<functionName>?url=`
-  // O URL abaixo é um exemplo genérico para uma função implantada.
-  const PROXY_URL = `https://rssproxy-k5q5p2x37a-uc.a.run.app?url=`;
+  const PROXY_URL = `https://rssproxy-k5q5p2x37a-uc.a.run.app/?url=`;
   const parser = new Parser();
   
   // Buscar todos os feeds em paralelo
@@ -100,7 +96,6 @@ export default function RssFeed() {
         <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
                 <Image src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2FInfoMoney-logo.png?alt=media&token=c19c3230-0d94-411a-b52b-232115162464" alt="InfoMoney Logo" width={150} height={40} />
-                <Rss className="h-6 w-6 text-orange-500" />
             </div>
             <CardDescription>Feed de Notícias Externo</CardDescription>
         </div>
