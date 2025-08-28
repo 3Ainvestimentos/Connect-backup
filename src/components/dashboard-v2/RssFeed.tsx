@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -42,7 +43,7 @@ const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
       })
       .then(str => parser.parseString(str))
       .catch(error => {
-        console.error(`Error parsing feed ${url}:`, error);
+        console.error(`Error fetching or parsing feed ${url}:`, error);
         return null; // Retorna nulo em caso de erro para não quebrar o Promise.all
       })
   );
@@ -51,7 +52,7 @@ const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
   
   // Combinar, ordenar e limitar os itens
   let combinedItems: FeedItem[] = feeds
-    .filter(feed => feed !== null) // Filtra os feeds que falharam
+    .filter((feed): feed is Parser.Output<{ [key: string]: any; }> => feed !== null) // Filtra os feeds que falharam
     .flatMap(feed => feed?.items || []);
     
   combinedItems.sort((a, b) => {
