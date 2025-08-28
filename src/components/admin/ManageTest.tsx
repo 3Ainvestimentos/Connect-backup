@@ -45,6 +45,7 @@ export function ManageTest() {
 
         try {
             update({ id: toastId, description: "2. Obtendo instância do Storage..." });
+            // Força a obtenção de uma nova instância para garantir a configuração correta
             const storage = getStorage(getFirebaseApp());
 
             const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
