@@ -42,9 +42,8 @@ export default function RssFeed() {
 
   useEffect(() => {
     const getItemsPerPage = () => {
-        if (window.innerWidth >= 1280) return 4; // Telas grandes (lg) e maiores
-        if (window.innerWidth >= 1024) return 3; // Telas médias (md)
-        if (window.innerWidth >= 768) return 2; // Telas pequenas (sm)
+        if (window.innerWidth >= 1024) return 4; // Telas de notebook (lg) e maiores
+        if (window.innerWidth >= 768) return 2; // Telas pequenas (md)
         return 1; // Telas extra pequenas
     }
 
@@ -86,7 +85,7 @@ export default function RssFeed() {
 
 
   const renderSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {[...Array(itemsPerPage)].map((_, i) => (
         <Card key={i} className="flex flex-col">
           <CardHeader>
@@ -117,16 +116,16 @@ export default function RssFeed() {
             </CardDescription>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-hidden">
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && paginatedItems && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
                 <Card className="h-full flex flex-col w-full transition-colors">
                   <CardHeader>
-                    <CardTitle className="font-headline text-base leading-tight break-words group-hover:underline">{item.title}</CardTitle>
+                    <CardTitle className="font-headline text-base leading-tight group-hover:underline break-words">{item.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground line-clamp-4 break-words">{item.contentSnippet}</p>
