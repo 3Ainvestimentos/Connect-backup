@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 
-export type NewsStatus = 'draft' | 'approved' | 'published';
+export type NewsStatus = 'draft' | 'approved' | 'published' | 'archived';
 
 export interface NewsItemType {
   id: string;
@@ -30,6 +30,7 @@ interface NewsContextType {
   addNewsItem: (item: Omit<NewsItemType, 'id' | 'status'>) => Promise<WithId<Omit<NewsItemType, 'id' | 'status'>>>;
   updateNewsItem: (item: Partial<NewsItemType> & { id: string }) => Promise<void>;
   updateNewsStatus: (id: string, status: NewsStatus) => Promise<void>;
+  archiveNewsItem: (id: string) => Promise<void>;
   deleteNewsItemMutation: UseMutationResult<void, Error, string, unknown>;
   toggleNewsHighlight: (id: string) => void;
   updateHighlightType: (id: string, type: 'large' | 'small') => void;
@@ -100,6 +101,10 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     await updateNewsItemMutation.mutateAsync({ id, status });
   }, [updateNewsItemMutation]);
 
+  const archiveNewsItem = useCallback(async (id: string) => {
+    await updateNewsItemMutation.mutateAsync({ id, status: 'archived' });
+  }, [updateNewsItemMutation]);
+
 
   const toggleNewsHighlight = useCallback((id: string) => {
     const targetNews = newsItems.find(n => n.id === id);
@@ -156,7 +161,8 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     toggleNewsHighlight,
     updateHighlightType,
     updateNewsStatus,
-  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus]);
+    archiveNewsItem,
+  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus, archiveNewsItem]);
 
   return (
     <NewsContext.Provider value={value}>

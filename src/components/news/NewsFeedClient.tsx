@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { NewsItemType } from '@/contexts/NewsContext';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
@@ -20,8 +20,13 @@ interface NewsFeedClientProps {
 
 export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps) {
   const [selectedNews, setSelectedNews] = useState<NewsItemType | null>(null);
-  // The sorting is now handled by the context based on the `order` field.
-  const sortedNews = initialNewsItems;
+
+  const sortedNews = useMemo(() => {
+    // Filter out archived news and then sort by order
+    return initialNewsItems
+      .filter(item => item.status !== 'archived')
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+  }, [initialNewsItems]);
   
   const { user } = useAuth();
   const { collaborators } = useCollaborators();

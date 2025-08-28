@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNews } from '@/contexts/NewsContext';
 import type { NewsItemType, NewsStatus } from '@/contexts/NewsContext';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Star, Eye, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, Edit, Loader2, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -40,18 +40,25 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
   draft: { label: 'Rascunho', color: 'bg-yellow-500' },
   approved: { label: 'Aprovado', color: 'bg-blue-500' },
   published: { label: 'Publicado', color: 'bg-green-500' },
+  archived: { label: 'Arquivado', color: 'bg-gray-500' },
 };
 
 export function ManageNews() {
-    const { newsItems, addNewsItem, updateNewsItem, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus } = useNews();
+    const { newsItems, addNewsItem, updateNewsItem, archiveNewsItem, updateHighlightType, updateNewsStatus, toggleNewsHighlight } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
+    const [showArchived, setShowArchived] = useState(false);
+    const [isArchiving, setIsArchiving] = useState<string | null>(null);
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
     });
+
+    const displayedNews = useMemo(() => {
+        return newsItems.filter(item => showArchived ? true : item.status !== 'archived');
+    }, [newsItems, showArchived]);
     
     const handleOrderChange = async (newsId: string, newOrder: number) => {
         try {
@@ -93,13 +100,17 @@ export function ManageNews() {
         setIsPreviewOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm("Tem certeza que deseja excluir esta notícia?")) return;
-
-        await deleteNewsItemMutation.mutateAsync(id, {
-            onSuccess: () => toast({ title: "Sucesso!", description: "Notícia excluída." }),
-            onError: (error) => toast({ title: "Falha na Exclusão", description: error.message, variant: "destructive" }),
-        });
+    const handleArchive = async (id: string) => {
+        if (!window.confirm("Tem certeza que deseja arquivar esta notícia?")) return;
+        setIsArchiving(id);
+        try {
+          await archiveNewsItem(id);
+          toast({ title: "Notícia arquivada com sucesso." });
+        } catch (error) {
+          toast({ title: "Erro ao arquivar", description: (error as Error).message, variant: "destructive" });
+        } finally {
+          setIsArchiving(null);
+        }
     };
     
     const onSubmit = async (data: NewsFormValues) => {
@@ -131,10 +142,16 @@ export function ManageNews() {
                         <CardTitle>Gerenciar Notícias</CardTitle>
                         <CardDescription>Adicione, edite ou remova notícias do feed. Marque até 3 para destaque.</CardDescription>
                     </div>
-                    <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Adicionar Notícia
-                    </Button>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" onClick={() => setShowArchived(!showArchived)}>
+                            {showArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                            {showArchived ? "Ocultar Arquivadas" : "Mostrar Arquivadas"}
+                        </Button>
+                        <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Notícia
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-lg">
@@ -150,21 +167,25 @@ export function ManageNews() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {newsItems.map(item => (
-                                    <TableRow key={item.id}>
+                                {displayedNews.map(item => (
+                                    <TableRow key={item.id} className={item.status === 'archived' ? 'bg-muted/50' : ''}>
                                         <TableCell>
                                             <Input
                                               type="number"
                                               defaultValue={item.order}
                                               onBlur={(e) => handleOrderChange(item.id, parseInt(e.target.value, 10))}
                                               className="w-20"
+                                              disabled={item.status === 'archived'}
                                             />
                                         </TableCell>
-                                        <TableCell className="font-medium">{item.title}</TableCell>
+                                        <TableCell className={cn("font-medium", item.status === 'archived' && 'text-muted-foreground')}>
+                                          {item.title}
+                                        </TableCell>
                                         <TableCell>
                                             <Select
                                               value={item.status}
                                               onValueChange={(value) => updateNewsStatus(item.id, value as NewsStatus)}
+                                              disabled={item.status === 'archived'}
                                             >
                                                 <SelectTrigger className="w-[130px]">
                                                     <SelectValue>
@@ -176,7 +197,7 @@ export function ManageNews() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(statusConfig).map(([key, config]) => (
-                                                        <SelectItem key={key} value={key}>
+                                                        <SelectItem key={key} value={key} disabled={key === 'archived'}>
                                                             <div className="flex items-center gap-2">
                                                                 <div className={cn("h-2 w-2 rounded-full", config.color)} />
                                                                 {config.label}
@@ -191,6 +212,7 @@ export function ManageNews() {
                                                 checked={item.isHighlight}
                                                 onCheckedChange={() => toggleNewsHighlight(item.id)}
                                                 aria-label="Marcar como destaque"
+                                                disabled={item.status !== 'published'}
                                             />
                                         </TableCell>
                                          <TableCell>
@@ -198,6 +220,7 @@ export function ManageNews() {
                                                  <Select
                                                     defaultValue={item.highlightType || 'small'}
                                                     onValueChange={(value) => updateHighlightType(item.id, value as 'large' | 'small')}
+                                                    disabled={item.status !== 'published'}
                                                 >
                                                     <SelectTrigger className="w-[120px]">
                                                         <SelectValue />
@@ -216,13 +239,11 @@ export function ManageNews() {
                                             <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted" title="Editar">
                                                 <Edit className="h-4 w-4" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteNewsItemMutation.isPending && deleteNewsItemMutation.variables === item.id} title="Excluir">
-                                                {deleteNewsItemMutation.isPending && deleteNewsItemMutation.variables === item.id ? (
-                                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                )}
-                                            </Button>
+                                            {item.status !== 'archived' && (
+                                                <Button variant="ghost" size="icon" onClick={() => handleArchive(item.id)} className="hover:bg-muted" disabled={isArchiving === item.id} title="Arquivar">
+                                                    {isArchiving === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4 text-destructive" />}
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}
