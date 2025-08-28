@@ -49,9 +49,10 @@ export function ManageTest() {
         try {
             addLog("2. Chamando a função uploadFile...");
             const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST, undefined, addLog);
-            addLog("9. SUCESSO! URL recebida no componente.");
-
+            
+            addLog("10. SUCESSO! URL recebida no componente.");
             setUploadedUrl(downloadUrl);
+            
             toast({
                 title: "Upload Concluído com Sucesso!",
                 variant: "success",
@@ -66,7 +67,7 @@ export function ManageTest() {
                 variant: "destructive",
             });
         } finally {
-            addLog("10. Processo finalizado.");
+            addLog("11. Processo finalizado no componente.");
             setIsUploading(false);
         }
     };

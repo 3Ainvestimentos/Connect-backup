@@ -33,15 +33,19 @@ export const uploadFile = async (file: File, storagePath: string, fileName?: str
     try {
         addLog?.("5. Criando referência do Storage...");
         const storageRef = ref(storage, filePath);
-        addLog?.("6. Referência criada. Chamando uploadBytes...");
-
-        const snapshot = await uploadBytes(storageRef, file);
-        addLog?.("7. uploadBytes concluído. Chamando getDownloadURL...");
         
+        addLog?.(`6. Referência criada. Path: ${storageRef.fullPath}, Bucket: ${storageRef.bucket}`);
+        addLog?.(`6.1. Detalhes do arquivo: Nome - ${file.name}, Tamanho - ${file.size} bytes, Tipo - ${file.type}`);
+        
+        addLog?.("7. Chamando uploadBytes...");
+        const snapshot = await uploadBytes(storageRef, file);
+        
+        addLog?.("8. uploadBytes concluído. Chamando getDownloadURL...");
         const downloadUrl = await getDownloadURL(snapshot.ref);
-        addLog?.("8. getDownloadURL concluído.");
-
+        
+        addLog?.("9. getDownloadURL concluído.");
         return downloadUrl;
+
     } catch (error) {
         addLog?.(`ERRO na função uploadFile: ${error instanceof Error ? error.message : String(error)}`);
         console.error("Error uploading file:", error);
