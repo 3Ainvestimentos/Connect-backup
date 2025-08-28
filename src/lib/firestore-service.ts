@@ -19,29 +19,31 @@ export type WithId<T> = T & { id: string };
  * @param addLog A function to log progress messages.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
-export const uploadFile = async (file: File, storagePath: string, addLog: (log: string) => void): Promise<string> => {
-    addLog("3. Entrando em uploadFile...");
+export const uploadFile = async (file: File, storagePath: string, fileName?: string, addLog?: (log: string) => void): Promise<string> => {
+    addLog?.("3. Entrando em uploadFile...");
     
     // Standardized file name to prevent conflicts and ensure uniqueness
-    // Use encodeURIComponent to handle special characters safely in filenames.
-    const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
+    const standardizedFileName = fileName 
+        ? encodeURIComponent(fileName.replace(/\s+/g, '_')) 
+        : `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
+
     const filePath = `${storagePath}/${standardizedFileName}`;
-    addLog(`4. Caminho do arquivo definido como: ${filePath}`);
+    addLog?.(`4. Caminho do arquivo definido como: ${filePath}`);
 
     try {
-        addLog("5. Criando referência do Storage...");
+        addLog?.("5. Criando referência do Storage...");
         const storageRef = ref(storage, filePath);
-        addLog("6. Referência criada. Chamando uploadBytes...");
+        addLog?.("6. Referência criada. Chamando uploadBytes...");
 
         const snapshot = await uploadBytes(storageRef, file);
-        addLog("7. uploadBytes concluído. Chamando getDownloadURL...");
+        addLog?.("7. uploadBytes concluído. Chamando getDownloadURL...");
         
         const downloadUrl = await getDownloadURL(snapshot.ref);
-        addLog("8. getDownloadURL concluído.");
+        addLog?.("8. getDownloadURL concluído.");
 
         return downloadUrl;
     } catch (error) {
-        addLog(`ERRO na função uploadFile: ${error instanceof Error ? error.message : String(error)}`);
+        addLog?.(`ERRO na função uploadFile: ${error instanceof Error ? error.message : String(error)}`);
         console.error("Error uploading file:", error);
         throw new Error("Não foi possível carregar o arquivo.");
     }
