@@ -77,7 +77,7 @@ export default function RssFeed() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.slice(0, 3).map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full" key={index}>
-                <Card className="h-full flex flex-col hover:border-primary transition-colors">
+                <Card className="h-full flex flex-col hover:border-header transition-colors">
                   <CardHeader>
                     <CardTitle className="font-headline text-base leading-tight break-words">{item.title}</CardTitle>
                   </CardHeader>
