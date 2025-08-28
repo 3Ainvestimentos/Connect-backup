@@ -42,9 +42,10 @@ export default function RssFeed() {
 
   useEffect(() => {
     const getItemsPerPage = () => {
-        if (window.innerWidth < 768) return 1;
-        if (window.innerWidth < 1024) return 2;
-        return 3;
+        if (window.innerWidth >= 1280) return 4; // Telas grandes (lg) e maiores
+        if (window.innerWidth >= 1024) return 3; // Telas médias (md)
+        if (window.innerWidth >= 768) return 2; // Telas pequenas (sm)
+        return 1; // Telas extra pequenas
     }
 
     const handleResize = () => {
@@ -85,7 +86,7 @@ export default function RssFeed() {
 
 
   const renderSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {[...Array(itemsPerPage)].map((_, i) => (
         <Card key={i} className="flex flex-col">
           <CardHeader>
@@ -120,7 +121,7 @@ export default function RssFeed() {
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && paginatedItems && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
                 <Card className="h-full flex flex-col w-full transition-colors">
