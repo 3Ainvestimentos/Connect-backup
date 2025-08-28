@@ -13,9 +13,9 @@ const storage = getStorage(app);
 export type WithId<T> = T & { id: string };
 
 /**
- * Uploads a file to Firebase Storage.
+ * Uploads a file to a specified path in Firebase Storage.
  * @param file The file to upload.
- * @param storagePath The base path in Storage to upload to (e.g., 'noticias', 'documentos').
+ * @param storagePath The base path in Storage where the file should be saved (e.g., 'Destaques e notícias').
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
 export const uploadFile = async (file: File, storagePath: string): Promise<string> => {
@@ -33,6 +33,7 @@ export const uploadFile = async (file: File, storagePath: string): Promise<strin
         throw new Error("Não foi possível carregar o arquivo.");
     }
 };
+
 
 /**
  * Attaches a real-time listener to a Firestore collection.

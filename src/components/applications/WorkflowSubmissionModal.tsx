@@ -99,23 +99,19 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           throw new Error(`A área de workflow para "${workflowDefinition.name}" não tem uma pasta de armazenamento configurada.`);
         }
 
-        const fileUploadPromises = Object.entries(fileFields).map(([fieldId, file]) => {
-            if (file) {
-                return uploadFile(file, storagePath);
-            }
-            return Promise.resolve(null);
-        });
-
-        const uploadedFileUrls = await Promise.all(fileUploadPromises);
-        
         const formDataForFirestore = { ...data };
-        let fileUrlIndex = 0;
-        for (const fieldId in fileFields) {
-            if (fileFields[fieldId]) {
-                formDataForFirestore[fieldId] = uploadedFileUrls[fileUrlIndex];
-                fileUrlIndex++;
-            }
-        }
+        const fileUploadPromises = workflowDefinition.fields
+            .filter(field => field.type === 'file' && fileFields[field.id])
+            .map(async (field) => {
+                const file = fileFields[field.id];
+                if (file) {
+                    const url = await uploadFile(file, storagePath);
+                    formDataForFirestore[field.id] = url;
+                }
+            });
+        
+        await Promise.all(fileUploadPromises);
+
          workflowDefinition.fields.forEach(field => {
             if (field.type === 'date-range' && formDataForFirestore[field.id]) {
                 formDataForFirestore[field.id] = {

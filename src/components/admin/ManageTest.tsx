@@ -8,8 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UploadCloud, FileCheck } from 'lucide-react';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { getFirebaseApp } from '@/lib/firebase';
+import { uploadFile } from '@/lib/firestore-service';
 
 const STORAGE_PATH_TEST = "Teste";
 
@@ -44,21 +43,9 @@ export function ManageTest() {
         });
 
         try {
-            update({ id: toastId, description: "2. Obtendo instância do Storage..." });
-            // Força a obtenção de uma nova instância para garantir a configuração correta
-            const storage = getStorage(getFirebaseApp());
-
-            const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
-            const filePath = `${STORAGE_PATH_TEST}/${standardizedFileName}`;
+            update({ id: toastId, description: "2. Chamando a função uploadFile..." });
             
-            update({ id: toastId, description: `3. Criando referência para: ${filePath}` });
-            const storageRef = ref(storage, filePath);
-
-            update({ id: toastId, description: "4. Enviando bytes do arquivo (uploadBytes)..." });
-            const snapshot = await uploadBytes(storageRef, file);
-            
-            update({ id: toastId, description: "5. Upload concluído. Obtendo URL de download..." });
-            const downloadUrl = await getDownloadURL(snapshot.ref);
+            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST);
 
             setUploadedUrl(downloadUrl);
             update({
