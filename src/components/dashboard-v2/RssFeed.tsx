@@ -84,7 +84,7 @@ export default function RssFeed() {
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && items && (
-          <Carousel opts={{ align: "start", loop: true }} className="w-full px-12">
+          <Carousel opts={{ align: "start", loop: true }} className="w-full px-10">
             <CarouselContent className="-ml-4">
               {items.map((item, index) => (
                 <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
@@ -105,8 +105,8 @@ export default function RssFeed() {
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
-            <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
+            <CarouselPrevious />
+            <CarouselNext />
           </Carousel>
         )}
       </CardContent>
