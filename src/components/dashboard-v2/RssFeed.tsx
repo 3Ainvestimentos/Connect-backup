@@ -14,7 +14,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 // 1. URLs dos feeds
 const feedUrls = [
-  'https://www.infomoney.com.br/feed/',
+  'https://www.infomoney.com.br/mercados/rss',
   'https://www.infomoney.com.br/economia/rss',
   'https://www.infomoney.com.br/business/rss',
 ];
