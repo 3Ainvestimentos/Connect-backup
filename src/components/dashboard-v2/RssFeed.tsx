@@ -1,11 +1,11 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -38,7 +38,25 @@ const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
 export default function RssFeed() {
   const { theme } = useTheme();
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 3;
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+
+  useEffect(() => {
+    const getItemsPerPage = () => {
+        if (window.innerWidth < 768) return 1;
+        if (window.innerWidth < 1024) return 2;
+        return 3;
+    }
+
+    const handleResize = () => {
+        setItemsPerPage(getItemsPerPage());
+        setCurrentPage(1); // Reset page on resize
+    };
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Set initial value
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
   const { data: items, isLoading, isError } = useQuery<FeedItem[], Error>({
     queryKey: ['rssFeeds', feedUrls],
@@ -52,8 +70,8 @@ export default function RssFeed() {
     ? 'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Finfomoney-logo%20branca.png?alt=media&token=4cc683ae-8d98-4ba8-bfa2-e965c8ae478f'
     : 'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Finfomoney-logo.png?alt=media&token=f94a25f3-116e-4b11-82db-5e65ecec3c6c';
 
-  const totalPages = items ? Math.ceil(items.length / ITEMS_PER_PAGE) : 0;
-  const paginatedItems = items ? items.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE) : [];
+  const totalPages = items ? Math.ceil(items.length / itemsPerPage) : 0;
+  const paginatedItems = items ? items.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage) : [];
 
   const handlePrevPage = () => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
@@ -65,8 +83,8 @@ export default function RssFeed() {
 
 
   const renderSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {[...Array(3)].map((_, i) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {[...Array(itemsPerPage)].map((_, i) => (
         <Card key={i} className="flex flex-col">
           <CardHeader>
             <Skeleton className="h-5 w-4/5" />
@@ -97,7 +115,7 @@ export default function RssFeed() {
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && paginatedItems && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
                 <Card className="h-full flex flex-col w-full transition-colors">
