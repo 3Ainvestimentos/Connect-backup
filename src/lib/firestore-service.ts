@@ -12,15 +12,24 @@ const storage = getStorage(app);
 
 export type WithId<T> = T & { id: string };
 
+interface UploadOptions {
+  fileName?: string;
+  addLog?: (log: string) => void;
+}
+
 /**
  * Uploads a file to a specified path in Firebase Storage, with detailed logging.
  * @param file The file to upload.
  * @param storagePath The base path in Storage where the file should be saved (e.g., 'Destaques e notícias').
- * @param addLog A function to log progress messages.
+ * @param options An optional object containing a fileName and a logging function.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
-export const uploadFile = async (file: File, storagePath: string, fileName?: string, addLog?: (log: string) => void): Promise<string> => {
-    addLog?.("3. Entrando em uploadFile...");
+export const uploadFile = async (file: File, storagePath: string, options: UploadOptions = {}): Promise<string> => {
+    const { fileName, addLog } = options;
+    const noOpLog = () => {}; // A no-operation function if addLog is not provided
+    const log = addLog || noOpLog;
+
+    log("3. Entrando em uploadFile...");
     
     // Standardized file name to prevent conflicts and ensure uniqueness
     const standardizedFileName = fileName 
@@ -28,26 +37,27 @@ export const uploadFile = async (file: File, storagePath: string, fileName?: str
         : `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
 
     const filePath = `${storagePath}/${standardizedFileName}`;
-    addLog?.(`4. Caminho do arquivo definido como: ${filePath}`);
+    log(`4. Caminho do arquivo definido como: ${filePath}`);
 
     try {
-        addLog?.("5. Criando referência do Storage...");
+        log("5. Criando referência do Storage...");
         const storageRef = ref(storage, filePath);
         
-        addLog?.(`6. Referência criada. Path: ${storageRef.fullPath}, Bucket: ${storageRef.bucket}`);
-        addLog?.(`6.1. Detalhes do arquivo: Nome - ${file.name}, Tamanho - ${file.size} bytes, Tipo - ${file.type}`);
+        log(`6. Referência criada. Path: ${storageRef.fullPath}, Bucket: ${storageRef.bucket}`);
+        log(`6.1. Detalhes do arquivo: Nome - ${file.name}, Tamanho - ${file.size} bytes, Tipo - ${file.type}`);
         
-        addLog?.("7. Chamando uploadBytes...");
+        log("7. Chamando uploadBytes...");
         const snapshot = await uploadBytes(storageRef, file);
         
-        addLog?.("8. uploadBytes concluído. Chamando getDownloadURL...");
+        log("8. uploadBytes concluído. Chamando getDownloadURL...");
         const downloadUrl = await getDownloadURL(snapshot.ref);
         
-        addLog?.("9. getDownloadURL concluído.");
+        log("9. getDownloadURL concluído.");
         return downloadUrl;
 
     } catch (error) {
-        addLog?.(`ERRO na função uploadFile: ${error instanceof Error ? error.message : String(error)}`);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log(`ERRO na função uploadFile: ${errorMessage}`);
         console.error("Error uploading file:", error);
         throw new Error("Não foi possível carregar o arquivo.");
     }
