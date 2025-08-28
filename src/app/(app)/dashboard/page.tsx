@@ -1,4 +1,3 @@
-
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -24,6 +23,7 @@ import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
 import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
+import RssFeed from '@/components/dashboard-v2/RssFeed';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -187,20 +187,7 @@ export default function DashboardV2Page() {
         </section>
 
         <section>
-            <Card className="shadow-sm">
-                <CardHeader>
-                    <CardTitle className="font-headline text-foreground text-xl flex items-center gap-2">
-                        <Cpu className="h-6 w-6" />
-                        Card de Conteúdo Dinâmico
-                    </CardTitle>
-                    <CardDescription>O conteúdo deste card será definido no próximo passo.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center text-muted-foreground p-8">
-                        Aguardando prompt do usuário para gerar o conteúdo...
-                    </div>
-                </CardContent>
-            </Card>
+          <RssFeed />
         </section>
         
         <section className="space-y-6">
