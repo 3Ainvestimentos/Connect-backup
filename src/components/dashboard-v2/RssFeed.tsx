@@ -3,7 +3,7 @@
 import React from 'react';
 import type Parser from 'rss-parser';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Rss, ExternalLink } from 'lucide-react';
