@@ -44,15 +44,14 @@ export function ManageTest() {
         setIsUploading(true);
         setUploadedUrl(null);
         setLogs([]);
-        addLog("1. Iniciando upload...");
+        addLog("1. Iniciando upload no componente...");
 
         try {
             addLog("2. Chamando a função uploadFile...");
-            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST);
-            addLog("3. Função uploadFile concluída.");
+            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST, addLog);
+            addLog("9. SUCESSO! URL recebida no componente.");
 
             setUploadedUrl(downloadUrl);
-            addLog(`4. SUCESSO! URL recebida: ${downloadUrl}`);
             toast({
                 title: "Upload Concluído com Sucesso!",
                 variant: "success",
@@ -67,7 +66,7 @@ export function ManageTest() {
                 variant: "destructive",
             });
         } finally {
-            addLog("5. Processo finalizado.");
+            addLog("10. Processo finalizado.");
             setIsUploading(false);
         }
     };
@@ -123,7 +122,7 @@ export function ManageTest() {
                         <CardDescription>Acompanhamento detalhado do processo de upload.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="p-4 bg-muted rounded-md font-mono text-xs space-y-1">
+                        <div className="p-4 bg-muted rounded-md font-mono text-xs space-y-1 h-64 overflow-y-auto">
                             {logs.map((log, index) => (
                                 <p key={index}>{log}</p>
                             ))}

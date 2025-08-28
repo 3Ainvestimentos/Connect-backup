@@ -13,22 +13,35 @@ const storage = getStorage(app);
 export type WithId<T> = T & { id: string };
 
 /**
- * Uploads a file to a specified path in Firebase Storage.
+ * Uploads a file to a specified path in Firebase Storage, with detailed logging.
  * @param file The file to upload.
  * @param storagePath The base path in Storage where the file should be saved (e.g., 'Destaques e notícias').
+ * @param addLog A function to log progress messages.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
-export const uploadFile = async (file: File, storagePath: string): Promise<string> => {
+export const uploadFile = async (file: File, storagePath: string, addLog: (log: string) => void): Promise<string> => {
+    addLog("3. Entrando em uploadFile...");
+    
     // Standardized file name to prevent conflicts and ensure uniqueness
     // Use encodeURIComponent to handle special characters safely in filenames.
     const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
     const filePath = `${storagePath}/${standardizedFileName}`;
-    const storageRef = ref(storage, filePath);
+    addLog(`4. Caminho do arquivo definido como: ${filePath}`);
+
     try {
+        addLog("5. Criando referência do Storage...");
+        const storageRef = ref(storage, filePath);
+        addLog("6. Referência criada. Chamando uploadBytes...");
+
         const snapshot = await uploadBytes(storageRef, file);
+        addLog("7. uploadBytes concluído. Chamando getDownloadURL...");
+        
         const downloadUrl = await getDownloadURL(snapshot.ref);
+        addLog("8. getDownloadURL concluído.");
+
         return downloadUrl;
     } catch (error) {
+        addLog(`ERRO na função uploadFile: ${error instanceof Error ? error.message : String(error)}`);
         console.error("Error uploading file:", error);
         throw new Error("Não foi possível carregar o arquivo.");
     }
