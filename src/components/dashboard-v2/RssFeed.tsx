@@ -2,7 +2,6 @@
 "use client";
 
 import React from 'react';
-import type { FeedItem } from '@/app/api/rss/route';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +10,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useTheme } from '@/contexts/ThemeContext';
+import type { FeedItem } from '@/app/api/rss/route';
 
 const feedUrls = [
   'https://www.infomoney.com.br/mercados/rss',
@@ -76,10 +76,10 @@ export default function RssFeed() {
         {!isLoading && !isError && items && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {items.slice(0, 3).map((item, index) => (
-              <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full" key={index}>
-                <Card className="h-full flex flex-col hover:border-header transition-colors">
+              <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
+                <Card className="h-full flex flex-col transition-colors">
                   <CardHeader>
-                    <CardTitle className="font-headline text-base leading-tight break-words">{item.title}</CardTitle>
+                    <CardTitle className="font-headline text-base leading-tight break-words group-hover:underline">{item.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground line-clamp-4 break-words">{item.contentSnippet}</p>
