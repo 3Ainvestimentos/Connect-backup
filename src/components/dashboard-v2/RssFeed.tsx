@@ -1,8 +1,7 @@
-
 "use client";
 
 import React from 'react';
-import Parser from 'rss-parser';
+import type Parser from 'rss-parser';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -13,14 +12,13 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useTheme } from '@/contexts/ThemeContext';
 
-// 1. Definir as URLs dos feeds
+// 1. URLs dos feeds
 const feedUrls = [
-  'https://www.infomoney.com.br/mercados/rss',
+  'https://www.infomoney.com.br/feed/',
   'https://www.infomoney.com.br/economia/rss',
   'https://www.infomoney.com.br/business/rss',
 ];
 
-// Interface para um item de feed combinado
 interface FeedItem {
   title?: string;
   link?: string;
@@ -30,45 +28,20 @@ interface FeedItem {
   creator?: string;
 }
 
-// 2. Definir a função de busca e parsing
+// 2. Função de busca que chama a NOSSA API INTERNA
 const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
-  // URL da nossa Cloud Function que atua como proxy.
-  const PROXY_URL = `https://rssproxy-k5q5p2x37a-uc.a.run.app/?url=`;
-  const parser = new Parser();
-  
-  // Buscar todos os feeds em paralelo
-  const promises = urls.map(url =>
-    fetch(`${PROXY_URL}${encodeURIComponent(url)}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`Failed to fetch ${url}, status: ${res.status}`);
-        return res.text();
-      })
-      .then(str => parser.parseString(str))
-      .catch(error => {
-        console.error(`Error fetching or parsing feed ${url}:`, error);
-        return null; // Retorna nulo em caso de erro para não quebrar o Promise.all
-      })
-  );
-  
-  const feeds = await Promise.all(promises);
-  
-  // Combinar, ordenar e limitar os itens
-  let combinedItems: FeedItem[] = feeds
-    .filter((feed): feed is Parser.Output<{ [key: string]: any; }> => feed !== null) // Filtra os feeds que falharam
-    .flatMap(feed => feed?.items || []);
-    
-  combinedItems.sort((a, b) => {
-    const dateA = a.isoDate ? new Date(a.isoDate).getTime() : 0;
-    const dateB = b.isoDate ? new Date(b.isoDate).getTime() : 0;
-    return dateB - dateA;
-  });
-  
-  return combinedItems.slice(0, 20); // Limita a 20 notícias mais recentes
+  // A requisição é feita para /api/rss, que está no mesmo domínio
+  const response = await fetch(`/api/rss?urls=${encodeURIComponent(urls.join(','))}`);
+  if (!response.ok) {
+    throw new Error('Não foi possível carregar os feeds de notícias.');
+  }
+  return response.json();
 };
 
 export default function RssFeed() {
   const { theme } = useTheme();
-  // 3. Usar o useQuery para gerenciar o estado
+  
+  // 3. O useQuery chama a função fetchFeeds, que é segura
   const { data: items, isLoading, isError } = useQuery<FeedItem[], Error>({
     queryKey: ['rssFeeds', feedUrls],
     queryFn: () => fetchFeeds(feedUrls),
