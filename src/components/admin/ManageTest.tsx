@@ -49,8 +49,7 @@ export function ManageTest() {
 
         try {
             addLog("2. Chamando a função uploadFile...");
-            // Pass the addLog function inside the options object
-            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST, { addLog });
+            const downloadUrl = await uploadFile(file, STORAGE_PATH_TEST, file.name, { addLog });
             
             addLog("Upload bem-sucedido! URL recebida no componente.");
             setUploadedUrl(downloadUrl);

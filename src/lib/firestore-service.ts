@@ -23,17 +23,18 @@ interface UploadOptions {
  * Uses uploadBytesResumable to provide progress feedback.
  * @param file The file to upload.
  * @param storagePath The base path in Storage where the file should be saved.
- * @param options An optional object containing a logging function and a specific file name.
+ * @param fileName The name for the file. If not provided, the original file name is used.
+ * @param options An optional object containing a logging function.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
 export const uploadFile = (
   file: File,
   storagePath: string,
-  options: UploadOptions = {}
+  fileName?: string,
+  options: { addLog?: (log: string) => void } = {}
 ): Promise<string> => {
-    const { addLog = () => {}, fileName } = options;
+    const { addLog = () => {} } = options;
     const log = (message: string) => {
-        // This check prevents logs from appearing in the server console during build
         if (typeof window !== 'undefined') {
             addLog(message);
         }
@@ -46,11 +47,9 @@ export const uploadFile = (
             const currentApp = getFirebaseApp();
             const storage = getStorage(currentApp);
 
-            const standardizedFileName = `${Date.now()}-${encodeURIComponent(
-              (fileName || file.name).replace(/\s+/g, '_')
-            )}`;
-
-            const filePath = `${storagePath}/${standardizedFileName}`;
+            const finalFileName = `${Date.now()}-${encodeURIComponent((fileName || file.name).replace(/\s+/g, '_'))}`;
+            const filePath = `${storagePath}/${finalFileName}`;
+            
             log(`4. Caminho do arquivo definido como: ${filePath}`);
 
             log("5. Criando referência do Storage...");
@@ -62,22 +61,18 @@ export const uploadFile = (
             log("7. Chamando uploadBytesResumable...");
             const uploadTask = uploadBytesResumable(storageRef, file);
 
-            // Listen for state changes, errors, and completion of the upload.
             uploadTask.on('state_changed', 
                 (snapshot: UploadTaskSnapshot) => {
-                    // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     log(`Progresso do Upload: ${progress.toFixed(2)}% (${snapshot.state})`);
                 }, 
                 (error) => {
-                    // Handle unsuccessful uploads
                     const errorMessage = error.code ? `Código: ${error.code} - ${error.message}` : error.message;
                     log(`ERRO no upload: ${errorMessage}`);
                     console.error("Upload Error Details:", error);
                     reject(new Error(`Falha no upload: ${error.code}`));
                 }, 
                 () => {
-                    // Handle successful uploads on complete
                     log("Upload concluído com sucesso. Obtendo URL de download...");
                     getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                         log("URL de download obtida com sucesso.");
