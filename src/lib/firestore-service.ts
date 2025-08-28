@@ -1,4 +1,5 @@
 
+
 import { getFirebaseApp } from './firebase'; // Import the initialized app function
 import { getFirestore, writeBatch, onSnapshot } from "firebase/firestore";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction, query, where, Query } from 'firebase/firestore';
@@ -8,12 +9,10 @@ import { cleanDataForFirestore } from './data-sanitizer';
 // Initialize Firestore with the app instance
 const app = getFirebaseApp();
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 export type WithId<T> = T & { id: string };
 
 interface UploadOptions {
-  fileName?: string;
   addLog?: (log: string) => void;
 }
 
@@ -21,25 +20,26 @@ interface UploadOptions {
  * Uploads a file to a specified path in Firebase Storage, with detailed logging.
  * @param file The file to upload.
  * @param storagePath The base path in Storage where the file should be saved (e.g., 'Destaques e notícias').
- * @param options An optional object containing a fileName and a logging function.
+ * @param options An optional object containing a logging function.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
 export const uploadFile = async (file: File, storagePath: string, options: UploadOptions = {}): Promise<string> => {
-    const { fileName, addLog } = options;
+    const { addLog } = options;
     const noOpLog = () => {}; // A no-operation function if addLog is not provided
     const log = addLog || noOpLog;
 
-    log("3. Entrando em uploadFile...");
-    
-    // Standardized file name to prevent conflicts and ensure uniqueness
-    const standardizedFileName = fileName 
-        ? encodeURIComponent(fileName.replace(/\s+/g, '_')) 
-        : `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
-
-    const filePath = `${storagePath}/${standardizedFileName}`;
-    log(`4. Caminho do arquivo definido como: ${filePath}`);
-
     try {
+        log("3. Entrando em uploadFile...");
+        
+        // This is the crucial fix: Get the storage instance *inside* the function.
+        const storage = getStorage(app);
+
+        // Standardized file name to prevent conflicts and ensure uniqueness
+        const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
+
+        const filePath = `${storagePath}/${standardizedFileName}`;
+        log(`4. Caminho do arquivo definido como: ${filePath}`);
+
         log("5. Criando referência do Storage...");
         const storageRef = ref(storage, filePath);
         
@@ -48,11 +48,11 @@ export const uploadFile = async (file: File, storagePath: string, options: Uploa
         
         log("7. Chamando uploadBytes...");
         const snapshot = await uploadBytes(storageRef, file);
-        
         log("8. uploadBytes concluído. Chamando getDownloadURL...");
-        const downloadUrl = await getDownloadURL(snapshot.ref);
         
+        const downloadUrl = await getDownloadURL(snapshot.ref);
         log("9. getDownloadURL concluído.");
+        
         return downloadUrl;
 
     } catch (error) {
