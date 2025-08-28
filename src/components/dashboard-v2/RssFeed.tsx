@@ -80,7 +80,7 @@ export default function RssFeed() {
             <CardDescription>Feed de Notícias Externo</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="overflow-hidden">
+      <CardContent>
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && items && (
@@ -90,9 +90,9 @@ export default function RssFeed() {
                 {items.map((item, index) => (
                   <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
                     <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full">
-                      <Card className="h-full flex flex-col hover:border-primary transition-colors">
+                      <Card className="h-full w-full flex flex-col hover:border-primary transition-colors">
                         <CardHeader>
-                          <CardTitle className="font-headline text-base line-clamp-3">{item.title}</CardTitle>
+                          <CardTitle className="font-headline text-base line-clamp-3 break-words">{item.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-grow">
                           <p className="text-sm text-muted-foreground line-clamp-4">{item.contentSnippet}</p>
