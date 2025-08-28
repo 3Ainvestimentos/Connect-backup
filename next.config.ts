@@ -37,14 +37,6 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-   async rewrites() {
-    return [
-      {
-        source: '/_next/static/chunks/:path*',
-        destination: `https://firebasestorage.googleapis.com/v0/b/${process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}/o/:path*`
-      }
-    ]
-  }
 };
 
 export default nextConfig;

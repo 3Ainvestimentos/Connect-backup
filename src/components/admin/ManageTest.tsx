@@ -73,7 +73,7 @@ export function ManageTest() {
             update({
                 id: toastId,
                 title: "Falha no Upload",
-                description: `Ocorreu um erro na etapa final do diagnóstico: ${errorMessage}`,
+                description: `Ocorreu um erro no diagnóstico: ${errorMessage}`,
                 variant: "destructive",
                 duration: 15000,
             });
