@@ -42,9 +42,9 @@ export default function RssFeed() {
 
   useEffect(() => {
     const getItemsPerPage = () => {
-        if (window.innerWidth >= 1024) return 4; // Telas de notebook (lg) e maiores
-        if (window.innerWidth >= 768) return 2; // Telas pequenas (md)
-        return 1; // Telas extra pequenas
+        if (window.innerWidth >= 1024) return 4;
+        if (window.innerWidth >= 768) return 2;
+        return 1; 
     }
 
     const handleResize = () => {
@@ -123,7 +123,7 @@ export default function RssFeed() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
-                <Card className="h-full flex flex-col w-full transition-colors">
+                <Card className="h-full flex flex-col w-full transition-colors hover:border-header">
                   <CardHeader>
                     <CardTitle className="font-headline text-base leading-tight group-hover:underline break-words">{item.title}</CardTitle>
                   </CardHeader>
@@ -140,18 +140,18 @@ export default function RssFeed() {
           </div>
         )}
       </CardContent>
-       <CardFooter className="flex justify-between items-center pt-4 border-t">
-        <span className="text-sm text-muted-foreground">
-          Página {currentPage} de {totalPages}
-        </span>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1}>
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Anterior
+       <CardFooter className="flex justify-center items-center pt-4 border-t">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={handlePrevPage} disabled={currentPage === 1} className="h-8 w-8">
+            <ChevronLeft className="h-4 w-4" />
+             <span className="sr-only">Anterior</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages}>
-            Próxima
-            <ChevronRight className="h-4 w-4 ml-1" />
+          <span className="text-xs text-muted-foreground font-mono">
+            {currentPage} / {totalPages}
+          </span>
+          <Button variant="outline" size="icon" onClick={handleNextPage} disabled={currentPage === totalPages} className="h-8 w-8">
+            <ChevronRight className="h-4 w-4" />
+            <span className="sr-only">Próxima</span>
           </Button>
         </div>
       </CardFooter>
