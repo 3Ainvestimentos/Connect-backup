@@ -80,7 +80,7 @@ export default function RssFeed() {
             <CardDescription>Feed de Notícias Externo</CardDescription>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="overflow-hidden">
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && items && (

@@ -1,3 +1,4 @@
+
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -171,17 +172,17 @@ export default function DashboardV2Page() {
             description="Veja os últimos anúncios e destaques da empresa."
           />
           {hasHighlights && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3" style={{ minHeight: '450px' }}>
-                <div className="h-full">
-                    {largeHighlight && <HighlightCard item={largeHighlight} className="h-full" />}
-                </div>
-                <div className="flex flex-col gap-3 h-full">
-                    {smallHighlights.map(item => (
-                        <div key={item.id} className="flex-1 h-full">
-                            <HighlightCard item={item} className="h-full" />
-                        </div>
-                    ))}
-                </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3 h-[450px] md:h-[500px]">
+                {largeHighlight && (
+                  <div className="md:row-span-2 h-full min-h-[200px]">
+                    <HighlightCard item={largeHighlight} className="h-full" />
+                  </div>
+                )}
+                {smallHighlights.map(item => (
+                    <div key={item.id} className="h-full min-h-[200px]">
+                        <HighlightCard item={item} className="h-full" />
+                    </div>
+                ))}
             </div>
           )}
         </section>
