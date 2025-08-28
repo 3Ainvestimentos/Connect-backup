@@ -1,8 +1,20 @@
+
 // src/app/api/rss/route.ts
 import { NextResponse } from 'next/server';
 import Parser from 'rss-parser';
 
 const parser = new Parser();
+
+interface CustomFeedItem extends Parser.Item {
+  sourceCategory?: string;
+}
+
+const getCategoryFromUrl = (url: string): string => {
+    if (url.includes('mercados')) return 'Mercados';
+    if (url.includes('economia')) return 'Economia';
+    if (url.includes('business')) return 'Business';
+    return 'Notícias';
+};
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,13 +27,22 @@ export async function GET(request: Request) {
   const feedUrls = feedUrlsParam.split(',');
 
   try {
-    const fetchPromises = feedUrls.map(url => parser.parseURL(url));
-    const feeds = await Promise.allSettled(fetchPromises);
+    const fetchPromises = feedUrls.map(async (url) => {
+      const feed = await parser.parseURL(url);
+      const category = getCategoryFromUrl(url);
+      return { feed, category };
+    });
+    
+    const results = await Promise.allSettled(fetchPromises);
 
-    let combinedItems: Parser.Item[] = [];
-    feeds.forEach((result) => {
-      if (result.status === 'fulfilled' && result.value.items) {
-        combinedItems = combinedItems.concat(result.value.items);
+    let combinedItems: CustomFeedItem[] = [];
+    results.forEach((result) => {
+      if (result.status === 'fulfilled' && result.value.feed.items) {
+        const itemsWithSource = result.value.feed.items.map(item => ({
+          ...item,
+          sourceCategory: result.value.category,
+        }));
+        combinedItems = combinedItems.concat(itemsWithSource);
       }
     });
 

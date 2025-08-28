@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
@@ -18,6 +18,7 @@ interface FeedItem {
   contentSnippet?: string;
   isoDate?: string;
   creator?: string;
+  sourceCategory?: string;
 }
 
 const feedUrls = [
@@ -42,8 +43,8 @@ export default function RssFeed() {
   const { data: items, isLoading, isError } = useQuery<FeedItem[], Error>({
     queryKey: ['rssFeeds', feedUrls],
     queryFn: () => fetchFeeds(feedUrls),
-    staleTime: 1000 * 60 * 10,
-    refetchInterval: 1000 * 60 * 60,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    refetchInterval: 1000 * 60 * 60, // 1 hour
     refetchOnWindowFocus: false,
   });
 
@@ -64,7 +65,7 @@ export default function RssFeed() {
 
 
   const renderSkeleton = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {[...Array(3)].map((_, i) => (
         <Card key={i} className="flex flex-col">
           <CardHeader>
@@ -96,10 +97,10 @@ export default function RssFeed() {
         {isLoading && renderSkeleton()}
         {isError && <p className="text-center text-destructive">Erro ao carregar notícias do feed.</p>}
         {!isLoading && !isError && paginatedItems && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
-                <Card className="h-full flex flex-col hover:border-header transition-colors w-full">
+                <Card className="h-full flex flex-col w-full transition-colors">
                   <CardHeader>
                     <CardTitle className="font-headline text-base leading-tight break-words group-hover:underline">{item.title}</CardTitle>
                   </CardHeader>
@@ -107,7 +108,7 @@ export default function RssFeed() {
                     <p className="text-sm text-muted-foreground line-clamp-4 break-words">{item.contentSnippet}</p>
                   </CardContent>
                   <CardFooter className="flex justify-between items-center text-xs text-muted-foreground border-t pt-3 mt-auto">
-                    <span>{item.creator || 'InfoMoney'}</span>
+                    <span>{item.sourceCategory || 'InfoMoney'}</span>
                     <span>{item.isoDate ? format(new Date(item.isoDate), "dd MMM, yyyy", { locale: ptBR }) : ''}</span>
                   </CardFooter>
                 </Card>
