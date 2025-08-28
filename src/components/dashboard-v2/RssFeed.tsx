@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import type Parser from 'rss-parser';
+import type { FeedItem } from '@/app/api/rss/route';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -19,15 +19,6 @@ const feedUrls = [
   'https://www.infomoney.com.br/economia/rss',
   'https://www.infomoney.com.br/business/rss',
 ];
-
-interface FeedItem {
-  title?: string;
-  link?: string;
-  pubDate?: string;
-  isoDate?: string;
-  contentSnippet?: string;
-  creator?: string;
-}
 
 // 2. Função de busca que chama a NOSSA API INTERNA
 const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
@@ -95,7 +86,7 @@ export default function RssFeed() {
                           <CardTitle className="font-headline text-base line-clamp-3 break-words">{item.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex-grow">
-                          <p className="text-sm text-muted-foreground line-clamp-4">{item.contentSnippet}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-4 break-words">{item.contentSnippet}</p>
                         </CardContent>
                         <CardFooter className="flex justify-between items-center text-xs text-muted-foreground border-t pt-3 mt-auto">
                           <span>{item.creator || 'InfoMoney'}</span>
