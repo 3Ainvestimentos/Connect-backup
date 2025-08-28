@@ -20,10 +20,16 @@ interface UploadOptions {
  * Uploads a file to a specified path in Firebase Storage, with detailed logging.
  * @param file The file to upload.
  * @param storagePath The base path in Storage where the file should be saved (e.g., 'Destaques e notícias').
+ * @param fileName An optional, specific name for the file.
  * @param options An optional object containing a logging function.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
-export const uploadFile = async (file: File, storagePath: string, options: UploadOptions = {}): Promise<string> => {
+export const uploadFile = async (
+  file: File,
+  storagePath: string,
+  fileName?: string,
+  options: UploadOptions = {}
+): Promise<string> => {
     const { addLog } = options;
     const noOpLog = () => {}; // A no-operation function if addLog is not provided
     const log = addLog || noOpLog;
@@ -31,11 +37,14 @@ export const uploadFile = async (file: File, storagePath: string, options: Uploa
     try {
         log("3. Entrando em uploadFile...");
         
-        // This is the crucial fix: Get the storage instance *inside* the function.
-        const storage = getStorage(app);
+        // CRITICAL FIX: Get a fresh instance of the app and storage inside the function
+        // This ensures the correct context, especially for authentication, is used for the operation.
+        const currentApp = getFirebaseApp();
+        const storage = getStorage(currentApp);
 
-        // Standardized file name to prevent conflicts and ensure uniqueness
-        const standardizedFileName = `${Date.now()}-${encodeURIComponent(file.name.replace(/\s+/g, '_'))}`;
+        const standardizedFileName = `${Date.now()}-${encodeURIComponent(
+          (fileName || file.name).replace(/\s+/g, '_')
+        )}`;
 
         const filePath = `${storagePath}/${standardizedFileName}`;
         log(`4. Caminho do arquivo definido como: ${filePath}`);
