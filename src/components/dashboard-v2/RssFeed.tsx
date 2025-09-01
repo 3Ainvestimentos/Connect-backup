@@ -130,7 +130,7 @@ export default function RssFeed() {
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground line-clamp-4 break-words">{item.contentSnippet}</p>
                   </CardContent>
-                  <CardFooter className="flex justify-between items-center text-xs text-muted-foreground border-t pt-3 mt-auto">
+                  <CardFooter className="flex justify-between items-center text-xs text-header-background bg-accent border-t pt-3 mt-auto">
                     <span>{item.sourceCategory || 'InfoMoney'}</span>
                     <span>{item.isoDate ? format(new Date(item.isoDate), "dd MMM, yyyy", { locale: ptBR }) : ''}</span>
                   </CardFooter>
@@ -142,14 +142,14 @@ export default function RssFeed() {
       </CardContent>
        <CardFooter className="flex justify-center items-center pt-4 border-t">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={currentPage === 1} className="h-8 w-8">
+          <Button variant="outline" size="icon" onClick={handlePrevPage} disabled={currentPage === 1} className="h-8 w-8">
             <ChevronLeft className="h-4 w-4" />
              <span className="sr-only">Anterior</span>
           </Button>
           <span className="text-xs text-muted-foreground font-mono">
             {currentPage} / {totalPages}
           </span>
-          <Button variant="outline" size="sm" onClick={handleNextPage} disabled={currentPage === totalPages} className="h-8 w-8">
+          <Button variant="outline" size="icon" onClick={handleNextPage} disabled={currentPage === totalPages} className="h-8 w-8">
             <ChevronRight className="h-4 w-4" />
             <span className="sr-only">Próxima</span>
           </Button>
