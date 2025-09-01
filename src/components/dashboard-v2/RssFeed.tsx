@@ -130,7 +130,7 @@ export default function RssFeed() {
                   <CardContent className="flex-grow">
                     <p className="text-sm text-muted-foreground line-clamp-4 break-words">{item.contentSnippet}</p>
                   </CardContent>
-                  <CardFooter className="flex justify-between items-center text-xs text-header-background bg-accent border-t pt-3 mt-auto">
+                  <CardFooter className="flex justify-between items-center text-xs text-secondary-foreground bg-secondary border-t pt-3 mt-auto">
                     <span>{item.sourceCategory || 'InfoMoney'}</span>
                     <span>{item.isoDate ? format(new Date(item.isoDate), "dd MMM, yyyy", { locale: ptBR }) : ''}</span>
                   </CardFooter>
