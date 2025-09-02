@@ -25,6 +25,7 @@ import { addDocumentToCollection } from '@/lib/firestore-service';
 import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
 import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
 import RssFeed from '@/components/dashboard-v2/RssFeed';
+import TradingViewWidget from '@/components/dashboard-v2/TradingViewWidget';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -192,12 +193,12 @@ export default function DashboardV2Page() {
             <RssFeed />
           </div>
           <div className="w-1/4">
-            <Card className="h-full">
+            <Card className="h-full flex flex-col">
               <CardHeader>
-                <CardTitle>Novo Card</CardTitle>
+                <CardTitle>Visão de Mercado</CardTitle>
               </CardHeader>
-              <CardContent>
-                {/* Content will be added later */}
+              <CardContent className="flex-grow">
+                <TradingViewWidget />
               </CardContent>
             </Card>
           </div>
