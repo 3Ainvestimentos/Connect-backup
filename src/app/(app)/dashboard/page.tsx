@@ -195,7 +195,7 @@ export default function DashboardV2Page() {
           <div className="w-full md:w-1/4">
             <Card className="h-full flex flex-col">
               <CardHeader>
-                  <Image src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2FTradingView-Logo.png?alt=media&token=197efd23-e52d-42d2-8554-424ad5df43a4" alt="TradingView Logo" width={150} height={40} />
+                  <Image src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2FTradingView-Logo.png?alt=media&token=197efd23-e52d-42d2-8554-424ad5df43a4" alt="TradingView Logo" width={195} height={52} />
               </CardHeader>
               <CardContent className="flex-grow">
                 <TradingViewWidget />
