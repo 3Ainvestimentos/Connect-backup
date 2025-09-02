@@ -106,15 +106,11 @@ export default function RssFeed() {
   return (
     <Card className="shadow-sm">
       <CardHeader>
-        <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <Image src={logoUrl} alt="InfoMoney Logo" width={150} height={40} />
-            </div>
-            <CardDescription>
-                Feed de Notícias Externo
-                {lastUpdatedTime && ` (atualizado às ${lastUpdatedTime})`}
-            </CardDescription>
-        </div>
+        <Image src={logoUrl} alt="InfoMoney Logo" width={150} height={40} />
+        <CardDescription>
+            Feed de Notícias Externo
+            {lastUpdatedTime && ` (atualizado às ${lastUpdatedTime})`}
+        </CardDescription>
       </CardHeader>
       <CardContent className="overflow-hidden">
         {isLoading && renderSkeleton()}
@@ -123,7 +119,7 @@ export default function RssFeed() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {paginatedItems.map((item, index) => (
               <a href={item.link} target="_blank" rel="noopener noreferrer" className="block h-full group" key={index}>
-                <Card className="h-full flex flex-col w-full transition-colors">
+                <Card className="h-full flex flex-col w-full transition-colors hover:bg-muted/50">
                   <CardHeader>
                     <CardTitle className="font-headline text-base leading-tight group-hover:underline break-words">{item.title}</CardTitle>
                   </CardHeader>
