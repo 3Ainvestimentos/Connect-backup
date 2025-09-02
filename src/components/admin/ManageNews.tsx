@@ -317,15 +317,15 @@ export function ManageNews() {
                                             </div>
                                             <div className="space-y-2">
                                                 <p className="text-sm font-semibold text-center">Destaque Pequeno</p>
-                                                <div className="relative rounded-lg overflow-hidden h-64 w-full bg-black aspect-video">
+                                                <div className="relative rounded-lg overflow-hidden h-40 w-full bg-black">
                                                      {previewingNews.videoUrl ? (
                                                         <video src={previewingNews.videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
                                                     ) : (
                                                         <Image src={previewingNews.imageUrl} alt="Preview pequeno" layout="fill" objectFit="cover" />
                                                     )}
                                                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
-                                                        <h3 className="text-xl font-headline font-bold text-white">{previewingNews.title}</h3>
-                                                        <p className="text-sm text-gray-200 font-body">{previewingNews.snippet}</p>
+                                                        <h3 className="text-lg font-headline font-bold text-white">{previewingNews.title}</h3>
+                                                        <p className="text-xs text-gray-200 font-body">{previewingNews.snippet}</p>
                                                     </div>
                                                 </div>
                                             </div>
