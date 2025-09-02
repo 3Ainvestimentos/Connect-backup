@@ -187,8 +187,20 @@ export default function DashboardV2Page() {
           )}
         </section>
 
-        <section>
-          <RssFeed />
+        <section className="flex flex-col md:flex-row gap-6">
+          <div className="w-full md:w-3/4">
+            <RssFeed />
+          </div>
+          <div className="w-full md:w-1/4">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Novo Card</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* Content will be added later */}
+              </CardContent>
+            </Card>
+          </div>
         </section>
         
         <section className="space-y-6">
@@ -371,3 +383,5 @@ export default function DashboardV2Page() {
     </>
   );
 }
+
+    
