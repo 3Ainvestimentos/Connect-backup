@@ -45,6 +45,15 @@ const TradingViewWidget: React.FC = () => {
                     "originalTitle": "Indices"
                 },
                 {
+                    "title": "Futuros",
+                    "symbols": [
+                        { "s": "BMFBOVESPA:T101!", "d": "Treasure 10 anos" },
+                        { "s": "BMFBOVESPA:IND1!", "d": "Ibovespa Futuro" },
+                        { "s": "BMFBOVESPA:ISP1!", "d": "S&P 500 Futuro" },
+                        { "s": "BMFBOVESPA:DI11!", "d": "DI Futuro" }
+                    ]
+                },
+                {
                     "title": "Moedas",
                     "symbols": [
                         { "s": "FX_IDC:USDBRL", "d": "USD/BRL" },
@@ -53,15 +62,6 @@ const TradingViewWidget: React.FC = () => {
                         { "s": "CMCMARKETS:GBPUSD", "d": "GBP/USD" }
                     ],
                     "originalTitle": "Forex"
-                },
-                {
-                    "title": "Futuros",
-                    "symbols": [
-                        { "s": "BMFBOVESPA:T101!", "d": "Treasure 10 anos" },
-                        { "s": "BMFBOVESPA:IND1!", "d": "Ibovespa Futuro" },
-                        { "s": "BMFBOVESPA:ISP1!", "d": "S&P 500 Futuro" },
-                        { "s": "BMFBOVESPA:DI11!", "d": "DI Futuro" }
-                    ]
                 }
             ],
             "support_host": "https://www.tradingview.com",
