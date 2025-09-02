@@ -9,6 +9,11 @@ const TradingViewWidget: React.FC = () => {
     const { theme } = useTheme();
 
     useEffect(() => {
+        if (!containerRef.current) return;
+
+        // Limpa o container antes de adicionar o novo script para evitar duplicação
+        containerRef.current.innerHTML = '';
+        
         const script = document.createElement('script');
         script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
         script.async = true;
@@ -61,16 +66,10 @@ const TradingViewWidget: React.FC = () => {
             ],
             "support_host": "https://www.tradingview.com",
             "width": "100%",
-            "height": "100%",
-            "showSymbolLogo": false,
-            "showChart": true
+            "height": "100%"
         });
 
-        if (containerRef.current) {
-            // Limpa o container antes de adicionar o novo script para evitar duplicação
-            containerRef.current.innerHTML = '';
-            containerRef.current.appendChild(script);
-        }
+        containerRef.current.appendChild(script);
 
         // Cleanup function para remover o script quando o componente é desmontado
         return () => {
@@ -82,6 +81,7 @@ const TradingViewWidget: React.FC = () => {
 
     return (
         <div ref={containerRef} className="tradingview-widget-container h-full">
+            {/* O script irá criar um div filho aqui, então podemos deixar um placeholder */}
             <div className="tradingview-widget-container__widget h-full"></div>
         </div>
     );
