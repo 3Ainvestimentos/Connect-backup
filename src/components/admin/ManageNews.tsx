@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Separator } from '../ui/separator';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -254,53 +255,92 @@ export function ManageNews() {
             </Card>
 
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-              <DialogContent className="max-w-2xl">
-                {previewingNews && (
-                  <>
-                    <DialogHeader>
-                      <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4 bg-black">
-                          {previewingNews.videoUrl ? (
-                              <video src={previewingNews.videoUrl} controls autoPlay className="w-full h-full object-contain" />
-                          ) : (
-                              <Image
-                                  src={previewingNews.imageUrl}
-                                  alt={previewingNews.title}
-                                  layout="fill"
-                                  objectFit="cover"
-                              />
-                          )}
-                      </div>
-                      <DialogTitle className="font-headline text-2xl text-left">{previewingNews.title}</DialogTitle>
-                      <div className="text-left !mt-2">
-                          <Badge variant="outline" className="font-body text-foreground">{previewingNews.category}</Badge>
-                          <span className="text-xs text-muted-foreground font-body ml-2">
-                              {new Date(previewingNews.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                          </span>
-                      </div>
-                    </DialogHeader>
-                    <ScrollArea className="max-h-[40vh] pr-4">
-                      <div className="py-4 text-sm text-foreground">
-                        {previewingNews.content && <p className="whitespace-pre-wrap">{previewingNews.content}</p>}
-                        {previewingNews.link && (
-                          <div className="mt-4">
-                            <Button variant="outline" asChild>
-                              <a href={previewingNews.link} target="_blank" rel="noopener noreferrer">
-                                <LinkIcon className="mr-2 h-4 w-4" />
-                                Acessar Link
-                              </a>
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </ScrollArea>
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="outline" className="hover:bg-muted">Fechar</Button>
-                      </DialogClose>
-                    </DialogFooter>
-                  </>
-                )}
-              </DialogContent>
+                <DialogContent className="max-w-4xl">
+                    {previewingNews && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="font-headline text-2xl text-left">{previewingNews.title}</DialogTitle>
+                                <div className="text-left !mt-2">
+                                    <Badge variant="outline" className="font-body text-foreground">{previewingNews.category}</Badge>
+                                    <span className="text-xs text-muted-foreground font-body ml-2">
+                                        {new Date(previewingNews.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                                    </span>
+                                </div>
+                            </DialogHeader>
+                            <ScrollArea className="max-h-[70vh]">
+                                <div className="pr-6 space-y-6">
+                                    <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4 bg-black">
+                                        {previewingNews.videoUrl ? (
+                                            <video src={previewingNews.videoUrl} controls autoPlay className="w-full h-full object-contain" />
+                                        ) : (
+                                            <Image
+                                                src={previewingNews.imageUrl}
+                                                alt={previewingNews.title}
+                                                layout="fill"
+                                                objectFit="cover"
+                                            />
+                                        )}
+                                    </div>
+                                    
+                                    <div className="py-4 text-sm text-foreground">
+                                        {previewingNews.content && <p className="whitespace-pre-wrap">{previewingNews.content}</p>}
+                                        {previewingNews.link && (
+                                            <div className="mt-4">
+                                                <Button variant="outline" asChild>
+                                                    <a href={previewingNews.link} target="_blank" rel="noopener noreferrer">
+                                                        <LinkIcon className="mr-2 h-4 w-4" />
+                                                        Acessar Link
+                                                    </a>
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <Separator />
+
+                                    <div>
+                                        <h3 className="font-headline text-lg font-bold mb-4">Prévia do Destaque na Tela Inicial</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-semibold text-center">Destaque Grande</p>
+                                                <div className="relative rounded-lg overflow-hidden h-64 w-full bg-black">
+                                                    {previewingNews.videoUrl ? (
+                                                        <video src={previewingNews.videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Image src={previewingNews.imageUrl} alt="Preview grande" layout="fill" objectFit="cover" />
+                                                    )}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+                                                        <h3 className="text-xl font-headline font-bold text-white">{previewingNews.title}</h3>
+                                                        <p className="text-sm text-gray-200 font-body">{previewingNews.snippet}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-semibold text-center">Destaque Pequeno</p>
+                                                <div className="relative rounded-lg overflow-hidden h-64 w-full bg-black aspect-video">
+                                                     {previewingNews.videoUrl ? (
+                                                        <video src={previewingNews.videoUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <Image src={previewingNews.imageUrl} alt="Preview pequeno" layout="fill" objectFit="cover" />
+                                                    )}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-4 flex flex-col justify-end">
+                                                        <h3 className="text-xl font-headline font-bold text-white">{previewingNews.title}</h3>
+                                                        <p className="text-sm text-gray-200 font-body">{previewingNews.snippet}</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ScrollArea>
+                            <DialogFooter className="pt-4">
+                                <DialogClose asChild>
+                                <Button type="button" variant="outline" className="hover:bg-muted">Fechar</Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </>
+                    )}
+                </DialogContent>
             </Dialog>
 
              <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingNews(null); setIsDialogOpen(isOpen); }}>
@@ -369,3 +409,4 @@ export function ManageNews() {
         </>
     );
 }
+
