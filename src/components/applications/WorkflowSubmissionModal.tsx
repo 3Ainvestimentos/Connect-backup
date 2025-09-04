@@ -105,7 +105,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             .map(async (field) => {
                 const file = fileFields[field.id];
                 if (file) {
-                    const url = await uploadFile(file, storagePath);
+                    const url = await uploadFile(file, storagePath, newRequest.id);
                     formDataForFirestore[field.id] = url;
                 }
             });

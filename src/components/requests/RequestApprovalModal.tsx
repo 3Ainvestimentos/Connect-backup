@@ -231,9 +231,12 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     let attachmentUrl = '';
 
     try {
+        const storagePath = workflowArea?.storageFolderPath;
+        if (!storagePath) {
+            throw new Error(`A área de workflow para "${definition?.name}" não tem uma pasta de armazenamento configurada.`);
+        }
         if (response === 'executed' && attachment) {
-            const storagePath = workflowArea?.storageFolderPath;
-            attachmentUrl = await uploadFile(attachment, request.id, attachment.name, storagePath);
+            attachmentUrl = await uploadFile(attachment, storagePath, request.id, attachment.name);
             historyNote += ` Anexo: ${attachment.name}.`;
         }
     } catch (e) {

@@ -19,79 +19,55 @@ interface UploadOptions {
 }
 
 /**
- * Uploads a file to a specified path in Firebase Storage, with detailed logging.
- * Uses uploadBytesResumable to provide progress feedback.
+ * Uploads a file to a specified path in Firebase Storage.
  * @param file The file to upload.
  * @param storagePath The base path in Storage where the file should be saved.
+ * @param requestId The ID of the workflow request for sub-folder organization.
  * @param fileName The name for the file. If not provided, the original file name is used.
- * @param options An optional object containing a logging function.
  * @returns A promise that resolves to the download URL of the uploaded file.
  */
 export const uploadFile = (
   file: File,
   storagePath: string,
-  fileName?: string,
-  options: { addLog?: (log: string) => void } = {}
+  requestId: string,
+  fileName?: string
 ): Promise<string> => {
-    const { addLog = () => {} } = options;
-    const log = (message: string) => {
-        if (typeof window !== 'undefined') {
-            addLog(message);
+  return new Promise((resolve, reject) => {
+    try {
+      const currentApp = getFirebaseApp();
+      const storage = getStorage(currentApp);
+
+      const finalFileName = `${Date.now()}-${encodeURIComponent((fileName || file.name).replace(/\s+/g, '_'))}`;
+      
+      // Use a consistent folder structure: {base_path}/{request_id}/{file_name}
+      const filePath = `${storagePath}/${requestId}/${finalFileName}`;
+      
+      const storageRef = ref(storage, filePath);
+      
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot: UploadTaskSnapshot) => {
+          // Progress can be monitored here if needed
+        }, 
+        (error) => {
+          console.error("Upload Error Details:", error);
+          reject(new Error(`Falha no upload: ${error.code}`));
+        }, 
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+            resolve(downloadURL);
+          }).catch(error => {
+            reject(new Error(`Falha ao obter URL de download: ${error.code}`));
+          });
         }
-    };
-    
-    return new Promise((resolve, reject) => {
-        try {
-            log("3. Entrando em uploadFile...");
-            
-            const currentApp = getFirebaseApp();
-            const storage = getStorage(currentApp);
+      );
 
-            const finalFileName = `${Date.now()}-${encodeURIComponent((fileName || file.name).replace(/\s+/g, '_'))}`;
-            const filePath = `${storagePath}/${finalFileName}`;
-            
-            log(`4. Caminho do arquivo definido como: ${filePath}`);
-
-            log("5. Criando referência do Storage...");
-            const storageRef = ref(storage, filePath);
-            
-            log(`6. Referência criada. Path: ${storageRef.fullPath}, Bucket: ${storageRef.bucket}`);
-            log(`6.1. Detalhes do arquivo: Nome - ${file.name}, Tamanho - ${file.size} bytes, Tipo - ${file.type}`);
-            
-            log("7. Chamando uploadBytesResumable...");
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            uploadTask.on('state_changed', 
-                (snapshot: UploadTaskSnapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    log(`Progresso do Upload: ${progress.toFixed(2)}% (${snapshot.state})`);
-                }, 
-                (error) => {
-                    const errorMessage = error.code ? `Código: ${error.code} - ${error.message}` : error.message;
-                    log(`ERRO no upload: ${errorMessage}`);
-                    console.error("Upload Error Details:", error);
-                    reject(new Error(`Falha no upload: ${error.code}`));
-                }, 
-                () => {
-                    log("Upload concluído com sucesso. Obtendo URL de download...");
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                        log("URL de download obtida com sucesso.");
-                        resolve(downloadURL);
-                    }).catch(error => {
-                        const errorMessage = error.code ? `Código: ${error.code} - ${error.message}` : error.message;
-                        log(`ERRO ao obter URL de download: ${errorMessage}`);
-                        reject(new Error(`Falha ao obter URL de download: ${error.code}`));
-                    });
-                }
-            );
-
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            log(`ERRO na função uploadFile: ${errorMessage}`);
-            console.error("Error setting up upload:", error);
-            reject(new Error("Não foi possível iniciar o upload do arquivo."));
-        }
-    });
+    } catch (error) {
+      console.error("Error setting up upload:", error);
+      reject(new Error("Não foi possível iniciar o upload do arquivo."));
+    }
+  });
 };
 
 
