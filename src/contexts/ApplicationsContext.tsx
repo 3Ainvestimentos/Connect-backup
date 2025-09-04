@@ -12,7 +12,6 @@ const workflowActionSchema = z.object({
   label: z.string().min(1, "O rótulo da ação é obrigatório."),
   approverIds: z.array(z.string()).optional(), // Optional: pre-defined approvers
   commentRequired: z.boolean().optional(),
-  attachmentRequired: z.boolean().optional(),
   commentPlaceholder: z.string().optional(),
   attachmentPlaceholder: z.string().optional(),
 });

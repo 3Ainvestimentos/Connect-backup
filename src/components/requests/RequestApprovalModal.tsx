@@ -221,11 +221,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
             setActionResponse(null); // Reset for next attempt
             return;
         }
-        if (actionDef.attachmentRequired && !attachment) {
-            toast({ title: "Erro de Validação", description: "O anexo é obrigatório para esta ação.", variant: "destructive" });
-            setActionResponse(null);
-            return;
-        }
     }
     
     setIsSubmitting(true);
@@ -532,7 +527,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                     <Textarea id="execution_comment" value={comment} onChange={e => setComment(e.target.value)} placeholder={actionDef?.commentPlaceholder || ''} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="execution_attachment">Anexo {actionDef?.attachmentRequired && '*'}</Label>
+                    <Label htmlFor="execution_attachment">Anexo</Label>
                     <Input id="execution_attachment" type="file" onChange={e => setAttachment(e.target.files ? e.target.files[0] : null)} placeholder={actionDef?.attachmentPlaceholder || ''}/>
                 </div>
                 <Button className="w-full bg-admin-primary hover:bg-admin-primary/90" onClick={() => handleActionResponse('executed')} disabled={isSubmitting}>
