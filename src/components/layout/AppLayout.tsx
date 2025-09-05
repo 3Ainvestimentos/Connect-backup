@@ -49,6 +49,7 @@ import PollTrigger from '@/components/polls/PollTrigger';
 import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { TermsOfUseModal } from '../auth/TermsOfUseModal';
 import MessageFAB from '../fab/MessageFAB';
+import FloatingActionButton from '../fab/FloatingActionButton';
 
 
 export const navItems = [
@@ -427,6 +428,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
           {children}
+          <FloatingActionButton />
           <MessageFAB />
         </main>
       </div>
