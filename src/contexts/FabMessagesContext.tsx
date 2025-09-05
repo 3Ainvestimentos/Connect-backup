@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
-// Schemas for the individual messages within a pipeline step
+// Schemas for the individual messages within a Campaign
 const ctaMessageSchema = z.object({
   title: z.string().min(1, "Título do CTA é obrigatório."),
   icon: z.string().min(1, "Ícone é obrigatório."),
@@ -20,41 +20,38 @@ const followUpMessageSchema = z.object({
   ctaLink: z.string().url("Link do botão deve ser uma URL válida."),
 });
 
-// Schema for a single step in the message pipeline
-const pipelineStepSchema = z.object({
-  day: z.number().int().positive("O dia deve ser um número positivo."),
+// Schema for a single Campaign (CTA + Follow-up)
+export const campaignSchema = z.object({
+  id: z.string().default(() => `campaign_${Date.now()}_${Math.random()}`), // Unique ID for dnd-kit
   ctaMessage: ctaMessageSchema,
   followUpMessage: followUpMessageSchema,
 });
-export type PipelineStep = z.infer<typeof pipelineStepSchema>;
+export type CampaignType = z.infer<typeof campaignSchema>;
 
-// Main schema for a user's FAB message campaign.
+// Main schema for a user's FAB message pipeline.
 export const fabMessageSchema = z.object({
   userId: z.string(),
   userName: z.string(),
-  pipeline: z.array(pipelineStepSchema).min(1, "O pipeline deve ter pelo menos uma mensagem."),
+  pipeline: z.array(campaignSchema).default([]),
+  archivedCampaigns: z.array(campaignSchema).default([]),
   isActive: z.boolean().default(true),
-  // Tracking fields
-  currentDay: z.number().int().default(1),
+  activeCampaignIndex: z.number().int().default(0),
   status: z.enum(['pending_cta', 'pending_follow_up', 'completed']).default('pending_cta'),
-  sequenceStartDate: z.string().optional(), // ISO Date string, set on first click.
-  lastInteractionDate: z.string().optional(), // ISO Date string of the last click
   // Timestamps
   createdAt: z.string().default(() => new Date().toISOString()),
   updatedAt: z.string().default(() => new Date().toISOString()),
 });
 
 export type FabMessageType = WithId<z.infer<typeof fabMessageSchema>>;
-export type FabMessagePayload = z.infer<typeof fabMessageSchema>;
+export type FabMessagePayload = Partial<Omit<FabMessageType, 'id'>>;
 
 interface FabMessagesContextType {
   fabMessages: FabMessageType[];
   loading: boolean;
-  upsertMessageForUser: (userId: string, data: Partial<FabMessagePayload>) => Promise<void>;
+  upsertMessageForUser: (userId: string, data: FabMessagePayload) => Promise<void>;
   deleteMessageForUser: (userId: string) => Promise<void>;
-  advanceUserSequence: (userId: string) => Promise<void>;
-  startUserSequence: (userId: string) => Promise<void>;
-  resetUserSequence: (userId: string) => Promise<void>;
+  markCampaignAsClicked: (userId: string) => Promise<void>;
+  advanceToNextCampaign: (userId: string) => Promise<void>;
 }
 
 const FabMessagesContext = createContext<FabMessagesContextType | undefined>(undefined);
@@ -82,7 +79,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [queryClient]);
 
-  const upsertMutation = useMutation<void, Error, { userId: string; data: Partial<FabMessagePayload> }>({
+  const upsertMutation = useMutation<void, Error, { userId: string; data: FabMessagePayload }>({
     mutationFn: ({ userId, data }) => {
         const payload = { ...data, updatedAt: new Date().toISOString() };
         return setDocumentInCollection(COLLECTION_NAME, userId, payload);
@@ -99,61 +96,46 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const startSequenceMutation = useMutation<void, Error, string>({
-    mutationFn: (userId: string) => updateDocumentInCollection(COLLECTION_NAME, userId, { 
-      status: 'pending_follow_up',
-      sequenceStartDate: new Date().toISOString(),
-      lastInteractionDate: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }),
-    onSuccess: () => {
-        // Listener will handle update
-    }
+  const markAsClickedMutation = useMutation<void, Error, string>({
+    mutationFn: (userId: string) => {
+      return updateDocumentInCollection(COLLECTION_NAME, userId, {
+        status: 'pending_follow_up',
+        updatedAt: new Date().toISOString(),
+      });
+    },
   });
 
-  const advanceSequenceMutation = useMutation<void, Error, string>({
+  const advanceCampaignMutation = useMutation<void, Error, string>({
      mutationFn: (userId: string) => {
         const message = fabMessages.find(m => m.userId === userId);
         if (!message) throw new Error("Mensagem não encontrada para o usuário");
         
-        const nextDay = message.currentDay + 1;
+        const completedCampaign = message.pipeline[message.activeCampaignIndex];
+        const newArchived = [...(message.archivedCampaigns || []), completedCampaign];
         
-        const updatePayload: Partial<FabMessageType> = {
-            status: 'pending_cta',
-            currentDay: nextDay,
-            lastInteractionDate: new Date().toISOString(),
+        const nextIndex = message.activeCampaignIndex + 1;
+        const hasNextCampaign = nextIndex < message.pipeline.length;
+
+        const updatePayload: FabMessagePayload = {
+            status: hasNextCampaign ? 'pending_cta' : 'completed',
+            activeCampaignIndex: nextIndex,
+            archivedCampaigns: newArchived,
             updatedAt: new Date().toISOString(),
         };
 
         return updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
      },
-     onSuccess: () => {
-        // Listener will handle update
-     }
   });
   
-  const resetSequenceMutation = useMutation<void, Error, string>({
-    mutationFn: (userId: string) => updateDocumentInCollection(COLLECTION_NAME, userId, { 
-      status: 'pending_cta',
-      currentDay: 1,
-      sequenceStartDate: undefined, // remove field
-      lastInteractionDate: undefined, // remove field
-      updatedAt: new Date().toISOString(),
-    }),
-     onSuccess: () => {
-      // Listener will handle update
-    }
-  });
 
   const value = useMemo(() => ({
     fabMessages,
     loading: isFetching,
     upsertMessageForUser: (userId, data) => upsertMutation.mutateAsync({ userId, data }),
     deleteMessageForUser: (userId) => deleteMutation.mutateAsync(userId),
-    advanceUserSequence: (userId) => advanceSequenceMutation.mutateAsync(userId),
-    startUserSequence: (userId) => startSequenceMutation.mutateAsync(userId),
-    resetUserSequence: (userId) => resetSequenceMutation.mutateAsync(userId),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, advanceSequenceMutation, startSequenceMutation, resetSequenceMutation]);
+    markCampaignAsClicked: (userId) => markAsClickedMutation.mutateAsync(userId),
+    advanceToNextCampaign: (userId) => advanceCampaignMutation.mutateAsync(userId),
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, advanceCampaignMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>
