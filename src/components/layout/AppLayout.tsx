@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, Banknote, ListChecks, Award } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, Banknote, ListChecks, Award, MessageSquarePlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -175,6 +175,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
             <DropdownMenuGroup>
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Painéis de controle</DropdownMenuLabel>
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
+                {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/fab-messages" className="cursor-pointer font-body"><MessageSquarePlus className="mr-2 h-4 w-4" /><span>Mensagens FAB</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>

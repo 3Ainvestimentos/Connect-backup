@@ -11,13 +11,9 @@ import { ManageMessages } from '@/components/admin/ManageMessages';
 import { ManageQuickLinks } from '@/components/admin/ManageQuickLinks';
 import { ManagePolls } from '@/components/admin/ManagePolls';
 import { ManageRankings } from '@/components/admin/ManageRankings';
-import { Button } from '@/components/ui/button';
-import { MessageSquarePlus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 export default function AdminContentPage() {
     const [activeTab, setActiveTab] = useState("news");
-    const router = useRouter();
 
     return (
         <AdminGuard>
@@ -25,15 +21,6 @@ export default function AdminContentPage() {
                 <PageHeader 
                     title="Gerenciamento de Conteúdo"
                     description="Gerencie as informações dinâmicas da intranet."
-                    actions={
-                        <Button 
-                            className="bg-admin-primary hover:bg-admin-primary/90"
-                            onClick={() => router.push('/admin/fab-messages')}
-                        >
-                           <MessageSquarePlus className="mr-2 h-4 w-4" />
-                           Mensagens FAB
-                        </Button>
-                    }
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
