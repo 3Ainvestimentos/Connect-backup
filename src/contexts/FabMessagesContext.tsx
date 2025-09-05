@@ -3,33 +3,47 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, setDocumentInCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { arrayUnion } from 'firebase/firestore';
 
+// Nested schemas for the two types of messages
+const ctaMessageSchema = z.object({
+  title: z.string().min(1, "Título do CTA é obrigatório."),
+  icon: z.string().min(1, "Ícone é obrigatório."),
+  ctaText: z.string().min(1, "Texto do botão é obrigatório."),
+  ctaLink: z.string().url("Link do CTA deve ser uma URL válida."),
+});
+
+const followUpMessageSchema = z.object({
+  title: z.string().min(1, "Título do acompanhamento é obrigatório."),
+  content: z.string().min(1, "Conteúdo do acompanhamento é obrigatório."),
+  icon: z.string().min(1, "Ícone é obrigatório."),
+});
+
+
+// Main schema for a user's FAB message campaign. The document ID will be the user's ID.
 export const fabMessageSchema = z.object({
-  title: z.string().min(3, "O título deve ter pelo menos 3 caracteres."),
-  content: z.string().min(5, "O conteúdo deve ter pelo menos 5 caracteres."),
-  icon: z.string().min(1, "Um ícone deve ser selecionado."),
-  ctaLink: z.string().url("O link da ação deve ser uma URL válida."),
-  ctaText: z.string().min(1, "O texto da ação é obrigatório."),
-  targetUserIds: z.array(z.string()).min(1, "Ao menos um usuário deve ser selecionado."),
-  status: z.enum(['draft', 'sent']).default('draft'),
-  readByUserIds: z.array(z.string()).default([]),
-  clickedByUserIds: z.array(z.string()).default([]),
+  userId: z.string(), // This will be the document ID
+  userName: z.string(),
+  ctaMessage: ctaMessageSchema,
+  followUpMessage: followUpMessageSchema,
+  status: z.enum(['draft', 'sent', 'clicked']).default('draft'),
+  isActive: z.boolean().default(true),
   createdAt: z.string().default(() => new Date().toISOString()),
+  updatedAt: z.string().default(() => new Date().toISOString()),
 });
 
 export type FabMessageType = WithId<z.infer<typeof fabMessageSchema>>;
+export type FabMessagePayload = z.infer<typeof fabMessageSchema>;
 
 interface FabMessagesContextType {
   fabMessages: FabMessageType[];
   loading: boolean;
-  addFabMessage: (message: Omit<FabMessageType, 'id'>) => Promise<FabMessageType>;
-  updateFabMessage: (message: Partial<FabMessageType> & { id: string }) => Promise<void>;
-  deleteFabMessageMutation: UseMutationResult<void, Error, string, unknown>;
-  markAsRead: (messageId: string, userId: string) => Promise<void>;
-  markAsClicked: (messageId: string, userId: string) => Promise<void>;
+  upsertMessageForUser: (userId: string, data: Partial<FabMessagePayload>) => Promise<void>;
+  deleteMessageForUser: (userId: string) => Promise<void>;
+  markAsClicked: (userId: string) => Promise<void>;
+  updateMessageStatus: (userId: string, status: 'draft' | 'sent' | 'clicked', isActive: boolean) => Promise<void>;
 }
 
 const FabMessagesContext = createContext<FabMessagesContextType | undefined>(undefined);
@@ -42,15 +56,13 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: async () => [],
     staleTime: Infinity,
-    select: (data) => data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
   });
 
   React.useEffect(() => {
     const unsubscribe = listenToCollection<FabMessageType>(
       COLLECTION_NAME,
       (newData) => {
-        const sortedData = newData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        queryClient.setQueryData([COLLECTION_NAME], sortedData);
+        queryClient.setQueryData([COLLECTION_NAME], newData);
       },
       (error) => {
         console.error(`Failed to listen to ${COLLECTION_NAME} collection:`, error);
@@ -59,68 +71,53 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [queryClient]);
 
-  const addFabMessageMutation = useMutation<WithId<Omit<FabMessageType, 'id'>>, Error, Omit<FabMessageType, 'id'>>({
-    mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, messageData),
-  });
-
-  const updateFabMessageMutation = useMutation<void, Error, Partial<FabMessageType> & { id: string }>({
-    mutationFn: (updatedMessage) => {
-      const { id, ...data } = updatedMessage;
-      return updateDocumentInCollection(COLLECTION_NAME, id, data);
+  const upsertMutation = useMutation<void, Error, { userId: string; data: Partial<FabMessagePayload> }>({
+    mutationFn: ({ userId, data }) => {
+        const payload = { ...data, updatedAt: new Date().toISOString() };
+        return setDocumentInCollection(COLLECTION_NAME, userId, payload);
+    },
+     onSuccess: () => {
+      // Listener will update the cache
     },
   });
 
-  const deleteFabMessageMutation = useMutation<void, Error, string>({
-    mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-  });
-
-  const markAsReadMutation = useMutation<void, Error, { messageId: string; userId: string }>({
-    mutationFn: ({ messageId, userId }) => {
-      return updateDocumentInCollection(COLLECTION_NAME, messageId, {
-        readByUserIds: arrayUnion(userId)
-      });
-    },
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: FabMessageType[] | undefined) => {
-          if (!oldData) return [];
-          return oldData.map(msg => {
-              if (msg.id === variables.messageId && !msg.readByUserIds.includes(variables.userId)) {
-                  return { ...msg, readByUserIds: [...msg.readByUserIds, variables.userId] };
-              }
-              return msg;
-          });
-      });
+  const deleteMutation = useMutation<void, Error, string>({
+    mutationFn: (userId: string) => deleteDocumentFromCollection(COLLECTION_NAME, userId),
+    onSuccess: () => {
+      // Listener will update the cache
     },
   });
 
-  const markAsClickedMutation = useMutation<void, Error, { messageId: string; userId: string }>({
-    mutationFn: ({ messageId, userId }) => {
-      return updateDocumentInCollection(COLLECTION_NAME, messageId, {
-        clickedByUserIds: arrayUnion(userId)
-      });
-    },
-    onSuccess: (data, variables) => {
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: FabMessageType[] | undefined) => {
-          if (!oldData) return [];
-          return oldData.map(msg => {
-              if (msg.id === variables.messageId && !msg.clickedByUserIds.includes(variables.userId)) {
-                  return { ...msg, clickedByUserIds: [...msg.clickedByUserIds, variables.userId] };
-              }
-              return msg;
-          });
-      });
+  const markAsClickedMutation = useMutation<void, Error, string>({
+    mutationFn: (userId: string) => updateDocumentInCollection(COLLECTION_NAME, userId, { 
+        status: 'clicked',
+        updatedAt: new Date().toISOString(),
+    }),
+     onSuccess: () => {
+      // Listener will update the cache
     },
   });
+
+  const updateStatusMutation = useMutation<void, Error, { userId: string, status: 'draft' | 'sent' | 'clicked', isActive: boolean }>({
+    mutationFn: ({ userId, status, isActive }) => updateDocumentInCollection(COLLECTION_NAME, userId, { 
+        status, 
+        isActive,
+        updatedAt: new Date().toISOString(),
+    }),
+     onSuccess: () => {
+      // Listener will update the cache
+    },
+  });
+
 
   const value = useMemo(() => ({
     fabMessages,
     loading: isFetching,
-    addFabMessage: (message) => addFabMessageMutation.mutateAsync(message) as Promise<FabMessageType>,
-    updateFabMessage: (message) => updateFabMessageMutation.mutateAsync(message),
-    deleteFabMessageMutation,
-    markAsRead: (messageId, userId) => markAsReadMutation.mutateAsync({ messageId, userId }),
-    markAsClicked: (messageId, userId) => markAsClickedMutation.mutateAsync({ messageId, userId }),
-  }), [fabMessages, isFetching, addFabMessageMutation, updateFabMessageMutation, deleteFabMessageMutation, markAsReadMutation, markAsClickedMutation]);
+    upsertMessageForUser: (userId, data) => upsertMutation.mutateAsync({ userId, data }),
+    deleteMessageForUser: (userId) => deleteMutation.mutateAsync(userId),
+    markAsClicked: (userId) => markAsClickedMutation.mutateAsync(userId),
+    updateMessageStatus: (userId, status, isActive) => updateStatusMutation.mutateAsync({ userId, status, isActive }),
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, updateStatusMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>
