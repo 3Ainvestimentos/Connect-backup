@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -31,6 +32,8 @@ const formSchema = z.object({
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
 type SortKey = 'name' | 'status' | 'isActive';
+type CampaignType = z.infer<typeof campaignSchema>;
+
 
 const statusOptions = {
     pending_cta: { label: 'Pendente CTA', className: 'bg-yellow-100 text-yellow-800' },
@@ -60,7 +63,11 @@ export function ManageFabMessages() {
     const [isImporting, setIsImporting] = useState(false);
 
     const commercialUsers = useMemo(() => {
-        return collaborators.filter(c => c.axis === 'Comercial');
+        const testUsers = [
+            'desenvolvedor@3ariva.com.br',
+            'matheus@3ainvestimentos.com.br'
+        ];
+        return collaborators.filter(c => c.axis === 'Comercial' || testUsers.includes(c.email));
     }, [collaborators]);
 
     const userMessageMap = useMemo(() => {
@@ -157,8 +164,9 @@ export function ManageFabMessages() {
         } else {
              reset({
                 pipeline: [{
-                    ctaMessage: { title: 'Temos uma novidade para você!', icon: 'MessageSquare', ctaLink: 'https://www.google.com' },
-                    followUpMessage: { title: 'Obrigado pelo seu interesse!', content: 'Fique de olho para mais atualizações.', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: 'https://www.google.com' }
+                    id: `campaign_${Date.now()}`,
+                    ctaMessage: { title: '', icon: 'MessageSquare', ctaLink: '' },
+                    followUpMessage: { title: '', content: '', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: '' }
                 }]
             });
         }
@@ -190,6 +198,7 @@ export function ManageFabMessages() {
             isActive: existingMessage?.isActive ?? true,
             status: existingMessage?.status || 'pending_cta',
             activeCampaignIndex: existingMessage?.activeCampaignIndex || 0,
+            archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };
 
         try {
@@ -336,7 +345,7 @@ export function ManageFabMessages() {
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
-                         <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-grow">
+                         <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
                             {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
                             Importar CSV
                         </Button>
