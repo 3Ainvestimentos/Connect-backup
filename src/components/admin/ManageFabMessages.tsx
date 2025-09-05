@@ -46,7 +46,7 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser } from useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -403,7 +403,7 @@ export function ManageFabMessages() {
                         <div className="space-y-6 mt-4 max-h-[60vh] overflow-y-auto pr-4">
                             {fields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-card">
-                                    <Badge variant="secondary" className="absolute -top-2.5 right-4 bg-muted text-muted-foreground border-border">Campanha {index + 1}</Badge>
+                                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-muted text-muted-foreground border-border">Campanha {index + 1}</Badge>
                                     
                                     <div>
                                         <Label htmlFor={`pipeline.${index}.ctaMessage`}>Mensagem de CTA (Curta)</Label>
