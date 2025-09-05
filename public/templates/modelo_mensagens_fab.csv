@@ -1,0 +1,3 @@
+userEmail,ctaTitle,ctaIcon,ctaText,ctaLink,followUpTitle,followUpContent,followUpIcon,isActive
+colaborador1@3a.com.br,Feedback Rápido,MessageSquare,Responder Agora,https://forms.gle/exemplo,Obrigado!,Agradecemos seu feedback. Ele é muito importante para nós.,CheckCircle,true
+colaborador2@3a.com.br,Atualize seu Perfil,User,Atualizar,https://intranet.3a.com.br/me/profile,Perfil Completo!,Obrigado por manter suas informações em dia.,ThumbsUp,true

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useFabMessages, type FabMessageType, type FabMessagePayload } from '@/contexts/FabMessagesContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
@@ -23,6 +23,7 @@ import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '../ui/dropdown-menu';
+import Papa from 'papaparse';
 
 
 const ctaMessageSchema = z.object({
@@ -45,6 +46,7 @@ const formSchema = z.object({
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
 type SortKey = 'name' | 'status' | 'isActive';
+type CsvRow = { [key: string]: string };
 
 const statusOptions = {
     not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800' },
@@ -63,12 +65,15 @@ export function ManageFabMessages() {
     const { fabMessages, upsertMessageForUser, deleteMessageForUser, updateMessageStatus, loading } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
     const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
 
     const commercialUsers = useMemo(() => {
@@ -251,6 +256,90 @@ export function ManageFabMessages() {
              toast({ title: "Erro", description: "Não foi possível remover a configuração.", variant: "destructive" });
         }
     }
+
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+
+        Papa.parse<CsvRow>(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                const requiredHeaders = ['userEmail', 'ctaTitle', 'ctaIcon', 'ctaText', 'ctaLink', 'followUpTitle', 'followUpContent', 'followUpIcon', 'isActive'];
+                const fileHeaders = results.meta.fields;
+                
+                if (!fileHeaders || !requiredHeaders.every(h => fileHeaders.includes(h))) {
+                    toast({
+                        title: "Erro no Arquivo CSV",
+                        description: `O arquivo deve conter as colunas: ${requiredHeaders.join(', ')}.`,
+                        variant: "destructive",
+                        duration: 10000,
+                    });
+                    setIsImporting(false);
+                    return;
+                }
+                
+                let successfulCount = 0;
+                let failedCount = 0;
+                
+                for (const row of results.data) {
+                    const user = collaborators.find(c => c.email === row.userEmail?.trim());
+                    if (!user) {
+                        failedCount++;
+                        console.warn(`Usuário não encontrado para o email: ${row.userEmail}`);
+                        continue;
+                    }
+
+                    const payload: FabMessagePayload = {
+                        userId: user.id3a,
+                        userName: user.name,
+                        status: 'sent',
+                        isActive: row.isActive?.trim().toLowerCase() === 'true',
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        ctaMessage: {
+                            title: row.ctaTitle?.trim(),
+                            icon: row.ctaIcon?.trim(),
+                            ctaText: row.ctaText?.trim(),
+                            ctaLink: row.ctaLink?.trim(),
+                        },
+                        followUpMessage: {
+                            title: row.followUpTitle?.trim(),
+                            content: row.followUpContent?.trim(),
+                            icon: row.followUpIcon?.trim(),
+                        }
+                    };
+
+                    try {
+                        await upsertMessageForUser(user.id3a, payload);
+                        successfulCount++;
+                    } catch (e) {
+                        failedCount++;
+                        console.error(`Falha ao salvar mensagem para ${user.email}:`, e);
+                    }
+                }
+                
+                toast({
+                    title: "Importação Concluída",
+                    description: `${successfulCount} mensagens salvas com sucesso. ${failedCount > 0 ? `${failedCount} falharam.` : ''}`,
+                    variant: failedCount > 0 ? "destructive" : "success"
+                });
+
+                setIsImporting(false);
+                setIsImportModalOpen(false);
+            },
+            error: (error) => {
+                 toast({ title: "Erro ao processar CSV", description: error.message, variant: "destructive" });
+                 setIsImporting(false);
+            }
+        });
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
     
     const SortableHeader = ({ tKey, label }: { tKey: SortKey, label: string }) => (
         <TableHead onClick={() => handleSort(tKey)} className="cursor-pointer hover:bg-muted/50">
@@ -312,6 +401,10 @@ export function ManageFabMessages() {
                              <DropdownMenuCheckboxItem checked={activeFilter === 'inactive'} onCheckedChange={() => setActiveFilter('inactive')}>Não</DropdownMenuCheckboxItem>
                         </DropdownMenuContent>
                      </DropdownMenu>
+                     <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="w-full sm:w-auto">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Importar CSV
+                    </Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -437,6 +530,61 @@ export function ManageFabMessages() {
                                 Salvar e Enviar
                             </Button>
                         </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+             <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Importar Mensagens FAB via CSV</DialogTitle>
+                        <DialogDescription>
+                            Faça o upload de um arquivo CSV para configurar mensagens em lote para os colaboradores.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
+                           <div className="flex items-start gap-3">
+                                <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 flex-shrink-0"/>
+                                <div>
+                                    <p className="font-semibold">Atenção: A importação irá sobrescrever quaisquer configurações de mensagens existentes para os usuários listados no arquivo.</p>
+                                </div>
+                           </div>
+                        </div>
+
+                        <h3 className="font-semibold">Instruções:</h3>
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                            <li>Crie uma planilha (no Excel, Google Sheets, etc.).</li>
+                            <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaTitle,ctaIcon,ctaText,ctaLink,followUpTitle,followUpContent,followUpIcon,isActive</code>
+                            </li>
+                            <li>A coluna `isActive` deve ser `true` ou `false`.</li>
+                             <li>A coluna `userEmail` deve corresponder a um email de colaborador existente no sistema.</li>
+                            <li>Preencha as linhas com os dados de cada colaborador.</li>
+                            <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
+                        </ol>
+                         <a href="/templates/modelo_mensagens_fab.csv" download >
+                            <Button variant="secondary">
+                                <FileDown className="mr-2 h-4 w-4"/>
+                                Baixar Modelo CSV
+                            </Button>
+                        </a>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsImportModalOpen(false)} disabled={isImporting}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                            {isImporting ? 'Importando...' : 'Selecionar Arquivo'}
+                        </Button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
+                            onChange={handleFileImport}
+                        />
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
