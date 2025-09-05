@@ -33,10 +33,10 @@ type CampaignType = z.infer<typeof campaignSchema>;
 
 
 const statusOptions = {
-    pending_cta: { label: 'Pendente CTA', className: 'bg-yellow-100 text-yellow-800' },
-    pending_follow_up: { label: 'Pendente Acomp.', className: 'bg-blue-100 text-blue-800' },
-    completed: { label: 'Concluído', className: 'bg-green-100 text-green-800' },
-    not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800' },
+    pending_cta: { label: 'Pendente CTA', className: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-800' },
+    pending_follow_up: { label: 'Pendente Acomp.', className: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800' },
+    completed: { label: 'Concluído', className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800' },
+    not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700/50 dark:text-gray-200 dark:border-gray-600' },
 };
 
 const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
@@ -46,7 +46,7 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, markCampaignAsClicked, advanceToNextCampaign } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -162,8 +162,8 @@ export function ManageFabMessages() {
              reset({
                 pipeline: [{
                     id: `campaign_${Date.now()}`,
-                    ctaMessage: 'Sua mensagem de CTA aqui...',
-                    followUpMessage: 'Sua mensagem de acompanhamento aqui...'
+                    ctaMessage: '',
+                    followUpMessage: ''
                 }]
             });
         }
@@ -193,8 +193,8 @@ export function ManageFabMessages() {
             userName: editingUser.name,
             pipeline: data.pipeline,
             isActive: existingMessage?.isActive ?? true,
-            status: 'pending_cta', // Reset status on new pipeline
-            activeCampaignIndex: 0, // Reset index
+            status: 'pending_cta',
+            activeCampaignIndex: 0,
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };
 
@@ -299,7 +299,10 @@ export function ManageFabMessages() {
         <Card>
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
-                <CardDescription>Configure e envie campanhas de mensagens individuais para os colaboradores do eixo Comercial.</CardDescription>
+                 <CardDescription>
+                    Configure e envie campanhas de mensagens para os colaboradores. Uma campanha consiste em uma mensagem de CTA (curta) e uma de acompanhamento (detalhada). 
+                    A coluna 'Progresso' indica qual campanha do pipeline está ativa. O 'Status' se refere à campanha ativa.
+                </CardDescription>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
                      <div className="relative flex-grow w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
