@@ -46,7 +46,7 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser } from useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -440,7 +440,7 @@ export function ManageFabMessages() {
                                 <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                             </DialogClose>
                             <div className="flex gap-2">
-                                <Button type="submit" disabled={isSubmitting}>
+                                <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                                     Salvar Pipeline
                                 </Button>
