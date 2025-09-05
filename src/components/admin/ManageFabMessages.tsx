@@ -2,16 +2,16 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
-import { useFabMessages, type FabMessageType, type FabMessagePayload } from '@/contexts/FabMessagesContext';
+import { useFabMessages, type FabMessageType, type FabMessagePayload, pipelineStepSchema } from '@/contexts/FabMessagesContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
@@ -23,36 +23,19 @@ import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '../ui/dropdown-menu';
-import Papa from 'papaparse';
-
-
-const ctaMessageSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório."),
-  icon: z.string().min(1, "Ícone é obrigatório."),
-  ctaText: z.string().min(1, "Texto do botão é obrigatório."),
-  ctaLink: z.string().url("Link deve ser uma URL válida."),
-});
-
-const followUpMessageSchema = z.object({
-  title: z.string().min(1, "Título é obrigatório."),
-  content: z.string().min(1, "Conteúdo é obrigatório."),
-  icon: z.string().min(1, "Ícone é obrigatório."),
-});
 
 const formSchema = z.object({
-    ctaMessage: ctaMessageSchema,
-    followUpMessage: followUpMessageSchema,
+    pipeline: z.array(pipelineStepSchema).min(1, "O pipeline deve ter pelo menos um passo."),
 });
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
 type SortKey = 'name' | 'status' | 'isActive';
-type CsvRow = { [key: string]: string };
 
 const statusOptions = {
+    pending_cta: { label: 'Pendente CTA', className: 'bg-yellow-100 text-yellow-800' },
+    pending_follow_up: { label: 'Pendente Acomp.', className: 'bg-blue-100 text-blue-800' },
+    completed: { label: 'Concluído', className: 'bg-green-100 text-green-800' },
     not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800' },
-    draft: { label: 'Rascunho', className: 'bg-yellow-100 text-yellow-800' },
-    sent: { label: 'Enviada', className: 'bg-blue-100 text-blue-800' },
-    clicked: { label: 'Clicada', className: 'bg-green-100 text-green-800' },
 };
 
 const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
@@ -62,19 +45,15 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, updateMessageStatus, loading } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, resetUserSequence } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-    const [isImporting, setIsImporting] = useState(false);
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
     const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
 
     const commercialUsers = useMemo(() => {
         return collaborators.filter(c => c.axis === 'Comercial');
@@ -163,90 +142,62 @@ export function ManageFabMessages() {
     });
     
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
+    const { fields, append, remove } = useFieldArray({ control, name: "pipeline" });
+
 
     const handleOpenForm = (user: Collaborator) => {
         setEditingUser(user);
         const existingMessage = userMessageMap.get(user.id3a);
-        if (existingMessage) {
-            reset({
-                ctaMessage: existingMessage.ctaMessage,
-                followUpMessage: existingMessage.followUpMessage,
-            });
+        if (existingMessage && existingMessage.pipeline) {
+            reset({ pipeline: existingMessage.pipeline });
         } else {
              reset({
-                ctaMessage: { title: '', icon: 'MessageSquare', ctaText: '', ctaLink: '' },
-                followUpMessage: { title: '', content: '', icon: 'CheckCircle' },
+                pipeline: [{
+                    day: 1,
+                    ctaMessage: { title: 'Temos uma novidade para você!', icon: 'MessageSquare' },
+                    followUpMessage: { title: 'Obrigado pelo seu interesse!', content: 'Fique de olho para mais atualizações.', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: 'https://www.google.com' }
+                }]
             });
         }
         setIsFormOpen(true);
     };
-
-    const onSubmit = async (data: FabMessageFormValues) => {
-        if (!editingUser) return;
-        
-        const payload: FabMessagePayload = {
-            userId: editingUser.id3a,
-            userName: editingUser.name,
-            status: userMessageMap.get(editingUser.id3a)?.status || 'draft',
-            isActive: userMessageMap.get(editingUser.id3a)?.isActive ?? true,
-            createdAt: userMessageMap.get(editingUser.id3a)?.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            ...data,
-        };
-
-        try {
-            await upsertMessageForUser(editingUser.id3a, payload);
-            toast({ title: "Sucesso", description: `Mensagens para ${editingUser.name} foram salvas.` });
-            setIsFormOpen(false);
-        } catch (error) {
-            toast({ title: "Erro", description: "Não foi possível salvar as mensagens.", variant: "destructive" });
-        }
-    };
     
-    const handleSendMessage = async () => {
-        if (!editingUser) return;
-        
-        // Ensure form data is valid and get it
-        const isValid = await form.trigger();
-        if (!isValid) {
-            toast({ title: "Formulário Inválido", description: "Por favor, corrija os erros antes de enviar.", variant: "destructive"});
-            return;
-        }
-        const data = form.getValues();
-
-        const payload: FabMessagePayload = {
-            userId: editingUser.id3a,
-            userName: editingUser.name,
-            status: 'sent', // Set status to 'sent'
-            isActive: true,  // Ensure it's active on send
-            createdAt: userMessageMap.get(editingUser.id3a)?.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            ...data,
-        };
-        
-        try {
-            await upsertMessageForUser(editingUser.id3a, payload);
-            toast({ title: "Mensagem Enviada!", description: `A campanha foi ativada para ${editingUser.name}.`, variant: 'success' });
-            setIsFormOpen(false);
-        } catch (error) {
-            toast({ title: "Erro ao Enviar", description: "Não foi possível enviar a campanha.", variant: "destructive" });
-        }
-    };
-
     const handleToggleActivation = async (user: Collaborator, isActive: boolean) => {
         const message = userMessageMap.get(user.id3a);
         if (!message) {
-            toast({ title: "Atenção", description: "Crie uma mensagem primeiro antes de ativá-la.", variant: "destructive" });
+            toast({ title: "Atenção", description: "Crie uma campanha primeiro antes de ativá-la.", variant: "destructive" });
             return;
         }
         try {
-            await updateMessageStatus(user.id3a, message.status, isActive);
+            await upsertMessageForUser(user.id3a, { isActive });
             toast({ title: "Sucesso", description: `Campanha ${isActive ? 'ativada' : 'pausada'} para ${user.name}.`, variant: 'default' });
         } catch (error) {
             toast({ title: "Erro", description: "Não foi possível alterar o status da campanha.", variant: "destructive" });
         }
     };
-    
+
+    const onSubmit = async (data: FabMessageFormValues) => {
+        if (!editingUser) return;
+        
+        const existingMessage = userMessageMap.get(editingUser.id3a);
+        const payload: FabMessagePayload = {
+            userId: editingUser.id3a,
+            userName: editingUser.name,
+            pipeline: data.pipeline,
+            isActive: existingMessage?.isActive ?? true,
+            status: existingMessage?.status || 'pending_cta',
+            currentDay: existingMessage?.currentDay || 1,
+        };
+
+        try {
+            await upsertMessageForUser(editingUser.id3a, payload);
+            toast({ title: "Sucesso", description: `Pipeline de mensagens para ${editingUser.name} foi salvo.` });
+            setIsFormOpen(false);
+        } catch (error) {
+            toast({ title: "Erro", description: "Não foi possível salvar o pipeline.", variant: "destructive" });
+        }
+    };
+
     const handleDelete = async (userId: string) => {
         if (!window.confirm("Tem certeza que deseja apagar a configuração de mensagens para este usuário? Esta ação é irreversível.")) return;
         try {
@@ -257,90 +208,6 @@ export function ManageFabMessages() {
         }
     }
 
-    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        setIsImporting(true);
-
-        Papa.parse<CsvRow>(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: async (results) => {
-                const requiredHeaders = ['userEmail', 'ctaTitle', 'ctaIcon', 'ctaText', 'ctaLink', 'followUpTitle', 'followUpContent', 'followUpIcon', 'isActive'];
-                const fileHeaders = results.meta.fields;
-                
-                if (!fileHeaders || !requiredHeaders.every(h => fileHeaders.includes(h))) {
-                    toast({
-                        title: "Erro no Arquivo CSV",
-                        description: `O arquivo deve conter as colunas: ${requiredHeaders.join(', ')}.`,
-                        variant: "destructive",
-                        duration: 10000,
-                    });
-                    setIsImporting(false);
-                    return;
-                }
-                
-                let successfulCount = 0;
-                let failedCount = 0;
-                
-                for (const row of results.data) {
-                    const user = collaborators.find(c => c.email === row.userEmail?.trim());
-                    if (!user) {
-                        failedCount++;
-                        console.warn(`Usuário não encontrado para o email: ${row.userEmail}`);
-                        continue;
-                    }
-
-                    const payload: FabMessagePayload = {
-                        userId: user.id3a,
-                        userName: user.name,
-                        status: 'sent',
-                        isActive: row.isActive?.trim().toLowerCase() === 'true',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        ctaMessage: {
-                            title: row.ctaTitle?.trim(),
-                            icon: row.ctaIcon?.trim(),
-                            ctaText: row.ctaText?.trim(),
-                            ctaLink: row.ctaLink?.trim(),
-                        },
-                        followUpMessage: {
-                            title: row.followUpTitle?.trim(),
-                            content: row.followUpContent?.trim(),
-                            icon: row.followUpIcon?.trim(),
-                        }
-                    };
-
-                    try {
-                        await upsertMessageForUser(user.id3a, payload);
-                        successfulCount++;
-                    } catch (e) {
-                        failedCount++;
-                        console.error(`Falha ao salvar mensagem para ${user.email}:`, e);
-                    }
-                }
-                
-                toast({
-                    title: "Importação Concluída",
-                    description: `${successfulCount} mensagens salvas com sucesso. ${failedCount > 0 ? `${failedCount} falharam.` : ''}`,
-                    variant: failedCount > 0 ? "destructive" : "success"
-                });
-
-                setIsImporting(false);
-                setIsImportModalOpen(false);
-            },
-            error: (error) => {
-                 toast({ title: "Erro ao processar CSV", description: error.message, variant: "destructive" });
-                 setIsImporting(false);
-            }
-        });
-
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-        }
-    };
-    
     const SortableHeader = ({ tKey, label }: { tKey: SortKey, label: string }) => (
         <TableHead onClick={() => handleSort(tKey)} className="cursor-pointer hover:bg-muted/50">
             <div className="flex items-center gap-1">
@@ -401,10 +268,6 @@ export function ManageFabMessages() {
                              <DropdownMenuCheckboxItem checked={activeFilter === 'inactive'} onCheckedChange={() => setActiveFilter('inactive')}>Não</DropdownMenuCheckboxItem>
                         </DropdownMenuContent>
                      </DropdownMenu>
-                     <Button onClick={() => setIsImportModalOpen(true)} variant="outline" className="w-full sm:w-auto">
-                        <Upload className="mr-2 h-4 w-4" />
-                        Importar CSV
-                    </Button>
                 </div>
             </CardHeader>
             <CardContent>
@@ -414,6 +277,7 @@ export function ManageFabMessages() {
                             <TableRow>
                                 <SortableHeader tKey="name" label="Colaborador" />
                                 <SortableHeader tKey="status" label="Status da Campanha" />
+                                <TableHead>Progresso</TableHead>
                                 <SortableHeader tKey="isActive" label="Ativa" />
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
@@ -426,6 +290,9 @@ export function ManageFabMessages() {
                                     <TableCell className="font-medium">{user.name}</TableCell>
                                     <TableCell>
                                         <StatusBadge status={message?.status || 'not_created'} />
+                                    </TableCell>
+                                     <TableCell>
+                                        {message ? `Dia ${message.currentDay}/${message.pipeline.length}` : '-'}
                                     </TableCell>
                                     <TableCell>
                                         <Switch
@@ -454,21 +321,22 @@ export function ManageFabMessages() {
                     <ScrollArea className="max-h-[80vh] p-1">
                         <div className="p-6 pt-0">
                         <DialogHeader>
-                            <DialogTitle>Configurar Mensagens para</DialogTitle>
+                            <DialogTitle>Configurar Pipeline para</DialogTitle>
                             <DialogDescription>{editingUser?.name}</DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
-                            {/* CTA Message Section */}
-                            <div className="p-4 border rounded-lg space-y-4">
-                                <h3 className="font-semibold text-lg">1. Mensagem de CTA (Primeiro Contato)</h3>
-                                <div>
-                                    <Label htmlFor="cta.title">Título</Label>
-                                    <Input id="cta.title" {...form.register('ctaMessage.title')} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                            {fields.map((field, index) => (
+                                <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
+                                    <Badge className="absolute -top-3 right-4 bg-primary text-primary-foreground">Dia {index + 1}</Badge>
+                                    
+                                    <h3 className="font-semibold text-lg">Passo {index + 1}: Mensagem de CTA</h3>
                                     <div>
-                                        <Label htmlFor="cta.icon">Ícone</Label>
-                                         <Controller name="ctaMessage.icon" control={control} render={({ field }) => (
+                                        <Label htmlFor={`pipeline.${index}.ctaMessage.title`}>Título</Label>
+                                        <Input {...form.register(`pipeline.${index}.ctaMessage.title`)} />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor={`pipeline.${index}.ctaMessage.icon`}>Ícone</Label>
+                                        <Controller name={`pipeline.${index}.ctaMessage.icon`} control={control} render={({ field }) => (
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                 <SelectTrigger><SelectValue/></SelectTrigger>
                                                 <SelectContent><ScrollArea className="h-60">
@@ -477,42 +345,46 @@ export function ManageFabMessages() {
                                             </Select>
                                         )}/>
                                     </div>
+                                    <Separator />
+                                    <h3 className="font-semibold text-lg">Passo {index + 1}: Mensagem de Acompanhamento</h3>
                                     <div>
-                                        <Label htmlFor="cta.ctaText">Texto do Botão</Label>
-                                        <Input id="cta.ctaText" {...form.register('ctaMessage.ctaText')} />
+                                        <Label htmlFor={`pipeline.${index}.followUpMessage.title`}>Título</Label>
+                                        <Input {...form.register(`pipeline.${index}.followUpMessage.title`)} />
+                                    </div>
+                                     <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor={`pipeline.${index}.followUpMessage.icon`}>Ícone</Label>
+                                            <Controller name={`pipeline.${index}.followUpMessage.icon`} control={control} render={({ field }) => (
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                                    <SelectContent><ScrollArea className="h-60">
+                                                        {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
+                                                    </ScrollArea></SelectContent>
+                                                </Select>
+                                            )}/>
+                                        </div>
+                                         <div>
+                                            <Label htmlFor={`pipeline.${index}.followUpMessage.ctaText`}>Texto do Botão</Label>
+                                            <Input {...form.register(`pipeline.${index}.followUpMessage.ctaText`)} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor={`pipeline.${index}.followUpMessage.content`}>Conteúdo</Label>
+                                        <Textarea {...form.register(`pipeline.${index}.followUpMessage.content`)} />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor={`pipeline.${index}.followUpMessage.ctaLink`}>Link do Botão</Label>
+                                        <Input {...form.register(`pipeline.${index}.followUpMessage.ctaLink`)} />
+                                    </div>
+                                     <div className="flex justify-end">
+                                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
-                                <div>
-                                    <Label htmlFor="cta.ctaLink">Link do Botão</Label>
-                                    <Input id="cta.ctaLink" {...form.register('ctaMessage.ctaLink')} />
-                                </div>
-                            </div>
-                            
-                            {/* Follow-up Message Section */}
-                             <div className="p-4 border rounded-lg space-y-4">
-                                <h3 className="font-semibold text-lg">2. Mensagem de Acompanhamento (Pós-clique)</h3>
-                                <div>
-                                    <Label htmlFor="followup.title">Título</Label>
-                                    <Input id="followup.title" {...form.register('followUpMessage.title')} />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                     <div>
-                                        <Label htmlFor="followup.icon">Ícone</Label>
-                                        <Controller name="followUpMessage.icon" control={control} render={({ field }) => (
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                                <SelectContent><ScrollArea className="h-60">
-                                                    {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
-                                                </ScrollArea></SelectContent>
-                                            </Select>
-                                        )}/>
-                                    </div>
-                                </div>
-                                <div>
-                                    <Label htmlFor="followup.content">Conteúdo</Label>
-                                    <Textarea id="followup.content" {...form.register('followUpMessage.content')} />
-                                </div>
-                            </div>
+                            ))}
+
+                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ day: fields.length + 1, ctaMessage: { title: '', icon: 'MessageSquare' }, followUpMessage: { title: '', content: '', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: '' }})}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Passo ao Pipeline
+                            </Button>
                         </form>
                         </div>
                     </ScrollArea>
@@ -523,68 +395,9 @@ export function ManageFabMessages() {
                         <div className="flex gap-2">
                              <Button type="button" variant="secondary" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                Salvar Rascunho
-                            </Button>
-                            <Button type="button" className="bg-admin-primary hover:bg-admin-primary/90" onClick={handleSendMessage} disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
-                                Salvar e Enviar
+                                Salvar Pipeline
                             </Button>
                         </div>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-             <Dialog open={isImportModalOpen} onOpenChange={setIsImportModalOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Importar Mensagens FAB via CSV</DialogTitle>
-                        <DialogDescription>
-                            Faça o upload de um arquivo CSV para configurar mensagens em lote para os colaboradores.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
-                           <div className="flex items-start gap-3">
-                                <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 flex-shrink-0"/>
-                                <div>
-                                    <p className="font-semibold">Atenção: A importação irá sobrescrever quaisquer configurações de mensagens existentes para os usuários listados no arquivo.</p>
-                                </div>
-                           </div>
-                        </div>
-
-                        <h3 className="font-semibold">Instruções:</h3>
-                        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                            <li>Crie uma planilha (no Excel, Google Sheets, etc.).</li>
-                            <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaTitle,ctaIcon,ctaText,ctaLink,followUpTitle,followUpContent,followUpIcon,isActive</code>
-                            </li>
-                            <li>A coluna `isActive` deve ser `true` ou `false`.</li>
-                             <li>A coluna `userEmail` deve corresponder a um email de colaborador existente no sistema.</li>
-                            <li>Preencha as linhas com os dados de cada colaborador.</li>
-                            <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
-                        </ol>
-                         <a href="/templates/modelo_mensagens_fab.csv" download >
-                            <Button variant="secondary">
-                                <FileDown className="mr-2 h-4 w-4"/>
-                                Baixar Modelo CSV
-                            </Button>
-                        </a>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsImportModalOpen(false)} disabled={isImporting}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
-                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
-                            {isImporting ? 'Importando...' : 'Selecionar Arquivo'}
-                        </Button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept=".csv"
-                            onChange={handleFileImport}
-                        />
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
