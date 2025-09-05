@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -144,6 +143,7 @@ export default function MessageFAB() {
     
     const CtaIcon = getIcon(activeMessage.ctaMessage.icon);
     const FollowUpIcon = getIcon(activeMessage.followUpMessage.icon);
+    const shouldAnimate = activeMessage.status === 'sent';
 
     return (
          <div className="fixed top-20 right-8 z-50 flex items-start">
@@ -177,7 +177,10 @@ export default function MessageFAB() {
             <Button
                 variant="outline"
                 size="icon"
-                className="h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0 animate-pulse-bg"
+                className={cn(
+                    "h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0",
+                    shouldAnimate && "animate-pulse-bg"
+                )}
                 aria-label="Nova mensagem"
             >
                 <BobIcon />
@@ -185,4 +188,3 @@ export default function MessageFAB() {
         </div>
     );
 }
-
