@@ -15,12 +15,6 @@ export default function FabMessagesAdminPage() {
                 <PageHeader
                     title="Gerenciar Mensagens FAB"
                     description="Crie e monitore mensagens flutuantes para os usuários."
-                    actions={
-                        <Button variant="outline" onClick={() => router.back()}>
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Voltar
-                        </Button>
-                    }
                 />
                 <ManageFabMessages />
             </div>
