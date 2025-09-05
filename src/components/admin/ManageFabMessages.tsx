@@ -16,10 +16,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
 import { Badge } from '../ui/badge';
-import { getIcon } from '@/lib/icons';
-import { iconList } from '@/lib/icon-list';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
@@ -166,8 +162,8 @@ export function ManageFabMessages() {
              reset({
                 pipeline: [{
                     id: `campaign_${Date.now()}`,
-                    ctaMessage: { title: '', icon: 'MessageSquare', ctaLink: '' },
-                    followUpMessage: { title: '', content: '', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: '' }
+                    ctaMessage: 'Sua mensagem de CTA aqui...',
+                    followUpMessage: 'Sua mensagem de acompanhamento aqui...'
                 }]
             });
         }
@@ -197,8 +193,8 @@ export function ManageFabMessages() {
             userName: editingUser.name,
             pipeline: data.pipeline,
             isActive: existingMessage?.isActive ?? true,
-            status: existingMessage?.status || 'pending_cta',
-            activeCampaignIndex: existingMessage?.activeCampaignIndex || 0,
+            status: 'pending_cta', // Reset status on new pipeline
+            activeCampaignIndex: 0, // Reset index
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };
 
@@ -221,7 +217,7 @@ export function ManageFabMessages() {
             header: true,
             skipEmptyLines: true,
             complete: async (results) => {
-                const requiredHeaders = ['userEmail', 'cta_title', 'cta_icon', 'cta_link', 'followup_title', 'followup_content', 'followup_icon', 'followup_ctaText', 'followup_ctaLink'];
+                const requiredHeaders = ['userEmail', 'ctaMessage', 'followUpMessage'];
                 if (!requiredHeaders.every(h => results.meta.fields?.includes(h))) {
                     toast({ title: "Erro de Cabeçalho", description: `O CSV deve conter as colunas: ${requiredHeaders.join(', ')}`, variant: "destructive", duration: 10000 });
                     setIsImporting(false);
@@ -239,18 +235,8 @@ export function ManageFabMessages() {
 
                     const campaign: CampaignType = {
                         id: `campaign_${Date.now()}_${Math.random()}`,
-                        ctaMessage: {
-                            title: row.cta_title,
-                            icon: row.cta_icon,
-                            ctaLink: row.cta_link
-                        },
-                        followUpMessage: {
-                            title: row.followup_title,
-                            content: row.followup_content,
-                            icon: row.followup_icon,
-                            ctaText: row.followup_ctaText,
-                            ctaLink: row.followup_ctaLink
-                        }
+                        ctaMessage: row.ctaMessage,
+                        followUpMessage: row.followUpMessage,
                     };
                     
                     if (!userCampaigns[user.id3a]) {
@@ -409,93 +395,58 @@ export function ManageFabMessages() {
 
              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogContent className="max-w-2xl">
-                    <ScrollArea className="max-h-[80vh] p-1">
-                        <div className="p-6 pt-0">
-                        <DialogHeader>
-                            <DialogTitle>Configurar Pipeline para</DialogTitle>
-                            <DialogDescription>{editingUser?.name}</DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+                    <DialogHeader>
+                        <DialogTitle>Configurar Pipeline para</DialogTitle>
+                        <DialogDescription>{editingUser?.name}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <div className="space-y-6 mt-4 max-h-[60vh] overflow-y-auto pr-4">
                             {fields.map((field, index) => (
-                                <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
-                                    <Badge variant="secondary" className="absolute -top-3 right-4">Campanha {index + 1}</Badge>
+                                <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-card">
+                                    <Badge variant="secondary" className="absolute -top-2.5 right-4 bg-muted text-muted-foreground border-border">Campanha {index + 1}</Badge>
                                     
-                                    <h3 className="font-semibold text-lg">Passo {index + 1}: Mensagem de CTA</h3>
                                     <div>
-                                        <Label htmlFor={`pipeline.${index}.ctaMessage.title`}>Título</Label>
-                                        <Input {...form.register(`pipeline.${index}.ctaMessage.title`)} />
+                                        <Label htmlFor={`pipeline.${index}.ctaMessage`}>Mensagem de CTA (Curta)</Label>
+                                        <Textarea 
+                                            {...form.register(`pipeline.${index}.ctaMessage`)}
+                                            placeholder="Ex: Nova oportunidade de investimento disponível!"
+                                            rows={2}
+                                        />
+                                         {form.formState.errors.pipeline?.[index]?.ctaMessage && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.ctaMessage?.message}</p>}
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor={`pipeline.${index}.ctaMessage.icon`}>Ícone</Label>
-                                            <Controller name={`pipeline.${index}.ctaMessage.icon`} control={control} render={({ field }) => (
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                                    <SelectContent><ScrollArea className="h-60">
-                                                        {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
-                                                    </ScrollArea></SelectContent>
-                                                </Select>
-                                            )}/>
-                                        </div>
-                                         <div>
-                                            <Label htmlFor={`pipeline.${index}.ctaMessage.ctaLink`}>Link do CTA</Label>
-                                            <Input {...form.register(`pipeline.${index}.ctaMessage.ctaLink`)} />
-                                        </div>
-                                    </div>
-                                    <Separator />
-                                    <h3 className="font-semibold text-lg">Passo {index + 1}: Mensagem de Acompanhamento</h3>
+                                    <Separator/>
                                     <div>
-                                        <Label htmlFor={`pipeline.${index}.followUpMessage.title`}>Título</Label>
-                                        <Input {...form.register(`pipeline.${index}.followUpMessage.title`)} />
+                                        <Label htmlFor={`pipeline.${index}.followUpMessage`}>Mensagem de Acompanhamento (Detalhada)</Label>
+                                        <Textarea 
+                                            {...form.register(`pipeline.${index}.followUpMessage`)}
+                                            placeholder="Ex: Explore os detalhes do nosso novo fundo imobiliário com foco em logística..."
+                                            rows={4}
+                                        />
+                                        {form.formState.errors.pipeline?.[index]?.followUpMessage && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.followUpMessage?.message}</p>}
                                     </div>
-                                     <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label htmlFor={`pipeline.${index}.followUpMessage.icon`}>Ícone</Label>
-                                            <Controller name={`pipeline.${index}.followUpMessage.icon`} control={control} render={({ field }) => (
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                                    <SelectContent><ScrollArea className="h-60">
-                                                        {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
-                                                    </ScrollArea></SelectContent>
-                                                </Select>
-                                            )}/>
-                                        </div>
-                                         <div>
-                                            <Label htmlFor={`pipeline.${index}.followUpMessage.ctaText`}>Texto do Botão</Label>
-                                            <Input {...form.register(`pipeline.${index}.followUpMessage.ctaText`)} />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <Label htmlFor={`pipeline.${index}.followUpMessage.content`}>Conteúdo</Label>
-                                        <Textarea {...form.register(`pipeline.${index}.followUpMessage.content`)} />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor={`pipeline.${index}.followUpMessage.ctaLink`}>Link do Botão</Label>
-                                        <Input {...form.register(`pipeline.${index}.followUpMessage.ctaLink`)} />
-                                    </div>
+
                                      <div className="flex justify-end">
                                         <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
                             ))}
 
-                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: { title: '', icon: 'MessageSquare', ctaLink: '' }, followUpMessage: { title: '', content: '', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: '' }})}>
+                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '' })}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                             </Button>
-                        </form>
                         </div>
-                    </ScrollArea>
-                    <DialogFooter className="!justify-between">
-                        <DialogClose asChild>
-                            <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
-                        </DialogClose>
-                        <div className="flex gap-2">
-                             <Button type="button" variant="secondary" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                Salvar Pipeline
-                            </Button>
-                        </div>
-                    </DialogFooter>
+                         <DialogFooter className="!justify-between mt-6">
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                            </DialogClose>
+                            <div className="flex gap-2">
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                    Salvar Pipeline
+                                </Button>
+                            </div>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
             <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
@@ -520,7 +471,7 @@ export function ManageFabMessages() {
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                             <li>Crie uma planilha com uma linha para **cada campanha** de um usuário.</li>
                             <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,cta_title,cta_icon,cta_link,followup_title,followup_content,followup_icon,followup_ctaText,followup_ctaLink</code>
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaMessage,followUpMessage</code>
                             </li>
                              <li>Para criar um pipeline para um usuário, adicione múltiplas linhas com o mesmo `userEmail`. A ordem das linhas no arquivo definirá a ordem do pipeline.</li>
                              <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>

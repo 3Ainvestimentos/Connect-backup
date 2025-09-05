@@ -7,18 +7,9 @@ import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollecti
 import * as z from 'zod';
 
 // Schemas for the individual messages within a Campaign
-const ctaMessageSchema = z.object({
-  title: z.string().min(1, "Título do CTA é obrigatório."),
-  icon: z.string().min(1, "Ícone é obrigatório."),
-});
+const ctaMessageSchema = z.string().min(1, "A mensagem de CTA é obrigatória.");
+const followUpMessageSchema = z.string().min(1, "A mensagem de acompanhamento é obrigatória.");
 
-const followUpMessageSchema = z.object({
-  title: z.string().min(1, "Título do acompanhamento é obrigatório."),
-  content: z.string().min(1, "Conteúdo do acompanhamento é obrigatório."),
-  icon: z.string().min(1, "Ícone é obrigatório."),
-  ctaText: z.string().min(1, "Texto do botão é obrigatório."),
-  ctaLink: z.string().url("Link do botão deve ser uma URL válida."),
-});
 
 // Schema for a single Campaign (CTA + Follow-up)
 export const campaignSchema = z.object({

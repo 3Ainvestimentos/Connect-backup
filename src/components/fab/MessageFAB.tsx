@@ -1,14 +1,13 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useFabMessages, FabMessageType } from '@/contexts/FabMessagesContext';
+import { useFabMessages } from '@/contexts/FabMessagesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
-import { getIcon } from '@/lib/icons';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 
 // 1. Ícone SVG do "Bob" (ou outro ícone principal)
 function BobIcon() {
@@ -101,7 +100,7 @@ const MessageBubble = ({ children, onClick, onClose, hasCloseButton, variant = '
 export default function MessageFAB() {
     const { user } = useAuth();
     const { collaborators } = useCollaborators();
-    const { fabMessages, markAsClicked, updateMessageStatus } = useFabMessages();
+    const { fabMessages, markCampaignAsClicked, advanceToNextCampaign } = useFabMessages();
     const [isVisible, setIsVisible] = useState(true);
 
     const currentUser = useMemo(() => {
@@ -113,7 +112,7 @@ export default function MessageFAB() {
         if (!currentUser) return null;
         const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
         
-        if (messageForUser && messageForUser.isActive && (messageForUser.status === 'sent' || messageForUser.status === 'clicked')) {
+        if (messageForUser && messageForUser.isActive && messageForUser.status !== 'completed') {
             return messageForUser;
         }
         return null;
@@ -121,55 +120,48 @@ export default function MessageFAB() {
 
 
     const handleCtaClick = (e: React.MouseEvent) => {
-        e.preventDefault(); // Prevent default link navigation
+        e.preventDefault();
         e.stopPropagation();
-        if (activeMessage && currentUser) {
-            markAsClicked(currentUser.id3a);
-            // Open the link in a new tab
-            window.open(activeMessage.ctaMessage.ctaLink, '_blank');
+        if (activeMessage && currentUser && activeMessage.status === 'pending_cta') {
+            markCampaignAsClicked(currentUser.id3a);
         }
     };
     
     const handleCloseFollowUp = (e: React.MouseEvent) => {
         e.stopPropagation();
-        setIsVisible(false);
-        // Optionally, you can mark it as fully 'completed' in the backend here
-        // For now, we just hide it on the client
+        if (activeMessage && currentUser) {
+            advanceToNextCampaign(currentUser.id3a);
+        }
+        // It will become invisible once the status updates to completed or the next campaign
     };
 
     if (!activeMessage || !isVisible) {
         return null;
     }
     
-    const CtaIcon = getIcon(activeMessage.ctaMessage.icon);
-    const FollowUpIcon = getIcon(activeMessage.followUpMessage.icon);
-    const shouldAnimate = activeMessage.status === 'sent';
+    const currentCampaign = activeMessage.pipeline[activeMessage.activeCampaignIndex];
+    if (!currentCampaign) return null;
+
+    const shouldAnimate = activeMessage.status === 'pending_cta';
 
     return (
          <div className="fixed top-20 right-8 z-50 flex items-start">
             <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
-                {activeMessage.status === 'sent' && (
+                {activeMessage.status === 'pending_cta' && (
                      <MessageBubble 
                         variant="primary"
                         onClick={handleCtaClick}
                     >
-                         <div className="flex items-center gap-3">
-                             <CtaIcon className="h-5 w-5 flex-shrink-0" />
-                            <p className="text-sm">{activeMessage.ctaMessage.title}</p>
-                         </div>
+                         <p className="text-sm">{currentCampaign.ctaMessage}</p>
                     </MessageBubble>
                 )}
-                 {activeMessage.status === 'clicked' && (
+                 {activeMessage.status === 'pending_follow_up' && (
                     <MessageBubble 
                         hasCloseButton 
                         variant="secondary"
                         onClose={handleCloseFollowUp}
                     >
-                        <div className="flex items-center gap-3">
-                             <FollowUpIcon className="h-5 w-5 flex-shrink-0 text-admin-primary" />
-                            <p className="text-sm font-semibold">{activeMessage.followUpMessage.title}</p>
-                         </div>
-                         <p className="text-xs mt-2">{activeMessage.followUpMessage.content}</p>
+                         <p className="text-sm">{currentCampaign.followUpMessage}</p>
                     </MessageBubble>
                 )}
             </div>
