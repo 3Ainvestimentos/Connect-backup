@@ -418,7 +418,7 @@ export function ManageFabMessages() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
                             {fields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
-                                    <Badge className="absolute -top-3 right-4 bg-primary text-primary-foreground">Campanha {index + 1}</Badge>
+                                    <Badge variant="secondary" className="absolute -top-3 right-4">Campanha {index + 1}</Badge>
                                     
                                     <h3 className="font-semibold text-lg">Passo {index + 1}: Mensagem de CTA</h3>
                                     <div>
