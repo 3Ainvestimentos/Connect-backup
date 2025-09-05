@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
-import { useFabMessages, type FabMessageType, type FabMessagePayload, pipelineStepSchema } from '@/contexts/FabMessagesContext';
+import { useFabMessages, type FabMessageType, type FabMessagePayload, campaignSchema } from '@/contexts/FabMessagesContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
@@ -23,9 +22,11 @@ import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '../ui/dropdown-menu';
+import Papa from 'papaparse';
+
 
 const formSchema = z.object({
-    pipeline: z.array(pipelineStepSchema).min(1, "O pipeline deve ter pelo menos um passo."),
+    pipeline: z.array(campaignSchema).min(1, "O pipeline deve ter pelo menos uma campanha."),
 });
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
@@ -45,15 +46,18 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, resetUserSequence } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isImportOpen, setIsImportOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
     const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isImporting, setIsImporting] = useState(false);
 
     const commercialUsers = useMemo(() => {
         return collaborators.filter(c => c.axis === 'Comercial');
@@ -153,8 +157,7 @@ export function ManageFabMessages() {
         } else {
              reset({
                 pipeline: [{
-                    day: 1,
-                    ctaMessage: { title: 'Temos uma novidade para você!', icon: 'MessageSquare' },
+                    ctaMessage: { title: 'Temos uma novidade para você!', icon: 'MessageSquare', ctaLink: 'https://www.google.com' },
                     followUpMessage: { title: 'Obrigado pelo seu interesse!', content: 'Fique de olho para mais atualizações.', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: 'https://www.google.com' }
                 }]
             });
@@ -186,7 +189,7 @@ export function ManageFabMessages() {
             pipeline: data.pipeline,
             isActive: existingMessage?.isActive ?? true,
             status: existingMessage?.status || 'pending_cta',
-            currentDay: existingMessage?.currentDay || 1,
+            activeCampaignIndex: existingMessage?.activeCampaignIndex || 0,
         };
 
         try {
@@ -196,6 +199,85 @@ export function ManageFabMessages() {
         } catch (error) {
             toast({ title: "Erro", description: "Não foi possível salvar o pipeline.", variant: "destructive" });
         }
+    };
+    
+    const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+
+        Papa.parse<{ [key: string]: string }>(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                const requiredHeaders = ['userEmail', 'cta_title', 'cta_icon', 'cta_link', 'followup_title', 'followup_content', 'followup_icon', 'followup_ctaText', 'followup_ctaLink'];
+                if (!requiredHeaders.every(h => results.meta.fields?.includes(h))) {
+                    toast({ title: "Erro de Cabeçalho", description: `O CSV deve conter as colunas: ${requiredHeaders.join(', ')}`, variant: "destructive", duration: 10000 });
+                    setIsImporting(false);
+                    return;
+                }
+
+                const userCampaigns: { [userId: string]: { userName: string, campaigns: CampaignType[] } } = {};
+
+                for (const row of results.data) {
+                    const user = collaborators.find(c => c.email === row.userEmail?.trim());
+                    if (!user) {
+                        console.warn(`Usuário não encontrado para o email: ${row.userEmail}`);
+                        continue;
+                    }
+
+                    const campaign: CampaignType = {
+                        id: `campaign_${Date.now()}_${Math.random()}`,
+                        ctaMessage: {
+                            title: row.cta_title,
+                            icon: row.cta_icon,
+                            ctaLink: row.cta_link
+                        },
+                        followUpMessage: {
+                            title: row.followup_title,
+                            content: row.followup_content,
+                            icon: row.followup_icon,
+                            ctaText: row.followup_ctaText,
+                            ctaLink: row.followup_ctaLink
+                        }
+                    };
+                    
+                    if (!userCampaigns[user.id3a]) {
+                        userCampaigns[user.id3a] = { userName: user.name, campaigns: [] };
+                    }
+                    userCampaigns[user.id3a].campaigns.push(campaign);
+                }
+
+                try {
+                    const upsertPromises = Object.entries(userCampaigns).map(([userId, { userName, campaigns }]) => {
+                        const payload: FabMessagePayload = {
+                            userId,
+                            userName,
+                            pipeline: campaigns,
+                            isActive: true,
+                            status: 'pending_cta',
+                            activeCampaignIndex: 0,
+                            archivedCampaigns: [],
+                        };
+                        return upsertMessageForUser(userId, payload);
+                    });
+                    
+                    await Promise.all(upsertPromises);
+                    toast({ title: "Importação Concluída!", description: `${Object.keys(userCampaigns).length} pipelines de usuário foram criados/atualizados.` });
+                    setIsImportOpen(false);
+
+                } catch (e) {
+                    toast({ title: "Erro na Importação", description: (e as Error).message, variant: "destructive" });
+                } finally {
+                    setIsImporting(false);
+                }
+            },
+            error: (err) => {
+                toast({ title: "Erro ao Ler Arquivo", description: err.message, variant: "destructive" });
+                setIsImporting(false);
+            }
+        });
     };
 
     const handleDelete = async (userId: string) => {
@@ -222,8 +304,8 @@ export function ManageFabMessages() {
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
                 <CardDescription>Configure e envie campanhas de mensagens individuais para os colaboradores do eixo Comercial.</CardDescription>
-                <div className="flex flex-col sm:flex-row gap-2 pt-4">
-                    <div className="relative flex-grow">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
+                     <div className="relative flex-grow w-full sm:w-auto">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input 
                             placeholder="Buscar por colaborador..."
@@ -232,42 +314,40 @@ export function ManageFabMessages() {
                             className="pl-10"
                         />
                     </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="w-full sm:w-auto">
-                                <Filter className="mr-2 h-4 w-4" />
-                                Status ({statusFilter.length || 'Todos'})
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                             <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-                             <DropdownMenuSeparator />
-                             {Object.entries(statusOptions).map(([key, { label }]) => (
-                                 <DropdownMenuCheckboxItem
-                                    key={key}
-                                    checked={statusFilter.includes(key)}
-                                    onCheckedChange={() => toggleStatusFilter(key)}
-                                 >
-                                     {label}
-                                 </DropdownMenuCheckboxItem>
-                             ))}
-                        </DropdownMenuContent>
-                     </DropdownMenu>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                             <Button variant="outline" className="w-full sm:w-auto">
-                                <Filter className="mr-2 h-4 w-4" />
-                                Campanha Ativa ({activeFilter === 'all' ? 'Todas' : activeFilter === 'active' ? 'Sim' : 'Não'})
-                            </Button>
-                        </DropdownMenuTrigger>
-                         <DropdownMenuContent>
-                             <DropdownMenuLabel>Filtrar por Campanha Ativa</DropdownMenuLabel>
-                             <DropdownMenuSeparator />
-                             <DropdownMenuCheckboxItem checked={activeFilter === 'all'} onCheckedChange={() => setActiveFilter('all')}>Todas</DropdownMenuCheckboxItem>
-                             <DropdownMenuCheckboxItem checked={activeFilter === 'active'} onCheckedChange={() => setActiveFilter('active')}>Sim</DropdownMenuCheckboxItem>
-                             <DropdownMenuCheckboxItem checked={activeFilter === 'inactive'} onCheckedChange={() => setActiveFilter('inactive')}>Não</DropdownMenuCheckboxItem>
-                        </DropdownMenuContent>
-                     </DropdownMenu>
+                    <div className="flex w-full sm:w-auto gap-2">
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full sm:w-auto">
+                                    <Filter className="mr-2 h-4 w-4" />
+                                    Status ({statusFilter.length || 'Todos'})
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {Object.entries(statusOptions).map(([key, { label }]) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={key}
+                                        checked={statusFilter.includes(key)}
+                                        onCheckedChange={() => toggleStatusFilter(key)}
+                                    >
+                                        {label}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                         <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-grow">
+                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                            Importar CSV
+                        </Button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
+                            onChange={handleFileImport}
+                        />
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -285,6 +365,7 @@ export function ManageFabMessages() {
                         <TableBody>
                             {filteredAndSortedUsers.map(user => {
                                 const message = userMessageMap.get(user.id3a);
+                                const progress = message ? `Campanha ${message.activeCampaignIndex + 1}/${message.pipeline.length}` : 'N/A';
                                 return (
                                 <TableRow key={user.id}>
                                     <TableCell className="font-medium">{user.name}</TableCell>
@@ -292,7 +373,7 @@ export function ManageFabMessages() {
                                         <StatusBadge status={message?.status || 'not_created'} />
                                     </TableCell>
                                      <TableCell>
-                                        {message ? `Dia ${message.currentDay}/${message.pipeline.length}` : '-'}
+                                        {progress}
                                     </TableCell>
                                     <TableCell>
                                         <Switch
@@ -327,23 +408,29 @@ export function ManageFabMessages() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
                             {fields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4 relative">
-                                    <Badge className="absolute -top-3 right-4 bg-primary text-primary-foreground">Dia {index + 1}</Badge>
+                                    <Badge className="absolute -top-3 right-4 bg-primary text-primary-foreground">Campanha {index + 1}</Badge>
                                     
                                     <h3 className="font-semibold text-lg">Passo {index + 1}: Mensagem de CTA</h3>
                                     <div>
                                         <Label htmlFor={`pipeline.${index}.ctaMessage.title`}>Título</Label>
                                         <Input {...form.register(`pipeline.${index}.ctaMessage.title`)} />
                                     </div>
-                                    <div>
-                                        <Label htmlFor={`pipeline.${index}.ctaMessage.icon`}>Ícone</Label>
-                                        <Controller name={`pipeline.${index}.ctaMessage.icon`} control={control} render={({ field }) => (
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                                <SelectContent><ScrollArea className="h-60">
-                                                    {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
-                                                </ScrollArea></SelectContent>
-                                            </Select>
-                                        )}/>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor={`pipeline.${index}.ctaMessage.icon`}>Ícone</Label>
+                                            <Controller name={`pipeline.${index}.ctaMessage.icon`} control={control} render={({ field }) => (
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                                    <SelectContent><ScrollArea className="h-60">
+                                                        {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
+                                                    </ScrollArea></SelectContent>
+                                                </Select>
+                                            )}/>
+                                        </div>
+                                         <div>
+                                            <Label htmlFor={`pipeline.${index}.ctaMessage.ctaLink`}>Link do CTA</Label>
+                                            <Input {...form.register(`pipeline.${index}.ctaMessage.ctaLink`)} />
+                                        </div>
                                     </div>
                                     <Separator />
                                     <h3 className="font-semibold text-lg">Passo {index + 1}: Mensagem de Acompanhamento</h3>
@@ -382,8 +469,8 @@ export function ManageFabMessages() {
                                 </div>
                             ))}
 
-                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ day: fields.length + 1, ctaMessage: { title: '', icon: 'MessageSquare' }, followUpMessage: { title: '', content: '', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: '' }})}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Passo ao Pipeline
+                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: { title: '', icon: 'MessageSquare', ctaLink: '' }, followUpMessage: { title: '', content: '', icon: 'CheckCircle', ctaText: 'Saiba Mais', ctaLink: '' }})}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                             </Button>
                         </form>
                         </div>
@@ -401,6 +488,52 @@ export function ManageFabMessages() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+                 <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Importar Campanhas via CSV</DialogTitle>
+                        <DialogDescription>
+                            Faça o upload de um arquivo CSV para criar ou substituir pipelines de campanhas para múltiplos usuários.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                         <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
+                           <div className="flex items-start gap-3">
+                                <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 flex-shrink-0"/>
+                                <div>
+                                    <p className="font-semibold">Atenção: A importação irá sobrescrever o pipeline existente para os e-mails informados no arquivo.</p>
+                                </div>
+                           </div>
+                        </div>
+
+                        <h3 className="font-semibold">Instruções:</h3>
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                            <li>Crie uma planilha com uma linha para **cada campanha** de um usuário.</li>
+                            <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,cta_title,cta_icon,cta_link,followup_title,followup_content,followup_icon,followup_ctaText,followup_ctaLink</code>
+                            </li>
+                             <li>Para criar um pipeline para um usuário, adicione múltiplas linhas com o mesmo `userEmail`. A ordem das linhas no arquivo definirá a ordem do pipeline.</li>
+                             <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
+                        </ol>
+                         <a href="/templates/modelo_campanhas_fab.csv" download className="inline-block" >
+                            <Button variant="secondary">
+                                <FileDown className="mr-2 h-4 w-4"/>
+                                Baixar Modelo CSV
+                            </Button>
+                        </a>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsImportOpen(false)} disabled={isImporting}>
+                            Cancelar
+                        </Button>
+                        <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                            {isImporting ? 'Importando...' : 'Selecionar Arquivo'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     );
 }
+
