@@ -6,16 +6,11 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
-// Schemas for the individual messages within a Campaign
-const ctaMessageSchema = z.string().min(1, "A mensagem de CTA é obrigatória.");
-const followUpMessageSchema = z.string().min(1, "A mensagem de acompanhamento é obrigatória.");
-
-
 // Schema for a single Campaign (CTA + Follow-up)
 export const campaignSchema = z.object({
   id: z.string().default(() => `campaign_${Date.now()}_${Math.random()}`), // Unique ID for dnd-kit
-  ctaMessage: ctaMessageSchema,
-  followUpMessage: followUpMessageSchema,
+  ctaMessage: z.string().min(1, "A mensagem de CTA é obrigatória."),
+  followUpMessage: z.string().min(1, "A mensagem de acompanhamento é obrigatória."),
 });
 export type CampaignType = z.infer<typeof campaignSchema>;
 
@@ -27,7 +22,7 @@ export const fabMessageSchema = z.object({
   archivedCampaigns: z.array(campaignSchema).default([]),
   isActive: z.boolean().default(true),
   activeCampaignIndex: z.number().int().default(0),
-  status: z.enum(['pending_cta', 'pending_follow_up', 'completed']).default('pending_cta'),
+  status: z.enum(['ready', 'pending_cta', 'pending_follow_up', 'completed']).default('ready'),
   // Timestamps
   createdAt: z.string().default(() => new Date().toISOString()),
   updatedAt: z.string().default(() => new Date().toISOString()),
@@ -43,6 +38,7 @@ interface FabMessagesContextType {
   deleteMessageForUser: (userId: string) => Promise<void>;
   markCampaignAsClicked: (userId: string) => Promise<void>;
   advanceToNextCampaign: (userId: string) => Promise<void>;
+  startCampaign: (userId: string) => Promise<void>;
 }
 
 const FabMessagesContext = createContext<FabMessagesContextType | undefined>(undefined);
@@ -108,7 +104,8 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         const hasNextCampaign = nextIndex < message.pipeline.length;
 
         const updatePayload: FabMessagePayload = {
-            status: hasNextCampaign ? 'pending_cta' : 'completed',
+            status: hasNextCampaign ? 'ready' : 'completed', // Go to 'ready' for the next campaign
+            isActive: hasNextCampaign, // Deactivate if the pipeline is complete
             activeCampaignIndex: nextIndex,
             archivedCampaigns: newArchived,
             updatedAt: new Date().toISOString(),
@@ -116,6 +113,20 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
 
         return updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
      },
+  });
+
+  const startCampaignMutation = useMutation<void, Error, string>({
+      mutationFn: (userId: string) => {
+          const message = fabMessages.find(m => m.userId === userId);
+          if (!message) throw new Error("Campanha não encontrada para este usuário.");
+          if (message.status !== 'ready') throw new Error("A campanha não está pronta para ser enviada.");
+          
+          return updateDocumentInCollection(COLLECTION_NAME, userId, {
+              status: 'pending_cta',
+              isActive: true,
+              updatedAt: new Date().toISOString(),
+          });
+      },
   });
   
 
@@ -126,7 +137,8 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     deleteMessageForUser: (userId) => deleteMutation.mutateAsync(userId),
     markCampaignAsClicked: (userId) => markAsClickedMutation.mutateAsync(userId),
     advanceToNextCampaign: (userId) => advanceCampaignMutation.mutateAsync(userId),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, advanceCampaignMutation]);
+    startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, advanceCampaignMutation, startCampaignMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>

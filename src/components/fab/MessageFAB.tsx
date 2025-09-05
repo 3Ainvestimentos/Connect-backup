@@ -112,7 +112,8 @@ export default function MessageFAB() {
         if (!currentUser) return null;
         const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
         
-        if (messageForUser && messageForUser.isActive && messageForUser.status !== 'completed') {
+        // A mensagem só é "ativa" se estiver nos status de pendência e com a flag isActive.
+        if (messageForUser && messageForUser.isActive && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up')) {
             return messageForUser;
         }
         return null;

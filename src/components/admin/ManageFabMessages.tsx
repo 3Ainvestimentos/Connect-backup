@@ -33,6 +33,7 @@ type CampaignType = z.infer<typeof campaignSchema>;
 
 
 const statusOptions = {
+    ready: { label: 'Pronto para Envio', className: 'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/50 dark:text-cyan-200 dark:border-cyan-800' },
     pending_cta: { label: 'Pendente CTA', className: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-800' },
     pending_follow_up: { label: 'Pendente Acomp.', className: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800' },
     completed: { label: 'Concluído', className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800' },
@@ -46,7 +47,7 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, markCampaignAsClicked, advanceToNextCampaign } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -183,6 +184,15 @@ export function ManageFabMessages() {
             toast({ title: "Erro", description: "Não foi possível alterar o status da campanha.", variant: "destructive" });
         }
     };
+    
+    const handleStartCampaign = async (userId: string) => {
+        try {
+            await startCampaign(userId);
+            toast({ title: "Sucesso!", description: "A campanha foi enviada para o colaborador."});
+        } catch (error) {
+            toast({ title: "Erro ao Enviar", description: (error as Error).message, variant: "destructive"});
+        }
+    }
 
     const onSubmit = async (data: FabMessageFormValues) => {
         if (!editingUser) return;
@@ -193,7 +203,7 @@ export function ManageFabMessages() {
             userName: editingUser.name,
             pipeline: data.pipeline,
             isActive: existingMessage?.isActive ?? true,
-            status: 'pending_cta',
+            status: 'ready', // Set to ready to be sent
             activeCampaignIndex: 0,
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };
@@ -252,7 +262,7 @@ export function ManageFabMessages() {
                             userName,
                             pipeline: campaigns,
                             isActive: true,
-                            status: 'pending_cta',
+                            status: 'ready', // Default to ready
                             activeCampaignIndex: 0,
                             archivedCampaigns: [],
                         };
@@ -300,8 +310,8 @@ export function ManageFabMessages() {
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
                  <CardDescription>
-                    Configure e envie campanhas de mensagens para os colaboradores. Uma campanha consiste em uma mensagem de CTA (curta) e uma de acompanhamento (detalhada). 
-                    A coluna 'Progresso' indica qual campanha do pipeline está ativa. O 'Status' se refere à campanha ativa.
+                    Configure e envie campanhas para os colaboradores. Uma campanha consiste em uma mensagem de CTA (curta) e uma de acompanhamento (detalhada). 
+                    A coluna 'Progresso' indica qual campanha do pipeline está ativa. O 'Status' refere-se à campanha ativa.
                 </CardDescription>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
                      <div className="relative flex-grow w-full sm:w-auto">
@@ -381,7 +391,16 @@ export function ManageFabMessages() {
                                           disabled={!message}
                                         />
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right space-x-1">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm"
+                                            onClick={() => handleStartCampaign(user.id3a)}
+                                            disabled={!message || message.status !== 'ready'}
+                                            className="hover:bg-green-500/10 hover:text-green-600"
+                                        >
+                                            <Send className="mr-2 h-4 w-4" /> Enviar Campanha
+                                        </Button>
                                         <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
                                             <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
                                         </Button>
