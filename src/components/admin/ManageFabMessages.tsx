@@ -1,255 +1,292 @@
+
 "use client";
 
 import React, { useState, useMemo } from 'react';
-import { useFabMessages, type FabMessageType, fabMessageSchema } from '@/contexts/FabMessagesContext';
+import { useFabMessages, type FabMessageType, type FabMessagePayload } from '@/contexts/FabMessagesContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Award, Users, Send, Eye, MessageSquare, BarChart } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
-import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import { RecipientSelectionModal } from './RecipientSelectionModal';
+import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
 import { Badge } from '../ui/badge';
 import { getIcon, iconList } from '@/lib/icon-list';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
-import { Progress } from '../ui/progress';
+import { Separator } from '../ui/separator';
+import { Switch } from '../ui/switch';
 
-type FabMessageFormValues = z.infer<typeof fabMessageSchema>;
+
+const ctaMessageSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório."),
+  icon: z.string().min(1, "Ícone é obrigatório."),
+  ctaText: z.string().min(1, "Texto do botão é obrigatório."),
+  ctaLink: z.string().url("Link deve ser uma URL válida."),
+});
+
+const followUpMessageSchema = z.object({
+  title: z.string().min(1, "Título é obrigatório."),
+  content: z.string().min(1, "Conteúdo é obrigatório."),
+  icon: z.string().min(1, "Ícone é obrigatório."),
+});
+
+const formSchema = z.object({
+    ctaMessage: ctaMessageSchema,
+    followUpMessage: followUpMessageSchema,
+});
+
+type FabMessageFormValues = z.infer<typeof formSchema>;
+
+const StatusBadge = ({ status }: { status: FabMessageType['status'] | 'not_created' }) => {
+    const config = {
+        not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800' },
+        draft: { label: 'Rascunho', className: 'bg-yellow-100 text-yellow-800' },
+        sent: { label: 'Enviada', className: 'bg-blue-100 text-blue-800' },
+        clicked: { label: 'Clicada', className: 'bg-green-100 text-green-800' },
+    }[status];
+
+    return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
+};
+
 
 export function ManageFabMessages() {
-    const { fabMessages, addFabMessage, updateFabMessage, deleteFabMessageMutation, loading } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, updateMessageStatus, loading } = useFabMessages();
     const { collaborators } = useCollaborators();
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
-    const [editingMessage, setEditingMessage] = useState<FabMessageType | null>(null);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
+
+    const commercialUsers = useMemo(() => {
+        return collaborators.filter(c => c.axis === 'Comercial');
+    }, [collaborators]);
+
+    const userMessageMap = useMemo(() => {
+        const map = new Map<string, FabMessageType>();
+        fabMessages.forEach(msg => map.set(msg.userId, msg));
+        return map;
+    }, [fabMessages]);
 
     const form = useForm<FabMessageFormValues>({
-        resolver: zodResolver(fabMessageSchema),
-        defaultValues: {
-            title: '',
-            content: '',
-            icon: 'MessageSquare',
-            ctaLink: '',
-            ctaText: '',
-            targetUserIds: ['all'],
-            status: 'draft',
-            createdAt: new Date().toISOString(),
-        }
+        resolver: zodResolver(formSchema),
     });
+    
+    const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
 
-    const { formState: { isSubmitting, errors }, watch } = form;
-    const watchRecipientIds = watch('targetUserIds');
-    const watchIcon = watch('icon');
-
-    const handleDialogOpen = (message: FabMessageType | null) => {
-        setEditingMessage(message);
-        if (message) {
-            form.reset(message);
+    const handleOpenForm = (user: Collaborator) => {
+        setEditingUser(user);
+        const existingMessage = userMessageMap.get(user.id3a);
+        if (existingMessage) {
+            reset({
+                ctaMessage: existingMessage.ctaMessage,
+                followUpMessage: existingMessage.followUpMessage,
+            });
         } else {
-            form.reset({
-                 title: '',
-                content: '',
-                icon: 'MessageSquare',
-                ctaLink: '',
-                ctaText: '',
-                targetUserIds: ['all'],
-                status: 'draft',
-                createdAt: new Date().toISOString(),
+             reset({
+                ctaMessage: { title: '', icon: 'MessageSquare', ctaText: '', ctaLink: '' },
+                followUpMessage: { title: '', content: '', icon: 'CheckCircle' },
             });
         }
-        setIsDialogOpen(true);
-    };
-
-    const handleDelete = async (id: string) => {
-        if (!window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação é irreversível.")) return;
-        try {
-            await deleteFabMessageMutation.mutateAsync(id);
-            toast({ title: "Sucesso!", description: "Mensagem FAB excluída." });
-        } catch (error) {
-            toast({ title: "Falha na Exclusão", description: (error as Error).message, variant: "destructive" });
-        }
+        setIsFormOpen(true);
     };
 
     const onSubmit = async (data: FabMessageFormValues) => {
-        const payload = { ...data, status: 'sent' as const };
+        if (!editingUser) return;
+        
+        const payload: FabMessagePayload = {
+            userId: editingUser.id3a,
+            userName: editingUser.name,
+            status: 'draft',
+            isActive: true,
+            createdAt: userMessageMap.get(editingUser.id3a)?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            ...data,
+        };
+
         try {
-            if (editingMessage) {
-                await updateFabMessage({ ...payload, id: editingMessage.id });
-                toast({ title: "Mensagem FAB atualizada com sucesso." });
-            } else {
-                await addFabMessage(payload);
-                toast({ title: "Mensagem FAB enviada com sucesso." });
-            }
-            setIsDialogOpen(false);
+            await upsertMessageForUser(editingUser.id3a, payload);
+            toast({ title: "Sucesso", description: `Mensagens para ${editingUser.name} foram salvas como rascunho.` });
+            setIsFormOpen(false);
         } catch (error) {
-            toast({ title: "Erro ao salvar", description: (error as Error).message, variant: "destructive" });
+            toast({ title: "Erro", description: "Não foi possível salvar as mensagens.", variant: "destructive" });
         }
     };
+    
+    const handleSendMessage = async () => {
+        if (!editingUser) return;
+        // First, save the current form state
+        await handleSubmit(onSubmit)(); 
+        
+        // Then, update the status to 'sent'
+        await updateMessageStatus(editingUser.id3a, 'sent', true);
+        toast({ title: "Mensagem Enviada!", description: `A campanha foi ativada para ${editingUser.name}.`, variant: 'success' });
+        setIsFormOpen(false);
+    };
 
-    const getRecipientDescription = (ids: string[]) => {
-        if (ids.includes('all')) return `Todos os ${collaborators.length} Colaboradores`;
-        return `${ids.length} colaborador(es) selecionado(s)`;
+    const handleToggleActivation = async (user: Collaborator, isActive: boolean) => {
+        const message = userMessageMap.get(user.id3a);
+        if (!message) {
+            toast({ title: "Atenção", description: "Crie uma mensagem primeiro antes de ativá-la.", variant: "destructive" });
+            return;
+        }
+        try {
+            await updateMessageStatus(user.id3a, message.status, isActive);
+            toast({ title: "Sucesso", description: `Campanha ${isActive ? 'ativada' : 'pausada'} para ${user.name}.`, variant: 'default' });
+        } catch (error) {
+            toast({ title: "Erro", description: "Não foi possível alterar o status da campanha.", variant: "destructive" });
+        }
     };
     
-    const calculateEngagement = (message: FabMessageType) => {
-        const totalTargets = message.targetUserIds.includes('all') ? collaborators.length : message.targetUserIds.length;
-        if (totalTargets === 0) return { readPercentage: 0, clickPercentage: 0 };
-        
-        const readPercentage = (message.readByUserIds.length / totalTargets) * 100;
-        const clickPercentage = (message.clickedByUserIds.length / totalTargets) * 100;
-        
-        return { readPercentage, clickPercentage };
-    };
-
+    const handleDelete = async (userId: string) => {
+        if (!window.confirm("Tem certeza que deseja apagar a configuração de mensagens para este usuário? Esta ação é irreversível.")) return;
+        try {
+             await deleteMessageForUser(userId);
+             toast({ title: "Sucesso!", description: "Configuração de mensagens removida." });
+        } catch (error) {
+             toast({ title: "Erro", description: "Não foi possível remover a configuração.", variant: "destructive" });
+        }
+    }
+    
     return (
-        <>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle>Gerenciar Mensagens FAB</CardTitle>
-                        <CardDescription>Crie, envie e monitore o engajamento das mensagens flutuantes.</CardDescription>
-                    </div>
-                    <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Nova Mensagem FAB
-                    </Button>
-                </CardHeader>
-                <CardContent>
-                    <div className="border rounded-lg">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Título</TableHead>
-                                    <TableHead>Público-Alvo</TableHead>
-                                    <TableHead>Leituras</TableHead>
-                                    <TableHead>Cliques</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
+        <Card>
+            <CardHeader>
+                <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
+                <CardDescription>Configure e envie campanhas de mensagens individuais para os colaboradores do eixo Comercial.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Colaborador</TableHead>
+                                <TableHead>Status da Campanha</TableHead>
+                                <TableHead>Ativa</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {commercialUsers.map(user => {
+                                const message = userMessageMap.get(user.id3a);
+                                return (
+                                <TableRow key={user.id}>
+                                    <TableCell className="font-medium">{user.name}</TableCell>
+                                    <TableCell>
+                                        <StatusBadge status={message?.status || 'not_created'} />
+                                    </TableCell>
+                                    <TableCell>
+                                        <Switch
+                                          checked={message?.isActive ?? false}
+                                          onCheckedChange={(checked) => handleToggleActivation(user, checked)}
+                                          disabled={!message}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)}>
+                                            <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
+                                        </Button>
+                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id3a)} disabled={!message}>
+                                            <Trash2 className="h-4 w-4 text-destructive"/>
+                                        </Button>
+                                    </TableCell>
                                 </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {fabMessages.map(item => {
-                                    const { readPercentage, clickPercentage } = calculateEngagement(item);
-                                    return (
-                                    <TableRow key={item.id}>
-                                        <TableCell className="font-medium">{item.title}</TableCell>
-                                        <TableCell><Badge variant="outline">{getRecipientDescription(item.targetUserIds)}</Badge></TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Progress value={readPercentage} className="w-24 h-2 [&>div]:bg-blue-500"/>
-                                                <span className="text-xs font-mono text-muted-foreground">{readPercentage.toFixed(0)}%</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                             <div className="flex items-center gap-2">
-                                                <Progress value={clickPercentage} className="w-24 h-2 [&>div]:bg-success"/>
-                                                <span className="text-xs font-mono text-muted-foreground">{clickPercentage.toFixed(0)}%</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} disabled={deleteFabMessageMutation.isPending && deleteFabMessageMutation.variables === item.id} className="hover:bg-muted">
-                                                {deleteFabMessageMutation.isPending && deleteFabMessageMutation.variables === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4 text-destructive" />}
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )})}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
-            </Card>
+                            )})}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogContent className="max-w-2xl">
-                    <ScrollArea className="max-h-[80vh] pr-6 -mr-6">
-                        <div className="pr-1">
-                            <DialogHeader>
-                                <DialogTitle>{editingMessage ? 'Editar Mensagem FAB' : 'Nova Mensagem FAB'}</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mt-4">
+                    <ScrollArea className="max-h-[80vh] p-1">
+                        <div className="p-6 pt-0">
+                        <DialogHeader>
+                            <DialogTitle>Configurar Mensagens para</DialogTitle>
+                            <DialogDescription>{editingUser?.name}</DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+                            {/* CTA Message Section */}
+                            <div className="p-4 border rounded-lg space-y-4">
+                                <h3 className="font-semibold text-lg">1. Mensagem de CTA (Primeiro Contato)</h3>
                                 <div>
-                                    <Label htmlFor="title">Título (Chamada principal)</Label>
-                                    <Input id="title" {...form.register('title')} />
-                                    {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
+                                    <Label htmlFor="cta.title">Título</Label>
+                                    <Input id="cta.title" {...form.register('ctaMessage.title')} />
                                 </div>
-                                <div>
-                                    <Label htmlFor="content">Conteúdo (Texto do balão)</Label>
-                                    <Textarea id="content" {...form.register('content')} />
-                                    {errors.content && <p className="text-sm text-destructive mt-1">{errors.content.message}</p>}
-                                </div>
-                                <div>
-                                    <Label htmlFor="icon">Ícone</Label>
-                                    <Controller name="icon" control={form.control} render={({ field }) => {
-                                        const IconToShow = getIcon(field.value);
-                                        return (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="cta.icon">Ícone</Label>
+                                         <Controller name="ctaMessage.icon" control={control} render={({ field }) => (
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <SelectTrigger><SelectValue>
-                                                    <div className="flex items-center gap-2"><IconToShow className='h-4 w-4' /><span>{field.value}</span></div>
-                                                </SelectValue></SelectTrigger>
+                                                <SelectTrigger><SelectValue/></SelectTrigger>
                                                 <SelectContent><ScrollArea className="h-60">
-                                                    {iconList.map(iconName => {
-                                                        const Icon = getIcon(iconName);
-                                                        return <SelectItem key={iconName} value={iconName}><div className="flex items-center gap-2"><Icon className="h-4 w-4" /><span>{iconName}</span></div></SelectItem>
-                                                    })}
+                                                    {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
                                                 </ScrollArea></SelectContent>
                                             </Select>
-                                        );
-                                    }}/>
-                                    {errors.icon && <p className="text-sm text-destructive mt-1">{errors.icon.message}</p>}
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="ctaText">Texto do Botão (CTA)</Label>
-                                        <Input id="ctaText" {...form.register('ctaText')} placeholder="Ex: Ver agora" />
-                                        {errors.ctaText && <p className="text-sm text-destructive mt-1">{errors.ctaText.message}</p>}
+                                        )}/>
                                     </div>
                                     <div>
-                                        <Label htmlFor="ctaLink">Link do Botão (CTA)</Label>
-                                        <Input id="ctaLink" {...form.register('ctaLink')} placeholder="https://..." />
-                                        {errors.ctaLink && <p className="text-sm text-destructive mt-1">{errors.ctaLink.message}</p>}
+                                        <Label htmlFor="cta.ctaText">Texto do Botão</Label>
+                                        <Input id="cta.ctaText" {...form.register('ctaMessage.ctaText')} />
                                     </div>
                                 </div>
                                 <div>
-                                    <Label>Público-Alvo</Label>
-                                    <Button type="button" variant="outline" className="w-full justify-start text-left mt-2" onClick={() => setIsSelectionModalOpen(true)}>
-                                    <Users className="mr-2 h-4 w-4" />
-                                    <span>{getRecipientDescription(watchRecipientIds)}</span>
-                                    </Button>
-                                    {errors.targetUserIds && <p className="text-sm text-destructive mt-1">{errors.targetUserIds.message as string}</p>}
+                                    <Label htmlFor="cta.ctaLink">Link do Botão</Label>
+                                    <Input id="cta.ctaLink" {...form.register('ctaMessage.ctaLink')} />
                                 </div>
-                                <DialogFooter className="pt-4">
-                                    <DialogClose asChild><Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button></DialogClose>
-                                    <Button type="submit" className="bg-admin-primary hover:bg-admin-primary/90" disabled={isSubmitting}>
-                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        {editingMessage ? 'Salvar Alterações e Reenviar' : 'Enviar Mensagem'}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
+                            </div>
+                            
+                            {/* Follow-up Message Section */}
+                             <div className="p-4 border rounded-lg space-y-4">
+                                <h3 className="font-semibold text-lg">2. Mensagem de Acompanhamento (Pós-clique)</h3>
+                                <div>
+                                    <Label htmlFor="followup.title">Título</Label>
+                                    <Input id="followup.title" {...form.register('followUpMessage.title')} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                     <div>
+                                        <Label htmlFor="followup.icon">Ícone</Label>
+                                        <Controller name="followUpMessage.icon" control={control} render={({ field }) => (
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                                <SelectContent><ScrollArea className="h-60">
+                                                    {iconList.map(i => <SelectItem key={i} value={i}><div className="flex items-center gap-2">{React.createElement(getIcon(i), {className:"h-4 w-4"})}<span>{i}</span></div></SelectItem>)}
+                                                </ScrollArea></SelectContent>
+                                            </Select>
+                                        )}/>
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label htmlFor="followup.content">Conteúdo</Label>
+                                    <Textarea id="followup.content" {...form.register('followUpMessage.content')} />
+                                </div>
+                            </div>
+                        </form>
                         </div>
                     </ScrollArea>
+                    <DialogFooter className="!justify-between">
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                        </DialogClose>
+                        <div className="flex gap-2">
+                             <Button type="button" variant="secondary" onClick={handleSubmit(onSubmit)} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                Salvar Rascunho
+                            </Button>
+                            <Button type="button" className="bg-admin-primary hover:bg-admin-primary/90" onClick={handleSendMessage} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+                                Salvar e Enviar
+                            </Button>
+                        </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
-
-             <RecipientSelectionModal
-                isOpen={isSelectionModalOpen}
-                onClose={() => setIsSelectionModalOpen(false)}
-                allCollaborators={collaborators}
-                selectedIds={watchRecipientIds}
-                onConfirm={(newIds) => {
-                    form.setValue('targetUserIds', newIds, { shouldValidate: true });
-                    setIsSelectionModalOpen(false);
-                }}
-            />
-        </>
+        </Card>
     );
 }
+
+
+    
