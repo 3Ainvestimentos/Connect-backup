@@ -16,7 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
 import { Badge } from '../ui/badge';
-import { getIcon, iconList } from '@/lib/icon-list';
+import { getIcon } from '@/lib/icons';
+import { iconList } from '@/lib/icon-list';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
@@ -545,4 +546,3 @@ export function ManageFabMessages() {
         </Card>
     );
 }
-
