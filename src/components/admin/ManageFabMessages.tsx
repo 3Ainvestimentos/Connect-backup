@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
@@ -22,6 +22,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '../ui/dropdown-menu';
 
 
 const ctaMessageSchema = z.object({
@@ -43,15 +44,17 @@ const formSchema = z.object({
 });
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
+type SortKey = 'name' | 'status' | 'isActive';
 
-const StatusBadge = ({ status }: { status: FabMessageType['status'] | 'not_created' }) => {
-    const config = {
-        not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800' },
-        draft: { label: 'Rascunho', className: 'bg-yellow-100 text-yellow-800' },
-        sent: { label: 'Enviada', className: 'bg-blue-100 text-blue-800' },
-        clicked: { label: 'Clicada', className: 'bg-green-100 text-green-800' },
-    }[status];
+const statusOptions = {
+    not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800' },
+    draft: { label: 'Rascunho', className: 'bg-yellow-100 text-yellow-800' },
+    sent: { label: 'Enviada', className: 'bg-blue-100 text-blue-800' },
+    clicked: { label: 'Clicada', className: 'bg-green-100 text-green-800' },
+};
 
+const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
+    const config = statusOptions[status];
     return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
 };
 
@@ -61,6 +64,12 @@ export function ManageFabMessages() {
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState<string[]>([]);
+    const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [sortKey, setSortKey] = useState<SortKey>('name');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+
 
     const commercialUsers = useMemo(() => {
         return collaborators.filter(c => c.axis === 'Comercial');
@@ -71,6 +80,78 @@ export function ManageFabMessages() {
         fabMessages.forEach(msg => map.set(msg.userId, msg));
         return map;
     }, [fabMessages]);
+
+     const filteredAndSortedUsers = useMemo(() => {
+        let items = [...commercialUsers];
+
+        if (searchTerm) {
+            items = items.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        }
+
+        if (statusFilter.length > 0) {
+            items = items.filter(user => {
+                const message = userMessageMap.get(user.id3a);
+                const status = message?.status || 'not_created';
+                return statusFilter.includes(status);
+            });
+        }
+        
+        if (activeFilter !== 'all') {
+            items = items.filter(user => {
+                 const message = userMessageMap.get(user.id3a);
+                 const isActive = message?.isActive ?? false;
+                 return activeFilter === 'active' ? isActive : !isActive;
+            });
+        }
+        
+        items.sort((a, b) => {
+            const messageA = userMessageMap.get(a.id3a);
+            const messageB = userMessageMap.get(b.id3a);
+
+            let valA: any, valB: any;
+            
+            switch (sortKey) {
+                case 'name':
+                    valA = a.name;
+                    valB = b.name;
+                    break;
+                case 'status':
+                    valA = messageA?.status || 'not_created';
+                    valB = messageB?.status || 'not_created';
+                    break;
+                case 'isActive':
+                    valA = messageA?.isActive ?? false;
+                    valB = messageB?.isActive ?? false;
+                    break;
+                default:
+                    return 0;
+            }
+
+            let comparison = 0;
+            if (valA > valB) comparison = 1;
+            else if (valA < valB) comparison = -1;
+
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+
+        return items;
+    }, [commercialUsers, userMessageMap, searchTerm, statusFilter, activeFilter, sortKey, sortDirection]);
+
+    const handleSort = (key: SortKey) => {
+        if (sortKey === key) {
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortKey(key);
+            setSortDirection('asc');
+        }
+    };
+    
+    const toggleStatusFilter = (status: string) => {
+        setStatusFilter(prev => 
+            prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
+        );
+    };
 
     const form = useForm<FabMessageFormValues>({
         resolver: zodResolver(formSchema),
@@ -101,8 +182,8 @@ export function ManageFabMessages() {
         const payload: FabMessagePayload = {
             userId: editingUser.id3a,
             userName: editingUser.name,
-            status: 'draft',
-            isActive: true,
+            status: userMessageMap.get(editingUser.id3a)?.status || 'draft',
+            isActive: userMessageMap.get(editingUser.id3a)?.isActive ?? true,
             createdAt: userMessageMap.get(editingUser.id3a)?.createdAt || new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             ...data,
@@ -110,7 +191,7 @@ export function ManageFabMessages() {
 
         try {
             await upsertMessageForUser(editingUser.id3a, payload);
-            toast({ title: "Sucesso", description: `Mensagens para ${editingUser.name} foram salvas como rascunho.` });
+            toast({ title: "Sucesso", description: `Mensagens para ${editingUser.name} foram salvas.` });
             setIsFormOpen(false);
         } catch (error) {
             toast({ title: "Erro", description: "Não foi possível salvar as mensagens.", variant: "destructive" });
@@ -119,13 +200,32 @@ export function ManageFabMessages() {
     
     const handleSendMessage = async () => {
         if (!editingUser) return;
-        // First, save the current form state
-        await handleSubmit(onSubmit)(); 
         
-        // Then, update the status to 'sent'
-        await updateMessageStatus(editingUser.id3a, 'sent', true);
-        toast({ title: "Mensagem Enviada!", description: `A campanha foi ativada para ${editingUser.name}.`, variant: 'success' });
-        setIsFormOpen(false);
+        // Ensure form data is valid and get it
+        const isValid = await form.trigger();
+        if (!isValid) {
+            toast({ title: "Formulário Inválido", description: "Por favor, corrija os erros antes de enviar.", variant: "destructive"});
+            return;
+        }
+        const data = form.getValues();
+
+        const payload: FabMessagePayload = {
+            userId: editingUser.id3a,
+            userName: editingUser.name,
+            status: 'sent', // Set status to 'sent'
+            isActive: true,  // Ensure it's active on send
+            createdAt: userMessageMap.get(editingUser.id3a)?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            ...data,
+        };
+        
+        try {
+            await upsertMessageForUser(editingUser.id3a, payload);
+            toast({ title: "Mensagem Enviada!", description: `A campanha foi ativada para ${editingUser.name}.`, variant: 'success' });
+            setIsFormOpen(false);
+        } catch (error) {
+            toast({ title: "Erro ao Enviar", description: "Não foi possível enviar a campanha.", variant: "destructive" });
+        }
     };
 
     const handleToggleActivation = async (user: Collaborator, isActive: boolean) => {
@@ -152,25 +252,81 @@ export function ManageFabMessages() {
         }
     }
     
+    const SortableHeader = ({ tKey, label }: { tKey: SortKey, label: string }) => (
+        <TableHead onClick={() => handleSort(tKey)} className="cursor-pointer hover:bg-muted/50">
+            <div className="flex items-center gap-1">
+                {label}
+                {sortKey === tKey && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+            </div>
+        </TableHead>
+    );
+    
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
                 <CardDescription>Configure e envie campanhas de mensagens individuais para os colaboradores do eixo Comercial.</CardDescription>
+                <div className="flex flex-col sm:flex-row gap-2 pt-4">
+                    <div className="relative flex-grow">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Buscar por colaborador..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                     <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="w-full sm:w-auto">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Status ({statusFilter.length || 'Todos'})
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                             <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
+                             <DropdownMenuSeparator />
+                             {Object.entries(statusOptions).map(([key, { label }]) => (
+                                 <DropdownMenuCheckboxItem
+                                    key={key}
+                                    checked={statusFilter.includes(key)}
+                                    onCheckedChange={() => toggleStatusFilter(key)}
+                                 >
+                                     {label}
+                                 </DropdownMenuCheckboxItem>
+                             ))}
+                        </DropdownMenuContent>
+                     </DropdownMenu>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                             <Button variant="outline" className="w-full sm:w-auto">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Campanha Ativa ({activeFilter === 'all' ? 'Todas' : activeFilter === 'active' ? 'Sim' : 'Não'})
+                            </Button>
+                        </DropdownMenuTrigger>
+                         <DropdownMenuContent>
+                             <DropdownMenuLabel>Filtrar por Campanha Ativa</DropdownMenuLabel>
+                             <DropdownMenuSeparator />
+                             <DropdownMenuCheckboxItem checked={activeFilter === 'all'} onCheckedChange={() => setActiveFilter('all')}>Todas</DropdownMenuCheckboxItem>
+                             <DropdownMenuCheckboxItem checked={activeFilter === 'active'} onCheckedChange={() => setActiveFilter('active')}>Sim</DropdownMenuCheckboxItem>
+                             <DropdownMenuCheckboxItem checked={activeFilter === 'inactive'} onCheckedChange={() => setActiveFilter('inactive')}>Não</DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                     </DropdownMenu>
+                </div>
             </CardHeader>
             <CardContent>
                 <div className="border rounded-lg">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Colaborador</TableHead>
-                                <TableHead>Status da Campanha</TableHead>
-                                <TableHead>Ativa</TableHead>
+                                <SortableHeader tKey="name" label="Colaborador" />
+                                <SortableHeader tKey="status" label="Status da Campanha" />
+                                <SortableHeader tKey="isActive" label="Ativa" />
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {commercialUsers.map(user => {
+                            {filteredAndSortedUsers.map(user => {
                                 const message = userMessageMap.get(user.id3a);
                                 return (
                                 <TableRow key={user.id}>
@@ -287,6 +443,3 @@ export function ManageFabMessages() {
         </Card>
     );
 }
-
-
-    
