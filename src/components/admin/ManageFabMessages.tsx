@@ -342,7 +342,7 @@ export function ManageFabMessages() {
                                         />
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)}>
+                                        <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
                                             <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
                                         </Button>
                                          <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id3a)} disabled={!message}>
