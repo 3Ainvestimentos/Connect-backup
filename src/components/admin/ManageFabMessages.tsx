@@ -21,6 +21,7 @@ import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '../ui/dropdown-menu';
 import Papa from 'papaparse';
+import { Checkbox } from '../ui/checkbox';
 
 
 const formSchema = z.object({
@@ -59,6 +60,8 @@ export function ManageFabMessages() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isImporting, setIsImporting] = useState(false);
+    const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+    const [isSendingBulk, setIsSendingBulk] = useState(false);
 
     const commercialUsers = useMemo(() => {
         const testUsers = [
@@ -146,6 +149,50 @@ export function ManageFabMessages() {
         );
     };
 
+    const handleBulkStartCampaign = async () => {
+        if (selectedUserIds.length === 0) return;
+        setIsSendingBulk(true);
+        const promises = selectedUserIds.map(userId => startCampaign(userId));
+        try {
+            await Promise.all(promises);
+            toast({
+                title: "Sucesso!",
+                description: `${selectedUserIds.length} campanha(s) enviada(s) para os colaboradores.`,
+                variant: 'success'
+            });
+            setSelectedUserIds([]);
+        } catch (error) {
+            toast({
+                title: "Erro ao Enviar em Lote",
+                description: (error as Error).message,
+                variant: "destructive"
+            });
+        } finally {
+            setIsSendingBulk(false);
+        }
+    };
+    
+    const toggleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const readyUserIds = filteredAndSortedUsers
+                .filter(user => {
+                    const message = userMessageMap.get(user.id3a);
+                    return message?.status === 'ready';
+                })
+                .map(user => user.id3a);
+            setSelectedUserIds(readyUserIds);
+        } else {
+            setSelectedUserIds([]);
+        }
+    };
+    
+    const isAllReadyUsersSelected = useMemo(() => {
+        const readyUserIds = filteredAndSortedUsers
+            .filter(user => userMessageMap.get(user.id3a)?.status === 'ready')
+            .map(user => user.id3a);
+        return readyUserIds.length > 0 && readyUserIds.every(id => selectedUserIds.includes(id));
+    }, [filteredAndSortedUsers, selectedUserIds, userMessageMap]);
+
     const form = useForm<FabMessageFormValues>({
         resolver: zodResolver(formSchema),
     });
@@ -184,15 +231,6 @@ export function ManageFabMessages() {
             toast({ title: "Erro", description: "Não foi possível alterar o status da campanha.", variant: "destructive" });
         }
     };
-    
-    const handleStartCampaign = async (userId: string) => {
-        try {
-            await startCampaign(userId);
-            toast({ title: "Sucesso!", description: "A campanha foi enviada para o colaborador."});
-        } catch (error) {
-            toast({ title: "Erro ao Enviar", description: (error as Error).message, variant: "destructive"});
-        }
-    }
 
     const onSubmit = async (data: FabMessageFormValues) => {
         if (!editingUser) return;
@@ -323,7 +361,11 @@ export function ManageFabMessages() {
                             className="pl-10"
                         />
                     </div>
-                    <div className="flex w-full sm:w-auto gap-2">
+                    <div className="flex w-full sm:w-auto flex-wrap gap-2">
+                        <Button variant="outline" onClick={handleBulkStartCampaign} disabled={selectedUserIds.length === 0 || isSendingBulk}>
+                            {isSendingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+                            Enviar para Selecionados ({selectedUserIds.length})
+                        </Button>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="w-full sm:w-auto">
@@ -364,6 +406,13 @@ export function ManageFabMessages() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                 <TableHead className="w-[50px]">
+                                    <Checkbox
+                                        checked={isAllReadyUsersSelected}
+                                        onCheckedChange={(checked) => toggleSelectAll(!!checked)}
+                                        aria-label="Selecionar todos os usuários prontos"
+                                    />
+                                </TableHead>
                                 <SortableHeader tKey="name" label="Colaborador" />
                                 <SortableHeader tKey="status" label="Status da Campanha" />
                                 <TableHead>Progresso</TableHead>
@@ -375,8 +424,21 @@ export function ManageFabMessages() {
                             {filteredAndSortedUsers.map(user => {
                                 const message = userMessageMap.get(user.id3a);
                                 const progress = message ? `Campanha ${message.activeCampaignIndex + 1}/${message.pipeline.length}` : 'N/A';
+                                const isReady = message?.status === 'ready';
                                 return (
                                 <TableRow key={user.id}>
+                                    <TableCell>
+                                        <Checkbox
+                                            checked={selectedUserIds.includes(user.id3a)}
+                                            onCheckedChange={(checked) => {
+                                                setSelectedUserIds(prev =>
+                                                    checked ? [...prev, user.id3a] : prev.filter(id => id !== user.id3a)
+                                                );
+                                            }}
+                                            aria-label={`Selecionar ${user.name}`}
+                                            disabled={!isReady}
+                                        />
+                                    </TableCell>
                                     <TableCell className="font-medium">{user.name}</TableCell>
                                     <TableCell>
                                         <StatusBadge status={message?.status || 'not_created'} />
@@ -392,15 +454,6 @@ export function ManageFabMessages() {
                                         />
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm"
-                                            onClick={() => handleStartCampaign(user.id3a)}
-                                            disabled={!message || message.status !== 'ready'}
-                                            className="hover:bg-green-500/10 hover:text-green-600"
-                                        >
-                                            <Send className="mr-2 h-4 w-4" /> Enviar Campanha
-                                        </Button>
                                         <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
                                             <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
                                         </Button>
