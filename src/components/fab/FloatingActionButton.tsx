@@ -42,7 +42,7 @@ export default function FloatingActionButton() {
         <Button
             variant="outline"
             size="icon"
-            className="h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0 animate-pulse-bg"
+            className="h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0"
             aria-label="Abrir nova mensagem"
         >
             <BobIcon />
