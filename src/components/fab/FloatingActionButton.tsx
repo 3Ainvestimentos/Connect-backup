@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 
-// 1. Ícone SVG do "Bob"
+// Ícone SVG do "Bob"
 function BobIcon() {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" fill="none" className="h-9 w-9">
@@ -30,92 +30,14 @@ function BobIcon() {
     );
 }
 
-// 2. Componente do Balão de Diálogo
-interface MessageBubbleProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-  onClose?: (e: React.MouseEvent) => void;
-  hasCloseButton?: boolean;
-  variant?: 'primary' | 'secondary';
-  className?: string;
-}
-
-const MessageBubble = ({ children, onClick, onClose, hasCloseButton, variant = 'primary', className }: MessageBubbleProps) => {
-    const bubbleColor = 'hsl(170, 60%, 50%)';
-    const borderColor = 'hsl(170, 60%, 50%)';
-
-    const baseClasses = "cursor-pointer w-64 rounded-lg p-4 shadow-lg transition-all";
-    const variantClasses = {
-        primary: "bg-[hsl(170,60%,50%)] text-white font-semibold",
-        secondary: "bg-white text-black border-2",
-    };
-
-    return (
-        <div className="relative animate-in fade-in-50" onClick={onClick}>
-            <div
-                className={cn(baseClasses, variantClasses[variant], hasCloseButton && "pr-8", className)}
-                style={{ borderColor: variant === 'secondary' ? borderColor : 'transparent' }}
-            >
-                {children}
-                {hasCloseButton && (
-                    <button 
-                        onClick={onClose}
-                        className="absolute top-1 right-1 p-1 text-black/50 hover:text-black/80 rounded-full"
-                        aria-label="Fechar mensagem"
-                    >
-                        <X size={16} />
-                    </button>
-                )}
-            </div>
-            {/* 3. A Seta do Balão */}
-            <div 
-                className="absolute top-4 -right-2 w-0 h-0"
-                style={{
-                    borderTop: '8px solid transparent',
-                    borderBottom: '8px solid transparent',
-                    borderLeft: `8px solid ${variant === 'secondary' ? borderColor : bubbleColor}`,
-                }}
-            />
-        </div>
-    );
-};
-
-
-// 4. Componente FAB Principal
+// Componente FAB Principal
 export default function FloatingActionButton() {
-  const [showPrimaryBubble, setShowPrimaryBubble] = React.useState(true);
-  const [showSecondaryBubble, setShowSecondaryBubble] = React.useState(true);
+  // Lógica de estado e balões de diálogo foram removidos, 
+  // pois a funcionalidade real agora é gerenciada por MessageFAB.tsx.
+  // Este componente agora serve como um placeholder ou base visual.
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start">
-        {/* Wrapper para os balões, posicionado à esquerda do botão */}
-        <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
-            {/* Balão 1 (CTA) */}
-            {showPrimaryBubble && (
-                <MessageBubble 
-                    variant="primary"
-                    onClick={() => alert('Primary bubble clicked!')}
-                >
-                    <p className="text-sm">Texto do CTA aqui.</p>
-                </MessageBubble>
-            )}
-
-            {/* Balão 2 (Secundário) */}
-            {showSecondaryBubble && (
-                <MessageBubble 
-                    hasCloseButton 
-                    variant="secondary"
-                    onClick={() => alert('Secondary bubble clicked!')}
-                    onClose={(e) => {
-                        e.stopPropagation(); // Evita que o clique no "X" acione o onClick do balão
-                        setShowSecondaryBubble(false);
-                    }}
-                >
-                    <p className="text-sm">Texto da segunda mensagem aqui.</p>
-                </MessageBubble>
-            )}
-        </div>
-        
         {/* O FAB em si */}
         <Button
             variant="outline"
