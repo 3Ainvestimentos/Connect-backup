@@ -1,15 +1,33 @@
+
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
+import { useIdleFabMessages } from '@/contexts/IdleFabMessagesContext';
+import { useFabMessages } from '@/contexts/FabMessagesContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
-// Ícone SVG do "Bob"
+// --- Ícone do Bob ---
 function BobIcon() {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" fill="none" className="h-9 w-9">
-            <g transform="translate(0, 1.5)">
+            <style>
+            {`
+                @keyframes lamp-on-off {
+                0%, 25% { opacity: 1; }
+                50% { opacity: 0.1; }
+                50.01%, 75% { opacity: 0.1; }
+                100% { opacity: 1; }
+                }
+                .animate-lamp {
+                animation: lamp-on-off 2s infinite ease-in-out;
+                }
+            `}
+            </style>
+            <g className="animate-lamp" transform="translate(0, 1.5)">
                 <circle cx="12" cy="6.5" r="5.5" fill="#FFFFE0" opacity="0.3"/>
                 <circle cx="12" cy="6.5" r="4.5" fill="#FFFFE0" opacity="0.5"/>
                 <path d="M12 11.5C9.23858 11.5 7 9.26142 7 6.5C7 3.73858 9.23858 1.5 12 1.5C14.7614 1.5 17 3.73858 17 6.5C17 9.26142 14.7614 11.5 12 11.5Z" stroke="#374151" strokeWidth="0.75" fill="rgba(209, 213, 219, 0.3)"/>
@@ -30,16 +48,89 @@ function BobIcon() {
     );
 }
 
-// Componente FAB Principal
+// --- Componente do Balão de Diálogo ---
+interface MessageBubbleProps {
+  children: React.ReactNode;
+  onClose: (e: React.MouseEvent) => void;
+}
+function MessageBubble({ children, onClose }: MessageBubbleProps) {
+    return (
+        <div className="relative animate-in fade-in-50">
+            <div
+                className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2"
+                style={{ borderColor: 'hsl(170, 60%, 50%)' }}
+            >
+                {children}
+                <button 
+                    onClick={onClose}
+                    className="absolute top-1 right-1 p-1 text-black/50 hover:text-black/80 rounded-full"
+                    aria-label="Fechar mensagem"
+                >
+                    <X size={16} />
+                </button>
+            </div>
+            <div 
+                className="absolute top-4 -right-2 w-0 h-0"
+                style={{
+                    borderTop: '8px solid transparent',
+                    borderBottom: '8px solid transparent',
+                    borderLeft: `8px solid hsl(170, 60%, 50%)`,
+                }}
+            />
+        </div>
+    );
+}
+
 export default function FloatingActionButton() {
-  // Lógica de estado e balões de diálogo foram removidos, 
-  // pois a funcionalidade real agora é gerenciada por MessageFAB.tsx.
-  // Este componente agora serve como um placeholder ou base visual.
+  const { idleMessages } = useIdleFabMessages();
+  const { fabMessages } = useFabMessages();
+  const { user } = useAuth();
+  const { collaborators } = useCollaborators();
+
+  const [currentIdleMessageIndex, setCurrentIdleMessageIndex] = useState(0);
+  const [showIdleMessage, setShowIdleMessage] = useState(false);
+
+  const activeCampaign = React.useMemo(() => {
+    if (!user) return null;
+    const currentUser = collaborators.find(c => c.email === user.email);
+    if (!currentUser) return null;
+    const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
+    return (messageForUser && messageForUser.isActive && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up')) ? messageForUser : null;
+  }, [fabMessages, user, collaborators]);
+
+  const handleFabClick = () => {
+    // Se há uma campanha ativa, o MessageFAB.tsx cuidará da exibição.
+    // Se não há, controlamos a exibição da mensagem ociosa aqui.
+    if (!activeCampaign) {
+      if (showIdleMessage) {
+        // Se já está mostrando, vai para a próxima mensagem
+        setCurrentIdleMessageIndex(prev => (prev + 1) % idleMessages.length);
+      } else {
+        // Se não está mostrando, apenas mostra a primeira (ou a atual)
+        setShowIdleMessage(true);
+      }
+    }
+  };
+
+  const handleCloseIdleMessage = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Evita que o clique no "X" acione o handleFabClick
+    setShowIdleMessage(false);
+  };
+  
+  const idleMessageToShow = idleMessages[currentIdleMessageIndex];
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start">
-        {/* O FAB em si */}
+        {showIdleMessage && !activeCampaign && idleMessageToShow && (
+             <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
+                <MessageBubble onClose={handleCloseIdleMessage}>
+                    <p className="text-sm">{idleMessageToShow.text}</p>
+                </MessageBubble>
+             </div>
+        )}
+
         <Button
+            onClick={handleFabClick}
             variant="outline"
             size="icon"
             className="h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0"

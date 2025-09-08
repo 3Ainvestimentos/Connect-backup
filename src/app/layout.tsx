@@ -20,6 +20,7 @@ import { Roboto, Archivo } from 'next/font/google';
 import { PollsProvider } from '@/contexts/PollsContext';
 import { RankingsProvider } from '@/contexts/RankingsContext';
 import { FabMessagesProvider } from '@/contexts/FabMessagesContext';
+import { IdleFabMessagesProvider } from '@/contexts/IdleFabMessagesContext';
 
 
 const fontRoboto = Roboto({
@@ -69,7 +70,9 @@ export default function RootLayout({
                                       <PollsProvider>
                                         <RankingsProvider>
                                           <FabMessagesProvider>
-                                            {children}
+                                            <IdleFabMessagesProvider>
+                                              {children}
+                                            </IdleFabMessagesProvider>
                                           </FabMessagesProvider>
                                         </RankingsProvider>
                                       </PollsProvider>
