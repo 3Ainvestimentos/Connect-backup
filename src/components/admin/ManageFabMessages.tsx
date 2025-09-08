@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
-import { useFabMessages, type FabMessageType, type FabMessagePayload, campaignSchema } from '@/contexts/FabMessagesContext';
+import { useFabMessages, type FabMessageType, type FabMessagePayload, campaignSchema, campaignTags } from '@/contexts/FabMessagesContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical, PieChart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
@@ -22,7 +22,9 @@ import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '../ui/dropdown-menu';
 import Papa from 'papaparse';
 import { Checkbox } from '../ui/checkbox';
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Pie, ResponsiveContainer, Tooltip, Legend, Cell as RechartsCell } from 'recharts';
+import { PieChart as RechartsPieChart } from 'recharts';
 
 const formSchema = z.object({
     pipeline: z.array(campaignSchema).min(1, "O pipeline deve ter pelo menos uma campanha."),
@@ -47,8 +49,46 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 };
 
 
+const TagDistributionChart = ({ messages }: { messages: FabMessageType[] }) => {
+    const tagCounts = useMemo(() => {
+        const counts: { [key: string]: number } = {};
+        campaignTags.forEach(tag => counts[tag] = 0);
+
+        messages.forEach(message => {
+            message.pipeline.forEach(campaign => counts[campaign.tag]++);
+            message.archivedCampaigns.forEach(campaign => counts[campaign.tag]++);
+        });
+        return Object.entries(counts).map(([name, value]) => ({ name, value }));
+    }, [messages]);
+
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><PieChart /> Distribuição de Campanhas por Tag</CardTitle>
+                <CardDescription>Visualização da proporção de todas as campanhas (ativas e arquivadas) por categoria.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                    <RechartsPieChart>
+                        <Pie data={tagCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
+                            {tagCounts.map((entry, index) => (
+                                <RechartsCell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                    </RechartsPieChart>
+                </ResponsiveContainer>
+            </CardContent>
+        </Card>
+    );
+};
+
+
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, advanceToNextCampaign, markCampaignAsClicked } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -62,6 +102,7 @@ export function ManageFabMessages() {
     const [isImporting, setIsImporting] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isSendingBulk, setIsSendingBulk] = useState(false);
+    const [activeTab, setActiveTab] = React.useState('management');
 
     const commercialUsers = useMemo(() => {
         const testUsers = [
@@ -211,7 +252,8 @@ export function ManageFabMessages() {
                 pipeline: [{
                     id: `campaign_${Date.now()}`,
                     ctaMessage: '',
-                    followUpMessage: ''
+                    followUpMessage: '',
+                    tag: 'Relacionamento'
                 }]
             });
         }
@@ -265,7 +307,7 @@ export function ManageFabMessages() {
             header: true,
             skipEmptyLines: true,
             complete: async (results) => {
-                const requiredHeaders = ['userEmail', 'ctaMessage', 'followUpMessage'];
+                const requiredHeaders = ['userEmail', 'ctaMessage', 'followUpMessage', 'tag'];
                 if (!requiredHeaders.every(h => results.meta.fields?.includes(h))) {
                     toast({ title: "Erro de Cabeçalho", description: `O CSV deve conter as colunas: ${requiredHeaders.join(', ')}`, variant: "destructive", duration: 10000 });
                     setIsImporting(false);
@@ -280,11 +322,17 @@ export function ManageFabMessages() {
                         console.warn(`Usuário não encontrado para o email: ${row.userEmail}`);
                         continue;
                     }
+                    
+                    const tag = row.tag as typeof campaignTags[number];
+                    if (!campaignTags.includes(tag)) {
+                        console.warn(`Tag inválida "${tag}" para o usuário ${user.email}. Usando 'Relacionamento' como padrão.`);
+                    }
 
                     const campaign: CampaignType = {
                         id: `campaign_${Date.now()}_${Math.random()}`,
                         ctaMessage: row.ctaMessage,
                         followUpMessage: row.followUpMessage,
+                        tag: campaignTags.includes(tag) ? tag : 'Relacionamento',
                     };
                     
                     if (!userCampaigns[user.id3a]) {
@@ -342,14 +390,17 @@ export function ManageFabMessages() {
             </div>
         </TableHead>
     );
+
+    if (activeTab === 'monitoring') {
+        return <TagDistributionChart messages={fabMessages} />;
+    }
     
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
                  <CardDescription>
-                    Configure e envie campanhas para os colaboradores. Uma campanha consiste em uma mensagem de CTA (curta) e uma de acompanhamento (detalhada). 
-                    A coluna 'Progresso' indica qual campanha do pipeline está ativa. O 'Status' refere-se à campanha ativa.
+                   {`O status 'Pronto' indica que a campanha está aguardando o envio manual. 'Progresso' mostra quantas campanhas do pipeline foram concluídas.`}
                 </CardDescription>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
                      <div className="relative flex-grow w-full sm:w-auto">
@@ -489,6 +540,24 @@ export function ManageFabMessages() {
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-card">
                                     <Badge variant="secondary" className="absolute -top-3 right-4 bg-muted text-muted-foreground border-border">Campanha {index + 1}</Badge>
                                     
+                                     <div>
+                                        <Label htmlFor={`pipeline.${index}.tag`}>Tag da Campanha</Label>
+                                        <Controller
+                                            name={`pipeline.${index}.tag`}
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <SelectTrigger><SelectValue placeholder="Selecione uma tag..."/></SelectTrigger>
+                                                    <SelectContent>
+                                                        {campaignTags.map(tag => (
+                                                            <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            )}
+                                        />
+                                        {form.formState.errors.pipeline?.[index]?.tag && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.tag?.message}</p>}
+                                    </div>
                                     <div>
                                         <Label htmlFor={`pipeline.${index}.ctaMessage`}>Mensagem de CTA (Curta)</Label>
                                         <Textarea 
@@ -515,7 +584,7 @@ export function ManageFabMessages() {
                                 </div>
                             ))}
 
-                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '' })}>
+                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento' })}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                             </Button>
                         </div>
@@ -555,9 +624,10 @@ export function ManageFabMessages() {
                         <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
                             <li>Crie uma planilha com uma linha para **cada campanha** de um usuário.</li>
                             <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaMessage,followUpMessage</code>
+                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaMessage,followUpMessage,tag</code>
                             </li>
                              <li>Para criar um pipeline para um usuário, adicione múltiplas linhas com o mesmo `userEmail`. A ordem das linhas no arquivo definirá a ordem do pipeline.</li>
+                             <li>O valor da coluna `tag` deve corresponder a uma das opções: {campaignTags.join(', ')}.</li>
                              <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
                         </ol>
                          <a href="/templates/modelo_campanhas_fab.csv" download className="inline-block" >

@@ -6,11 +6,15 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
+// Define a lista de tags permitidas
+export const campaignTags = ['Captação', 'ROA', 'Relacionamento', 'Campanhas e Missões', 'Engajamento'] as const;
+
 // Schema for a single Campaign (CTA + Follow-up)
 export const campaignSchema = z.object({
   id: z.string().default(() => `campaign_${Date.now()}_${Math.random()}`), // Unique ID for dnd-kit
   ctaMessage: z.string().min(1, "A mensagem de CTA é obrigatória."),
   followUpMessage: z.string().min(1, "A mensagem de acompanhamento é obrigatória."),
+  tag: z.enum(campaignTags).default('Relacionamento'), // Adiciona o campo de tag
 });
 export type CampaignType = z.infer<typeof campaignSchema>;
 
