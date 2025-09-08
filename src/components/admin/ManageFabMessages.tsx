@@ -423,7 +423,16 @@ export function ManageFabMessages() {
                         <TableBody>
                             {filteredAndSortedUsers.map(user => {
                                 const message = userMessageMap.get(user.id3a);
-                                const progress = message ? `Campanha ${message.activeCampaignIndex + 1}/${message.pipeline.length}` : 'N/A';
+                                
+                                let progressText = 'N/A';
+                                if (message) {
+                                    const completedCount = message.archivedCampaigns?.length || 0;
+                                    const totalCount = (message.pipeline?.length || 0) + completedCount;
+                                    if (totalCount > 0) {
+                                        progressText = `${completedCount}/${totalCount} concluídas`;
+                                    }
+                                }
+
                                 const isReady = message?.status === 'ready';
                                 return (
                                 <TableRow key={user.id}>
@@ -444,7 +453,7 @@ export function ManageFabMessages() {
                                         <StatusBadge status={message?.status || 'not_created'} />
                                     </TableCell>
                                      <TableCell>
-                                        {progress}
+                                        {progressText}
                                     </TableCell>
                                     <TableCell>
                                         <Switch
