@@ -5,7 +5,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useMe
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase';
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators } from './CollaboratorsContext';
 import type { CollaboratorPermissions } from './CollaboratorsContext';
@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const { collaborators, loading: loadingCollaborators } = useCollaborators();
   const { settings, loading: loadingSettings } = useSystemSettings();
   
@@ -80,14 +81,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
              return;
         }
 
-        if (!collaborator && !isSuper) {
+        // Check for collaborator validity ONLY if we are NOT on the login page,
+        // to avoid showing errors before an explicit login attempt.
+        if (pathname !== '/login' && !collaborator && !isSuper) {
             firebaseSignOut(auth);
-            toast({
-                title: "Acesso Negado",
-                description: "Este e-mail não está na lista de colaboradores autorizados.",
-                variant: "destructive"
-            });
-            router.push('/login');
+            // The toast is now only shown on explicit sign-in failure.
             return;
         }
 
@@ -131,7 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-  }, [user, loading, collaborators, loadingCollaborators, settings, loadingSettings, auth, router]);
+  }, [user, loading, collaborators, loadingCollaborators, settings, loadingSettings, auth, pathname]);
 
   
   const signInWithGoogle = async () => {
