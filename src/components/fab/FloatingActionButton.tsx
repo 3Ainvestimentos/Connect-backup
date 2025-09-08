@@ -86,22 +86,16 @@ export default function FloatingActionButton() {
   }, [fabMessages, user, collaborators]);
 
   const handleFabClick = () => {
-    // Se há uma campanha ativa, o MessageFAB.tsx cuidará da exibição.
-    // Se não há, controlamos a exibição da mensagem ociosa aqui.
     if (!activeCampaign) {
-      if (showIdleMessage) {
-        // Se já está mostrando, vai para a próxima mensagem
-        setCurrentIdleMessageIndex(prev => (prev + 1) % idleMessages.length);
-      } else {
-        // Se não está mostrando, apenas mostra a primeira (ou a atual)
-        setShowIdleMessage(true);
-      }
+      setShowIdleMessage(true);
     }
   };
 
   const handleCloseIdleMessage = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Evita que o clique no "X" acione o handleFabClick
+    e.stopPropagation();
     setShowIdleMessage(false);
+    // Advance to the next message index for the next click
+    setCurrentIdleMessageIndex(prev => (prev + 1) % (idleMessages.length || 1));
   };
   
   const idleMessageToShow = idleMessages[currentIdleMessageIndex];
