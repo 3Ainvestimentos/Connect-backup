@@ -12,7 +12,7 @@ export default function FabMessagesAdminPage() {
         <AdminGuard>
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
-                    title="Gerenciar Mensagens FAB"
+                    title="Mensagens FAB"
                     description="Crie e monitore mensagens flutuantes para os usuários."
                 />
                 
