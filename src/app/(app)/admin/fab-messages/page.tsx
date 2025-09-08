@@ -6,6 +6,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { ManageFabMessages } from "@/components/admin/ManageFabMessages";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListChecks, PieChart } from "lucide-react";
+import TagDistributionChart from "@/components/admin/TagDistributionChart";
+
 
 export default function FabMessagesAdminPage() {
     return (
@@ -31,7 +33,7 @@ export default function FabMessagesAdminPage() {
                          <ManageFabMessages />
                     </TabsContent>
                     <TabsContent value="monitoring" className="mt-6">
-                        {/* O conteúdo do gráfico será renderizado pelo ManageFabMessages */}
+                        <TagDistributionChart />
                     </TabsContent>
                 </Tabs>
             </div>

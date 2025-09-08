@@ -23,8 +23,6 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLab
 import Papa from 'papaparse';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Pie, ResponsiveContainer, Tooltip, Legend, Cell as RechartsCell } from 'recharts';
-import { PieChart as RechartsPieChart } from 'recharts';
 
 const formSchema = z.object({
     pipeline: z.array(campaignSchema).min(1, "O pipeline deve ter pelo menos uma campanha."),
@@ -48,47 +46,8 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
     return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
 };
 
-
-const TagDistributionChart = ({ messages }: { messages: FabMessageType[] }) => {
-    const tagCounts = useMemo(() => {
-        const counts: { [key: string]: number } = {};
-        campaignTags.forEach(tag => counts[tag] = 0);
-
-        messages.forEach(message => {
-            message.pipeline.forEach(campaign => counts[campaign.tag]++);
-            message.archivedCampaigns.forEach(campaign => counts[campaign.tag]++);
-        });
-        return Object.entries(counts).map(([name, value]) => ({ name, value }));
-    }, [messages]);
-
-    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><PieChart /> Distribuição de Campanhas por Tag</CardTitle>
-                <CardDescription>Visualização da proporção de todas as campanhas (ativas e arquivadas) por categoria.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                    <RechartsPieChart>
-                        <Pie data={tagCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                            {tagCounts.map((entry, index) => (
-                                <RechartsCell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                    </RechartsPieChart>
-                </ResponsiveContainer>
-            </CardContent>
-        </Card>
-    );
-};
-
-
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, advanceToNextCampaign, markCampaignAsClicked } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -102,7 +61,6 @@ export function ManageFabMessages() {
     const [isImporting, setIsImporting] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isSendingBulk, setIsSendingBulk] = useState(false);
-    const [activeTab, setActiveTab] = React.useState('management');
 
     const commercialUsers = useMemo(() => {
         const testUsers = [
@@ -391,16 +349,12 @@ export function ManageFabMessages() {
         </TableHead>
     );
 
-    if (activeTab === 'monitoring') {
-        return <TagDistributionChart messages={fabMessages} />;
-    }
-    
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
                  <CardDescription>
-                   {`O status 'Pronto' indica que a campanha está aguardando o envio manual. 'Progresso' mostra quantas campanhas do pipeline foram concluídas.`}
+                   O status 'Pronto' indica que a campanha está aguardando o envio manual. 'Progresso' mostra quantas campanhas do pipeline foram concluídas.
                 </CardDescription>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
                      <div className="relative flex-grow w-full sm:w-auto">
@@ -538,7 +492,7 @@ export function ManageFabMessages() {
                         <div className="space-y-6 mt-4 max-h-[60vh] overflow-y-auto pr-4">
                             {fields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-card">
-                                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-muted text-muted-foreground border-border">Campanha {index + 1}</Badge>
+                                    <Badge className="absolute -top-3 right-4 bg-muted text-muted-foreground">Campanha {index + 1}</Badge>
                                     
                                      <div>
                                         <Label htmlFor={`pipeline.${index}.tag`}>Tag da Campanha</Label>
