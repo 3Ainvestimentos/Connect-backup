@@ -101,7 +101,7 @@ export default function FloatingActionButton() {
   const idleMessageToShow = idleMessages[currentIdleMessageIndex];
 
   return (
-    <div className="fixed top-20 right-8 z-50 flex items-start">
+    <div className="fixed top-20 right-8 z-50 flex items-start group">
         {showIdleMessage && !activeCampaign && idleMessageToShow && (
              <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
                 <MessageBubble onClose={handleCloseIdleMessage}>
@@ -113,9 +113,10 @@ export default function FloatingActionButton() {
         <Button
             onClick={handleFabClick}
             size="icon"
-            className="h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0 transition-all duration-200 hover:bg-background hover:scale-[1.03] hover:shadow-xl"
+            className="h-14 w-14 rounded-full p-0 shadow-lg flex-shrink-0 transition-all duration-200 bg-transparent hover:bg-transparent"
             aria-label="Abrir nova mensagem"
         >
+            <div className="absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"></div>
             <BobIcon />
         </Button>
     </div>
