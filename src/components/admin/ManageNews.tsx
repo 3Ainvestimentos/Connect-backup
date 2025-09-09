@@ -55,10 +55,14 @@ export function ManageNews() {
     const [showArchived, setShowArchived] = useState(false);
     const [isSavingOrder, setIsSavingOrder] = useState(false);
 
-    useEffect(() => {
-        const filtered = newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
-        setLocalNews(filtered);
+    const displayedNews = useMemo(() => {
+        return newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
     }, [newsItems, showArchived]);
+
+    useEffect(() => {
+        setLocalNews(displayedNews);
+    }, [displayedNews]);
+
 
     const handleDragEnd = (result: DropResult) => {
         if (!result.destination) return;
@@ -67,10 +71,10 @@ export function ManageNews() {
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
         
-        setLocalNews(items); // Update UI immediately
+        setLocalNews(items);
 
         const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
-
+        
         setIsSavingOrder(true);
         updateNewsOrder(updatedOrder)
             .then(() => {
@@ -78,9 +82,7 @@ export function ManageNews() {
             })
             .catch((error) => {
                 toast({ title: "Erro ao salvar a ordem", description: "Não foi possível atualizar a ordem das notícias.", variant: "destructive"});
-                // Revert to original order on failure
-                const originalOrder = newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
-                setLocalNews(originalOrder);
+                setLocalNews(displayedNews);
             })
             .finally(() => {
                 setIsSavingOrder(false);
@@ -180,7 +182,7 @@ export function ManageNews() {
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <StrictModeDroppable droppableId="newsDroppable" isDropDisabled={isSavingOrder}>
+                                <StrictModeDroppable droppableId="newsDroppable">
                                     {(provided) => (
                                         <TableBody ref={provided.innerRef} {...provided.droppableProps}>
                                             {localNews.map((item, index) => (
