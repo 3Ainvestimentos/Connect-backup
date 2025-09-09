@@ -31,7 +31,7 @@
     --admin-ring: 170 60% 50%;
     
     /* Chart Colors - Green Palette */
-    --chart-1: 170 55% 45%; /* Slightly darker green */
+    --chart-1: 170 60% 40%; /* Slightly darker green */
     --chart-2: 170 50% 60%; /* Lighter green */
     --chart-3: 170 65% 35%; /* Darker green */
     --chart-4: 170 45% 70%; /* Soft light green */
@@ -81,7 +81,7 @@
     --admin-ring: 170 60% 50%;
 
     /* Chart Colors - Green Palette */
-    --chart-1: 170 55% 45%; /* Slightly darker green */
+    --chart-1: 170 60% 40%; /* Slightly darker green */
     --chart-2: 170 50% 60%; /* Lighter green */
     --chart-3: 170 65% 35%; /* Darker green */
     --chart-4: 170 45% 70%; /* Soft light green */

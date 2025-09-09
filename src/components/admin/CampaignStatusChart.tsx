@@ -15,13 +15,13 @@ interface CampaignStatusChartProps {
 export default function CampaignStatusChart({ messages }: CampaignStatusChartProps) {
     
     const chartData = useMemo(() => {
-        let totalCampaigns = 0;
+        let sentCampaigns = 0;
         let completedCampaigns = 0;
         let effectiveCampaigns = 0;
 
         messages.forEach(message => {
-            // Only count campaigns currently in the active pipeline
-            totalCampaigns += message.pipeline.length;
+            // Count campaigns that have been sent
+            sentCampaigns += message.pipeline.filter(c => !!c.sentAt).length;
             completedCampaigns += message.pipeline.filter(c => c.status === 'completed').length;
             effectiveCampaigns += message.pipeline.filter(c => !!c.effectiveAt).length;
         });
@@ -29,7 +29,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
         return [
             { 
                 name: 'Status', 
-                'Total de Campanhas': totalCampaigns, 
+                'Campanhas Enviadas': sentCampaigns,
                 'Campanhas Concluídas': completedCampaigns,
                 'Campanhas com Efetividade': effectiveCampaigns,
             }
@@ -72,7 +72,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
                                 cursor={false}
                              />
                              <Legend />
-                             <Bar dataKey="Total de Campanhas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                             <Bar dataKey="Campanhas Enviadas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                              <Bar dataKey="Campanhas Concluídas" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                              <Bar dataKey="Campanhas com Efetividade" fill="#FF8042" radius={[4, 4, 0, 0]} />
                         </BarChart>
