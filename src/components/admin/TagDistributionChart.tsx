@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from 'react';
@@ -24,7 +25,7 @@ export default function TagDistributionChart({ messages }: TagDistributionChartP
                     counts[campaign.tag]++;
                 }
             });
-            message.archivedCampaigns.forEach(campaign => {
+            (message.archivedCampaigns || []).forEach(campaign => {
                 if (counts[campaign.tag] !== undefined) {
                     counts[campaign.tag]++;
                 }

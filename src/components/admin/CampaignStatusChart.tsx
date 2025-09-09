@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from 'react';
@@ -20,7 +21,10 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
 
         messages.forEach(message => {
             totalCampaigns += message.pipeline.length + (message.archivedCampaigns?.length || 0);
-            completedCampaigns += message.archivedCampaigns?.length || 0;
+            
+            const completedInPipeline = message.pipeline.filter(c => c.status === 'completed').length;
+            const completedInArchive = message.archivedCampaigns?.length || 0;
+            completedCampaigns += completedInPipeline + completedInArchive;
         });
         
         return [
