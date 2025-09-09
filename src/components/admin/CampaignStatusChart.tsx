@@ -19,8 +19,8 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
         let completedCampaigns = 0;
 
         messages.forEach(message => {
-            totalCampaigns += message.pipeline.length + message.archivedCampaigns.length;
-            completedCampaigns += message.archivedCampaigns.length;
+            totalCampaigns += message.pipeline.length + (message.archivedCampaigns?.length || 0);
+            completedCampaigns += message.archivedCampaigns?.length || 0;
         });
         
         return [
@@ -61,6 +61,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
                                     borderColor: "hsl(var(--border))",
                                     borderRadius: "var(--radius)",
                                 }}
+                                cursor={false}
                              />
                              <Legend />
                              <Bar dataKey="Total de Campanhas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
