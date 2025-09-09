@@ -38,7 +38,7 @@ type SortKey = keyof Collaborator | 'status';
 
 const statusOptions: { [key: string]: { label: string, className: string } } = {
     ready: { label: 'Pronto para Envio', className: 'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/50 dark:text-cyan-200 dark:border-cyan-800' },
-    pending_cta: { label: 'Pendente CTA', className: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-800' },
+    pending_cta: { label: 'Aguardando Clique', className: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-800' },
     completed: { label: 'Concluído', className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800' },
     not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700/50 dark:text-gray-200 dark:border-gray-600' },
 };
@@ -285,17 +285,20 @@ export function ManageFabMessages() {
         
         const updatedPipeline = data.pipeline.map(campaign => {
             const originalCampaign = existingMessage?.pipeline.find(p => p.id === campaign.id);
-            if (originalCampaign && campaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
-                return { ...campaign, status: 'loaded' as const };
+            // If the campaign was completed, but now it's being edited, reset its status
+            if (originalCampaign && originalCampaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
+                return { ...campaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined };
             }
             return campaign;
         });
+
+        const hasLoadedCampaigns = updatedPipeline.some(c => c.status === 'loaded');
 
         const payload: FabMessagePayload = {
             userId: editingUser.id3a,
             userName: editingUser.name,
             pipeline: updatedPipeline,
-            status: 'ready', 
+            status: hasLoadedCampaigns ? 'ready' : 'completed', 
             activeCampaignIndex: existingMessage?.activeCampaignIndex ?? 0,
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };

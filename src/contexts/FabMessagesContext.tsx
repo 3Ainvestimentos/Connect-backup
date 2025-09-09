@@ -30,7 +30,8 @@ export const fabMessageSchema = z.object({
   pipeline: z.array(campaignSchema).default([]),
   archivedCampaigns: z.array(campaignSchema).default([]),
   activeCampaignIndex: z.number().int().default(0),
-  status: z.enum(['ready', 'pending_cta', 'completed']).default('ready'),
+  status: z.enum(['ready', 'pending_cta', 'completed', 'not_created']).default('ready'),
+  isActive: z.boolean().default(true), // New field to control visibility/activity
   // Timestamps
   createdAt: z.string().default(() => new Date().toISOString()),
   updatedAt: z.string().default(() => new Date().toISOString()),
@@ -220,3 +221,4 @@ export const useFabMessages = (): FabMessagesContextType => {
   }
   return context;
 };
+
