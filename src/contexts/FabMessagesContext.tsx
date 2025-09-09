@@ -81,35 +81,32 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: async ({ userId, data }) => {
         const existingMessage = fabMessages.find(m => m.userId === userId) || await getDocument<FabMessageType>(COLLECTION_NAME, userId);
 
-        const payload = {
+        const payload: FabMessagePayload = {
             ...data,
             updatedAt: new Date().toISOString(),
         };
 
-        if (existingMessage) {
-            // Apply logic to reset status of modified completed campaigns
-            if (payload.pipeline) {
-                payload.pipeline = payload.pipeline.map(newCampaign => {
-                    const oldCampaign = existingMessage.pipeline.find(c => c.id === newCampaign.id);
-                    if (oldCampaign && oldCampaign.status === 'completed') {
-                        const hasChanged = oldCampaign.ctaMessage !== newCampaign.ctaMessage || oldCampaign.followUpMessage !== newCampaign.followUpMessage;
-                        if (hasChanged) {
-                            return { ...newCampaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined };
-                        }
+        if (existingMessage && payload.pipeline) {
+             payload.pipeline = payload.pipeline.map(newCampaign => {
+                const oldCampaign = existingMessage.pipeline.find(c => c.id === newCampaign.id);
+                if (oldCampaign && oldCampaign.status === 'completed') {
+                    const hasChanged = oldCampaign.ctaMessage !== newCampaign.ctaMessage || oldCampaign.followUpMessage !== newCampaign.followUpMessage;
+                    if (hasChanged) {
+                        // Reset status if a completed campaign was edited
+                        return { ...newCampaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined };
                     }
-                    return newCampaign;
-                });
-            }
+                }
+                return newCampaign;
+            });
         }
         
         // Ensure status is correct based on pipeline content
-        const hasLoadedCampaigns = payload.pipeline?.some(c => c.status === 'loaded');
         if (payload.pipeline && payload.pipeline.length > 0) {
+            const hasLoadedCampaigns = payload.pipeline.some(c => c.status === 'loaded');
             payload.status = hasLoadedCampaigns ? 'ready' : 'completed';
         } else {
             payload.status = 'not_created';
         }
-
 
         return setDocumentInCollection(COLLECTION_NAME, userId, payload);
     },
@@ -143,7 +140,6 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: async (userId: string) => {
       const message = fabMessages.find(m => m.userId === userId);
       if (!message || message.status !== 'pending_follow_up') {
-        // Silently fail if not in the correct state, as this might be triggered by a timeout after a state change.
         console.log("Follow-up completion attempted but message not in correct state.");
         return;
       }

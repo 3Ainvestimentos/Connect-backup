@@ -73,17 +73,17 @@ export default function FollowUpMessage() {
     useEffect(() => {
         if (activeFollowUp) {
             setIsVisible(true);
-            const timer = setTimeout(() => {
-                if (currentUser?.id3a) {
-                    completeFollowUp(currentUser.id3a);
-                }
-            }, 5000); // 5 segundos para exibir o follow-up
-
-            return () => clearTimeout(timer);
         } else {
             setIsVisible(false);
         }
-    }, [activeFollowUp, completeFollowUp, currentUser]);
+    }, [activeFollowUp]);
+    
+    const handleClose = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (currentUser?.id3a) {
+            completeFollowUp(currentUser.id3a);
+        }
+    };
 
 
     if (!activeFollowUp || !isVisible) {
@@ -96,11 +96,10 @@ export default function FollowUpMessage() {
     return (
          <div className="fixed top-20 right-8 z-50 flex items-start">
             <div className="absolute right-full mr-4">
-                <MessageBubble>
+                <MessageBubble onClose={handleClose}>
                      <p className="text-sm">{currentCampaign.followUpMessage}</p>
                 </MessageBubble>
             </div>
         </div>
     );
 }
-
