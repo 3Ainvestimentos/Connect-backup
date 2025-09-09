@@ -1,13 +1,12 @@
-
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, compareDesc } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FabMessageType, CampaignType } from '@/contexts/FabMessagesContext';
 import { Send, CheckCircle } from 'lucide-react';
@@ -28,10 +27,20 @@ const getStatusBadge = (status: CampaignType['status']) => {
 }
 
 export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalProps) {
+    const activeCampaigns = useMemo(() => {
+        if (!message?.pipeline) return [];
+        // Sort campaigns by sentAt date, most recent first. Campaigns without sentAt are pushed to the bottom.
+        return [...message.pipeline].sort((a, b) => {
+            if (a.sentAt && b.sentAt) {
+                return compareDesc(parseISO(a.sentAt), parseISO(b.sentAt));
+            }
+            if (a.sentAt) return -1; // a comes first
+            if (b.sentAt) return 1;  // b comes first
+            return 0; // Keep original order if both are unsent
+        });
+    }, [message]);
+    
     if (!message) return null;
-
-    // Apenas campanhas do pipeline ativo serão exibidas.
-    const activeCampaigns = message.pipeline || [];
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -97,4 +106,3 @@ export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalP
         </Dialog>
     );
 }
-
