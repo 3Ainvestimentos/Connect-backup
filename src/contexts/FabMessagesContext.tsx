@@ -104,14 +104,17 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         const completedCampaign = message.pipeline[message.activeCampaignIndex];
         const newArchived = [...(message.archivedCampaigns || []), completedCampaign];
         
-        const nextIndex = message.activeCampaignIndex + 1;
-        const hasNextCampaign = nextIndex < message.pipeline.length;
+        // Remove the completed campaign from the pipeline
+        const newPipeline = message.pipeline.filter((_, index) => index !== message.activeCampaignIndex);
+
+        const hasNextCampaign = newPipeline.length > 0;
 
         const updatePayload: FabMessagePayload = {
-            status: hasNextCampaign ? 'ready' : 'completed', // Go to 'ready' for the next campaign
-            isActive: hasNextCampaign, // Deactivate if the pipeline is complete
-            activeCampaignIndex: nextIndex,
+            pipeline: newPipeline,
             archivedCampaigns: newArchived,
+            activeCampaignIndex: 0, // Always reset to 0 for the new (shorter) pipeline
+            status: hasNextCampaign ? 'ready' : 'completed',
+            isActive: hasNextCampaign,
             updatedAt: new Date().toISOString(),
         };
 
