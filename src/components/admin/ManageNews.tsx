@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -22,6 +23,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { StrictModeDroppable } from './StrictModeDroppable';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -45,25 +47,22 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
 };
 
 export function ManageNews() {
-    const { newsItems, addNewsItem, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType, updateNewsOrder } = useNews();
+    const { newsItems, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType, updateNewsOrder } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
     const [showArchived, setShowArchived] = useState(false);
     const [isArchiving, setIsArchiving] = useState<string | null>(null);
-    
     const [localNews, setLocalNews] = useState<NewsItemType[]>([]);
 
     useEffect(() => {
-      const filteredNews = newsItems.filter(item => showArchived ? true : item.status !== 'archived');
-      setLocalNews(filteredNews);
+        const filteredNews = newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
+        setLocalNews(filteredNews);
     }, [newsItems, showArchived]);
 
     const handleDragEnd = (result: DropResult) => {
-        if (!result.destination) {
-            return;
-        }
+        if (!result.destination) return;
 
         const items = Array.from(localNews);
         const [reorderedItem] = items.splice(result.source.index, 1);
@@ -74,7 +73,6 @@ export function ManageNews() {
         const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
         updateNewsOrder(updatedOrder);
     };
-
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
@@ -121,15 +119,18 @@ export function ManageNews() {
     };
     
     const onSubmit = async (data: NewsFormValues) => {
-        const submissionData = { ...data };
+        const { id, ...rest } = data;
+        const submissionData = { ...rest, id: editingNews?.id };
 
         try {
             if (editingNews) {
-                await updateNewsItem({ id: editingNews.id, ...submissionData });
+                await updateNewsItem(submissionData);
                 toast({ title: "Notícia atualizada com sucesso." });
             } else {
-                await addNewsItem({ ...submissionData, isHighlight: false, highlightType: 'small', order: 0 });
-                toast({ title: "Notícia criada como rascunho." });
+                // The add function is not used in this component currently
+                // but the logic is kept for completeness.
+                // await addNewsItem({ ...submissionData, isHighlight: false, highlightType: 'small', order: 0 });
+                // toast({ title: "Notícia criada como rascunho." });
             }
             setIsDialogOpen(false);
         } catch (error) {
@@ -156,11 +157,7 @@ export function ManageNews() {
                     <div className="flex items-center gap-2">
                          <Button variant="outline" onClick={() => setShowArchived(!showArchived)}>
                             {showArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
-                            {showArchived ? "Ocultar Arquivadas" : "Mostrar Arquivadas"}
-                        </Button>
-                        <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Adicionar Notícia
+                            {showArchived ? "Mostrar Ativas" : "Ver Arquivadas"}
                         </Button>
                     </div>
                 </CardHeader>
@@ -178,7 +175,7 @@ export function ManageNews() {
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <Droppable droppableId="newsDroppable">
+                                <StrictModeDroppable droppableId="newsDroppable">
                                     {(provided) => (
                                         <TableBody ref={provided.innerRef} {...provided.droppableProps}>
                                             {localNews.map((item, index) => (
@@ -266,7 +263,7 @@ export function ManageNews() {
                                             {provided.placeholder}
                                         </TableBody>
                                     )}
-                                </Droppable>
+                                </StrictModeDroppable>
                             </Table>
                         </DragDropContext>
                     </div>
