@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Loader2, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore } from 'lucide-react';
+import { PlusCircle, Edit, Loader2, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore, GripVertical } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -22,6 +22,7 @@ import { Badge } from '../ui/badge';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -45,30 +46,41 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
 };
 
 export function ManageNews() {
-    const { newsItems, addNewsItem, updateNewsItem, archiveNewsItem, updateHighlightType, updateNewsStatus, toggleNewsHighlight } = useNews();
+    const { newsItems, addNewsItem, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType, updateNewsOrder } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
     const [showArchived, setShowArchived] = useState(false);
     const [isArchiving, setIsArchiving] = useState<string | null>(null);
+    
+    const [localNews, setLocalNews] = useState<NewsItemType[]>([]);
+
+    useEffect(() => {
+        const displayedNews = newsItems.filter(item => showArchived ? true : item.status !== 'archived');
+        setLocalNews(displayedNews);
+    }, [newsItems, showArchived]);
+
 
     const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
         resolver: zodResolver(newsSchema),
     });
-
-    const displayedNews = useMemo(() => {
-        return newsItems.filter(item => showArchived ? true : item.status !== 'archived');
-    }, [newsItems, showArchived]);
     
-    const handleOrderChange = async (newsId: string, newOrder: number) => {
-        try {
-            await updateNewsItem({ id: newsId, order: newOrder });
-            toast({ title: "Ordem atualizada", description: "A nova ordem da notícia foi salva." });
-        } catch (error) {
-            toast({ title: "Erro", description: "Não foi possível atualizar a ordem.", variant: "destructive" });
+    const handleDragEnd = (result: DropResult) => {
+        if (!result.destination) {
+            return;
         }
+
+        const items = Array.from(localNews);
+        const [reorderedItem] = items.splice(result.source.index, 1);
+        items.splice(result.destination.index, 0, reorderedItem);
+
+        setLocalNews(items);
+        
+        const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
+        updateNewsOrder(updatedOrder);
     };
+
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
@@ -156,100 +168,109 @@ export function ManageNews() {
                 </CardHeader>
                 <CardContent>
                     <div className="border rounded-lg">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[100px]">Ordem</TableHead>
-                                    <TableHead>Título</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Destaque</TableHead>
-                                    <TableHead>Tipo de Destaque</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {displayedNews.map(item => (
-                                    <TableRow key={item.id} className={item.status === 'archived' ? 'bg-muted/50' : ''}>
-                                        <TableCell>
-                                            <Input
-                                              type="number"
-                                              defaultValue={item.order}
-                                              onBlur={(e) => handleOrderChange(item.id, parseInt(e.target.value, 10))}
-                                              className="w-20"
-                                              disabled={item.status === 'archived'}
-                                            />
-                                        </TableCell>
-                                        <TableCell className={cn("font-medium", item.status === 'archived' && 'text-muted-foreground')}>
-                                          {item.title}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Select
-                                              value={item.status}
-                                              onValueChange={(value) => updateNewsStatus(item.id, value as NewsStatus)}
-                                              disabled={item.status === 'archived'}
-                                            >
-                                                <SelectTrigger className="w-[130px]">
-                                                    <SelectValue>
-                                                        <div className="flex items-center gap-2">
-                                                            <div className={cn("h-2 w-2 rounded-full", statusConfig[item.status].color)} />
-                                                            {statusConfig[item.status].label}
-                                                        </div>
-                                                    </SelectValue>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {Object.entries(statusConfig).map(([key, config]) => (
-                                                        <SelectItem key={key} value={key} disabled={key === 'archived'}>
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={cn("h-2 w-2 rounded-full", config.color)} />
-                                                                {config.label}
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Switch
-                                                checked={item.isHighlight}
-                                                onCheckedChange={() => toggleNewsHighlight(item.id)}
-                                                aria-label="Marcar como destaque"
-                                                disabled={item.status !== 'published'}
-                                            />
-                                        </TableCell>
-                                         <TableCell>
-                                            {item.isHighlight && (
-                                                 <Select
-                                                    defaultValue={item.highlightType || 'small'}
-                                                    onValueChange={(value) => updateHighlightType(item.id, value as 'large' | 'small')}
-                                                    disabled={item.status !== 'published'}
-                                                >
-                                                    <SelectTrigger className="w-[120px]">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="small">Pequeno</SelectItem>
-                                                        <SelectItem value="large">Grande</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handlePreviewOpen(item)} className="hover:bg-muted" title="Visualizar">
-                                                <Eye className="h-4 w-4" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted" title="Editar">
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            {item.status !== 'archived' && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleArchive(item.id)} className="hover:bg-muted" disabled={isArchiving === item.id} title="Arquivar">
-                                                    {isArchiving === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4 text-destructive" />}
-                                                </Button>
-                                            )}
-                                        </TableCell>
+                        <DragDropContext onDragEnd={handleDragEnd}>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[50px]"></TableHead>
+                                        <TableHead>Título</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Destaque</TableHead>
+                                        <TableHead>Tipo de Destaque</TableHead>
+                                        <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <Droppable droppableId="newsDroppable">
+                                    {(provided) => (
+                                        <TableBody ref={provided.innerRef} {...provided.droppableProps}>
+                                            {localNews.map((item, index) => (
+                                                <Draggable key={item.id} draggableId={item.id} index={index}>
+                                                     {(provided) => (
+                                                        <TableRow 
+                                                            ref={provided.innerRef}
+                                                            {...provided.draggableProps}
+                                                            className={item.status === 'archived' ? 'bg-muted/50' : ''}
+                                                        >
+                                                            <TableCell {...provided.dragHandleProps} className="cursor-grab">
+                                                                <GripVertical className="h-5 w-5 text-muted-foreground" />
+                                                            </TableCell>
+                                                            <TableCell className={cn("font-medium", item.status === 'archived' && 'text-muted-foreground')}>
+                                                              {item.title}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Select
+                                                                  value={item.status}
+                                                                  onValueChange={(value) => updateNewsStatus(item.id, value as NewsStatus)}
+                                                                  disabled={item.status === 'archived'}
+                                                                >
+                                                                    <SelectTrigger className="w-[130px]">
+                                                                        <SelectValue>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <div className={cn("h-2 w-2 rounded-full", statusConfig[item.status].color)} />
+                                                                                {statusConfig[item.status].label}
+                                                                            </div>
+                                                                        </SelectValue>
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {Object.entries(statusConfig).map(([key, config]) => (
+                                                                            <SelectItem key={key} value={key} disabled={key === 'archived'}>
+                                                                                <div className="flex items-center gap-2">
+                                                                                    <div className={cn("h-2 w-2 rounded-full", config.color)} />
+                                                                                    {config.label}
+                                                                                </div>
+                                                                            </SelectItem>
+                                                                        ))}
+                                                                    </SelectContent>
+                                                                </Select>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Switch
+                                                                    checked={item.isHighlight}
+                                                                    onCheckedChange={() => toggleNewsHighlight(item.id)}
+                                                                    aria-label="Marcar como destaque"
+                                                                    disabled={item.status !== 'published'}
+                                                                />
+                                                            </TableCell>
+                                                             <TableCell>
+                                                                {item.isHighlight && (
+                                                                     <Select
+                                                                        defaultValue={item.highlightType || 'small'}
+                                                                        onValueChange={(value) => updateHighlightType(item.id, value as 'large' | 'small')}
+                                                                        disabled={item.status !== 'published'}
+                                                                    >
+                                                                        <SelectTrigger className="w-[120px]">
+                                                                            <SelectValue />
+                                                                        </SelectTrigger>
+                                                                        <SelectContent>
+                                                                            <SelectItem value="small">Pequeno</SelectItem>
+                                                                            <SelectItem value="large">Grande</SelectItem>
+                                                                        </SelectContent>
+                                                                    </Select>
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell className="text-right">
+                                                                <Button variant="ghost" size="icon" onClick={() => handlePreviewOpen(item)} className="hover:bg-muted" title="Visualizar">
+                                                                    <Eye className="h-4 w-4" />
+                                                                </Button>
+                                                                <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted" title="Editar">
+                                                                    <Edit className="h-4 w-4" />
+                                                                </Button>
+                                                                {item.status !== 'archived' && (
+                                                                    <Button variant="ghost" size="icon" onClick={() => handleArchive(item.id)} className="hover:bg-muted" disabled={isArchiving === item.id} title="Arquivar">
+                                                                        {isArchiving === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4 text-destructive" />}
+                                                                    </Button>
+                                                                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                     )}
+                                                </Draggable>
+                                            ))}
+                                            {provided.placeholder}
+                                        </TableBody>
+                                    )}
+                                </Droppable>
+                            </Table>
+                        </DragDropContext>
                     </div>
                 </CardContent>
             </Card>
@@ -409,4 +430,3 @@ export function ManageNews() {
         </>
     );
 }
-

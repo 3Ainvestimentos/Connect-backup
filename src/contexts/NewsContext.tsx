@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, writeBatch, getFirestore, doc } from '@/lib/firestore-service';
 
 export type NewsStatus = 'draft' | 'approved' | 'published' | 'archived';
 
@@ -34,6 +34,7 @@ interface NewsContextType {
   deleteNewsItemMutation: UseMutationResult<void, Error, string, unknown>;
   toggleNewsHighlight: (id: string) => void;
   updateHighlightType: (id: string, type: 'large' | 'small') => void;
+  updateNewsOrder: (orderUpdates: { id: string; order: number }[]) => Promise<void>;
 }
 
 const NewsContext = createContext<NewsContextType | undefined>(undefined);
@@ -91,6 +92,25 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     },
     onSuccess: () => {}
   });
+
+  const updateNewsOrderMutation = useMutation<void, Error, { id: string; order: number }[]>({
+    mutationFn: async (orderUpdates) => {
+      const db = getFirestore();
+      const batch = writeBatch(db);
+      orderUpdates.forEach(update => {
+        const docRef = doc(db, COLLECTION_NAME, update.id);
+        batch.update(docRef, { order: update.order });
+      });
+      await batch.commit();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+      toast({ title: "Erro ao Ordenar", description: error.message, variant: "destructive" });
+    }
+  });
+
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
@@ -162,7 +182,8 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
     updateHighlightType,
     updateNewsStatus,
     archiveNewsItem,
-  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus, archiveNewsItem]);
+    updateNewsOrder: (updates) => updateNewsOrderMutation.mutateAsync(updates),
+  }), [newsItems, isFetching, addNewsItemMutation, updateNewsItemMutation, deleteNewsItemMutation, toggleNewsHighlight, updateHighlightType, updateNewsStatus, archiveNewsItem, updateNewsOrderMutation]);
 
   return (
     <NewsContext.Provider value={value}>
