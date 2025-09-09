@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
-import { useFabMessages, type FabMessageType, type FabMessagePayload, campaignSchema, campaignTags } from '@/contexts/FabMessagesContext';
+import { useFabMessages, type FabMessageType, type FabMessagePayload, campaignSchema, campaignTags, CampaignType } from '@/contexts/FabMessagesContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical, PieChart } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical, PieChart, Archive } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
@@ -31,7 +31,6 @@ const formSchema = z.object({
 });
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
-type CampaignType = z.infer<typeof campaignSchema>;
 type SortKey = keyof Collaborator | 'status' | 'isActive';
 
 
@@ -43,13 +42,20 @@ const statusOptions = {
     not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700/50 dark:text-gray-200 dark:border-gray-600' },
 };
 
+const campaignStatusBadgeClasses: Record<CampaignType['status'], string> = {
+    loaded: "bg-gray-200 text-gray-800",
+    active: "bg-yellow-200 text-yellow-800 animate-pulse",
+    completed: "bg-green-200 text-green-800",
+};
+
+
 const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
     const config = statusOptions[status];
     return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
 };
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, archiveIndividualCampaign } = useFabMessages();
     const { collaborators } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -61,6 +67,7 @@ export function ManageFabMessages() {
     const [isImporting, setIsImporting] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isSendingBulk, setIsSendingBulk] = useState(false);
+    const [isArchiving, setIsArchiving] = useState(false);
     
     const [filters, setFilters] = useState<{
         area: string[],
@@ -222,6 +229,23 @@ export function ManageFabMessages() {
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
     const { fields, append, remove } = useFieldArray({ control, name: "pipeline" });
 
+    const handleArchiveCampaignClick = async (campaignId: string) => {
+        if (!editingUser) return;
+        setIsArchiving(true);
+        try {
+            await archiveIndividualCampaign(editingUser.id3a, campaignId);
+            const updatedMessage = fabMessages.find(m => m.userId === editingUser.id3a);
+            if (updatedMessage) {
+                reset({ pipeline: updatedMessage.pipeline });
+            }
+            toast({ title: 'Campanha arquivada com sucesso!' });
+        } catch (error) {
+            toast({ title: 'Erro ao arquivar', description: (error as Error).message, variant: 'destructive' });
+        } finally {
+            setIsArchiving(false);
+        }
+    }
+
 
     const handleOpenForm = (user: Collaborator) => {
         setEditingUser(user);
@@ -234,7 +258,8 @@ export function ManageFabMessages() {
                     id: `campaign_${Date.now()}`,
                     ctaMessage: '',
                     followUpMessage: '',
-                    tag: 'Relacionamento'
+                    tag: 'Relacionamento',
+                    status: 'loaded',
                 }]
             });
         }
@@ -314,6 +339,7 @@ export function ManageFabMessages() {
                         ctaMessage: row.ctaMessage,
                         followUpMessage: row.followUpMessage,
                         tag: campaignTags.includes(tag) ? tag : 'Relacionamento',
+                        status: 'loaded'
                     };
                     
                     if (!userCampaigns[user.id3a]) {
@@ -470,10 +496,10 @@ export function ManageFabMessages() {
                                 
                                 let progressText = 'N/A';
                                 if (message) {
-                                    const completedCount = message.archivedCampaigns?.length || 0;
-                                    const totalCount = (message.pipeline?.length || 0) + completedCount;
-                                    if (totalCount > 0) {
-                                        progressText = `${completedCount}/${totalCount} concluídas`;
+                                    const completedCount = message.pipeline.filter(c => c.status === 'completed').length;
+                                    const totalLoadedCount = message.pipeline.length;
+                                    if (totalLoadedCount > 0) {
+                                        progressText = `${completedCount}/${totalLoadedCount} concluídas`;
                                     }
                                 }
 
@@ -535,7 +561,15 @@ export function ManageFabMessages() {
                         <div className="space-y-6 mt-4 max-h-[60vh] overflow-y-auto pr-4">
                             {fields.map((field, index) => (
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-card">
-                                    <Badge className="absolute -top-3 right-4 bg-muted text-muted-foreground">Campanha {index + 1}</Badge>
+                                    <div className="flex justify-between items-start">
+                                        <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
+                                        {field.status === 'completed' && (
+                                            <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(field.id)} disabled={isArchiving}>
+                                                {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
+                                                Arquivar
+                                            </Button>
+                                        )}
+                                    </div>
                                     
                                      <div>
                                         <Label htmlFor={`pipeline.${index}.tag`}>Tag da Campanha</Label>
@@ -581,7 +615,7 @@ export function ManageFabMessages() {
                                 </div>
                             ))}
 
-                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento' })}>
+                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                             </Button>
                         </div>

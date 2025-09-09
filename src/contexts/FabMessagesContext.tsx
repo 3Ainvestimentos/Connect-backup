@@ -14,7 +14,8 @@ export const campaignSchema = z.object({
   id: z.string().default(() => `campaign_${Date.now()}_${Math.random()}`), // Unique ID for dnd-kit
   ctaMessage: z.string().min(1, "A mensagem de CTA é obrigatória."),
   followUpMessage: z.string().min(1, "A mensagem de acompanhamento é obrigatória."),
-  tag: z.enum(campaignTags).default('Relacionamento'), // Adiciona o campo de tag
+  tag: z.enum(campaignTags).default('Relacionamento'),
+  status: z.enum(['loaded', 'active', 'completed']).default('loaded'),
 });
 export type CampaignType = z.infer<typeof campaignSchema>;
 
@@ -43,6 +44,7 @@ interface FabMessagesContextType {
   markCampaignAsClicked: (userId: string) => Promise<void>;
   advanceToNextCampaign: (userId: string) => Promise<void>;
   startCampaign: (userId: string) => Promise<void>;
+  archiveIndividualCampaign: (userId: string, campaignId: string) => Promise<void>;
 }
 
 const FabMessagesContext = createContext<FabMessagesContextType | undefined>(undefined);
@@ -89,8 +91,15 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const markAsClickedMutation = useMutation<void, Error, string>({
     mutationFn: (userId: string) => {
+      const message = fabMessages.find(m => m.userId === userId);
+      if (!message) throw new Error("Mensagem não encontrada para o usuário");
+      
+      const newPipeline = [...message.pipeline];
+      newPipeline[message.activeCampaignIndex].status = 'active';
+
       return updateDocumentInCollection(COLLECTION_NAME, userId, {
         status: 'pending_follow_up',
+        pipeline: newPipeline,
         updatedAt: new Date().toISOString(),
       });
     },
@@ -101,29 +110,43 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         const message = fabMessages.find(m => m.userId === userId);
         if (!message) throw new Error("Mensagem não encontrada para o usuário");
         
-        const completedCampaign = message.pipeline[message.activeCampaignIndex];
-        if (!completedCampaign) throw new Error("Campanha ativa inválida.");
+        const newPipeline = [...message.pipeline];
+        newPipeline[message.activeCampaignIndex].status = 'completed';
 
-        const newArchived = [...(message.archivedCampaigns || []), completedCampaign];
-        
-        // Correctly remove the completed campaign from the pipeline
-        const newPipeline = message.pipeline.slice(); // Create a shallow copy
-        newPipeline.splice(message.activeCampaignIndex, 1);
-
-        const hasNextCampaign = newPipeline.length > 0;
+        const hasMoreActiveCampaigns = newPipeline.some(c => c.status === 'loaded' || c.status === 'active');
 
         const updatePayload: FabMessagePayload = {
             pipeline: newPipeline,
-            archivedCampaigns: newArchived,
-            activeCampaignIndex: 0, // Always reset to 0 for the new (shorter) pipeline
-            status: hasNextCampaign ? 'ready' : 'completed',
-            isActive: hasNextCampaign,
+            status: hasMoreActiveCampaigns ? 'ready' : 'completed',
+            isActive: hasMoreActiveCampaigns, // Deactivate if no more campaigns to run
             updatedAt: new Date().toISOString(),
         };
 
         return updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
      },
   });
+  
+  const archiveIndividualCampaignMutation = useMutation<void, Error, { userId: string; campaignId: string }>({
+    mutationFn: ({ userId, campaignId }) => {
+      const message = fabMessages.find(m => m.userId === userId);
+      if (!message) throw new Error("Mensagem não encontrada para o usuário");
+      
+      const campaignToArchive = message.pipeline.find(c => c.id === campaignId);
+      if (!campaignToArchive || campaignToArchive.status !== 'completed') {
+        throw new Error("Apenas campanhas concluídas podem ser arquivadas.");
+      }
+
+      const newPipeline = message.pipeline.filter(c => c.id !== campaignId);
+      const newArchived = [...(message.archivedCampaigns || []), campaignToArchive];
+
+      return updateDocumentInCollection(COLLECTION_NAME, userId, {
+        pipeline: newPipeline,
+        archivedCampaigns: newArchived,
+        updatedAt: new Date().toISOString(),
+      });
+    },
+  });
+
 
   const startCampaignMutation = useMutation<void, Error, string>({
       mutationFn: (userId: string) => {
@@ -131,7 +154,16 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
           if (!message) throw new Error("Campanha não encontrada para este usuário.");
           if (message.status !== 'ready') throw new Error("A campanha não está pronta para ser enviada.");
           
+          const campaignToStart = message.pipeline[message.activeCampaignIndex];
+          if (!campaignToStart || campaignToStart.status !== 'loaded') {
+            throw new Error("Nenhuma campanha carregada para iniciar.");
+          }
+
+          const newPipeline = [...message.pipeline];
+          newPipeline[message.activeCampaignIndex].status = 'active';
+
           return updateDocumentInCollection(COLLECTION_NAME, userId, {
+              pipeline: newPipeline,
               status: 'pending_cta',
               isActive: true,
               updatedAt: new Date().toISOString(),
@@ -148,7 +180,8 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     markCampaignAsClicked: (userId) => markAsClickedMutation.mutateAsync(userId),
     advanceToNextCampaign: (userId) => advanceCampaignMutation.mutateAsync(userId),
     startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, advanceCampaignMutation, startCampaignMutation]);
+    archiveIndividualCampaign: (userId, campaignId) => archiveIndividualCampaignMutation.mutateAsync({ userId, campaignId }),
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, advanceCampaignMutation, startCampaignMutation, archiveIndividualCampaignMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>
