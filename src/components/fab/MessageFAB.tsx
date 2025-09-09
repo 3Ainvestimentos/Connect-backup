@@ -87,7 +87,7 @@ const MessageBubble = ({ children, onClick, onClose, hasCloseButton, variant = '
 export default function MessageFAB() {
     const { user } = useAuth();
     const { collaborators } = useCollaborators();
-    const { fabMessages, markCampaignAsClicked, advanceToNextCampaign } = useFabMessages();
+    const { fabMessages, markCampaignAsClicked } = useFabMessages();
     const [isVisible, setIsVisible] = useState(true);
 
     const currentUser = useMemo(() => {
@@ -99,8 +99,7 @@ export default function MessageFAB() {
         if (!currentUser) return null;
         const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
         
-        // A mensagem só é "ativa" se estiver nos status de pendência e com a flag isActive.
-        if (messageForUser && messageForUser.isActive && (messageForUser.status === 'pending_cta')) {
+        if (messageForUser && messageForUser.status === 'pending_cta') {
             return messageForUser;
         }
         return null;
