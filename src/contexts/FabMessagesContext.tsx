@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection } from '@/lib/firestore-service';
+import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection, getDocument } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { formatISO } from 'date-fns';
 
@@ -77,8 +77,27 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   }, [queryClient]);
 
   const upsertMutation = useMutation<void, Error, { userId: string; data: FabMessagePayload }>({
-    mutationFn: ({ userId, data }) => {
-        const payload = { ...data, updatedAt: new Date().toISOString() };
+    mutationFn: async ({ userId, data }) => {
+        const existingMessage = await getDocument<FabMessageType>(COLLECTION_NAME, userId);
+
+        const updatedPipeline = data.pipeline?.map(campaign => {
+            const originalCampaign = existingMessage?.pipeline.find(p => p.id === campaign.id);
+            // If a completed campaign is edited, reset its status to 'loaded'
+            if (originalCampaign && originalCampaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
+                return { ...campaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined };
+            }
+            return campaign;
+        }) || [];
+
+        const hasLoadedCampaigns = updatedPipeline.some(c => c.status === 'loaded');
+
+        const payload = {
+            ...data,
+            pipeline: updatedPipeline,
+            status: hasLoadedCampaigns ? 'ready' : (updatedPipeline.length > 0 ? 'completed' : 'not_created'),
+            updatedAt: new Date().toISOString(),
+        };
+
         return setDocumentInCollection(COLLECTION_NAME, userId, payload);
     },
      onSuccess: () => {
@@ -221,4 +240,3 @@ export const useFabMessages = (): FabMessagesContextType => {
   }
   return context;
 };
-

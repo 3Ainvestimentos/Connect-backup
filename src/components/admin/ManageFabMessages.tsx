@@ -281,26 +281,10 @@ export function ManageFabMessages() {
     const onSubmit = async (data: FabMessageFormValues) => {
         if (!editingUser) return;
     
-        const existingMessage = userMessageMap.get(editingUser.id3a);
-        
-        const updatedPipeline = data.pipeline.map(campaign => {
-            const originalCampaign = existingMessage?.pipeline.find(p => p.id === campaign.id);
-            // If the campaign was completed, but now it's being edited, reset its status
-            if (originalCampaign && originalCampaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
-                return { ...campaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined };
-            }
-            return campaign;
-        });
-
-        const hasLoadedCampaigns = updatedPipeline.some(c => c.status === 'loaded');
-
         const payload: FabMessagePayload = {
             userId: editingUser.id3a,
             userName: editingUser.name,
-            pipeline: updatedPipeline,
-            status: hasLoadedCampaigns ? 'ready' : 'completed', 
-            activeCampaignIndex: existingMessage?.activeCampaignIndex ?? 0,
-            archivedCampaigns: existingMessage?.archivedCampaigns || [],
+            pipeline: data.pipeline,
         };
     
         try {
