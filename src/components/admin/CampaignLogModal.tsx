@@ -45,7 +45,7 @@ export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalP
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-5xl">
                 <DialogHeader>
                     <DialogTitle>Histórico de Campanhas do Pipeline</DialogTitle>
                     <DialogDescription>

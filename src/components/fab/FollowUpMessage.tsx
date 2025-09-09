@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -95,7 +94,7 @@ export default function FollowUpMessage() {
 
     return (
          <div className="fixed top-20 right-8 z-50 flex items-start">
-            <div className="absolute right-full mr-4">
+             <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
                 <MessageBubble onClose={handleClose}>
                      <p className="text-sm">{currentCampaign.followUpMessage}</p>
                 </MessageBubble>
