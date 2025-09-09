@@ -235,14 +235,15 @@ export function ManageFabMessages() {
 
     const handleRemoveCampaign = async (index: number) => {
         if (!editingUser) return;
+        
+        // Remove from the form state first for instant UI update
         const currentPipeline = form.getValues('pipeline');
         const newPipeline = currentPipeline.filter((_, i) => i !== index);
+        remove(index); // Update form state visually
 
-        // Remove from the form state first for instant UI update
-        remove(index);
-        
         let payload: FabMessagePayload = { pipeline: newPipeline };
 
+        // If the pipeline is now empty, set the overall status to completed.
         if (newPipeline.length === 0) {
             payload = { ...payload, status: 'completed', isActive: false };
         }
@@ -252,6 +253,7 @@ export function ManageFabMessages() {
             toast({ title: 'Campanha removida do pipeline.' });
         } catch (error) {
             toast({ title: 'Erro ao remover', description: (error as Error).message, variant: 'destructive' });
+            // Revert form state on error
             reset({ pipeline: currentPipeline });
         }
     };
@@ -719,6 +721,7 @@ export function ManageFabMessages() {
         </Card>
     );
 }
+
 
 
 
