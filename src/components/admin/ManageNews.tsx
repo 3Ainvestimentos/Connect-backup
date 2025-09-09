@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNews } from '@/contexts/NewsContext';
 import type { NewsItemType, NewsStatus } from '@/contexts/NewsContext';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Loader2, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore, ChevronUp, ChevronDown } from 'lucide-react';
+import { PlusCircle, Edit, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -44,13 +44,12 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
 };
 
 export function ManageNews() {
-    const { newsItems, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType, updateNewsOrder } = useNews();
+    const { newsItems, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
     const [showArchived, setShowArchived] = useState(false);
-    const [isMoving, setIsMoving] = useState<string | null>(null);
     
     const displayedNews = useMemo(() => {
         return newsItems
@@ -99,31 +98,14 @@ export function ManageNews() {
           toast({ title: "Erro ao arquivar", description: (error as Error).message, variant: "destructive" });
         }
     };
-    
-    const handleMove = async (currentIndex: number, direction: 'up' | 'down') => {
-      const itemToMove = displayedNews[currentIndex];
-      if (!itemToMove) return;
 
-      setIsMoving(itemToMove.id);
-
-      const newOrderedList = Array.from(displayedNews);
-      const [movedItem] = newOrderedList.splice(currentIndex, 1);
-      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      newOrderedList.splice(newIndex, 0, movedItem);
-
-      const orderUpdates = newOrderedList.map((item, index) => ({
-        id: item.id,
-        order: index,
-      }));
-
-      try {
-        await updateNewsOrder(orderUpdates);
-        toast({ title: "Ordem atualizada com sucesso!"});
-      } catch (error) {
-        toast({ title: "Erro ao reordenar", description: (error as Error).message, variant: "destructive" });
-      } finally {
-        setIsMoving(null);
-      }
+    const handleOrderChange = async (newsId: string, newOrder: number) => {
+        try {
+            await updateNewsItem({ id: newsId, order: newOrder });
+            toast({ title: "Ordem da notícia atualizada." });
+        } catch (error) {
+            toast({ title: "Erro ao atualizar a ordem", description: (error as Error).message, variant: "destructive" });
+        }
     };
     
     const onSubmit = async (data: NewsFormValues) => {
@@ -155,7 +137,7 @@ export function ManageNews() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Gerenciar Notícias</CardTitle>
-                        <CardDescription>Adicione, edite ou remova notícias do feed. Use as setas para reordenar.</CardDescription>
+                        <CardDescription>Adicione, edite ou remova notícias do feed. Altere o número da ordem para reordenar.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                          <Button variant="outline" onClick={() => setShowArchived(!showArchived)}>
@@ -178,15 +160,21 @@ export function ManageNews() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {displayedNews.map((item, index) => (
+                                {displayedNews.map((item) => (
                                     <TableRow 
                                         key={item.id}
                                         className={cn(
                                             item.status === 'archived' ? 'bg-muted/50' : ''
                                         )}
                                     >
-                                        <TableCell className="font-mono text-center">
-                                            {index + 1}
+                                        <TableCell>
+                                            <Input
+                                                type="number"
+                                                defaultValue={item.order}
+                                                onBlur={(e) => handleOrderChange(item.id, parseInt(e.target.value, 10))}
+                                                className="w-20"
+                                                disabled={item.status === 'archived'}
+                                            />
                                         </TableCell>
                                         <TableCell className={cn("font-medium", item.status === 'archived' && 'text-muted-foreground')}>
                                           {item.title}
@@ -243,18 +231,6 @@ export function ManageNews() {
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            {isMoving === item.id ? (
-                                                <Loader2 className="h-4 w-4 animate-spin inline-block" />
-                                            ) : (
-                                                <>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'up')} disabled={index === 0 || !!isMoving} title="Mover para cima">
-                                                        <ChevronUp className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" onClick={() => handleMove(index, 'down')} disabled={index === displayedNews.length - 1 || !!isMoving} title="Mover para baixo">
-                                                        <ChevronDown className="h-4 w-4" />
-                                                    </Button>
-                                                </>
-                                            )}
                                             <Button variant="ghost" size="icon" onClick={() => handlePreviewOpen(item)} className="hover:bg-muted" title="Visualizar">
                                                 <Eye className="h-4 w-4" />
                                             </Button>
