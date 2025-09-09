@@ -1,4 +1,3 @@
-
 "use client";
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -54,11 +53,8 @@ export function ManageNews() {
     const [showArchived, setShowArchived] = useState(false);
     const [isArchiving, setIsArchiving] = useState<string | null>(null);
     
-    const [localNews, setLocalNews] = useState<NewsItemType[]>([]);
-
-    useEffect(() => {
-        const displayedNews = newsItems.filter(item => showArchived ? true : item.status !== 'archived');
-        setLocalNews(displayedNews);
+    const displayedNews = useMemo(() => {
+        return newsItems.filter(item => showArchived ? true : item.status !== 'archived');
     }, [newsItems, showArchived]);
 
 
@@ -67,11 +63,9 @@ export function ManageNews() {
             return;
         }
 
-        const items = Array.from(localNews);
+        const items = Array.from(displayedNews);
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
-
-        setLocalNews(items);
         
         const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
         updateNewsOrder(updatedOrder);
@@ -183,7 +177,7 @@ export function ManageNews() {
                                 <Droppable droppableId="newsDroppable">
                                     {(provided) => (
                                         <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                                            {localNews.map((item, index) => (
+                                            {displayedNews.map((item, index) => (
                                                 <Draggable key={item.id} draggableId={item.id} index={index}>
                                                      {(provided) => (
                                                         <TableRow 
@@ -288,8 +282,8 @@ export function ManageNews() {
                                     </span>
                                 </div>
                             </DialogHeader>
-                            <ScrollArea className="max-h-[70vh]">
-                                <div className="pr-6 space-y-6">
+                            <ScrollArea className="max-h-[70vh] pr-6">
+                                <div className="space-y-6">
                                     <div className="relative w-full h-64 rounded-lg overflow-hidden mb-4 bg-black">
                                         {previewingNews.videoUrl ? (
                                             <video src={previewingNews.videoUrl} controls autoPlay className="w-full h-full object-contain" />
