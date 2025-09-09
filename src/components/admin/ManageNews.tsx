@@ -22,7 +22,6 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { StrictModeDroppable } from './StrictModeDroppable';
 
 const newsSchema = z.object({
     id: z.string().optional(),
@@ -56,7 +55,9 @@ export function ManageNews() {
     const [isSavingOrder, setIsSavingOrder] = useState(false);
 
     const displayedNews = useMemo(() => {
-        return newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
+        return newsItems
+          .filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived')
+          .sort((a,b) => (a.order || 0) - (b.order || 0));
     }, [newsItems, showArchived]);
 
     useEffect(() => {
@@ -71,7 +72,7 @@ export function ManageNews() {
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
         
-        setLocalNews(items);
+        setLocalNews(items); // Update UI immediately
 
         const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
         
@@ -82,7 +83,7 @@ export function ManageNews() {
             })
             .catch((error) => {
                 toast({ title: "Erro ao salvar a ordem", description: "Não foi possível atualizar a ordem das notícias.", variant: "destructive"});
-                setLocalNews(displayedNews);
+                setLocalNews(displayedNews); // Revert on error
             })
             .finally(() => {
                 setIsSavingOrder(false);
@@ -182,7 +183,7 @@ export function ManageNews() {
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <StrictModeDroppable droppableId="newsDroppable">
+                                <Droppable droppableId="newsDroppable">
                                     {(provided) => (
                                         <TableBody ref={provided.innerRef} {...provided.droppableProps}>
                                             {localNews.map((item, index) => (
@@ -273,7 +274,7 @@ export function ManageNews() {
                                             {provided.placeholder}
                                         </TableBody>
                                     )}
-                                </StrictModeDroppable>
+                                </Droppable>
                             </Table>
                         </DragDropContext>
                     </div>
@@ -435,3 +436,5 @@ export function ManageNews() {
         </>
     );
 }
+
+    
