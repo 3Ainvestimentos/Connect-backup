@@ -47,7 +47,7 @@ function MessageBubble({ children, onClose }: MessageBubbleProps) {
     return (
         <div className="relative animate-in fade-in-50">
             <div
-                className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2 prose"
+                className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2 prose text-sm"
                 style={{ borderColor: 'hsl(170, 60%, 50%)' }}
             >
                 {children}
