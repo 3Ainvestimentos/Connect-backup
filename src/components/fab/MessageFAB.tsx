@@ -130,8 +130,8 @@ export default function MessageFAB() {
     const isFollowUpPending = activeMessage.status === 'pending_follow_up';
 
     return (
-         <div className="fixed top-20 right-8 z-50 flex items-start">
-            <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
+         <div className="fixed top-20 right-8 z-50">
+            <div className="absolute right-full mr-4 flex flex-col items-end gap-4 w-64">
                 {isCtaPending && (
                      <MessageBubble 
                         variant="primary"
