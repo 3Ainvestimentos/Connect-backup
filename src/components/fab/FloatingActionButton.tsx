@@ -47,7 +47,7 @@ function MessageBubble({ children, onClose }: MessageBubbleProps) {
     return (
         <div className="relative animate-in fade-in-50">
             <div
-                className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2 prose prose-sm"
+                className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2 prose"
                 style={{ borderColor: 'hsl(170, 60%, 50%)' }}
             >
                 {children}
@@ -142,10 +142,10 @@ export default function FloatingActionButton() {
         <Button
             onClick={handleFabClick}
             size="icon"
-            className="h-14 w-14 rounded-full p-0 shadow-lg flex-shrink-0 bg-transparent hover:bg-transparent relative flex items-center justify-center"
+            className="h-14 w-14 rounded-full p-0 shadow-lg flex-shrink-0 bg-transparent hover:bg-transparent relative flex items-center justify-center transition-all duration-200 hover:scale-[1.03] hover:shadow-xl"
             aria-label="Abrir nova mensagem"
         >
-            <div className="absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"></div>
+            <div className="absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)]"></div>
             <div className="relative z-10">
                 <BobIcon />
             </div>
@@ -153,4 +153,3 @@ export default function FloatingActionButton() {
     </div>
   );
 }
-
