@@ -1,21 +1,24 @@
-
 "use client";
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { useFabMessages, campaignTags } from '@/contexts/FabMessagesContext';
+import { useFabMessages, campaignTags, FabMessageType } from '@/contexts/FabMessagesContext';
 import { ResponsiveContainer, PieChart, Pie, Tooltip, Legend, Cell as RechartsCell } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 
-export default function TagDistributionChart() {
-    const { fabMessages, loading } = useFabMessages();
+interface TagDistributionChartProps {
+    messages: FabMessageType[];
+}
+
+export default function TagDistributionChart({ messages }: TagDistributionChartProps) {
+    const { loading } = useFabMessages(); // Still use loading from context
 
     const tagCounts = useMemo(() => {
         const counts: { [key: string]: number } = {};
         campaignTags.forEach(tag => counts[tag] = 0);
 
-        fabMessages.forEach(message => {
+        messages.forEach(message => {
             message.pipeline.forEach(campaign => {
                 if (counts[campaign.tag] !== undefined) {
                     counts[campaign.tag]++;
@@ -28,7 +31,7 @@ export default function TagDistributionChart() {
             });
         });
         return Object.entries(counts).map(([name, value]) => ({ name, value }));
-    }, [fabMessages]);
+    }, [messages]);
 
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF'];
 
@@ -50,10 +53,10 @@ export default function TagDistributionChart() {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><PieChartIcon /> Distribuição de Campanhas por Tag</CardTitle>
-                <CardDescription>Visualização da proporção de todas as campanhas (ativas e arquivadas) por categoria.</CardDescription>
+                <CardDescription>Proporção de todas as campanhas (ativas e arquivadas) por categoria para os usuários selecionados.</CardDescription>
             </CardHeader>
             <CardContent>
-                 {fabMessages.length > 0 ? (
+                 {messages.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                         <PieChart>
                             <Pie data={tagCounts} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
@@ -72,9 +75,9 @@ export default function TagDistributionChart() {
                         </PieChart>
                     </ResponsiveContainer>
                  ) : (
-                    <div className="text-center py-10 text-muted-foreground">
+                    <div className="text-center py-10 text-muted-foreground flex flex-col items-center justify-center h-[300px]">
                         <PieChartIcon className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                        <p className="mt-4">Nenhuma campanha encontrada para exibir no gráfico.</p>
+                        <p className="mt-4">Nenhuma campanha encontrada para os usuários selecionados.</p>
                     </div>
                  )}
             </CardContent>
