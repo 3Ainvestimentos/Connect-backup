@@ -33,8 +33,8 @@ export default function CampaignHistoryChart({ messages }: CampaignHistoryChartP
                      dailyStats[date].concluidas++;
                 }
                 // Campanhas com Efetividade
-                if (campaign.isEffective && campaign.followUpClosedAt) {
-                     const date = format(startOfDay(parseISO(campaign.followUpClosedAt)), 'yyyy-MM-dd');
+                if (campaign.effectiveAt) {
+                     const date = format(startOfDay(parseISO(campaign.effectiveAt)), 'yyyy-MM-dd');
                      if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0 };
                      dailyStats[date].efetivas++;
                 }

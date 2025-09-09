@@ -20,7 +20,7 @@ export const campaignSchema = z.object({
   sentAt: z.string().optional(),
   clickedAt: z.string().optional(),
   followUpClosedAt: z.string().optional(), // Data de fechamento do follow-up
-  isEffective: z.boolean().optional().default(false),
+  effectiveAt: z.string().optional(), // Data de quando foi marcada como efetiva
 });
 export type CampaignType = z.infer<typeof campaignSchema>;
 
@@ -94,7 +94,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
                     const hasChanged = oldCampaign.ctaMessage !== newCampaign.ctaMessage || oldCampaign.followUpMessage !== newCampaign.followUpMessage;
                     if (hasChanged) {
                         // Reset status if a completed campaign was edited
-                        return { ...newCampaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined, followUpClosedAt: undefined };
+                        return { ...newCampaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined, followUpClosedAt: undefined, effectiveAt: undefined };
                     }
                 }
                 return newCampaign;

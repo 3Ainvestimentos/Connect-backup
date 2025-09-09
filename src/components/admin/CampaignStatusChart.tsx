@@ -23,7 +23,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
             // Only count campaigns currently in the active pipeline
             totalCampaigns += message.pipeline.length;
             completedCampaigns += message.pipeline.filter(c => c.status === 'completed').length;
-            effectiveCampaigns += message.pipeline.filter(c => c.isEffective).length;
+            effectiveCampaigns += message.pipeline.filter(c => !!c.effectiveAt).length;
         });
         
         return [

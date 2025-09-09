@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '../ui/scroll-area';
 import { CampaignLogModal } from './CampaignLogModal';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { formatISO } from 'date-fns';
 
 
 const formSchema = z.object({
@@ -235,7 +236,7 @@ export function ManageFabMessages() {
         resolver: zodResolver(formSchema),
     });
     
-    const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
+    const { formState: { isSubmitting }, reset, handleSubmit, control, setValue } = form;
     const { fields, append, remove, move } = useFieldArray({ control, name: "pipeline" });
     
     const handleArchiveCampaignClick = async () => {
@@ -272,7 +273,6 @@ export function ManageFabMessages() {
                     followUpMessage: '',
                     tag: 'Relacionamento',
                     status: 'loaded',
-                    isEffective: false,
                 }]
             });
         }
@@ -334,7 +334,6 @@ export function ManageFabMessages() {
                         followUpMessage: row.followUpMessage,
                         tag: campaignTags.includes(tag) ? tag : 'Relacionamento',
                         status: 'loaded',
-                        isEffective: false,
                     };
                     
                     if (!userCampaigns[user.id3a]) {
@@ -599,10 +598,15 @@ export function ManageFabMessages() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <Controller
-                                                            name={`pipeline.${index}.isEffective`}
+                                                            name={`pipeline.${index}.effectiveAt`}
                                                             control={control}
                                                             render={({ field: { value, onChange } }) => (
-                                                                <Checkbox checked={value} onCheckedChange={onChange} />
+                                                                <Checkbox 
+                                                                    checked={!!value} 
+                                                                    onCheckedChange={(checked) => 
+                                                                        onChange(checked ? formatISO(new Date()) : undefined)
+                                                                    } 
+                                                                />
                                                             )}
                                                         />
                                                     </TableCell>
@@ -620,7 +624,7 @@ export function ManageFabMessages() {
 
                     <Separator className="my-4" />
                     
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ id: `campaign_${Date.now()}_${Math.random()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded', isEffective: false })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ id: `campaign_${Date.now()}_${Math.random()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                     </Button>
 
