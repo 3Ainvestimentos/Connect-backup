@@ -124,8 +124,8 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       if (!message) throw new Error("Mensagem não encontrada para o usuário");
       
       const campaignToArchive = message.pipeline.find(c => c.id === campaignId);
-      if (!campaignToArchive || campaignToArchive.status !== 'completed') {
-        throw new Error("Apenas campanhas concluídas podem ser arquivadas.");
+      if (!campaignToArchive) {
+        throw new Error("Campanha não encontrada no pipeline para arquivar.");
       }
 
       const newPipeline = message.pipeline.filter(c => c.id !== campaignId);

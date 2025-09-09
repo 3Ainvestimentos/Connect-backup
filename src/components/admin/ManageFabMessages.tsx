@@ -236,18 +236,18 @@ export function ManageFabMessages() {
     
     const handleRemoveCampaign = async (index: number) => {
         if (!editingUser) return;
-    
-        const currentPipeline = form.getValues('pipeline');
+
+        const currentMessage = userMessageMap.get(editingUser.id3a);
+        if (!currentMessage) return;
+
+        const pipeline = currentMessage.pipeline;
         
-        if (currentPipeline.length === 1) {
-            // If it's the last one, delete the entire message document
+        if (pipeline.length === 1) {
             await deleteMessageForUser(editingUser.id3a);
-            toast({ title: 'Pipeline limpo!', description: `Todas as campanhas foram removidas para ${editingUser.name}.` });
-            setIsFormOpen(false); // Close the modal as there's nothing left to edit
+            toast({ title: 'Pipeline limpo!', description: `A configuração de mensagens foi removida para ${editingUser.name}.` });
+            setIsFormOpen(false);
         } else {
-            // If not the last one, just remove from the array and update
-            remove(index);
-            const updatedPipeline = form.getValues('pipeline');
+            const updatedPipeline = pipeline.filter((_, i) => i !== index);
             await upsertMessageForUser(editingUser.id3a, { pipeline: updatedPipeline });
             toast({ title: 'Campanha removida!' });
         }
@@ -255,16 +255,22 @@ export function ManageFabMessages() {
 
     const handleArchiveCampaignClick = async (campaignId: string) => {
         if (!editingUser) return;
+        
+        const message = userMessageMap.get(editingUser.id3a);
+        if (!message) return;
+        
+        const campaignToArchive = message.pipeline.find(c => c.id === campaignId);
+        if (!campaignToArchive) return;
+
         setIsArchiving(true);
         try {
             await archiveIndividualCampaign(editingUser.id3a, campaignId);
             const updatedMessage = userMessageMap.get(editingUser.id3a);
             if (updatedMessage) {
-                 // Re-fetch or rely on listener to update `fabMessages`, then get new data and reset form
                  setTimeout(() => {
                     const latestMessage = userMessageMap.get(editingUser.id3a);
                     reset({ pipeline: latestMessage?.pipeline || [] });
-                 }, 500); // Give listener some time
+                 }, 500);
             }
             toast({ title: 'Campanha arquivada com sucesso!' });
         } catch (error) {
