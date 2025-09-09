@@ -97,16 +97,19 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const newPipeline = [...message.pipeline];
-      newPipeline[message.activeCampaignIndex].status = 'completed';
+      const activeCampaign = newPipeline[message.activeCampaignIndex];
 
-      // Check if there are more campaigns to run
-      const hasMoreCampaigns = message.activeCampaignIndex < newPipeline.length - 1;
+      if (activeCampaign) {
+          activeCampaign.status = 'completed';
+      }
+
+      // Automatically move to the next 'ready' state, no follow-up needed.
+      const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
 
       const updatePayload: FabMessagePayload = {
         pipeline: newPipeline,
         status: hasMoreCampaigns ? 'ready' : 'completed',
-        isActive: hasMoreCampaigns,
-        activeCampaignIndex: message.activeCampaignIndex + (hasMoreCampaigns ? 1 : 0),
+        isActive: hasMoreCampaigns, 
         updatedAt: new Date().toISOString(),
       };
 
@@ -134,6 +137,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
             archivedCampaigns: newArchived,
             status: hasMoreActiveCampaigns ? 'ready' : 'completed',
             isActive: hasMoreActiveCampaigns, 
+            activeCampaignIndex: 0, // Reset index when archiving
             updatedAt: new Date().toISOString(),
         };
 
@@ -153,10 +157,14 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
 
       const newPipeline = message.pipeline.filter(c => c.id !== campaignId);
       const newArchived = [...(message.archivedCampaigns || []), campaignToArchive];
+      
+      const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
 
       return updateDocumentInCollection(COLLECTION_NAME, userId, {
         pipeline: newPipeline,
         archivedCampaigns: newArchived,
+        status: hasMoreCampaigns ? 'ready' : 'completed',
+        isActive: hasMoreCampaigns,
         updatedAt: new Date().toISOString(),
       });
     },
