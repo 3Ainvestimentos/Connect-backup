@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -38,6 +39,7 @@ type SortKey = keyof Collaborator | 'status';
 const statusOptions: { [key: string]: { label: string, className: string } } = {
     ready: { label: 'Pronto para Envio', className: 'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/50 dark:text-cyan-200 dark:border-cyan-800' },
     pending_cta: { label: 'Aguardando Clique', className: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-800' },
+    pending_follow_up: { label: 'Aguardando Follow-up', className: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-800' },
     completed: { label: 'Concluído', className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800' },
     not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700/50 dark:text-gray-200 dark:border-gray-600' },
 };
