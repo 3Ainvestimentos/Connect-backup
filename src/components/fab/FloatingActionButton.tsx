@@ -50,7 +50,14 @@ function MessageBubble({ children, onClose }: MessageBubbleProps) {
                 className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2 prose text-sm"
                 style={{ borderColor: 'hsl(170, 60%, 50%)' }}
             >
-                {children}
+                <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                        a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" />
+                    }}
+                >
+                    {children as string}
+                </ReactMarkdown>
                 <button 
                     onClick={onClose}
                     className="absolute top-1 right-1 p-1 text-black/50 hover:text-black/80 rounded-full"
@@ -127,29 +134,21 @@ export default function FloatingActionButton() {
         {showIdleMessage && !activeCampaign && idleMessageToShow && (
              <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
                 <MessageBubble onClose={handleCloseIdleMessage}>
-                    <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                            a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" />
-                        }}
-                    >
-                        {idleMessageToShow.text}
-                    </ReactMarkdown>
+                   {idleMessageToShow.text}
                 </MessageBubble>
              </div>
         )}
 
-        <Button
+        <div
+            className="relative h-14 w-14 cursor-pointer"
             onClick={handleFabClick}
-            size="icon"
-            className="h-14 w-14 rounded-full p-0 shadow-lg flex-shrink-0 bg-transparent hover:bg-transparent relative flex items-center justify-center transition-all duration-200 hover:scale-[1.03] hover:shadow-xl"
             aria-label="Abrir nova mensagem"
         >
-            <div className="absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)]"></div>
-            <div className="relative z-10">
+            <div className="absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"></div>
+            <div className="relative z-10 w-full h-full flex items-center justify-center">
                 <BobIcon />
             </div>
-        </Button>
+        </div>
     </div>
   );
 }
