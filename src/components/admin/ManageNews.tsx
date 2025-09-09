@@ -52,29 +52,30 @@ export function ManageNews() {
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
     const [showArchived, setShowArchived] = useState(false);
-    const [isArchiving, setIsArchiving] = useState<string | null>(null);
-    const [localNews, setLocalNews] = useState<NewsItemType[]>([]);
+    const [isSavingOrder, setIsSavingOrder] = useState(false);
 
     const displayedNews = useMemo(() => {
         return newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
     }, [newsItems, showArchived]);
 
-    useEffect(() => {
-        setLocalNews(displayedNews);
-    }, [displayedNews]);
-
-
-    const handleDragEnd = (result: DropResult) => {
+    const handleDragEnd = async (result: DropResult) => {
         if (!result.destination) return;
 
-        const items = Array.from(localNews);
+        const items = Array.from(displayedNews);
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
         
-        setLocalNews(items);
-        
         const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
-        updateNewsOrder(updatedOrder);
+
+        setIsSavingOrder(true);
+        try {
+            await updateNewsOrder(updatedOrder);
+            toast({ title: "Ordem das notícias atualizada com sucesso." });
+        } catch (error) {
+            toast({ title: "Erro ao salvar a ordem", description: "Não foi possível atualizar a ordem das notícias.", variant: "destructive"});
+        } finally {
+            setIsSavingOrder(false);
+        }
     };
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
@@ -110,14 +111,11 @@ export function ManageNews() {
 
     const handleArchive = async (id: string) => {
         if (!window.confirm("Tem certeza que deseja arquivar esta notícia?")) return;
-        setIsArchiving(id);
         try {
           await archiveNewsItem(id);
           toast({ title: "Notícia arquivada com sucesso." });
         } catch (error) {
           toast({ title: "Erro ao arquivar", description: (error as Error).message, variant: "destructive" });
-        } finally {
-          setIsArchiving(null);
         }
     };
     
@@ -129,11 +127,6 @@ export function ManageNews() {
             if (editingNews) {
                 await updateNewsItem(submissionData);
                 toast({ title: "Notícia atualizada com sucesso." });
-            } else {
-                // The add function is not used in this component currently
-                // but the logic is kept for completeness.
-                // await addNewsItem({ ...submissionData, isHighlight: false, highlightType: 'small', order: 0 });
-                // toast({ title: "Notícia criada como rascunho." });
             }
             setIsDialogOpen(false);
         } catch (error) {
@@ -155,7 +148,7 @@ export function ManageNews() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Gerenciar Notícias</CardTitle>
-                        <CardDescription>Adicione, edite ou remova notícias do feed. Marque até 3 para destaque.</CardDescription>
+                        <CardDescription>Adicione, edite ou remova notícias do feed. Arraste e solte para reordenar.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                          <Button variant="outline" onClick={() => setShowArchived(!showArchived)}>
@@ -178,16 +171,19 @@ export function ManageNews() {
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <StrictModeDroppable droppableId="newsDroppable">
+                                <StrictModeDroppable droppableId="newsDroppable" isDropDisabled={isSavingOrder}>
                                     {(provided) => (
                                         <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                                            {localNews.map((item, index) => (
+                                            {displayedNews.map((item, index) => (
                                                 <Draggable key={item.id} draggableId={item.id} index={index}>
-                                                     {(provided) => (
+                                                     {(provided, snapshot) => (
                                                         <TableRow 
                                                             ref={provided.innerRef}
                                                             {...provided.draggableProps}
-                                                            className={item.status === 'archived' ? 'bg-muted/50' : ''}
+                                                            className={cn(
+                                                              item.status === 'archived' ? 'bg-muted/50' : '',
+                                                              snapshot.isDragging && 'bg-muted shadow-lg'
+                                                            )}
                                                         >
                                                             <TableCell {...provided.dragHandleProps} className="cursor-grab">
                                                                 <GripVertical className="h-5 w-5 text-muted-foreground" />
@@ -254,8 +250,8 @@ export function ManageNews() {
                                                                     <Edit className="h-4 w-4" />
                                                                 </Button>
                                                                 {item.status !== 'archived' && (
-                                                                    <Button variant="ghost" size="icon" onClick={() => handleArchive(item.id)} className="hover:bg-muted" disabled={isArchiving === item.id} title="Arquivar">
-                                                                        {isArchiving === item.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Archive className="h-4 w-4 text-destructive" />}
+                                                                    <Button variant="ghost" size="icon" onClick={() => handleArchive(item.id)} className="hover:bg-muted" disabled={isSavingOrder} title="Arquivar">
+                                                                        <Archive className="h-4 w-4 text-destructive" />
                                                                     </Button>
                                                                 )}
                                                             </TableCell>
