@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PlusCircle, Edit, Loader2, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore, GripVertical } from 'lucide-react';
@@ -47,6 +47,7 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
 
 export function ManageNews() {
     const { newsItems, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType, updateNewsOrder } = useNews();
+    const [localNews, setLocalNews] = useState<NewsItemType[]>([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
@@ -54,28 +55,36 @@ export function ManageNews() {
     const [showArchived, setShowArchived] = useState(false);
     const [isSavingOrder, setIsSavingOrder] = useState(false);
 
-    const displayedNews = useMemo(() => {
-        return newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
+    useEffect(() => {
+        const filtered = newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
+        setLocalNews(filtered);
     }, [newsItems, showArchived]);
 
-    const handleDragEnd = async (result: DropResult) => {
+    const handleDragEnd = (result: DropResult) => {
         if (!result.destination) return;
 
-        const items = Array.from(displayedNews);
+        const items = Array.from(localNews);
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
         
+        setLocalNews(items); // Update UI immediately
+
         const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
 
         setIsSavingOrder(true);
-        try {
-            await updateNewsOrder(updatedOrder);
-            toast({ title: "Ordem das notícias atualizada com sucesso." });
-        } catch (error) {
-            toast({ title: "Erro ao salvar a ordem", description: "Não foi possível atualizar a ordem das notícias.", variant: "destructive"});
-        } finally {
-            setIsSavingOrder(false);
-        }
+        updateNewsOrder(updatedOrder)
+            .then(() => {
+                toast({ title: "Ordem das notícias atualizada com sucesso." });
+            })
+            .catch((error) => {
+                toast({ title: "Erro ao salvar a ordem", description: "Não foi possível atualizar a ordem das notícias.", variant: "destructive"});
+                // Revert to original order on failure
+                const originalOrder = newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
+                setLocalNews(originalOrder);
+            })
+            .finally(() => {
+                setIsSavingOrder(false);
+            });
     };
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
@@ -174,7 +183,7 @@ export function ManageNews() {
                                 <StrictModeDroppable droppableId="newsDroppable" isDropDisabled={isSavingOrder}>
                                     {(provided) => (
                                         <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                                            {displayedNews.map((item, index) => (
+                                            {localNews.map((item, index) => (
                                                 <Draggable key={item.id} draggableId={item.id} index={index}>
                                                      {(provided, snapshot) => (
                                                         <TableRow 
