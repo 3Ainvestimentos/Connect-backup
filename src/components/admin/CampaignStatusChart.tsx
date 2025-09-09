@@ -20,11 +20,9 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
         let completedCampaigns = 0;
 
         messages.forEach(message => {
-            totalCampaigns += message.pipeline.length + (message.archivedCampaigns?.length || 0);
-            
-            const completedInPipeline = message.pipeline.filter(c => c.status === 'completed').length;
-            const completedInArchive = message.archivedCampaigns?.length || 0;
-            completedCampaigns += completedInPipeline + completedInArchive;
+            // Only count campaigns currently in the active pipeline
+            totalCampaigns += message.pipeline.length;
+            completedCampaigns += message.pipeline.filter(c => c.status === 'completed').length;
         });
         
         return [
@@ -50,8 +48,8 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
     return (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><BarChartIcon /> Status Geral das Campanhas</CardTitle>
-                <CardDescription>Total de campanhas criadas vs. campanhas concluídas para os usuários selecionados.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><BarChartIcon /> Status das Campanhas Ativas</CardTitle>
+                <CardDescription>Total de campanhas no pipeline vs. campanhas concluídas para os usuários selecionados.</CardDescription>
             </CardHeader>
             <CardContent>
                 {messages.length > 0 ? (

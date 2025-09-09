@@ -13,19 +13,15 @@ interface TagDistributionChartProps {
 }
 
 export default function TagDistributionChart({ messages }: TagDistributionChartProps) {
-    const { loading } = useFabMessages(); // Still use loading from context
+    const { loading } = useFabMessages();
 
     const tagCounts = useMemo(() => {
         const counts: { [key: string]: number } = {};
         campaignTags.forEach(tag => counts[tag] = 0);
 
         messages.forEach(message => {
+            // Only count campaigns currently in the active pipeline
             message.pipeline.forEach(campaign => {
-                if (counts[campaign.tag] !== undefined) {
-                    counts[campaign.tag]++;
-                }
-            });
-            (message.archivedCampaigns || []).forEach(campaign => {
                 if (counts[campaign.tag] !== undefined) {
                     counts[campaign.tag]++;
                 }
@@ -54,7 +50,7 @@ export default function TagDistributionChart({ messages }: TagDistributionChartP
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><PieChartIcon /> Distribuição de Campanhas por Tag</CardTitle>
-                <CardDescription>Proporção de todas as campanhas (ativas e arquivadas) por categoria para os usuários selecionados.</CardDescription>
+                <CardDescription>Proporção das campanhas ativas por categoria para os usuários selecionados.</CardDescription>
             </CardHeader>
             <CardContent>
                  {messages.length > 0 ? (
