@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -113,7 +112,7 @@ export default function FloatingActionButton() {
         <Button
             onClick={handleFabClick}
             size="icon"
-            className="h-14 w-14 rounded-full p-0 shadow-lg flex-shrink-0 transition-all duration-200 bg-transparent hover:bg-transparent"
+            className="h-14 w-14 rounded-full p-0 shadow-lg flex-shrink-0 bg-transparent hover:bg-transparent"
             aria-label="Abrir nova mensagem"
         >
             <div className="absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"></div>
