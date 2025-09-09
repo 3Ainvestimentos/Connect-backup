@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// 1. Ícone SVG do "Bob" (ou outro ícone principal)
+// 1. Ícone SVG do "Bob"
 function BobIcon() {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" fill="none" className="h-9 w-9">
@@ -87,8 +87,7 @@ const MessageBubble = ({ children, onClick, onClose, hasCloseButton, variant = '
 export default function MessageFAB() {
     const { user } = useAuth();
     const { collaborators } = useCollaborators();
-    const { fabMessages, markCampaignAsClicked } = useFabMessages();
-    const [isVisible, setIsVisible] = useState(true);
+    const { fabMessages, markCampaignAsClicked, completeFollowUp } = useFabMessages();
 
     const currentUser = useMemo(() => {
         if (!user) return null;
@@ -99,10 +98,9 @@ export default function MessageFAB() {
         if (!currentUser) return null;
         const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
         
-        if (messageForUser && messageForUser.status === 'pending_cta') {
-            return messageForUser;
-        }
-        return null;
+        const isActiveState = messageForUser && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up');
+        
+        return isActiveState ? messageForUser : null;
     }, [fabMessages, currentUser]);
 
 
@@ -113,25 +111,42 @@ export default function MessageFAB() {
             markCampaignAsClicked(currentUser.id3a);
         }
     };
+    
+    const handleFollowUpClose = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (activeMessage && currentUser) {
+            completeFollowUp(currentUser.id3a);
+        }
+    };
 
-    if (!activeMessage || !isVisible) {
+    if (!activeMessage) {
         return null;
     }
     
     const currentCampaign = activeMessage.pipeline[activeMessage.activeCampaignIndex];
     if (!currentCampaign) return null;
 
-    const shouldAnimate = activeMessage.status === 'pending_cta';
+    const isCtaPending = activeMessage.status === 'pending_cta';
+    const isFollowUpPending = activeMessage.status === 'pending_follow_up';
 
     return (
          <div className="fixed top-20 right-8 z-50 flex items-start">
             <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
-                {activeMessage.status === 'pending_cta' && (
+                {isCtaPending && (
                      <MessageBubble 
                         variant="primary"
                         onClick={handleCtaClick}
                     >
                          <p className="text-sm">{currentCampaign.ctaMessage}</p>
+                    </MessageBubble>
+                )}
+                {isFollowUpPending && (
+                     <MessageBubble 
+                        variant="secondary"
+                        onClose={handleFollowUpClose}
+                        hasCloseButton
+                    >
+                         <p className="text-sm">{currentCampaign.followUpMessage}</p>
                     </MessageBubble>
                 )}
             </div>
@@ -141,7 +156,7 @@ export default function MessageFAB() {
                 size="icon"
                 className={cn(
                     "h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0",
-                    shouldAnimate && "animate-pulse-bg"
+                    isCtaPending && "animate-pulse-bg"
                 )}
                 aria-label="Nova mensagem"
             >

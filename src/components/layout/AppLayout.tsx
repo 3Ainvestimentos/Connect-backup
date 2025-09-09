@@ -50,7 +50,6 @@ import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { TermsOfUseModal } from '../auth/TermsOfUseModal';
 import MessageFAB from '../fab/MessageFAB';
 import FloatingActionButton from '../fab/FloatingActionButton';
-import FollowUpMessage from '../fab/FollowUpMessage';
 
 
 export const navItems = [
@@ -432,7 +431,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
           <FloatingActionButton />
           <MessageFAB />
-          <FollowUpMessage />
         </main>
       </div>
       <PollTrigger />
