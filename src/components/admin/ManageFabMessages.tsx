@@ -52,6 +52,9 @@ const campaignStatusBadgeClasses: Record<CampaignType['status'], string> = {
 
 const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
     const config = statusOptions[status];
+    if (!config) {
+        return <Badge variant="outline">Desconhecido</Badge>;
+    }
     return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
 };
 
@@ -691,3 +694,4 @@ export function ManageFabMessages() {
         </Card>
     );
 }
+
