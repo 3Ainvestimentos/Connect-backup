@@ -235,26 +235,28 @@ export function ManageFabMessages() {
 
     const handleRemoveCampaign = async (index: number) => {
         if (!editingUser) return;
-        
-        // Remove from the form state first for instant UI update
+
         const currentPipeline = form.getValues('pipeline');
-        const newPipeline = currentPipeline.filter((_, i) => i !== index);
-        remove(index); // Update form state visually
-
-        let payload: FabMessagePayload = { pipeline: newPipeline };
-
-        // If the pipeline is now empty, set the overall status to completed.
-        if (newPipeline.length === 0) {
-            payload = { ...payload, status: 'completed', isActive: false };
+        if (currentPipeline.length === 1) {
+            // This is the last campaign, so we delete the whole document.
+            if (window.confirm("Esta é a última campanha. Deseja remover toda a configuração de mensagens para este usuário?")) {
+                await deleteMessageForUser(editingUser.id3a);
+                toast({ title: 'Configuração removida.' });
+                setIsFormOpen(false); // Close modal after deletion
+            }
+            return;
         }
+        
+        const newPipeline = currentPipeline.filter((_, i) => i !== index);
+        
+        let payload: FabMessagePayload = { pipeline: newPipeline };
 
         try {
             await upsertMessageForUser(editingUser.id3a, payload);
+            remove(index); // Update form state visually after successful persistence
             toast({ title: 'Campanha removida do pipeline.' });
         } catch (error) {
             toast({ title: 'Erro ao remover', description: (error as Error).message, variant: 'destructive' });
-            // Revert form state on error
-            reset({ pipeline: currentPipeline });
         }
     };
     
@@ -535,7 +537,7 @@ export function ManageFabMessages() {
                                 let progressText = '0/0';
                                 if (message) {
                                     const completedCount = message.archivedCampaigns?.length || 0;
-                                    const totalCount = message.pipeline.length + (message.archivedCampaigns?.length || 0);
+                                    const totalCount = (message.pipeline?.length || 0) + (message.archivedCampaigns?.length || 0);
                                     progressText = `${completedCount}/${totalCount}`;
                                 }
 
@@ -721,7 +723,3 @@ export function ManageFabMessages() {
         </Card>
     );
 }
-
-
-
-
