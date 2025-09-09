@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -9,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical, PieChart, Archive, History } from 'lucide-react';
@@ -45,9 +43,9 @@ const statusOptions: { [key: string]: { label: string, className: string } } = {
 
 
 const campaignStatusBadgeClasses: Record<CampaignType['status'], string> = {
-    loaded: "bg-gray-200 text-gray-800 hover:bg-gray-200",
-    active: "bg-yellow-200 text-yellow-800 animate-pulse hover:bg-yellow-200",
-    completed: "bg-green-200 text-green-800 hover:bg-green-200",
+    loaded: "bg-gray-200 text-gray-800",
+    active: "bg-yellow-200 text-yellow-800 animate-pulse",
+    completed: "bg-green-200 text-green-800",
 };
 
 
@@ -76,6 +74,12 @@ export function ManageFabMessages() {
     const [isArchiving, setIsArchiving] = useState(false);
     const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
     
+    // State for the new campaign draft form
+    const [newCta, setNewCta] = useState('');
+    const [newFollowUp, setNewFollowUp] = useState('');
+    const [newTag, setNewTag] = useState<typeof campaignTags[number]>('Relacionamento');
+
+
     const [filters, setFilters] = useState<{
         area: string[],
         position: string[],
@@ -236,21 +240,25 @@ export function ManageFabMessages() {
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
     const { fields, append, remove, move } = useFieldArray({ control, name: "pipeline" });
     
-    const handleArchiveCampaigns = async () => {
+    const handleArchiveCampaignClick = async () => {
         if (!editingUser || selectedCampaignIds.length === 0) return;
-
         setIsArchiving(true);
+        
         try {
             await archiveMultipleCampaigns(editingUser.id3a, selectedCampaignIds);
+            
+            // Remove from the form state visually
+            const newPipeline = fields.filter(field => !selectedCampaignIds.includes(field.id));
+            reset({ pipeline: newPipeline });
+
             toast({ title: 'Campanhas arquivadas com sucesso!' });
-            setSelectedCampaignIds([]); // Reset selection
+            setSelectedCampaignIds([]); 
         } catch (error) {
             toast({ title: 'Erro ao arquivar', description: (error as Error).message, variant: 'destructive' });
         } finally {
             setIsArchiving(false);
         }
-    }
-
+    };
 
     const handleOpenForm = (user: Collaborator) => {
         setEditingUser(user);
@@ -270,7 +278,29 @@ export function ManageFabMessages() {
                 }]
             });
         }
+        setNewCta('');
+        setNewFollowUp('');
+        setNewTag('Relacionamento');
         setIsFormOpen(true);
+    };
+
+    const handleSaveNewCampaign = () => {
+        if (!newCta.trim() || !newFollowUp.trim()) {
+            toast({ title: 'Campos Obrigatórios', description: 'CTA e Follow-up devem ser preenchidos.', variant: 'destructive' });
+            return;
+        }
+        append({
+            id: `campaign_${Date.now()}_${Math.random()}`,
+            ctaMessage: newCta,
+            followUpMessage: newFollowUp,
+            tag: newTag,
+            status: 'loaded',
+            isEffective: false,
+        });
+        // Reset draft form
+        setNewCta('');
+        setNewFollowUp('');
+        setNewTag('Relacionamento');
     };
 
     const onSubmit = async (data: FabMessageFormValues) => {
@@ -424,268 +454,298 @@ export function ManageFabMessages() {
 
     return (
         <>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
-                    <CardDescription>
-                    Crie, envie e monitore as campanhas de comunicação. O status 'Pronto' indica que a campanha está aguardando o envio manual.
-                    </CardDescription>
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
-                        <div className="relative flex-grow w-full sm:w-auto">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Buscar por colaborador..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10"
-                            />
-                        </div>
-                        <div className="flex w-full sm:w-auto flex-wrap gap-2">
-                            <Button variant="outline" onClick={handleBulkStartCampaign} disabled={selectedUserIds.length === 0 || isSendingBulk}>
-                                {isSendingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
-                                Enviar para Selecionados ({selectedUserIds.length})
-                            </Button>
-                            <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
-                                {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                                Importar CSV
-                            </Button>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept=".csv"
-                                onChange={handleFileImport}
-                            />
-                        </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
+                <CardDescription>
+                Crie, envie e monitore as campanhas de comunicação. O status 'Pronto' indica que a campanha está aguardando o envio manual.
+                </CardDescription>
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
+                    <div className="relative flex-grow w-full sm:w-auto">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            placeholder="Buscar por colaborador..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="border rounded-lg overflow-x-auto">
+                    <div className="flex w-full sm:w-auto flex-wrap gap-2">
+                        <Button variant="outline" onClick={handleBulkStartCampaign} disabled={selectedUserIds.length === 0 || isSendingBulk}>
+                            {isSendingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+                            Enviar para Selecionados ({selectedUserIds.length})
+                        </Button>
+                        <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
+                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                            Importar CSV
+                        </Button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv"
+                            onChange={handleFileImport}
+                        />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="border rounded-lg overflow-x-auto">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[50px]">
+                                    <Checkbox
+                                        checked={isAllReadyUsersSelected}
+                                        onCheckedChange={(checked) => toggleSelectAll(!!checked)}
+                                        aria-label="Selecionar todos os usuários prontos"
+                                    />
+                                </TableHead>
+                                <SortableHeader tKey="name" label="Colaborador" />
+                                <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas}/>
+                                <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions}/>
+                                <FilterableHeader fkey="segment" label="Segmento" uniqueValues={uniqueSegments}/>
+                                <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders}/>
+                                <FilterableHeader fkey="status" label="Status" uniqueValues={Object.entries(statusOptions).map(([value, {label}]) => ({value, label}))}/>
+                                <TableHead>Progresso</TableHead>
+                                <TableHead>Acompanhamento</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredAndSortedUsers.map(user => {
+                                const message = userMessageMap.get(user.id3a);
+                                
+                                const completedInPipeline = message?.pipeline.filter(c => c.status === 'completed').length || 0;
+                                const totalInPipeline = message?.pipeline.length || 0;
+                                const progressText = `${completedInPipeline}/${totalInPipeline}`;
+
+                                const isReady = message?.status === 'ready';
+                                return (
+                                <TableRow key={user.id}>
+                                    <TableCell>
+                                        <Checkbox
+                                            checked={selectedUserIds.includes(user.id3a)}
+                                            onCheckedChange={(checked) => {
+                                                setSelectedUserIds(prev =>
+                                                    checked ? [...prev, user.id3a] : prev.filter(id => id !== user.id3a)
+                                                );
+                                            }}
+                                            aria-label={`Selecionar ${user.name}`}
+                                            disabled={!isReady}
+                                        />
+                                    </TableCell>
+                                    <TableCell className="font-medium">{user.name}</TableCell>
+                                    <TableCell>{user.area}</TableCell>
+                                    <TableCell>{user.position}</TableCell>
+                                    <TableCell>{user.segment}</TableCell>
+                                    <TableCell>{user.leader}</TableCell>
+                                    <TableCell>
+                                        <StatusBadge status={message?.status || 'not_created'} />
+                                    </TableCell>
+                                    <TableCell>
+                                        {message ? progressText : 'N/A'}
+                                    </TableCell>
+                                    <TableCell>
+                                        {message && (
+                                            <Button variant="ghost" size="icon" onClick={() => setLogViewingUser(message)} className="hover:bg-muted">
+                                                <History className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className="text-right space-x-1">
+                                        <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
+                                            <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            )})}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
+        </Card>
+        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Configurar Pipeline para</DialogTitle>
+                    <DialogDescription>{editingUser?.name}</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
+                    <div className="flex-grow overflow-y-auto pr-4 -mr-4">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[50px]">
+                                    <TableHead className="w-10">
                                         <Checkbox
-                                            checked={isAllReadyUsersSelected}
-                                            onCheckedChange={(checked) => toggleSelectAll(!!checked)}
-                                            aria-label="Selecionar todos os usuários prontos"
+                                            checked={selectedCampaignIds.length > 0 && selectedCampaignIds.length === fields.length}
+                                            onCheckedChange={(checked) => {
+                                                setSelectedCampaignIds(checked ? fields.map(f => f.id) : []);
+                                            }}
                                         />
                                     </TableHead>
-                                    <SortableHeader tKey="name" label="Colaborador" />
-                                    <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas}/>
-                                    <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions}/>
-                                    <FilterableHeader fkey="segment" label="Segmento" uniqueValues={uniqueSegments}/>
-                                    <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders}/>
-                                    <FilterableHeader fkey="status" label="Status" uniqueValues={Object.entries(statusOptions).map(([value, {label}]) => ({value, label}))}/>
-                                    <TableHead>Progresso</TableHead>
-                                    <TableHead>Acompanhamento</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>CTA</TableHead>
+                                    <TableHead>Follow-up</TableHead>
+                                    <TableHead>Tag</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Efetiva?</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredAndSortedUsers.map(user => {
-                                    const message = userMessageMap.get(user.id3a);
-                                    
-                                    const completedInPipeline = message?.pipeline.filter(c => c.status === 'completed').length || 0;
-                                    const totalInPipeline = message?.pipeline.length || 0;
-                                    const progressText = `${completedInPipeline}/${totalInPipeline}`;
-
-                                    const isReady = message?.status === 'ready';
-                                    return (
-                                    <TableRow key={user.id}>
+                                {fields.map((field, index) => (
+                                    <TableRow key={field.id}>
                                         <TableCell>
-                                            <Checkbox
-                                                checked={selectedUserIds.includes(user.id3a)}
+                                             <Checkbox
+                                                checked={selectedCampaignIds.includes(field.id)}
                                                 onCheckedChange={(checked) => {
-                                                    setSelectedUserIds(prev =>
-                                                        checked ? [...prev, user.id3a] : prev.filter(id => id !== user.id3a)
-                                                    );
+                                                    setSelectedCampaignIds(prev => checked ? [...prev, field.id] : prev.filter(id => id !== field.id))
                                                 }}
-                                                aria-label={`Selecionar ${user.name}`}
-                                                disabled={!isReady}
                                             />
                                         </TableCell>
-                                        <TableCell className="font-medium">{user.name}</TableCell>
-                                        <TableCell>{user.area}</TableCell>
-                                        <TableCell>{user.position}</TableCell>
-                                        <TableCell>{user.segment}</TableCell>
-                                        <TableCell>{user.leader}</TableCell>
+                                        <TableCell className="font-mono text-xs text-muted-foreground">{field.id.slice(-8)}</TableCell>
                                         <TableCell>
-                                            <StatusBadge status={message?.status || 'not_created'} />
+                                            <Textarea {...form.register(`pipeline.${index}.ctaMessage`)} rows={2} />
+                                        </TableCell>
+                                         <TableCell>
+                                            <Textarea {...form.register(`pipeline.${index}.followUpMessage`)} rows={2} />
                                         </TableCell>
                                         <TableCell>
-                                            {message ? progressText : 'N/A'}
+                                             <Controller
+                                                name={`pipeline.${index}.tag`}
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <SelectTrigger className="w-[150px]"><SelectValue/></SelectTrigger>
+                                                        <SelectContent>
+                                                            {campaignTags.map(tag => <SelectItem key={tag} value={tag}>{tag}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                )}
+                                            />
                                         </TableCell>
                                         <TableCell>
-                                            {message && (
-                                                <Button variant="ghost" size="icon" onClick={() => setLogViewingUser(message)} className="hover:bg-muted">
-                                                    <History className="h-4 w-4 text-muted-foreground" />
-                                                </Button>
-                                            )}
+                                            <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
                                         </TableCell>
-                                        <TableCell className="text-right space-x-1">
-                                            <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
-                                                <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
-                                            </Button>
+                                        <TableCell>
+                                            <Controller
+                                                name={`pipeline.${index}.isEffective`}
+                                                control={control}
+                                                render={({ field: { value, onChange } }) => (
+                                                    <Checkbox checked={value} onCheckedChange={onChange} />
+                                                )}
+                                            />
                                         </TableCell>
                                     </TableRow>
-                                )})}
+                                ))}
                             </TableBody>
                         </Table>
                     </div>
-                </CardContent>
-            </Card>
 
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
-                    <DialogHeader>
-                        <DialogTitle>Configurar Pipeline para</DialogTitle>
-                        <DialogDescription>{editingUser?.name}</DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
-                        <div className="flex-grow overflow-y-auto pr-4 -mr-4">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-10">
-                                            <Checkbox
-                                                checked={selectedCampaignIds.length > 0 && selectedCampaignIds.length === fields.length}
-                                                onCheckedChange={(checked) => {
-                                                    setSelectedCampaignIds(checked ? fields.map(f => f.id) : []);
-                                                }}
-                                            />
-                                        </TableHead>
-                                        <TableHead>ID</TableHead>
-                                        <TableHead>CTA</TableHead>
-                                        <TableHead>Follow-up</TableHead>
-                                        <TableHead>Tag</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Efetiva?</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {fields.map((field, index) => (
-                                        <TableRow key={field.id}>
-                                            <TableCell>
-                                                 <Checkbox
-                                                    checked={selectedCampaignIds.includes(field.id)}
-                                                    onCheckedChange={(checked) => {
-                                                        setSelectedCampaignIds(prev => checked ? [...prev, field.id] : prev.filter(id => id !== field.id))
-                                                    }}
-                                                />
-                                            </TableCell>
-                                            <TableCell className="font-mono text-xs text-muted-foreground">{field.id.slice(-8)}</TableCell>
-                                            <TableCell>
-                                                <Textarea {...form.register(`pipeline.${index}.ctaMessage`)} rows={2} />
-                                            </TableCell>
-                                             <TableCell>
-                                                <Textarea {...form.register(`pipeline.${index}.followUpMessage`)} rows={2} />
-                                            </TableCell>
-                                            <TableCell>
-                                                 <Controller
-                                                    name={`pipeline.${index}.tag`}
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                            <SelectTrigger className="w-[150px]"><SelectValue/></SelectTrigger>
-                                                            <SelectContent>
-                                                                {campaignTags.map(tag => <SelectItem key={tag} value={tag}>{tag}</SelectItem>)}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    )}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                 <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Controller
-                                                    name={`pipeline.${index}.isEffective`}
-                                                    control={control}
-                                                    render={({ field: { value, onChange } }) => (
-                                                        <Checkbox checked={value} onCheckedChange={onChange} />
-                                                    )}
-                                                />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                             <Button type="button" variant="outline" className="w-full mt-4" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded', isEffective: false })}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
+                    <Separator className="my-4" />
+
+                    <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+                        <h3 className="font-semibold text-lg">Criar Nova Campanha (Rascunho)</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="new-cta">Mensagem de CTA</Label>
+                                <Textarea id="new-cta" value={newCta} onChange={(e) => setNewCta(e.target.value)} placeholder="Ex: Olá! Notei que não tivemos interações recentes..." />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="new-follow-up">Mensagem de Follow-up</Label>
+                                <Textarea id="new-follow-up" value={newFollowUp} onChange={(e) => setNewFollowUp(e.target.value)} placeholder="Ex: Podemos agendar um bate-papo rápido?" />
+                            </div>
+                        </div>
+                        <div className="flex justify-between items-end">
+                            <div className="space-y-2">
+                                <Label htmlFor="new-tag">Tag</Label>
+                                <Select value={newTag} onValueChange={(value) => setNewTag(value as typeof campaignTags[number])}>
+                                    <SelectTrigger className="w-[180px] bg-background">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {campaignTags.map(tag => <SelectItem key={tag} value={tag}>{tag}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button type="button" onClick={handleSaveNewCampaign} className="bg-admin-primary hover:bg-admin-primary/90">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Salvar Nova Campanha
                             </Button>
                         </div>
-                        <DialogFooter className="!justify-between mt-6 pt-4 border-t">
-                             <div>
-                                <Button type="button" variant="destructive" size="sm" onClick={handleArchiveCampaigns} disabled={isArchiving || selectedCampaignIds.length === 0}>
-                                    {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
-                                    Arquivar Selecionadas ({selectedCampaignIds.length})
-                                </Button>
-                            </div>
-                            <div className="flex gap-2">
-                                <DialogClose asChild>
-                                    <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
-                                </DialogClose>
-                                <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                    Salvar Pipeline
-                                </Button>
-                            </div>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-            <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Importar Campanhas via CSV</DialogTitle>
-                        <DialogDescription>
-                            Faça o upload de um arquivo CSV para criar ou substituir pipelines de campanhas para múltiplos usuários.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
-                        <div className="flex items-start gap-3">
-                                <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 flex-shrink-0"/>
-                                <div>
-                                    <p className="font-semibold">Atenção: A importação irá sobrescrever o pipeline existente para os e-mails informados no arquivo.</p>
-                                </div>
-                        </div>
-                        </div>
-
-                        <h3 className="font-semibold">Instruções:</h3>
-                        <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
-                            <li>Crie uma planilha com uma linha para **cada campanha** de um usuário.</li>
-                            <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
-                                <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaMessage,followUpMessage,tag</code>
-                            </li>
-                            <li>Para criar um pipeline para um usuário, adicione múltiplas linhas com o mesmo `userEmail`. A ordem das linhas no arquivo definirá a ordem do pipeline.</li>
-                            <li>O valor da coluna `tag` deve corresponder a uma das opções: {campaignTags.join(', ')}.</li>
-                            <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
-                        </ol>
-                        <a href="/templates/modelo_campanhas_fab.csv" download className="inline-block" >
-                            <Button variant="secondary">
-                                <FileDown className="mr-2 h-4 w-4"/>
-                                Baixar Modelo CSV
-                            </Button>
-                        </a>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsImportOpen(false)} disabled={isImporting}>
-                            Cancelar
-                        </Button>
-                        <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
-                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
-                            {isImporting ? 'Importando...' : 'Selecionar Arquivo'}
-                        </Button>
+
+
+                    <DialogFooter className="!justify-between mt-6 pt-4 border-t">
+                         <div>
+                            <Button type="button" variant="destructive" size="sm" onClick={handleArchiveCampaignClick} disabled={isArchiving || selectedCampaignIds.length === 0}>
+                                {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
+                                Arquivar Selecionadas ({selectedCampaignIds.length})
+                            </Button>
+                        </div>
+                        <div className="flex gap-2">
+                            <DialogClose asChild>
+                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                Salvar Pipeline
+                            </Button>
+                        </div>
                     </DialogFooter>
-                </DialogContent>
-            </Dialog>
-            <CampaignLogModal
-                message={logViewingUser}
-                isOpen={!!logViewingUser}
-                onClose={() => setLogViewingUser(null)}
-            />
-        </>
+                </form>
+            </DialogContent>
+        </Dialog>
+        <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Importar Campanhas via CSV</DialogTitle>
+                    <DialogDescription>
+                        Faça o upload de um arquivo CSV para criar ou substituir pipelines de campanhas para múltiplos usuários.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
+                    <div className="flex items-start gap-3">
+                            <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 flex-shrink-0"/>
+                            <div>
+                                <p className="font-semibold">Atenção: A importação irá sobrescrever o pipeline existente para os e-mails informados no arquivo.</p>
+                            </div>
+                    </div>
+                    </div>
+
+                    <h3 className="font-semibold">Instruções:</h3>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                        <li>Crie uma planilha com uma linha para **cada campanha** de um usuário.</li>
+                        <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
+                            <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaMessage,followUpMessage,tag</code>
+                        </li>
+                        <li>Para criar um pipeline para um usuário, adicione múltiplas linhas com o mesmo `userEmail`. A ordem das linhas no arquivo definirá a ordem do pipeline.</li>
+                        <li>O valor da coluna `tag` deve corresponder a uma das opções: {campaignTags.join(', ')}.</li>
+                        <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
+                    </ol>
+                    <a href="/templates/modelo_campanhas_fab.csv" download className="inline-block" >
+                        <Button variant="secondary">
+                            <FileDown className="mr-2 h-4 w-4"/>
+                            Baixar Modelo CSV
+                        </Button>
+                    </a>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsImportOpen(false)} disabled={isImporting}>
+                        Cancelar
+                    </Button>
+                    <Button onClick={() => fileInputRef.current?.click()} disabled={isImporting}>
+                        {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                        {isImporting ? 'Importando...' : 'Selecionar Arquivo'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+        <CampaignLogModal
+            message={logViewingUser}
+            isOpen={!!logViewingUser}
+            onClose={() => setLogViewingUser(null)}
+        />
+    </>
     );
 }
