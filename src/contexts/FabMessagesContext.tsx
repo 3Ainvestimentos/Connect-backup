@@ -102,10 +102,13 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         if (!message) throw new Error("Mensagem não encontrada para o usuário");
         
         const completedCampaign = message.pipeline[message.activeCampaignIndex];
+        if (!completedCampaign) throw new Error("Campanha ativa inválida.");
+
         const newArchived = [...(message.archivedCampaigns || []), completedCampaign];
         
-        // Remove the completed campaign from the pipeline
-        const newPipeline = message.pipeline.filter((_, index) => index !== message.activeCampaignIndex);
+        // Correctly remove the completed campaign from the pipeline
+        const newPipeline = message.pipeline.slice(); // Create a shallow copy
+        newPipeline.splice(message.activeCampaignIndex, 1);
 
         const hasNextCampaign = newPipeline.length > 0;
 
