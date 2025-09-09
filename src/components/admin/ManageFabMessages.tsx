@@ -240,10 +240,12 @@ export function ManageFabMessages() {
         const currentPipeline = form.getValues('pipeline');
         
         if (currentPipeline.length === 1) {
+            // If it's the last one, delete the entire message document
             await deleteMessageForUser(editingUser.id3a);
             toast({ title: 'Pipeline limpo!', description: `Todas as campanhas foram removidas para ${editingUser.name}.` });
             setIsFormOpen(false); // Close the modal as there's nothing left to edit
         } else {
+            // If not the last one, just remove from the array and update
             remove(index);
             const updatedPipeline = form.getValues('pipeline');
             await upsertMessageForUser(editingUser.id3a, { pipeline: updatedPipeline });
@@ -256,9 +258,13 @@ export function ManageFabMessages() {
         setIsArchiving(true);
         try {
             await archiveIndividualCampaign(editingUser.id3a, campaignId);
-            const updatedMessage = fabMessages.find(m => m.userId === editingUser.id3a);
+            const updatedMessage = userMessageMap.get(editingUser.id3a);
             if (updatedMessage) {
-                reset({ pipeline: updatedMessage.pipeline });
+                 // Re-fetch or rely on listener to update `fabMessages`, then get new data and reset form
+                 setTimeout(() => {
+                    const latestMessage = userMessageMap.get(editingUser.id3a);
+                    reset({ pipeline: latestMessage?.pipeline || [] });
+                 }, 500); // Give listener some time
             }
             toast({ title: 'Campanha arquivada com sucesso!' });
         } catch (error) {
