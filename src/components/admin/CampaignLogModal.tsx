@@ -30,13 +30,14 @@ const getStatusBadge = (status: CampaignType['status']) => {
 export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalProps) {
     if (!message) return null;
 
-    const allCampaigns = [...message.pipeline, ...(message.archivedCampaigns || [])];
+    // Apenas campanhas do pipeline ativo serão exibidas.
+    const activeCampaigns = message.pipeline || [];
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-4xl">
                 <DialogHeader>
-                    <DialogTitle>Histórico de Campanhas</DialogTitle>
+                    <DialogTitle>Histórico de Campanhas do Pipeline</DialogTitle>
                     <DialogDescription>
                         Acompanhe os logs de envio e clique para o colaborador: {message.userName}.
                     </DialogDescription>
@@ -46,6 +47,7 @@ export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalP
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                    <TableHead>ID da Campanha</TableHead>
                                     <TableHead>Campanha (CTA)</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Data de Envio</TableHead>
@@ -53,8 +55,9 @@ export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalP
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {allCampaigns.length > 0 ? allCampaigns.map(campaign => (
+                                {activeCampaigns.length > 0 ? activeCampaigns.map(campaign => (
                                     <TableRow key={campaign.id}>
+                                        <TableCell className="font-mono text-xs text-muted-foreground">{campaign.id.slice(-8)}</TableCell>
                                         <TableCell className="font-medium max-w-xs truncate">{campaign.ctaMessage}</TableCell>
                                         <TableCell>{getStatusBadge(campaign.status)}</TableCell>
                                         <TableCell>
@@ -76,8 +79,8 @@ export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalP
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-muted-foreground">
-                                            Nenhum log de campanha encontrado.
+                                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                                            Nenhuma campanha no pipeline ativo.
                                         </TableCell>
                                     </TableRow>
                                 )}
