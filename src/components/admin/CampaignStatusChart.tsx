@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { FabMessageType, useFabMessages } from '@/contexts/FabMessagesContext';
+import { FabMessageType } from '@/contexts/FabMessagesContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { BarChart as BarChartIcon } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
@@ -13,25 +13,31 @@ interface CampaignStatusChartProps {
 }
 
 export default function CampaignStatusChart({ messages }: CampaignStatusChartProps) {
-    const { loading } = useFabMessages();
-
+    
     const chartData = useMemo(() => {
         let totalCampaigns = 0;
         let completedCampaigns = 0;
+        let effectiveCampaigns = 0;
 
         messages.forEach(message => {
             // Only count campaigns currently in the active pipeline
             totalCampaigns += message.pipeline.length;
             completedCampaigns += message.pipeline.filter(c => c.status === 'completed').length;
+            effectiveCampaigns += message.pipeline.filter(c => c.isEffective).length;
         });
         
         return [
-            { name: 'Status', 'Total de Campanhas': totalCampaigns, 'Campanhas Concluídas': completedCampaigns }
+            { 
+                name: 'Status', 
+                'Total de Campanhas': totalCampaigns, 
+                'Campanhas Concluídas': completedCampaigns,
+                'Campanhas com Efetividade': effectiveCampaigns,
+            }
         ];
 
     }, [messages]);
 
-     if (loading) {
+     if (!messages) {
         return (
             <Card>
                 <CardHeader>
@@ -49,7 +55,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><BarChartIcon /> Status das Campanhas Ativas</CardTitle>
-                <CardDescription>Total de campanhas no pipeline vs. campanhas concluídas para os usuários selecionados.</CardDescription>
+                <CardDescription>Comparativo de campanhas no pipeline, concluídas e marcadas com efetividade.</CardDescription>
             </CardHeader>
             <CardContent>
                 {messages.length > 0 ? (
@@ -68,6 +74,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
                              <Legend />
                              <Bar dataKey="Total de Campanhas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                              <Bar dataKey="Campanhas Concluídas" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                             <Bar dataKey="Campanhas com Efetividade" fill="hsl(var(--chart-3))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 ) : (
