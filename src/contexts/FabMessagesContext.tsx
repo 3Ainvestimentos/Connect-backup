@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection, getDocument } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { formatISO, subDays } from 'date-fns';
+import { useCollaborators, type Collaborator } from './CollaboratorsContext';
 
 // Define a lista de tags permitidas
 export const campaignTags = ['Captação', 'ROA', 'Relacionamento', 'Campanhas e Missões', 'Engajamento'] as const;
@@ -58,8 +59,7 @@ const COLLECTION_NAME = 'fabMessages';
 
 // --- Início: Lógica de Mock Data ---
 const createMockData = async (
-  userId: string, 
-  userName: string, 
+  user: Collaborator,
   upsertFn: (userId: string, data: FabMessagePayload) => Promise<void>
 ) => {
   const mockCampaigns: CampaignType[] = [];
@@ -105,8 +105,8 @@ const createMockData = async (
 
 
   const payload: FabMessagePayload = {
-      userId,
-      userName,
+      userId: user.id3a,
+      userName: user.name,
       pipeline: mockCampaigns,
       status: 'ready',
       activeCampaignIndex: 0,
@@ -117,8 +117,8 @@ const createMockData = async (
   };
 
   try {
-      await upsertFn(userId, payload);
-      console.log(`Dados de teste para ${userName} foram criados com sucesso.`);
+      await upsertFn(user.id3a, payload);
+      console.log(`Dados de teste para ${user.name} foram criados com sucesso.`);
   } catch (error) {
       console.error("Falha ao criar dados de teste:", error);
   }
@@ -127,6 +127,7 @@ const createMockData = async (
 
 export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { collaborators, loading: loadingCollaborators } = useCollaborators();
 
   const { data: fabMessages = [], isFetching } = useQuery<FabMessageType[]>({
     queryKey: [COLLECTION_NAME],
@@ -165,20 +166,19 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   });
   
   useEffect(() => {
-    // Apenas para ambiente de desenvolvimento e para o usuário específico
-    if (process.env.NODE_ENV === 'development') {
-        const devUserId = 'desenvolvedor@3ariva.com.br';
-        const devMessage = fabMessages.find(m => m.userId === devUserId);
-        
-        // Verifica se os dados de mock já foram criados para evitar recriação a cada render
-        const hasMockData = devMessage?.pipeline.some(c => c.id.startsWith('mock_campaign'));
-        
-        if (!isFetching && !devMessage || (devMessage && !hasMockData)) {
-            console.log("Iniciando criação de dados de teste para FAB Messages...");
-            createMockData(devUserId, 'Usuário Desenvolvedor', (userId, data) => upsertMutation.mutateAsync({ userId, data }));
+    if (process.env.NODE_ENV === 'development' && !loadingCollaborators && collaborators.length > 0) {
+        const devUser = collaborators.find(c => c.email === 'desenvolvedor@3ariva.com.br');
+        if (devUser) {
+            const devMessage = fabMessages.find(m => m.userId === devUser.id3a);
+            const hasMockData = devMessage?.pipeline.some(c => c.id.startsWith('mock_campaign'));
+
+            if (!isFetching && !devMessage || (devMessage && !hasMockData)) {
+                console.log("Iniciando criação de dados de teste para FAB Messages...");
+                createMockData(devUser, (userId, data) => upsertMutation.mutateAsync({ userId, data }));
+            }
         }
     }
-  }, [isFetching, fabMessages, upsertMutation]);
+}, [isFetching, fabMessages, collaborators, loadingCollaborators, upsertMutation]);
 
 
   React.useEffect(() => {
@@ -203,7 +203,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     },
   });
 
-  const markAsClickedMutation = useMutation<void, Error, string>({
+  const markCampaignAsClickedMutation = useMutation<void, Error, string>({
     mutationFn: async (userId: string) => {
       const message = fabMessages.find(m => m.userId === userId);
       if (!message || message.status !== 'pending_cta') {
@@ -333,12 +333,12 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     loading: isFetching,
     upsertMessageForUser: (userId, data) => upsertMutation.mutateAsync({ userId, data }),
     deleteMessageForUser: (userId) => deleteMutation.mutateAsync(userId),
-    markCampaignAsClicked: (userId) => markAsClickedMutation.mutateAsync(userId),
+    markCampaignAsClicked: (userId) => markCampaignAsClickedMutation.mutateAsync(userId),
     completeFollowUp: (userId) => completeFollowUpMutation.mutateAsync(userId),
     startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
     archiveIndividualCampaign: (userId, campaignId) => archiveIndividualCampaignMutation.mutateAsync({ userId, campaignId }),
     archiveMultipleCampaigns: (userId, campaignIds) => archiveMultipleCampaignsMutation.mutateAsync({userId, campaignIds}),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, completeFollowUpMutation, startCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markCampaignAsClickedMutation, completeFollowUpMutation, startCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>
