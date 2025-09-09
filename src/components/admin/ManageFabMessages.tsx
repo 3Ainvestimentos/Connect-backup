@@ -233,33 +233,6 @@ export function ManageFabMessages() {
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
     const { fields, append, remove } = useFieldArray({ control, name: "pipeline" });
 
-    const handleRemoveCampaign = async (index: number) => {
-        if (!editingUser) return;
-
-        const currentPipeline = form.getValues('pipeline');
-        if (currentPipeline.length === 1) {
-            // This is the last campaign, so we delete the whole document.
-            if (window.confirm("Esta é a última campanha. Deseja remover toda a configuração de mensagens para este usuário?")) {
-                await deleteMessageForUser(editingUser.id3a);
-                toast({ title: 'Configuração removida.' });
-                setIsFormOpen(false); // Close modal after deletion
-            }
-            return;
-        }
-        
-        const newPipeline = currentPipeline.filter((_, i) => i !== index);
-        
-        let payload: FabMessagePayload = { pipeline: newPipeline };
-
-        try {
-            await upsertMessageForUser(editingUser.id3a, payload);
-            remove(index); // Update form state visually after successful persistence
-            toast({ title: 'Campanha removida do pipeline.' });
-        } catch (error) {
-            toast({ title: 'Erro ao remover', description: (error as Error).message, variant: 'destructive' });
-        }
-    };
-    
     const handleArchiveCampaignClick = async (campaignId: string) => {
         if (!editingUser) return;
         setIsArchiving(true);
@@ -419,16 +392,6 @@ export function ManageFabMessages() {
         });
     };
 
-    const handleDelete = async (userId: string) => {
-        if (!window.confirm("Tem certeza que deseja apagar a configuração de mensagens para este usuário? Esta ação é irreversível.")) return;
-        try {
-             await deleteMessageForUser(userId);
-             toast({ title: "Sucesso!", description: "Configuração de mensagens removida." });
-        } catch (error) {
-             toast({ title: "Erro", description: "Não foi possível remover a configuração.", variant: "destructive" });
-        }
-    }
-
     const SortableHeader = ({ tKey, label }: { tKey: SortKey, label: string }) => (
         <TableHead onClick={() => handleSort(tKey)} className="cursor-pointer hover:bg-muted/50">
             <div className="flex items-center gap-1">
@@ -579,9 +542,6 @@ export function ManageFabMessages() {
                                         <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
                                             <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
                                         </Button>
-                                         <Button variant="ghost" size="icon" onClick={() => handleDelete(user.id3a)} disabled={!message}>
-                                            <Trash2 className="h-4 w-4 text-destructive"/>
-                                        </Button>
                                     </TableCell>
                                 </TableRow>
                             )})}
@@ -646,12 +606,6 @@ export function ManageFabMessages() {
                                             rows={4}
                                         />
                                         {form.formState.errors.pipeline?.[index]?.followUpMessage && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.followUpMessage?.message}</p>}
-                                    </div>
-
-                                     <div className="flex justify-end">
-                                        <Button type="button" variant="destructive" size="icon" onClick={() => handleRemoveCampaign(index)}>
-                                            <Trash2 className="h-4 w-4"/>
-                                        </Button>
                                     </div>
                                 </div>
                             ))}
