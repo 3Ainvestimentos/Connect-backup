@@ -240,14 +240,18 @@ export function ManageFabMessages() {
 
         // Remove from the form state first for instant UI update
         remove(index);
+        
+        let payload: FabMessagePayload = { pipeline: newPipeline };
 
-        // Then, persist this change to the backend
+        if (newPipeline.length === 0) {
+            payload = { ...payload, status: 'completed', isActive: false };
+        }
+
         try {
-            await upsertMessageForUser(editingUser.id3a, { pipeline: newPipeline });
+            await upsertMessageForUser(editingUser.id3a, payload);
             toast({ title: 'Campanha removida do pipeline.' });
         } catch (error) {
             toast({ title: 'Erro ao remover', description: (error as Error).message, variant: 'destructive' });
-            // If the backend fails, revert the form state (optional, but good practice)
             reset({ pipeline: currentPipeline });
         }
     };
@@ -715,5 +719,6 @@ export function ManageFabMessages() {
         </Card>
     );
 }
+
 
 
