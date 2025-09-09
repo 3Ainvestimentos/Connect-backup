@@ -100,7 +100,7 @@ export default function MessageFAB() {
         const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
         
         // A mensagem só é "ativa" se estiver nos status de pendência e com a flag isActive.
-        if (messageForUser && messageForUser.isActive && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up')) {
+        if (messageForUser && messageForUser.isActive && (messageForUser.status === 'pending_cta')) {
             return messageForUser;
         }
         return null;
@@ -110,17 +110,9 @@ export default function MessageFAB() {
     const handleCtaClick = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        if (activeMessage && currentUser && activeMessage.status === 'pending_cta') {
+        if (activeMessage && currentUser) {
             markCampaignAsClicked(currentUser.id3a);
         }
-    };
-    
-    const handleCloseFollowUp = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (activeMessage && currentUser) {
-            advanceToNextCampaign(currentUser.id3a);
-        }
-        // It will become invisible once the status updates to completed or the next campaign
     };
 
     if (!activeMessage || !isVisible) {
@@ -141,15 +133,6 @@ export default function MessageFAB() {
                         onClick={handleCtaClick}
                     >
                          <p className="text-sm">{currentCampaign.ctaMessage}</p>
-                    </MessageBubble>
-                )}
-                 {activeMessage.status === 'pending_follow_up' && (
-                    <MessageBubble 
-                        hasCloseButton 
-                        variant="secondary"
-                        onClose={handleCloseFollowUp}
-                    >
-                         <p className="text-sm">{currentCampaign.followUpMessage}</p>
                     </MessageBubble>
                 )}
             </div>

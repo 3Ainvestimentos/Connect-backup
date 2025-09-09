@@ -35,13 +35,13 @@ type FabMessageFormValues = z.infer<typeof formSchema>;
 type SortKey = keyof Collaborator | 'status' | 'isActive';
 
 
-const statusOptions = {
+const statusOptions: { [key: string]: { label: string, className: string } } = {
     ready: { label: 'Pronto para Envio', className: 'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/50 dark:text-cyan-200 dark:border-cyan-800' },
     pending_cta: { label: 'Pendente CTA', className: 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-200 dark:border-yellow-800' },
-    pending_follow_up: { label: 'Pendente Acomp.', className: 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-200 dark:border-blue-800' },
     completed: { label: 'Concluído', className: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800' },
     not_created: { label: 'Não Criada', className: 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700/50 dark:text-gray-200 dark:border-gray-600' },
 };
+
 
 const campaignStatusBadgeClasses: Record<CampaignType['status'], string> = {
     loaded: "bg-gray-200 text-gray-800",
@@ -506,10 +506,11 @@ export function ManageFabMessages() {
                                 
                                 let progressText = '0/0';
                                 if (message) {
-                                    const completedCount = message.pipeline.filter(c => c.status === 'completed').length;
-                                    const totalLoadedCount = message.pipeline.length;
-                                    progressText = `${completedCount}/${totalLoadedCount}`;
+                                    const completedCount = message.archivedCampaigns?.length || 0;
+                                    const totalCount = message.pipeline.length + (message.archivedCampaigns?.length || 0);
+                                    progressText = `${completedCount}/${totalCount}`;
                                 }
+
 
                                 const isReady = message?.status === 'ready';
                                 return (

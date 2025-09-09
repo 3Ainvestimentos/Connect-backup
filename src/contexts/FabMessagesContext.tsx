@@ -27,7 +27,7 @@ export const fabMessageSchema = z.object({
   archivedCampaigns: z.array(campaignSchema).default([]),
   isActive: z.boolean().default(true),
   activeCampaignIndex: z.number().int().default(0),
-  status: z.enum(['ready', 'pending_cta', 'pending_follow_up', 'completed']).default('ready'),
+  status: z.enum(['ready', 'pending_cta', 'completed']).default('ready'),
   // Timestamps
   createdAt: z.string().default(() => new Date().toISOString()),
   updatedAt: z.string().default(() => new Date().toISOString()),
@@ -90,35 +90,50 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const markAsClickedMutation = useMutation<void, Error, string>({
-    mutationFn: (userId: string) => {
+    mutationFn: async (userId: string) => {
       const message = fabMessages.find(m => m.userId === userId);
-      if (!message) throw new Error("Mensagem não encontrada para o usuário");
-      
-      const newPipeline = [...message.pipeline];
-      newPipeline[message.activeCampaignIndex].status = 'active';
+      if (!message || message.status !== 'pending_cta') {
+        throw new Error("A campanha não está aguardando um clique.");
+      }
 
-      return updateDocumentInCollection(COLLECTION_NAME, userId, {
-        status: 'pending_follow_up',
+      const newPipeline = [...message.pipeline];
+      newPipeline[message.activeCampaignIndex].status = 'completed';
+
+      // Check if there are more campaigns to run
+      const hasMoreCampaigns = message.activeCampaignIndex < newPipeline.length - 1;
+
+      const updatePayload: FabMessagePayload = {
         pipeline: newPipeline,
+        status: hasMoreCampaigns ? 'ready' : 'completed',
+        isActive: hasMoreCampaigns,
+        activeCampaignIndex: message.activeCampaignIndex + (hasMoreCampaigns ? 1 : 0),
         updatedAt: new Date().toISOString(),
-      });
+      };
+
+      await updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
     },
   });
+
 
   const advanceCampaignMutation = useMutation<void, Error, string>({
      mutationFn: (userId: string) => {
         const message = fabMessages.find(m => m.userId === userId);
         if (!message) throw new Error("Mensagem não encontrada para o usuário");
         
-        const newPipeline = [...message.pipeline];
-        newPipeline[message.activeCampaignIndex].status = 'completed';
+        // This mutation is now more about archiving/finishing the whole cycle
+        const completedCampaign = message.pipeline.find(c => c.status === 'completed');
+        if (!completedCampaign) return Promise.resolve(); // No completed campaign to archive
+
+        const newPipeline = message.pipeline.filter(c => c.id !== completedCampaign.id);
+        const newArchived = [...(message.archivedCampaigns || []), completedCampaign];
 
         const hasMoreActiveCampaigns = newPipeline.some(c => c.status === 'loaded' || c.status === 'active');
 
         const updatePayload: FabMessagePayload = {
             pipeline: newPipeline,
+            archivedCampaigns: newArchived,
             status: hasMoreActiveCampaigns ? 'ready' : 'completed',
-            isActive: hasMoreActiveCampaigns, // Deactivate if no more campaigns to run
+            isActive: hasMoreActiveCampaigns, 
             updatedAt: new Date().toISOString(),
         };
 
@@ -154,16 +169,20 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
           if (!message) throw new Error("Campanha não encontrada para este usuário.");
           if (message.status !== 'ready') throw new Error("A campanha não está pronta para ser enviada.");
           
-          const campaignToStart = message.pipeline[message.activeCampaignIndex];
-          if (!campaignToStart || campaignToStart.status !== 'loaded') {
+          const campaignToStart = message.pipeline.find(c => c.status === 'loaded');
+          if (!campaignToStart) {
             throw new Error("Nenhuma campanha carregada para iniciar.");
           }
 
-          const newPipeline = [...message.pipeline];
-          newPipeline[message.activeCampaignIndex].status = 'active';
+          const newPipeline = message.pipeline.map(p => 
+            p.id === campaignToStart.id ? { ...p, status: 'active' as const } : p
+          );
+          
+          const activeIndex = newPipeline.findIndex(p => p.id === campaignToStart.id);
 
           return updateDocumentInCollection(COLLECTION_NAME, userId, {
               pipeline: newPipeline,
+              activeCampaignIndex: activeIndex,
               status: 'pending_cta',
               isActive: true,
               updatedAt: new Date().toISOString(),
