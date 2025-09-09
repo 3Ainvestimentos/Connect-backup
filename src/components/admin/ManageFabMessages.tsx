@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -282,18 +283,27 @@ export function ManageFabMessages() {
 
     const onSubmit = async (data: FabMessageFormValues) => {
         if (!editingUser) return;
-        
+    
         const existingMessage = userMessageMap.get(editingUser.id3a);
+        
+        // Reset status of completed campaigns that might have been edited.
+        const updatedPipeline = data.pipeline.map(campaign => {
+            if (campaign.status === 'completed') {
+                return { ...campaign, status: 'loaded' as const };
+            }
+            return campaign;
+        });
+
         const payload: FabMessagePayload = {
             userId: editingUser.id3a,
             userName: editingUser.name,
-            pipeline: data.pipeline,
+            pipeline: updatedPipeline,
             isActive: existingMessage?.isActive ?? true,
-            status: 'ready', // Set to ready to be sent
+            status: 'ready', // Always set to 'ready' on save, so it can be sent.
             activeCampaignIndex: existingMessage?.activeCampaignIndex ?? 0,
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };
-
+    
         try {
             await upsertMessageForUser(editingUser.id3a, payload);
             toast({ title: "Sucesso", description: `Pipeline de mensagens para ${editingUser.name} foi salvo.` });
@@ -494,13 +504,11 @@ export function ManageFabMessages() {
                             {filteredAndSortedUsers.map(user => {
                                 const message = userMessageMap.get(user.id3a);
                                 
-                                let progressText = 'N/A';
+                                let progressText = '0/0';
                                 if (message) {
                                     const completedCount = message.pipeline.filter(c => c.status === 'completed').length;
                                     const totalLoadedCount = message.pipeline.length;
-                                    if (totalLoadedCount > 0) {
-                                        progressText = `${completedCount}/${totalLoadedCount} concluídas`;
-                                    }
+                                    progressText = `${completedCount}/${totalLoadedCount}`;
                                 }
 
                                 const isReady = message?.status === 'ready';
