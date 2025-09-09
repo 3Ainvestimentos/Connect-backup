@@ -256,22 +256,9 @@ export function ManageFabMessages() {
     const handleArchiveCampaignClick = async (campaignId: string) => {
         if (!editingUser) return;
         
-        const message = userMessageMap.get(editingUser.id3a);
-        if (!message) return;
-        
-        const campaignToArchive = message.pipeline.find(c => c.id === campaignId);
-        if (!campaignToArchive) return;
-
         setIsArchiving(true);
         try {
             await archiveIndividualCampaign(editingUser.id3a, campaignId);
-            const updatedMessage = userMessageMap.get(editingUser.id3a);
-            if (updatedMessage) {
-                 setTimeout(() => {
-                    const latestMessage = userMessageMap.get(editingUser.id3a);
-                    reset({ pipeline: latestMessage?.pipeline || [] });
-                 }, 500);
-            }
             toast({ title: 'Campanha arquivada com sucesso!' });
         } catch (error) {
             toast({ title: 'Erro ao arquivar', description: (error as Error).message, variant: 'destructive' });
@@ -575,16 +562,10 @@ export function ManageFabMessages() {
                                     <div className="flex justify-between items-start">
                                         <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
                                         <div className="flex gap-1">
-                                            {field.status === 'completed' ? (
-                                                <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(field.id)} disabled={isArchiving}>
-                                                    {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
-                                                    Arquivar
-                                                </Button>
-                                            ) : (
-                                                <Button type="button" variant="destructive" size="icon" onClick={() => handleRemoveCampaign(index)}>
-                                                    <Trash2 className="h-4 w-4"/>
-                                                </Button>
-                                            )}
+                                            <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(field.id)} disabled={isArchiving}>
+                                                {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
+                                                Arquivar
+                                            </Button>
                                         </div>
                                     </div>
                                     
