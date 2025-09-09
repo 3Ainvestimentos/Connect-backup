@@ -1,11 +1,11 @@
 
-
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
+import { formatISO } from 'date-fns';
 
 // Define a lista de tags permitidas
 export const campaignTags = ['Captação', 'ROA', 'Relacionamento', 'Campanhas e Missões', 'Engajamento'] as const;
@@ -17,6 +17,8 @@ export const campaignSchema = z.object({
   followUpMessage: z.string().min(1, "A mensagem de acompanhamento é obrigatória."),
   tag: z.enum(campaignTags).default('Relacionamento'),
   status: z.enum(['loaded', 'active', 'completed']).default('loaded'),
+  sentAt: z.string().optional(),
+  clickedAt: z.string().optional(),
 });
 export type CampaignType = z.infer<typeof campaignSchema>;
 
@@ -26,7 +28,6 @@ export const fabMessageSchema = z.object({
   userName: z.string(),
   pipeline: z.array(campaignSchema).default([]),
   archivedCampaigns: z.array(campaignSchema).default([]),
-  isActive: z.boolean().default(true),
   activeCampaignIndex: z.number().int().default(0),
   status: z.enum(['ready', 'pending_cta', 'completed']).default('ready'),
   // Timestamps
@@ -43,7 +44,6 @@ interface FabMessagesContextType {
   upsertMessageForUser: (userId: string, data: FabMessagePayload) => Promise<void>;
   deleteMessageForUser: (userId: string) => Promise<void>;
   markCampaignAsClicked: (userId: string) => Promise<void>;
-  advanceToNextCampaign: (userId: string) => Promise<void>;
   startCampaign: (userId: string) => Promise<void>;
   archiveIndividualCampaign: (userId: string, campaignId: string) => Promise<void>;
 }
@@ -102,16 +102,15 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
 
       if (activeCampaign) {
           activeCampaign.status = 'completed';
+          activeCampaign.clickedAt = formatISO(new Date());
       }
 
-      // Automatically move to the next 'ready' state, no follow-up needed.
       const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
 
       const updatePayload: FabMessagePayload = {
         pipeline: newPipeline,
         status: hasMoreCampaigns ? 'ready' : 'completed',
-        isActive: hasMoreCampaigns, 
-        updatedAt: new Date().toISOString(),
+        updatedAt: formatISO(new Date()),
       };
 
       await updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
@@ -119,33 +118,6 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   });
 
 
-  const advanceCampaignMutation = useMutation<void, Error, string>({
-     mutationFn: (userId: string) => {
-        const message = fabMessages.find(m => m.userId === userId);
-        if (!message) throw new Error("Mensagem não encontrada para o usuário");
-        
-        // This mutation is now more about archiving/finishing the whole cycle
-        const completedCampaign = message.pipeline.find(c => c.status === 'completed');
-        if (!completedCampaign) return Promise.resolve(); // No completed campaign to archive
-
-        const newPipeline = message.pipeline.filter(c => c.id !== completedCampaign.id);
-        const newArchived = [...(message.archivedCampaigns || []), completedCampaign];
-
-        const hasMoreActiveCampaigns = newPipeline.some(c => c.status === 'loaded' || c.status === 'active');
-
-        const updatePayload: FabMessagePayload = {
-            pipeline: newPipeline,
-            archivedCampaigns: newArchived,
-            status: hasMoreActiveCampaigns ? 'ready' : 'completed',
-            isActive: hasMoreActiveCampaigns, 
-            activeCampaignIndex: 0, // Reset index when archiving
-            updatedAt: new Date().toISOString(),
-        };
-
-        return updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
-     },
-  });
-  
   const archiveIndividualCampaignMutation = useMutation<void, Error, { userId: string; campaignId: string }>({
     mutationFn: ({ userId, campaignId }) => {
       const message = fabMessages.find(m => m.userId === userId);
@@ -165,8 +137,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         pipeline: newPipeline,
         archivedCampaigns: newArchived,
         status: hasMoreCampaigns ? 'ready' : 'completed',
-        isActive: hasMoreCampaigns,
-        updatedAt: new Date().toISOString(),
+        updatedAt: formatISO(new Date()),
       });
     },
   });
@@ -184,7 +155,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
           }
 
           const newPipeline = message.pipeline.map(p => 
-            p.id === campaignToStart.id ? { ...p, status: 'active' as const } : p
+            p.id === campaignToStart.id ? { ...p, status: 'active' as const, sentAt: formatISO(new Date()) } : p
           );
           
           const activeIndex = newPipeline.findIndex(p => p.id === campaignToStart.id);
@@ -193,8 +164,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
               pipeline: newPipeline,
               activeCampaignIndex: activeIndex,
               status: 'pending_cta',
-              isActive: true,
-              updatedAt: new Date().toISOString(),
+              updatedAt: formatISO(new Date()),
           });
       },
   });
@@ -206,10 +176,9 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     upsertMessageForUser: (userId, data) => upsertMutation.mutateAsync({ userId, data }),
     deleteMessageForUser: (userId) => deleteMutation.mutateAsync(userId),
     markCampaignAsClicked: (userId) => markAsClickedMutation.mutateAsync(userId),
-    advanceToNextCampaign: (userId) => advanceCampaignMutation.mutateAsync(userId),
     startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
     archiveIndividualCampaign: (userId, campaignId) => archiveIndividualCampaignMutation.mutateAsync({ userId, campaignId }),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, advanceCampaignMutation, startCampaignMutation, archiveIndividualCampaignMutation]);
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, startCampaignMutation, archiveIndividualCampaignMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>

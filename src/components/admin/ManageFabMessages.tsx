@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -12,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical, PieChart, Archive } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Send, MessageSquare, Edit2, Play, Pause, AlertTriangle, Search, Filter, ChevronUp, ChevronDown, Upload, FileDown, GripVertical, PieChart, Archive, History } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { useCollaborators, type Collaborator } from '@/contexts/CollaboratorsContext';
@@ -25,6 +24,7 @@ import Papa from 'papaparse';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '../ui/scroll-area';
+import { CampaignLogModal } from './CampaignLogModal';
 
 
 const formSchema = z.object({
@@ -32,7 +32,7 @@ const formSchema = z.object({
 });
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
-type SortKey = keyof Collaborator | 'status' | 'isActive';
+type SortKey = keyof Collaborator | 'status';
 
 
 const statusOptions: { [key: string]: { label: string, className: string } } = {
@@ -64,6 +64,7 @@ export function ManageFabMessages() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
+    const [logViewingUser, setLogViewingUser] = useState<FabMessageType | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
@@ -72,7 +73,6 @@ export function ManageFabMessages() {
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isSendingBulk, setIsSendingBulk] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
-    const [isUpdating, setIsUpdating] = useState<string | null>(null);
     
     const [filters, setFilters] = useState<{
         area: string[],
@@ -143,11 +143,11 @@ export function ManageFabMessages() {
         items.sort((a, b) => {
             let valA: any, valB: any;
             
-            if (sortKey === 'status' || sortKey === 'isActive') {
+            if (sortKey === 'status') {
                  const messageA = userMessageMap.get(a.id3a);
                  const messageB = userMessageMap.get(b.id3a);
-                 valA = sortKey === 'status' ? (messageA?.status || 'not_created') : (messageA?.isActive ?? false);
-                 valB = sortKey === 'status' ? (messageB?.status || 'not_created') : (messageB?.isActive ?? false);
+                 valA = messageA?.status || 'not_created';
+                 valB = messageB?.status || 'not_created';
             } else {
                  valA = a[sortKey as keyof Collaborator] as any;
                  valB = b[sortKey as keyof Collaborator] as any;
@@ -236,10 +236,11 @@ export function ManageFabMessages() {
     
     const handleRemoveCampaign = async (index: number) => {
         if (!editingUser) return;
-
+    
         const currentPipeline = form.getValues('pipeline');
+        
         if (currentPipeline.length <= 1) {
-            // This is the last campaign, so we delete the whole message doc
+            // If this is the last campaign, delete the whole message doc
             await deleteMessageForUser(editingUser.id3a);
             toast({ title: 'Pipeline limpo!', description: `Todas as campanhas foram removidas para ${editingUser.name}.` });
         } else {
@@ -287,32 +288,15 @@ export function ManageFabMessages() {
         }
         setIsFormOpen(true);
     };
-    
-    const handleToggleActivation = async (user: Collaborator, isActive: boolean) => {
-        const message = userMessageMap.get(user.id3a);
-        if (!message) {
-            toast({ title: "Atenção", description: "Crie uma campanha primeiro antes de ativá-la.", variant: "destructive" });
-            return;
-        }
-        setIsUpdating(user.id3a);
-        try {
-            await upsertMessageForUser(user.id3a, { isActive });
-            toast({ title: "Sucesso", description: `Campanha ${isActive ? 'ativada' : 'pausada'} para ${user.name}.`, variant: 'default' });
-        } catch (error) {
-            toast({ title: "Erro", description: "Não foi possível alterar o status da campanha.", variant: "destructive" });
-        } finally {
-            setIsUpdating(null);
-        }
-    };
 
     const onSubmit = async (data: FabMessageFormValues) => {
         if (!editingUser) return;
     
         const existingMessage = userMessageMap.get(editingUser.id3a);
         
+        // When saving, if a completed campaign is edited, reset its status to 'loaded'.
         const updatedPipeline = data.pipeline.map(campaign => {
             const originalCampaign = existingMessage?.pipeline.find(p => p.id === campaign.id);
-            // If the campaign content has changed and it was completed, reset its status
             if (originalCampaign && campaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
                 return { ...campaign, status: 'loaded' as const };
             }
@@ -323,7 +307,6 @@ export function ManageFabMessages() {
             userId: editingUser.id3a,
             userName: editingUser.name,
             pipeline: updatedPipeline,
-            isActive: existingMessage?.isActive ?? true,
             status: 'ready', 
             activeCampaignIndex: existingMessage?.activeCampaignIndex ?? 0,
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
@@ -389,7 +372,6 @@ export function ManageFabMessages() {
                             userId,
                             userName,
                             pipeline: campaigns,
-                            isActive: true,
                             status: 'ready', // Default to ready
                             activeCampaignIndex: 0,
                             archivedCampaigns: [],
@@ -457,6 +439,7 @@ export function ManageFabMessages() {
     );
 
     return (
+        <>
         <Card>
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
@@ -511,7 +494,7 @@ export function ManageFabMessages() {
                                 <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders}/>
                                 <FilterableHeader fkey="status" label="Status" uniqueValues={Object.entries(statusOptions).map(([value, {label}]) => ({value, label}))}/>
                                 <TableHead>Progresso</TableHead>
-                                <SortableHeader tKey="isActive" label="Ativa" />
+                                <TableHead>Acompanhamento</TableHead>
                                 <TableHead className="text-right">Ações</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -519,13 +502,11 @@ export function ManageFabMessages() {
                             {filteredAndSortedUsers.map(user => {
                                 const message = userMessageMap.get(user.id3a);
                                 
-                                let progressText = '0/0';
-                                if (message && message.pipeline && message.pipeline.length > 0) {
-                                    const completedCount = message.pipeline.filter(c => c.status === 'completed').length;
-                                    const totalCount = message.pipeline.length;
-                                    progressText = `${completedCount}/${totalCount}`;
-                                } else if (message) {
-                                    progressText = '0/0';
+                                let progressText: string;
+                                if (message) {
+                                    const completedInPipeline = message.pipeline.filter(c => c.status === 'completed').length;
+                                    const totalInPipeline = message.pipeline.length;
+                                    progressText = `${completedInPipeline}/${totalInPipeline}`;
                                 } else {
                                     progressText = 'N/A';
                                 }
@@ -557,15 +538,11 @@ export function ManageFabMessages() {
                                         {progressText}
                                     </TableCell>
                                     <TableCell>
-                                      {isUpdating === user.id3a ? (
-                                        <Loader2 className="h-5 w-5 animate-spin"/>
-                                      ) : (
-                                        <Switch
-                                          checked={message?.isActive ?? false}
-                                          onCheckedChange={(checked) => handleToggleActivation(user, checked)}
-                                          disabled={!message}
-                                        />
-                                      )}
+                                        {message && (
+                                            <Button variant="ghost" size="icon" onClick={() => setLogViewingUser(message)} className="hover:bg-muted">
+                                                <History className="h-4 w-4 text-muted-foreground" />
+                                            </Button>
+                                        )}
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
                                         <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
@@ -592,15 +569,16 @@ export function ManageFabMessages() {
                                     <div className="flex justify-between items-start">
                                         <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
                                         <div className="flex gap-1">
-                                            {field.status === 'completed' && (
+                                            {field.status === 'completed' ? (
                                                 <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(field.id)} disabled={isArchiving}>
                                                     {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
                                                     Arquivar
                                                 </Button>
+                                            ) : (
+                                                <Button type="button" variant="destructive" size="icon" onClick={() => handleRemoveCampaign(index)}>
+                                                    <Trash2 className="h-4 w-4"/>
+                                                </Button>
                                             )}
-                                            <Button type="button" variant="destructive" size="icon" onClick={() => handleRemoveCampaign(index)}>
-                                                <Trash2 className="h-4 w-4"/>
-                                            </Button>
                                         </div>
                                     </div>
                                     
@@ -708,6 +686,11 @@ export function ManageFabMessages() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </Card>
+            <CampaignLogModal
+                message={logViewingUser}
+                isOpen={!!logViewingUser}
+                onClose={() => setLogViewingUser(null)}
+            />
+        </>
     );
 }
