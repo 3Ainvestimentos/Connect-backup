@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo } from 'react';
@@ -9,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { format, parseISO, compareDesc } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FabMessageType, CampaignType } from '@/contexts/FabMessagesContext';
-import { Send, CheckCircle } from 'lucide-react';
+import { Send, CheckCircle, XCircle } from 'lucide-react';
 
 interface CampaignLogModalProps {
     isOpen: boolean;
@@ -61,6 +62,7 @@ export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalP
                                     <TableHead>Status</TableHead>
                                     <TableHead>Data de Envio</TableHead>
                                     <TableHead>Data do Clique</TableHead>
+                                    <TableHead>Data de Fechamento</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -85,10 +87,18 @@ export function CampaignLogModal({ isOpen, onClose, message }: CampaignLogModalP
                                                 </div>
                                             ) : '-'}
                                         </TableCell>
+                                        <TableCell>
+                                            {campaign.followUpClosedAt ? (
+                                                <div className="flex items-center gap-1.5 text-sm">
+                                                    <XCircle className="h-3 w-3 text-destructive" />
+                                                    {format(parseISO(campaign.followUpClosedAt), "dd/MM/yy HH:mm", { locale: ptBR })}
+                                                </div>
+                                            ) : '-'}
+                                        </TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                                        <TableCell colSpan={6} className="text-center text-muted-foreground">
                                             Nenhuma campanha no pipeline ativo.
                                         </TableCell>
                                     </TableRow>

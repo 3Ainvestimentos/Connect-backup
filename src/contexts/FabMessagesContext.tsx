@@ -19,6 +19,7 @@ export const campaignSchema = z.object({
   status: z.enum(['loaded', 'active', 'completed']).default('loaded'),
   sentAt: z.string().optional(),
   clickedAt: z.string().optional(),
+  followUpClosedAt: z.string().optional(), // Data de fechamento do follow-up
   isEffective: z.boolean().optional().default(false),
 });
 export type CampaignType = z.infer<typeof campaignSchema>;
@@ -93,7 +94,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
                     const hasChanged = oldCampaign.ctaMessage !== newCampaign.ctaMessage || oldCampaign.followUpMessage !== newCampaign.followUpMessage;
                     if (hasChanged) {
                         // Reset status if a completed campaign was edited
-                        return { ...newCampaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined };
+                        return { ...newCampaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined, followUpClosedAt: undefined };
                     }
                 }
                 return newCampaign;
@@ -129,8 +130,15 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("A campanha não está aguardando um clique.");
       }
       
+      const newPipeline = [...message.pipeline];
+      const activeCampaign = newPipeline[message.activeCampaignIndex];
+      if (activeCampaign) {
+          activeCampaign.clickedAt = formatISO(new Date());
+      }
+      
       return updateDocumentInCollection(COLLECTION_NAME, userId, {
         status: 'pending_follow_up',
+        pipeline: newPipeline,
         updatedAt: formatISO(new Date()),
       });
     },
@@ -149,7 +157,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
 
       if (activeCampaign) {
           activeCampaign.status = 'completed';
-          activeCampaign.clickedAt = formatISO(new Date());
+          activeCampaign.followUpClosedAt = formatISO(new Date());
       }
       
       const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
