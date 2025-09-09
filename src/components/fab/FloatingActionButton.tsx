@@ -9,6 +9,9 @@ import { useIdleFabMessages } from '@/contexts/IdleFabMessagesContext';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // --- Ícone do Bob ---
 function BobIcon() {
@@ -44,7 +47,7 @@ function MessageBubble({ children, onClose }: MessageBubbleProps) {
     return (
         <div className="relative animate-in fade-in-50">
             <div
-                className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2"
+                className="w-64 rounded-lg p-4 pr-8 shadow-lg bg-white text-black border-2 prose prose-sm"
                 style={{ borderColor: 'hsl(170, 60%, 50%)' }}
             >
                 {children}
@@ -73,9 +76,12 @@ export default function FloatingActionButton() {
   const { fabMessages } = useFabMessages();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
+  const router = useRouter();
 
   const [currentIdleMessageIndex, setCurrentIdleMessageIndex] = useState(0);
   const [showIdleMessage, setShowIdleMessage] = useState(false);
+  const [isFinalMessage, setIsFinalMessage] = useState(false);
+
 
   const activeCampaign = React.useMemo(() => {
     if (!user) return null;
@@ -86,7 +92,15 @@ export default function FloatingActionButton() {
   }, [fabMessages, user, collaborators]);
 
   const handleFabClick = () => {
-    if (!activeCampaign) {
+    if (activeCampaign) return;
+
+    if (currentIdleMessageIndex >= idleMessages.length) {
+      setIsFinalMessage(true);
+      setShowIdleMessage(true);
+      setTimeout(() => {
+        router.push('/chatbot');
+      }, 2000); // Redirect after 2 seconds
+    } else {
       setShowIdleMessage(true);
     }
   };
@@ -94,18 +108,33 @@ export default function FloatingActionButton() {
   const handleCloseIdleMessage = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowIdleMessage(false);
-    // Advance to the next message index for the next click
-    setCurrentIdleMessageIndex(prev => (prev + 1) % (idleMessages.length || 1));
+    if (isFinalMessage) {
+        // Reset cycle after redirect message is closed
+        setCurrentIdleMessageIndex(0);
+        setIsFinalMessage(false);
+    } else {
+        setCurrentIdleMessageIndex(prev => prev + 1);
+    }
   };
   
-  const idleMessageToShow = idleMessages[currentIdleMessageIndex];
+  const idleMessageToShow = isFinalMessage
+    ? { text: "Vou direcionar você para nossa aplicação principal" }
+    : idleMessages[currentIdleMessageIndex];
+
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
         {showIdleMessage && !activeCampaign && idleMessageToShow && (
              <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
                 <MessageBubble onClose={handleCloseIdleMessage}>
-                    <p className="text-sm">{idleMessageToShow.text}</p>
+                    <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                            a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" />
+                        }}
+                    >
+                        {idleMessageToShow.text}
+                    </ReactMarkdown>
                 </MessageBubble>
              </div>
         )}
@@ -124,3 +153,4 @@ export default function FloatingActionButton() {
     </div>
   );
 }
+
