@@ -1,14 +1,13 @@
-
 "use client";
 
 import AdminGuard from "@/components/auth/AdminGuard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ManageFabMessages } from "@/components/admin/ManageFabMessages";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListChecks, PieChart, Users, BarChart, Search, Filter, ChevronUp, ChevronDown } from "lucide-react";
+import { ListChecks, PieChart, Users, BarChart, Search, Filter, ChevronUp, ChevronDown, BotMessageSquare, MessageCircle } from "lucide-react";
 import TagDistributionChart from "@/components/admin/TagDistributionChart";
 import CampaignStatusChart from "@/components/admin/CampaignStatusChart";
-import CampaignHistoryChart from "@/components/admin/CampaignHistoryChart"; // Import the new chart
+import CampaignHistoryChart from "@/components/admin/CampaignHistoryChart";
 import { useCollaborators, type Collaborator } from "@/contexts/CollaboratorsContext";
 import { useFabMessages } from "@/contexts/FabMessagesContext";
 import React, { useState, useMemo } from 'react';
@@ -19,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ManageIdleFabMessages } from '@/components/admin/ManageIdleFabMessages';
 
 export default function FabMessagesAdminPage() {
     const { collaborators } = useCollaborators();
@@ -158,23 +158,33 @@ export default function FabMessagesAdminPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
                     title="Mensagens FAB"
-                    description="Crie e monitore mensagens flutuantes para os usuários."
+                    description="Crie, monitore e gerencie mensagens flutuantes para os usuários."
                 />
                 
                  <Tabs defaultValue="management" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="management">
                              <ListChecks className="mr-2 h-4 w-4" />
-                             Gerenciamento
+                             Campanhas Ativas
+                        </TabsTrigger>
+                        <TabsTrigger value="idle_messages">
+                             <MessageCircle className="mr-2 h-4 w-4" />
+                             Mensagens Ociosas
                         </TabsTrigger>
                         <TabsTrigger value="monitoring">
                             <PieChart className="mr-2 h-4 w-4" />
                             Monitoramento
                         </TabsTrigger>
                     </TabsList>
+
                     <TabsContent value="management" className="mt-6">
                          <ManageFabMessages />
                     </TabsContent>
+
+                    <TabsContent value="idle_messages" className="mt-6">
+                        <ManageIdleFabMessages />
+                    </TabsContent>
+
                     <TabsContent value="monitoring" className="mt-6 space-y-6">
                         <Card>
                             <CardHeader>
