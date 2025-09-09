@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -80,23 +79,19 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     mutationFn: async ({ userId, data }) => {
         const existingMessage = await getDocument<FabMessageType>(COLLECTION_NAME, userId);
 
-        const updatedPipeline = data.pipeline?.map(campaign => {
-            const originalCampaign = existingMessage?.pipeline.find(p => p.id === campaign.id);
-            // If a completed campaign is edited, reset its status to 'loaded'
-            if (originalCampaign && originalCampaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
-                return { ...campaign, status: 'loaded' as const, sentAt: undefined, clickedAt: undefined };
-            }
-            return campaign;
-        }) || [];
-
-        const hasLoadedCampaigns = updatedPipeline.some(c => c.status === 'loaded');
-
         const payload = {
             ...data,
-            pipeline: updatedPipeline,
-            status: hasLoadedCampaigns ? 'ready' : (updatedPipeline.length > 0 ? 'completed' : 'not_created'),
             updatedAt: new Date().toISOString(),
         };
+
+        // Ensure status is correct based on pipeline content
+        const hasLoadedCampaigns = payload.pipeline?.some(c => c.status === 'loaded');
+        if (payload.pipeline && payload.pipeline.length > 0) {
+            payload.status = hasLoadedCampaigns ? 'ready' : 'completed';
+        } else {
+            payload.status = 'not_created';
+        }
+
 
         return setDocumentInCollection(COLLECTION_NAME, userId, payload);
     },

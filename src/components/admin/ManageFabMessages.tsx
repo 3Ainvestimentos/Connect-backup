@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -574,17 +573,17 @@ export function ManageFabMessages() {
                                                     </TableCell>
                                                     <TableCell className="font-mono text-xs text-muted-foreground">{field.id.slice(-8)}</TableCell>
                                                     <TableCell>
-                                                        <Textarea {...form.register(`pipeline.${index}.ctaMessage`)} rows={2} />
+                                                        <Textarea {...form.register(`pipeline.${index}.ctaMessage`)} rows={2} disabled={field.status === 'completed'} />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Textarea {...form.register(`pipeline.${index}.followUpMessage`)} rows={2} />
+                                                        <Textarea {...form.register(`pipeline.${index}.followUpMessage`)} rows={2} disabled={field.status === 'completed'} />
                                                     </TableCell>
                                                     <TableCell>
                                                         <Controller
                                                             name={`pipeline.${index}.tag`}
                                                             control={control}
-                                                            render={({ field }) => (
-                                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            render={({ field: controllerField }) => (
+                                                                <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value} disabled={field.status === 'completed'}>
                                                                     <SelectTrigger className="w-[150px]"><SelectValue/></SelectTrigger>
                                                                     <SelectContent>
                                                                         {campaignTags.map(tag => <SelectItem key={tag} value={tag}>{tag}</SelectItem>)}
