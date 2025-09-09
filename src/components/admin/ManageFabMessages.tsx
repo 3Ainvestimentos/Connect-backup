@@ -233,6 +233,25 @@ export function ManageFabMessages() {
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
     const { fields, append, remove } = useFieldArray({ control, name: "pipeline" });
 
+    const handleRemoveCampaign = async (index: number) => {
+        if (!editingUser) return;
+        const currentPipeline = form.getValues('pipeline');
+        const newPipeline = currentPipeline.filter((_, i) => i !== index);
+
+        // Remove from the form state first for instant UI update
+        remove(index);
+
+        // Then, persist this change to the backend
+        try {
+            await upsertMessageForUser(editingUser.id3a, { pipeline: newPipeline });
+            toast({ title: 'Campanha removida do pipeline.' });
+        } catch (error) {
+            toast({ title: 'Erro ao remover', description: (error as Error).message, variant: 'destructive' });
+            // If the backend fails, revert the form state (optional, but good practice)
+            reset({ pipeline: currentPipeline });
+        }
+    };
+    
     const handleArchiveCampaignClick = async (campaignId: string) => {
         if (!editingUser) return;
         setIsArchiving(true);
@@ -622,7 +641,9 @@ export function ManageFabMessages() {
                                     </div>
 
                                      <div className="flex justify-end">
-                                        <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4"/></Button>
+                                        <Button type="button" variant="destructive" size="icon" onClick={() => handleRemoveCampaign(index)}>
+                                            <Trash2 className="h-4 w-4"/>
+                                        </Button>
                                     </div>
                                 </div>
                             ))}
@@ -694,4 +715,5 @@ export function ManageFabMessages() {
         </Card>
     );
 }
+
 
