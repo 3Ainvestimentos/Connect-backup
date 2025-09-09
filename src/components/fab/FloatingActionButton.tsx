@@ -113,7 +113,7 @@ export default function FloatingActionButton() {
         <Button
             onClick={handleFabClick}
             size="icon"
-            className="h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0 transition-all duration-200 hover:scale-[1.03] hover:shadow-xl"
+            className="h-14 w-14 rounded-full bg-background border-2 border-[hsl(170,60%,50%)] shadow-lg flex-shrink-0 transition-all duration-200 hover:bg-background hover:scale-[1.03] hover:shadow-xl"
             aria-label="Abrir nova mensagem"
         >
             <BobIcon />
