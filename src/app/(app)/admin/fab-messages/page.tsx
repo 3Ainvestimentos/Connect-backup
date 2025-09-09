@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ListChecks, PieChart, Users, BarChart, Search, Filter, ChevronUp, ChevronDown } from "lucide-react";
 import TagDistributionChart from "@/components/admin/TagDistributionChart";
 import CampaignStatusChart from "@/components/admin/CampaignStatusChart";
+import CampaignHistoryChart from "@/components/admin/CampaignHistoryChart"; // Import the new chart
 import { useCollaborators, type Collaborator } from "@/contexts/CollaboratorsContext";
 import { useFabMessages } from "@/contexts/FabMessagesContext";
 import React, { useState, useMemo } from 'react';
@@ -239,6 +240,8 @@ export default function FabMessagesAdminPage() {
                             <TagDistributionChart messages={selectedMessages} />
                             <CampaignStatusChart messages={selectedMessages} />
                         </div>
+
+                        <CampaignHistoryChart messages={selectedMessages} />
                     </TabsContent>
                 </Tabs>
             </div>
