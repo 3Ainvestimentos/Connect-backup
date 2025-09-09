@@ -239,12 +239,11 @@ export function ManageFabMessages() {
     
         const currentPipeline = form.getValues('pipeline');
         
-        if (currentPipeline.length <= 1) {
-            // If this is the last campaign, delete the whole message doc
+        if (currentPipeline.length === 1) {
             await deleteMessageForUser(editingUser.id3a);
             toast({ title: 'Pipeline limpo!', description: `Todas as campanhas foram removidas para ${editingUser.name}.` });
+            setIsFormOpen(false); // Close the modal as there's nothing left to edit
         } else {
-            // Just remove the one campaign
             remove(index);
             const updatedPipeline = form.getValues('pipeline');
             await upsertMessageForUser(editingUser.id3a, { pipeline: updatedPipeline });
@@ -294,7 +293,6 @@ export function ManageFabMessages() {
     
         const existingMessage = userMessageMap.get(editingUser.id3a);
         
-        // When saving, if a completed campaign is edited, reset its status to 'loaded'.
         const updatedPipeline = data.pipeline.map(campaign => {
             const originalCampaign = existingMessage?.pipeline.find(p => p.id === campaign.id);
             if (originalCampaign && campaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
@@ -440,123 +438,119 @@ export function ManageFabMessages() {
 
     return (
         <>
-        <Card>
-            <CardHeader>
-                <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
-                 <CardDescription>
-                   Crie, envie e monitore as campanhas de comunicação. O status 'Pronto' indica que a campanha está aguardando o envio manual.
-                </CardDescription>
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
-                     <div className="relative flex-grow w-full sm:w-auto">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                            placeholder="Buscar por colaborador..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10"
-                        />
+            <Card>
+                <CardHeader>
+                    <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
+                    <CardDescription>
+                    Crie, envie e monitore as campanhas de comunicação. O status 'Pronto' indica que a campanha está aguardando o envio manual.
+                    </CardDescription>
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
+                        <div className="relative flex-grow w-full sm:w-auto">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input 
+                                placeholder="Buscar por colaborador..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-10"
+                            />
+                        </div>
+                        <div className="flex w-full sm:w-auto flex-wrap gap-2">
+                            <Button variant="outline" onClick={handleBulkStartCampaign} disabled={selectedUserIds.length === 0 || isSendingBulk}>
+                                {isSendingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+                                Enviar para Selecionados ({selectedUserIds.length})
+                            </Button>
+                            <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
+                                {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                Importar CSV
+                            </Button>
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept=".csv"
+                                onChange={handleFileImport}
+                            />
+                        </div>
                     </div>
-                    <div className="flex w-full sm:w-auto flex-wrap gap-2">
-                        <Button variant="outline" onClick={handleBulkStartCampaign} disabled={selectedUserIds.length === 0 || isSendingBulk}>
-                            {isSendingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
-                            Enviar para Selecionados ({selectedUserIds.length})
-                        </Button>
-                         <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
-                            {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
-                            Importar CSV
-                        </Button>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            accept=".csv"
-                            onChange={handleFileImport}
-                        />
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                 <TableHead className="w-[50px]">
-                                    <Checkbox
-                                        checked={isAllReadyUsersSelected}
-                                        onCheckedChange={(checked) => toggleSelectAll(!!checked)}
-                                        aria-label="Selecionar todos os usuários prontos"
-                                    />
-                                </TableHead>
-                                <SortableHeader tKey="name" label="Colaborador" />
-                                <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas}/>
-                                <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions}/>
-                                <FilterableHeader fkey="segment" label="Segmento" uniqueValues={uniqueSegments}/>
-                                <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders}/>
-                                <FilterableHeader fkey="status" label="Status" uniqueValues={Object.entries(statusOptions).map(([value, {label}]) => ({value, label}))}/>
-                                <TableHead>Progresso</TableHead>
-                                <TableHead>Acompanhamento</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredAndSortedUsers.map(user => {
-                                const message = userMessageMap.get(user.id3a);
-                                
-                                let progressText: string;
-                                if (message) {
-                                    const completedInPipeline = message.pipeline.filter(c => c.status === 'completed').length;
-                                    const totalInPipeline = message.pipeline.length;
-                                    progressText = `${completedInPipeline}/${totalInPipeline}`;
-                                } else {
-                                    progressText = 'N/A';
-                                }
-
-                                const isReady = message?.status === 'ready';
-                                return (
-                                <TableRow key={user.id}>
-                                    <TableCell>
+                </CardHeader>
+                <CardContent>
+                    <div className="border rounded-lg overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[50px]">
                                         <Checkbox
-                                            checked={selectedUserIds.includes(user.id3a)}
-                                            onCheckedChange={(checked) => {
-                                                setSelectedUserIds(prev =>
-                                                    checked ? [...prev, user.id3a] : prev.filter(id => id !== user.id3a)
-                                                );
-                                            }}
-                                            aria-label={`Selecionar ${user.name}`}
-                                            disabled={!isReady}
+                                            checked={isAllReadyUsersSelected}
+                                            onCheckedChange={(checked) => toggleSelectAll(!!checked)}
+                                            aria-label="Selecionar todos os usuários prontos"
                                         />
-                                    </TableCell>
-                                    <TableCell className="font-medium">{user.name}</TableCell>
-                                    <TableCell>{user.area}</TableCell>
-                                    <TableCell>{user.position}</TableCell>
-                                    <TableCell>{user.segment}</TableCell>
-                                    <TableCell>{user.leader}</TableCell>
-                                    <TableCell>
-                                        <StatusBadge status={message?.status || 'not_created'} />
-                                    </TableCell>
-                                     <TableCell>
-                                        {progressText}
-                                    </TableCell>
-                                    <TableCell>
-                                        {message && (
-                                            <Button variant="ghost" size="icon" onClick={() => setLogViewingUser(message)} className="hover:bg-muted">
-                                                <History className="h-4 w-4 text-muted-foreground" />
-                                            </Button>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="text-right space-x-1">
-                                        <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
-                                            <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
-                                        </Button>
-                                    </TableCell>
+                                    </TableHead>
+                                    <SortableHeader tKey="name" label="Colaborador" />
+                                    <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas}/>
+                                    <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions}/>
+                                    <FilterableHeader fkey="segment" label="Segmento" uniqueValues={uniqueSegments}/>
+                                    <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders}/>
+                                    <FilterableHeader fkey="status" label="Status" uniqueValues={Object.entries(statusOptions).map(([value, {label}]) => ({value, label}))}/>
+                                    <TableHead>Progresso</TableHead>
+                                    <TableHead>Acompanhamento</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
-                            )})}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredAndSortedUsers.map(user => {
+                                    const message = userMessageMap.get(user.id3a);
+                                    
+                                    const completedInPipeline = message?.pipeline.filter(c => c.status === 'completed').length || 0;
+                                    const totalInPipeline = message?.pipeline.length || 0;
+                                    const progressText = `${completedInPipeline}/${totalInPipeline}`;
 
-             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                                    const isReady = message?.status === 'ready';
+                                    return (
+                                    <TableRow key={user.id}>
+                                        <TableCell>
+                                            <Checkbox
+                                                checked={selectedUserIds.includes(user.id3a)}
+                                                onCheckedChange={(checked) => {
+                                                    setSelectedUserIds(prev =>
+                                                        checked ? [...prev, user.id3a] : prev.filter(id => id !== user.id3a)
+                                                    );
+                                                }}
+                                                aria-label={`Selecionar ${user.name}`}
+                                                disabled={!isReady}
+                                            />
+                                        </TableCell>
+                                        <TableCell className="font-medium">{user.name}</TableCell>
+                                        <TableCell>{user.area}</TableCell>
+                                        <TableCell>{user.position}</TableCell>
+                                        <TableCell>{user.segment}</TableCell>
+                                        <TableCell>{user.leader}</TableCell>
+                                        <TableCell>
+                                            <StatusBadge status={message?.status || 'not_created'} />
+                                        </TableCell>
+                                        <TableCell>
+                                            {message ? progressText : 'N/A'}
+                                        </TableCell>
+                                        <TableCell>
+                                            {message && (
+                                                <Button variant="ghost" size="icon" onClick={() => setLogViewingUser(message)} className="hover:bg-muted">
+                                                    <History className="h-4 w-4 text-muted-foreground" />
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                        <TableCell className="text-right space-x-1">
+                                            <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
+                                                <Edit2 className="mr-2 h-4 w-4"/> Gerenciar
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )})}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Configurar Pipeline para</DialogTitle>
@@ -582,7 +576,7 @@ export function ManageFabMessages() {
                                         </div>
                                     </div>
                                     
-                                     <div>
+                                    <div>
                                         <Label htmlFor={`pipeline.${index}.tag`}>Tag da Campanha</Label>
                                         <Controller
                                             name={`pipeline.${index}.tag`}
@@ -607,7 +601,7 @@ export function ManageFabMessages() {
                                             placeholder="Ex: Nova oportunidade de investimento disponível!"
                                             rows={2}
                                         />
-                                         {form.formState.errors.pipeline?.[index]?.ctaMessage && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.ctaMessage?.message}</p>}
+                                        {form.formState.errors.pipeline?.[index]?.ctaMessage && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.ctaMessage?.message}</p>}
                                     </div>
                                     <Separator/>
                                     <div>
@@ -622,11 +616,11 @@ export function ManageFabMessages() {
                                 </div>
                             ))}
 
-                             <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
+                            <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                             </Button>
                         </div>
-                         <DialogFooter className="!justify-between mt-6">
+                        <DialogFooter className="!justify-between mt-6">
                             <DialogClose asChild>
                                 <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
                             </DialogClose>
@@ -641,7 +635,7 @@ export function ManageFabMessages() {
                 </DialogContent>
             </Dialog>
             <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-                 <DialogContent>
+                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Importar Campanhas via CSV</DialogTitle>
                         <DialogDescription>
@@ -649,13 +643,13 @@ export function ManageFabMessages() {
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4 py-4">
-                         <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
-                           <div className="flex items-start gap-3">
+                        <div className="p-4 rounded-md border border-amber-500/50 bg-amber-500/10 text-amber-700">
+                        <div className="flex items-start gap-3">
                                 <AlertTriangle className="h-5 w-5 mt-0.5 text-amber-600 flex-shrink-0"/>
                                 <div>
                                     <p className="font-semibold">Atenção: A importação irá sobrescrever o pipeline existente para os e-mails informados no arquivo.</p>
                                 </div>
-                           </div>
+                        </div>
                         </div>
 
                         <h3 className="font-semibold">Instruções:</h3>
@@ -664,11 +658,11 @@ export function ManageFabMessages() {
                             <li>A primeira linha **deve** ser um cabeçalho com os seguintes nomes de coluna, exatamente como mostrado:
                                 <code className="block bg-muted p-2 rounded-md my-2 text-xs">userEmail,ctaMessage,followUpMessage,tag</code>
                             </li>
-                             <li>Para criar um pipeline para um usuário, adicione múltiplas linhas com o mesmo `userEmail`. A ordem das linhas no arquivo definirá a ordem do pipeline.</li>
-                             <li>O valor da coluna `tag` deve corresponder a uma das opções: {campaignTags.join(', ')}.</li>
-                             <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
+                            <li>Para criar um pipeline para um usuário, adicione múltiplas linhas com o mesmo `userEmail`. A ordem das linhas no arquivo definirá a ordem do pipeline.</li>
+                            <li>O valor da coluna `tag` deve corresponder a uma das opções: {campaignTags.join(', ')}.</li>
+                            <li>Exporte ou salve o arquivo no formato **CSV (Valores Separados por Vírgula)**.</li>
                         </ol>
-                         <a href="/templates/modelo_campanhas_fab.csv" download className="inline-block" >
+                        <a href="/templates/modelo_campanhas_fab.csv" download className="inline-block" >
                             <Button variant="secondary">
                                 <FileDown className="mr-2 h-4 w-4"/>
                                 Baixar Modelo CSV
