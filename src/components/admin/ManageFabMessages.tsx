@@ -499,8 +499,11 @@ export function ManageFabMessages() {
                                 
                                 let progressText = '0/0';
                                 if (message) {
-                                    const completedCount = message.archivedCampaigns?.length || 0;
-                                    const totalCount = (message.pipeline?.length || 0) + (message.archivedCampaigns?.length || 0);
+                                    const completedInPipeline = message.pipeline?.filter(c => c.status === 'completed').length || 0;
+                                    const archivedCount = message.archivedCampaigns?.length || 0;
+                                    const completedCount = completedInPipeline + archivedCount;
+
+                                    const totalCount = (message.pipeline?.length || 0) + archivedCount;
                                     progressText = `${completedCount}/${totalCount}`;
                                 }
 
