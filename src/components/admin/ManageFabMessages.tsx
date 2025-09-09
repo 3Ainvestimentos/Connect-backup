@@ -45,9 +45,9 @@ const statusOptions: { [key: string]: { label: string, className: string } } = {
 
 
 const campaignStatusBadgeClasses: Record<CampaignType['status'], string> = {
-    loaded: "bg-gray-200 text-gray-800",
-    active: "bg-yellow-200 text-yellow-800",
-    completed: "bg-green-200 text-green-800",
+    loaded: "bg-gray-200 text-gray-800 hover:bg-gray-200",
+    active: "bg-yellow-200 text-yellow-800 hover:bg-yellow-200",
+    completed: "bg-green-200 text-green-800 hover:bg-green-200",
 };
 
 
@@ -60,7 +60,7 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 };
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, archiveMultipleCampaigns, loading: fabLoading } from useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, archiveMultipleCampaigns, loading: fabLoading } = useFabMessages();
     const { collaborators, loading: collabLoading } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -242,11 +242,7 @@ export function ManageFabMessages() {
         setIsArchiving(true);
         
         try {
-            const originalMessage = userMessageMap.get(editingUser.id3a);
-            if (!originalMessage) throw new Error("Mensagem original não encontrada.");
-            
             await archiveMultipleCampaigns(editingUser.id3a, selectedCampaignIds);
-            
             toast({ title: 'Campanhas arquivadas com sucesso!' });
             setSelectedCampaignIds([]);
         } catch (error) {
@@ -711,6 +707,6 @@ export function ManageFabMessages() {
             isOpen={!!logViewingUser}
             onClose={() => setLogViewingUser(null)}
         />
-    </>
+        </>
     );
 }
