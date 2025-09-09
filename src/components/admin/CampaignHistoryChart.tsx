@@ -16,19 +16,27 @@ interface CampaignHistoryChartProps {
 export default function CampaignHistoryChart({ messages }: CampaignHistoryChartProps) {
     
     const chartData = useMemo(() => {
-        const dailyStats: { [date: string]: { ctaSent: number, followUpDisplayed: number } } = {};
+        const dailyStats: { [date: string]: { total: number, concluidas: number, efetivas: number } } = {};
 
         messages.forEach(message => {
             message.pipeline.forEach(campaign => {
+                // Total de Campanhas (quando foi enviada)
                 if (campaign.sentAt) {
                     const date = format(startOfDay(parseISO(campaign.sentAt)), 'yyyy-MM-dd');
-                    if (!dailyStats[date]) dailyStats[date] = { ctaSent: 0, followUpDisplayed: 0 };
-                    dailyStats[date].ctaSent++;
+                    if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0 };
+                    dailyStats[date].total++;
                 }
-                if (campaign.clickedAt) {
-                    const date = format(startOfDay(parseISO(campaign.clickedAt)), 'yyyy-MM-dd');
-                     if (!dailyStats[date]) dailyStats[date] = { ctaSent: 0, followUpDisplayed: 0 };
-                    dailyStats[date].followUpDisplayed++;
+                // Campanhas Concluídas (quando o follow-up foi fechado)
+                if (campaign.followUpClosedAt) {
+                     const date = format(startOfDay(parseISO(campaign.followUpClosedAt)), 'yyyy-MM-dd');
+                     if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0 };
+                     dailyStats[date].concluidas++;
+                }
+                // Campanhas com Efetividade
+                if (campaign.isEffective && campaign.followUpClosedAt) {
+                     const date = format(startOfDay(parseISO(campaign.followUpClosedAt)), 'yyyy-MM-dd');
+                     if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0 };
+                     dailyStats[date].efetivas++;
                 }
             });
         });
@@ -36,8 +44,9 @@ export default function CampaignHistoryChart({ messages }: CampaignHistoryChartP
         return Object.entries(dailyStats)
             .map(([date, stats]) => ({
                 date: format(parseISO(date), 'dd/MM'),
-                'CTAs Enviados': stats.ctaSent,
-                'Follow-ups Exibidos': stats.followUpDisplayed
+                'Campanhas Enviadas': stats.total,
+                'Campanhas Concluídas': stats.concluidas,
+                'Campanhas com Efetividade': stats.efetivas
             }))
             .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -78,8 +87,9 @@ export default function CampaignHistoryChart({ messages }: CampaignHistoryChartP
                                 }}
                             />
                             <Legend />
-                            <Line type="monotone" dataKey="CTAs Enviados" stroke="hsl(var(--chart-1))" strokeWidth={2} activeDot={{ r: 8 }} />
-                            <Line type="monotone" dataKey="Follow-ups Exibidos" stroke="hsl(var(--chart-2))" strokeWidth={2} activeDot={{ r: 8 }}/>
+                            <Line type="monotone" dataKey="Campanhas Enviadas" stroke="hsl(var(--chart-1))" strokeWidth={2} activeDot={{ r: 8 }} />
+                            <Line type="monotone" dataKey="Campanhas Concluídas" stroke="hsl(var(--chart-2))" strokeWidth={2} activeDot={{ r: 8 }}/>
+                             <Line type="monotone" dataKey="Campanhas com Efetividade" stroke="#FF8042" strokeWidth={2} activeDot={{ r: 8 }}/>
                         </LineChart>
                     </ResponsiveContainer>
                 ) : (
