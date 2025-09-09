@@ -62,10 +62,6 @@ export function ManageNews() {
     }, [newsItems, showArchived]);
 
 
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
-        resolver: zodResolver(newsSchema),
-    });
-    
     const handleDragEnd = (result: DropResult) => {
         if (!result.destination) {
             return;
@@ -146,6 +142,10 @@ export function ManageNews() {
             });
         }
     };
+    
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
+        resolver: zodResolver(newsSchema),
+    });
     
     return (
         <>
