@@ -44,6 +44,9 @@ interface MessageBubbleProps {
   onClose: (e: React.MouseEvent) => void;
 }
 function MessageBubble({ children, onClose }: MessageBubbleProps) {
+    // Robustly handle children type and clean markdown syntax
+    const messageText = typeof children === 'string' ? children.replace(/\]\s+\(/g, '](') : '';
+    
     return (
         <div className="relative animate-in fade-in-50">
             <div
@@ -56,7 +59,7 @@ function MessageBubble({ children, onClose }: MessageBubbleProps) {
                         a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline" />
                     }}
                 >
-                    {children as string}
+                    {messageText}
                 </ReactMarkdown>
                 <button 
                     onClick={onClose}
