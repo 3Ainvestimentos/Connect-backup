@@ -19,6 +19,7 @@ export const campaignSchema = z.object({
   status: z.enum(['loaded', 'active', 'completed']).default('loaded'),
   sentAt: z.string().optional(),
   clickedAt: z.string().optional(),
+  isEffective: z.boolean().optional().default(false),
 });
 export type CampaignType = z.infer<typeof campaignSchema>;
 
@@ -46,6 +47,7 @@ interface FabMessagesContextType {
   markCampaignAsClicked: (userId: string) => Promise<void>;
   startCampaign: (userId: string) => Promise<void>;
   archiveIndividualCampaign: (userId: string, campaignId: string) => Promise<void>;
+  archiveMultipleCampaigns: (userId: string, campaignIds: string[]) => Promise<void>;
 }
 
 const FabMessagesContext = createContext<FabMessagesContextType | undefined>(undefined);
@@ -141,6 +143,29 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       });
     },
   });
+  
+  const archiveMultipleCampaignsMutation = useMutation<void, Error, { userId: string; campaignIds: string[] }>({
+    mutationFn: ({ userId, campaignIds }) => {
+        const message = fabMessages.find(m => m.userId === userId);
+        if (!message) throw new Error("Mensagem não encontrada para o usuário");
+
+        const campaignsToArchive = message.pipeline.filter(c => campaignIds.includes(c.id));
+        if (campaignsToArchive.length === 0) {
+            throw new Error("Nenhuma campanha selecionada foi encontrada no pipeline.");
+        }
+
+        const newPipeline = message.pipeline.filter(c => !campaignIds.includes(c.id));
+        const newArchived = [...(message.archivedCampaigns || []), ...campaignsToArchive];
+        const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
+
+        return updateDocumentInCollection(COLLECTION_NAME, userId, {
+            pipeline: newPipeline,
+            archivedCampaigns: newArchived,
+            status: hasMoreCampaigns ? 'ready' : 'completed',
+            updatedAt: formatISO(new Date()),
+        });
+    },
+});
 
 
   const startCampaignMutation = useMutation<void, Error, string>({
@@ -178,7 +203,8 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     markCampaignAsClicked: (userId) => markAsClickedMutation.mutateAsync(userId),
     startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
     archiveIndividualCampaign: (userId, campaignId) => archiveIndividualCampaignMutation.mutateAsync({ userId, campaignId }),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, startCampaignMutation, archiveIndividualCampaignMutation]);
+    archiveMultipleCampaigns: (userId, campaignIds) => archiveMultipleCampaignsMutation.mutateAsync({userId, campaignIds}),
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markAsClickedMutation, startCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>

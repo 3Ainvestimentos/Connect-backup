@@ -45,9 +45,9 @@ const statusOptions: { [key: string]: { label: string, className: string } } = {
 
 
 const campaignStatusBadgeClasses: Record<CampaignType['status'], string> = {
-    loaded: "bg-gray-200 text-gray-800",
-    active: "bg-yellow-200 text-yellow-800 animate-pulse",
-    completed: "bg-green-200 text-green-800",
+    loaded: "bg-gray-200 text-gray-800 hover:bg-gray-200",
+    active: "bg-yellow-200 text-yellow-800 animate-pulse hover:bg-yellow-200",
+    completed: "bg-green-200 text-green-800 hover:bg-green-200",
 };
 
 
@@ -60,7 +60,7 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 };
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, archiveIndividualCampaign, loading: fabLoading } = useFabMessages();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, archiveMultipleCampaigns, loading: fabLoading } = useFabMessages();
     const { collaborators, loading: collabLoading } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
@@ -74,6 +74,7 @@ export function ManageFabMessages() {
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isSendingBulk, setIsSendingBulk] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
+    const [selectedCampaignIds, setSelectedCampaignIds] = useState<string[]>([]);
     
     const [filters, setFilters] = useState<{
         area: string[],
@@ -235,20 +236,14 @@ export function ManageFabMessages() {
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
     const { fields, append, remove, move } = useFieldArray({ control, name: "pipeline" });
     
-    const handleArchiveCampaignClick = async (index: number) => {
-        if (!editingUser) return;
-        
-        const message = userMessageMap.get(editingUser.id3a);
-        const campaignToArchive = message?.pipeline[index];
-        if (!campaignToArchive) {
-             toast({ title: 'Erro', description: 'Campanha não encontrada para arquivamento.', variant: 'destructive' });
-             return;
-        }
+    const handleArchiveCampaigns = async () => {
+        if (!editingUser || selectedCampaignIds.length === 0) return;
 
         setIsArchiving(true);
         try {
-            await archiveIndividualCampaign(editingUser.id3a, campaignToArchive.id);
-            toast({ title: 'Campanha arquivada com sucesso!' });
+            await archiveMultipleCampaigns(editingUser.id3a, selectedCampaignIds);
+            toast({ title: 'Campanhas arquivadas com sucesso!' });
+            setSelectedCampaignIds([]); // Reset selection
         } catch (error) {
             toast({ title: 'Erro ao arquivar', description: (error as Error).message, variant: 'destructive' });
         } finally {
@@ -259,6 +254,7 @@ export function ManageFabMessages() {
 
     const handleOpenForm = (user: Collaborator) => {
         setEditingUser(user);
+        setSelectedCampaignIds([]);
         const existingMessage = userMessageMap.get(user.id3a);
         if (existingMessage && existingMessage.pipeline) {
             reset({ pipeline: existingMessage.pipeline });
@@ -270,6 +266,7 @@ export function ManageFabMessages() {
                     followUpMessage: '',
                     tag: 'Relacionamento',
                     status: 'loaded',
+                    isEffective: false,
                 }]
             });
         }
@@ -343,7 +340,8 @@ export function ManageFabMessages() {
                         ctaMessage: row.ctaMessage,
                         followUpMessage: row.followUpMessage,
                         tag: campaignTags.includes(tag) ? tag : 'Relacionamento',
-                        status: 'loaded'
+                        status: 'loaded',
+                        isEffective: false,
                     };
                     
                     if (!userCampaigns[user.id3a]) {
@@ -539,74 +537,95 @@ export function ManageFabMessages() {
             </Card>
 
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>Configurar Pipeline para</DialogTitle>
                         <DialogDescription>{editingUser?.name}</DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="space-y-6 mt-4 max-h-[60vh] overflow-y-auto pr-4">
-                            {fields.map((field, index) => (
-                                <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-card">
-                                    <div className="flex justify-between items-start">
-                                        <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
-                                        <div className="flex gap-1">
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(index)} disabled={isArchiving}>
-                                                {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
-                                                Arquivar
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    
-                                    <div>
-                                        <Label htmlFor={`pipeline.${index}.tag`}>Tag da Campanha</Label>
-                                        <Controller
-                                            name={`pipeline.${index}.tag`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <SelectTrigger><SelectValue placeholder="Selecione uma tag..."/></SelectTrigger>
-                                                    <SelectContent>
-                                                        {campaignTags.map(tag => (
-                                                            <SelectItem key={tag} value={tag}>{tag}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            )}
-                                        />
-                                        {form.formState.errors.pipeline?.[index]?.tag && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.tag?.message}</p>}
-                                    </div>
-                                    <div>
-                                        <Label htmlFor={`pipeline.${index}.ctaMessage`}>Mensagem de CTA (Curta)</Label>
-                                        <Textarea 
-                                            {...form.register(`pipeline.${index}.ctaMessage`)}
-                                            placeholder="Ex: Nova oportunidade de investimento disponível!"
-                                            rows={2}
-                                        />
-                                        {form.formState.errors.pipeline?.[index]?.ctaMessage && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.ctaMessage?.message}</p>}
-                                    </div>
-                                    <Separator/>
-                                    <div>
-                                        <Label htmlFor={`pipeline.${index}.followUpMessage`}>Mensagem de Acompanhamento (Detalhada)</Label>
-                                        <Textarea 
-                                            {...form.register(`pipeline.${index}.followUpMessage`)}
-                                            placeholder="Ex: Explore os detalhes do nosso novo fundo imobiliário com foco em logística..."
-                                            rows={4}
-                                        />
-                                        {form.formState.errors.pipeline?.[index]?.followUpMessage && <p className="text-sm text-destructive mt-1">{form.formState.errors.pipeline[index]?.followUpMessage?.message}</p>}
-                                    </div>
-                                </div>
-                            ))}
-
-                            <Button type="button" variant="outline" className="w-full" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
+                    <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
+                        <div className="flex-grow overflow-y-auto pr-4 -mr-4">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-10">
+                                            <Checkbox
+                                                checked={selectedCampaignIds.length > 0 && selectedCampaignIds.length === fields.length}
+                                                onCheckedChange={(checked) => {
+                                                    setSelectedCampaignIds(checked ? fields.map(f => f.id) : []);
+                                                }}
+                                            />
+                                        </TableHead>
+                                        <TableHead>ID</TableHead>
+                                        <TableHead>CTA</TableHead>
+                                        <TableHead>Follow-up</TableHead>
+                                        <TableHead>Tag</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Efetiva?</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {fields.map((field, index) => (
+                                        <TableRow key={field.id}>
+                                            <TableCell>
+                                                 <Checkbox
+                                                    checked={selectedCampaignIds.includes(field.id)}
+                                                    onCheckedChange={(checked) => {
+                                                        setSelectedCampaignIds(prev => checked ? [...prev, field.id] : prev.filter(id => id !== field.id))
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="font-mono text-xs text-muted-foreground">{field.id.slice(-8)}</TableCell>
+                                            <TableCell>
+                                                <Textarea {...form.register(`pipeline.${index}.ctaMessage`)} rows={2} />
+                                            </TableCell>
+                                             <TableCell>
+                                                <Textarea {...form.register(`pipeline.${index}.followUpMessage`)} rows={2} />
+                                            </TableCell>
+                                            <TableCell>
+                                                 <Controller
+                                                    name={`pipeline.${index}.tag`}
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                            <SelectTrigger className="w-[150px]"><SelectValue/></SelectTrigger>
+                                                            <SelectContent>
+                                                                {campaignTags.map(tag => <SelectItem key={tag} value={tag}>{tag}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                 <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Controller
+                                                    name={`pipeline.${index}.isEffective`}
+                                                    control={control}
+                                                    render={({ field: { value, onChange } }) => (
+                                                        <Checkbox checked={value} onCheckedChange={onChange} />
+                                                    )}
+                                                />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                             <Button type="button" variant="outline" className="w-full mt-4" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded', isEffective: false })}>
                                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                             </Button>
                         </div>
-                        <DialogFooter className="!justify-between mt-6">
-                            <DialogClose asChild>
-                                <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
-                            </DialogClose>
+                        <DialogFooter className="!justify-between mt-6 pt-4 border-t">
+                             <div>
+                                <Button type="button" variant="destructive" size="sm" onClick={handleArchiveCampaigns} disabled={isArchiving || selectedCampaignIds.length === 0}>
+                                    {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
+                                    Arquivar Selecionadas ({selectedCampaignIds.length})
+                                </Button>
+                            </div>
                             <div className="flex gap-2">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="outline" disabled={isSubmitting}>Cancelar</Button>
+                                </DialogClose>
                                 <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
                                     {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                                     Salvar Pipeline
