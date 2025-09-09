@@ -74,7 +74,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
                              <Legend />
                              <Bar dataKey="Total de Campanhas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                              <Bar dataKey="Campanhas Concluídas" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                             <Bar dataKey="Campanhas com Efetividade" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                             <Bar dataKey="Campanhas com Efetividade" fill="hsl(var(--admin-primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 ) : (
