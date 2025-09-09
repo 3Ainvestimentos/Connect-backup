@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNews } from '@/contexts/NewsContext';
 import type { NewsItemType, NewsStatus } from '@/contexts/NewsContext';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Loader2, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore, ChevronUp, ChevronDown } from 'lucide-react';
+import { PlusCircle, Edit, Loader2, Star, Eye, Link as LinkIcon, Archive, ArchiveRestore } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { Switch } from '../ui/switch';
@@ -45,48 +45,18 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
 };
 
 export function ManageNews() {
-    const { newsItems, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType, updateNewsOrder } = useNews();
+    const { newsItems, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
     const [previewingNews, setPreviewingNews] = useState<NewsItemType | null>(null);
     const [showArchived, setShowArchived] = useState(false);
-    const [isSavingOrder, setIsSavingOrder] = useState(false);
-
+    
     const displayedNews = useMemo(() => {
         return newsItems
           .filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived')
           .sort((a,b) => (a.order || 0) - (b.order || 0));
     }, [newsItems, showArchived]);
-    
-    const handleMove = async (currentIndex: number, direction: 'up' | 'down') => {
-        setIsSavingOrder(true);
-        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-        
-        if (newIndex < 0 || newIndex >= displayedNews.length) {
-            setIsSavingOrder(false);
-            return;
-        }
-
-        const newOrderedList = [...displayedNews];
-        const [movedItem] = newOrderedList.splice(currentIndex, 1);
-        newOrderedList.splice(newIndex, 0, movedItem);
-        
-        const orderUpdates = newOrderedList.map((item, index) => ({
-            id: item.id,
-            order: index
-        }));
-
-        try {
-            await updateNewsOrder(orderUpdates);
-            toast({ title: "Ordem das notícias atualizada." });
-        } catch (error) {
-            toast({ title: "Erro ao salvar a ordem", description: "Não foi possível atualizar a ordem das notícias.", variant: "destructive"});
-        } finally {
-            setIsSavingOrder(false);
-        }
-    };
-
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
@@ -99,6 +69,7 @@ export function ManageNews() {
             };
             reset(formattedNews);
         } else {
+            const newOrder = newsItems.length > 0 ? Math.max(...newsItems.map(n => n.order)) + 1 : 0;
             reset({
                 id: undefined,
                 title: '',
@@ -129,6 +100,15 @@ export function ManageNews() {
         }
     };
     
+    const handleOrderChange = async (id: string, newOrder: number) => {
+        try {
+            await updateNewsItem({ id, order: newOrder });
+            toast({ title: "Ordem atualizada." });
+        } catch (error) {
+            toast({ title: "Erro ao atualizar ordem", description: (error as Error).message, variant: "destructive" });
+        }
+    }
+    
     const onSubmit = async (data: NewsFormValues) => {
         const { id, ...rest } = data;
         const submissionData = { ...rest, id: editingNews?.id };
@@ -158,7 +138,7 @@ export function ManageNews() {
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
                         <CardTitle>Gerenciar Notícias</CardTitle>
-                        <CardDescription>Adicione, edite ou remova notícias do feed. Use as setas para reordenar.</CardDescription>
+                        <CardDescription>Adicione, edite ou remova notícias do feed. Use a coluna 'Ordem' para reordenar.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                          <Button variant="outline" onClick={() => setShowArchived(!showArchived)}>
@@ -172,7 +152,7 @@ export function ManageNews() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="w-[80px]">Ordem</TableHead>
+                                    <TableHead className="w-[100px]">Ordem</TableHead>
                                     <TableHead>Título</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Destaque</TableHead>
@@ -181,32 +161,21 @@ export function ManageNews() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {displayedNews.map((item, index) => (
+                                {displayedNews.map((item) => (
                                     <TableRow 
                                         key={item.id}
                                         className={cn(
                                             item.status === 'archived' ? 'bg-muted/50' : ''
                                         )}
                                     >
-                                        <TableCell className="flex items-center gap-1">
-                                             <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleMove(index, 'up')}
-                                                disabled={index === 0 || isSavingOrder}
-                                                className="h-7 w-7"
-                                            >
-                                                <ChevronUp className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleMove(index, 'down')}
-                                                disabled={index === displayedNews.length - 1 || isSavingOrder}
-                                                className="h-7 w-7"
-                                            >
-                                                <ChevronDown className="h-4 w-4" />
-                                            </Button>
+                                        <TableCell>
+                                            <Input
+                                                type="number"
+                                                defaultValue={item.order}
+                                                onBlur={(e) => handleOrderChange(item.id, parseInt(e.target.value) || 0)}
+                                                className="w-20"
+                                                aria-label={`Ordem da notícia ${item.title}`}
+                                            />
                                         </TableCell>
                                         <TableCell className={cn("font-medium", item.status === 'archived' && 'text-muted-foreground')}>
                                           {item.title}

@@ -62,7 +62,8 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
           ...item,
           order: item.order ?? 0,
           status: item.status || 'published',
-        })).sort((a, b) => a.order - b.order);
+        }));
+        // Note: The main sorting is now done in the component to avoid re-rendering issues
         queryClient.setQueryData([COLLECTION_NAME], processedData);
       },
       (error) => {
