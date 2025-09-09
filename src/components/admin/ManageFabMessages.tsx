@@ -234,31 +234,19 @@ export function ManageFabMessages() {
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
     const { fields, append, remove, move } = useFieldArray({ control, name: "pipeline" });
     
-    const handleRemoveCampaign = async (index: number) => {
+    const handleArchiveCampaignClick = async (index: number) => {
         if (!editingUser) return;
-
-        const currentMessage = userMessageMap.get(editingUser.id3a);
-        if (!currentMessage) return;
-
-        const pipeline = currentMessage.pipeline;
         
-        if (pipeline.length === 1) {
-            await deleteMessageForUser(editingUser.id3a);
-            toast({ title: 'Pipeline limpo!', description: `A configuração de mensagens foi removida para ${editingUser.name}.` });
-            setIsFormOpen(false);
-        } else {
-            const updatedPipeline = pipeline.filter((_, i) => i !== index);
-            await upsertMessageForUser(editingUser.id3a, { pipeline: updatedPipeline });
-            toast({ title: 'Campanha removida!' });
+        const message = userMessageMap.get(editingUser.id3a);
+        const campaignToArchive = message?.pipeline[index];
+        if (!campaignToArchive) {
+             toast({ title: 'Erro', description: 'Campanha não encontrada para arquivamento.', variant: 'destructive' });
+             return;
         }
-    };
 
-    const handleArchiveCampaignClick = async (campaignId: string) => {
-        if (!editingUser) return;
-        
         setIsArchiving(true);
         try {
-            await archiveIndividualCampaign(editingUser.id3a, campaignId);
+            await archiveIndividualCampaign(editingUser.id3a, campaignToArchive.id);
             toast({ title: 'Campanha arquivada com sucesso!' });
         } catch (error) {
             toast({ title: 'Erro ao arquivar', description: (error as Error).message, variant: 'destructive' });
@@ -562,7 +550,7 @@ export function ManageFabMessages() {
                                     <div className="flex justify-between items-start">
                                         <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
                                         <div className="flex gap-1">
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(field.id)} disabled={isArchiving}>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(index)} disabled={isArchiving}>
                                                 {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
                                                 Arquivar
                                             </Button>
