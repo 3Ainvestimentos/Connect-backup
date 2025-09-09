@@ -55,10 +55,14 @@ export function ManageNews() {
     const [isArchiving, setIsArchiving] = useState<string | null>(null);
     const [localNews, setLocalNews] = useState<NewsItemType[]>([]);
 
-    useEffect(() => {
-        const filteredNews = newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
-        setLocalNews(filteredNews);
+    const displayedNews = useMemo(() => {
+        return newsItems.filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived');
     }, [newsItems, showArchived]);
+
+    useEffect(() => {
+        setLocalNews(displayedNews);
+    }, [displayedNews]);
+
 
     const handleDragEnd = (result: DropResult) => {
         if (!result.destination) return;
