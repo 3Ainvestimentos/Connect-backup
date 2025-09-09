@@ -59,8 +59,8 @@ const StatusBadge = ({ status }: { status: keyof typeof statusOptions }) => {
 };
 
 export function ManageFabMessages() {
-    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, archiveIndividualCampaign } = useFabMessages();
-    const { collaborators } = useCollaborators();
+    const { fabMessages, upsertMessageForUser, deleteMessageForUser, startCampaign, archiveIndividualCampaign, loading: fabLoading } = useFabMessages();
+    const { collaborators, loading: collabLoading } = useCollaborators();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
@@ -72,6 +72,7 @@ export function ManageFabMessages() {
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isSendingBulk, setIsSendingBulk] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
+    const [isUpdating, setIsUpdating] = useState<string | null>(null);
     
     const [filters, setFilters] = useState<{
         area: string[],
@@ -231,7 +232,24 @@ export function ManageFabMessages() {
     });
     
     const { formState: { isSubmitting }, reset, handleSubmit, control } = form;
-    const { fields, append, remove } = useFieldArray({ control, name: "pipeline" });
+    const { fields, append, remove, move } = useFieldArray({ control, name: "pipeline" });
+    
+    const handleRemoveCampaign = async (index: number) => {
+        if (!editingUser) return;
+
+        const currentPipeline = form.getValues('pipeline');
+        if (currentPipeline.length <= 1) {
+            // This is the last campaign, so we delete the whole message doc
+            await deleteMessageForUser(editingUser.id3a);
+            toast({ title: 'Pipeline limpo!', description: `Todas as campanhas foram removidas para ${editingUser.name}.` });
+        } else {
+            // Just remove the one campaign
+            remove(index);
+            const updatedPipeline = form.getValues('pipeline');
+            await upsertMessageForUser(editingUser.id3a, { pipeline: updatedPipeline });
+            toast({ title: 'Campanha removida!' });
+        }
+    };
 
     const handleArchiveCampaignClick = async (campaignId: string) => {
         if (!editingUser) return;
@@ -276,11 +294,14 @@ export function ManageFabMessages() {
             toast({ title: "Atenção", description: "Crie uma campanha primeiro antes de ativá-la.", variant: "destructive" });
             return;
         }
+        setIsUpdating(user.id3a);
         try {
             await upsertMessageForUser(user.id3a, { isActive });
             toast({ title: "Sucesso", description: `Campanha ${isActive ? 'ativada' : 'pausada'} para ${user.name}.`, variant: 'default' });
         } catch (error) {
             toast({ title: "Erro", description: "Não foi possível alterar o status da campanha.", variant: "destructive" });
+        } finally {
+            setIsUpdating(null);
         }
     };
 
@@ -289,9 +310,10 @@ export function ManageFabMessages() {
     
         const existingMessage = userMessageMap.get(editingUser.id3a);
         
-        // Reset status of completed campaigns that might have been edited.
         const updatedPipeline = data.pipeline.map(campaign => {
-            if (campaign.status === 'completed') {
+            const originalCampaign = existingMessage?.pipeline.find(p => p.id === campaign.id);
+            // If the campaign content has changed and it was completed, reset its status
+            if (originalCampaign && campaign.status === 'completed' && (originalCampaign.ctaMessage !== campaign.ctaMessage || originalCampaign.followUpMessage !== campaign.followUpMessage)) {
                 return { ...campaign, status: 'loaded' as const };
             }
             return campaign;
@@ -302,7 +324,7 @@ export function ManageFabMessages() {
             userName: editingUser.name,
             pipeline: updatedPipeline,
             isActive: existingMessage?.isActive ?? true,
-            status: 'ready', // Always set to 'ready' on save, so it can be sent.
+            status: 'ready', 
             activeCampaignIndex: existingMessage?.activeCampaignIndex ?? 0,
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };
@@ -498,15 +520,15 @@ export function ManageFabMessages() {
                                 const message = userMessageMap.get(user.id3a);
                                 
                                 let progressText = '0/0';
-                                if (message) {
-                                    const completedInPipeline = message.pipeline?.filter(c => c.status === 'completed').length || 0;
-                                    const archivedCount = message.archivedCampaigns?.length || 0;
-                                    const completedCount = completedInPipeline + archivedCount;
-
-                                    const totalCount = (message.pipeline?.length || 0) + archivedCount;
+                                if (message && message.pipeline && message.pipeline.length > 0) {
+                                    const completedCount = message.pipeline.filter(c => c.status === 'completed').length;
+                                    const totalCount = message.pipeline.length;
                                     progressText = `${completedCount}/${totalCount}`;
+                                } else if (message) {
+                                    progressText = '0/0';
+                                } else {
+                                    progressText = 'N/A';
                                 }
-
 
                                 const isReady = message?.status === 'ready';
                                 return (
@@ -535,11 +557,15 @@ export function ManageFabMessages() {
                                         {progressText}
                                     </TableCell>
                                     <TableCell>
+                                      {isUpdating === user.id3a ? (
+                                        <Loader2 className="h-5 w-5 animate-spin"/>
+                                      ) : (
                                         <Switch
                                           checked={message?.isActive ?? false}
                                           onCheckedChange={(checked) => handleToggleActivation(user, checked)}
                                           disabled={!message}
                                         />
+                                      )}
                                     </TableCell>
                                     <TableCell className="text-right space-x-1">
                                         <Button variant="ghost" size="sm" onClick={() => handleOpenForm(user)} className="hover:bg-admin-primary/10 hover:text-admin-primary">
@@ -565,12 +591,17 @@ export function ManageFabMessages() {
                                 <div key={field.id} className="p-4 border rounded-lg space-y-4 relative bg-card">
                                     <div className="flex justify-between items-start">
                                         <Badge className={campaignStatusBadgeClasses[field.status]}>{field.status}</Badge>
-                                        {field.status === 'completed' && (
-                                            <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(field.id)} disabled={isArchiving}>
-                                                {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
-                                                Arquivar
+                                        <div className="flex gap-1">
+                                            {field.status === 'completed' && (
+                                                <Button type="button" variant="outline" size="sm" onClick={() => handleArchiveCampaignClick(field.id)} disabled={isArchiving}>
+                                                    {isArchiving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Archive className="mr-2 h-4 w-4"/>}
+                                                    Arquivar
+                                                </Button>
+                                            )}
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => handleRemoveCampaign(index)}>
+                                                <Trash2 className="h-4 w-4"/>
                                             </Button>
-                                        )}
+                                        </div>
                                     </div>
                                     
                                      <div>
