@@ -53,19 +53,23 @@ export function ManageNews() {
     const [showArchived, setShowArchived] = useState(false);
     const [isArchiving, setIsArchiving] = useState<string | null>(null);
     
-    const displayedNews = useMemo(() => {
-        return newsItems.filter(item => showArchived ? true : item.status !== 'archived');
-    }, [newsItems, showArchived]);
+    const [localNews, setLocalNews] = useState<NewsItemType[]>([]);
 
+    useEffect(() => {
+      const filteredNews = newsItems.filter(item => showArchived ? true : item.status !== 'archived');
+      setLocalNews(filteredNews);
+    }, [newsItems, showArchived]);
 
     const handleDragEnd = (result: DropResult) => {
         if (!result.destination) {
             return;
         }
 
-        const items = Array.from(displayedNews);
+        const items = Array.from(localNews);
         const [reorderedItem] = items.splice(result.source.index, 1);
         items.splice(result.destination.index, 0, reorderedItem);
+        
+        setLocalNews(items);
         
         const updatedOrder = items.map((item, index) => ({ id: item.id, order: index }));
         updateNewsOrder(updatedOrder);
@@ -177,7 +181,7 @@ export function ManageNews() {
                                 <Droppable droppableId="newsDroppable">
                                     {(provided) => (
                                         <TableBody ref={provided.innerRef} {...provided.droppableProps}>
-                                            {displayedNews.map((item, index) => (
+                                            {localNews.map((item, index) => (
                                                 <Draggable key={item.id} draggableId={item.id} index={index}>
                                                      {(provided) => (
                                                         <TableRow 
