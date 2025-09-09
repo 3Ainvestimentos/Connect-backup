@@ -4,7 +4,7 @@ import AdminGuard from "@/components/auth/AdminGuard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ManageFabMessages } from "@/components/admin/ManageFabMessages";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ListChecks, PieChart, Users, BarChart } from "lucide-react";
+import { ListChecks, PieChart, Users, BarChart, Search, Filter } from "lucide-react";
 import TagDistributionChart from "@/components/admin/TagDistributionChart";
 import CampaignStatusChart from "@/components/admin/CampaignStatusChart";
 import { useCollaborators } from "@/contexts/CollaboratorsContext";
@@ -15,7 +15,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
 
 
 export default function FabMessagesAdminPage() {
@@ -38,9 +37,14 @@ export default function FabMessagesAdminPage() {
 
     const filteredUsers = useMemo(() => {
         if (!searchTerm) return commercialUsers;
+        const lowercasedTerm = searchTerm.toLowerCase();
         return commercialUsers.filter(user => 
-            user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            user.email.toLowerCase().includes(searchTerm.toLowerCase())
+            user.name.toLowerCase().includes(lowercasedTerm) || 
+            user.email.toLowerCase().includes(lowercasedTerm) ||
+            user.area.toLowerCase().includes(lowercasedTerm) ||
+            user.position.toLowerCase().includes(lowercasedTerm) ||
+            user.segment.toLowerCase().includes(lowercasedTerm) ||
+            user.leader.toLowerCase().includes(lowercasedTerm)
         );
     }, [commercialUsers, searchTerm]);
     
@@ -96,7 +100,7 @@ export default function FabMessagesAdminPage() {
                                 <div className="relative pt-2">
                                      <Search className="absolute left-3 top-1/2 h-4 w-4 text-muted-foreground" />
                                      <Input 
-                                        placeholder="Buscar colaborador..."
+                                        placeholder="Buscar colaborador por nome, email, área, cargo..."
                                         value={searchTerm}
                                         onChange={e => setSearchTerm(e.target.value)}
                                         className="pl-10"
@@ -105,7 +109,7 @@ export default function FabMessagesAdminPage() {
                             </CardHeader>
                             <CardContent>
                                 <ScrollArea className="h-64">
-                                    <div className="border rounded-lg">
+                                    <div className="border rounded-lg overflow-x-auto">
                                         <Table>
                                             <TableHeader>
                                                 <TableRow>
@@ -117,19 +121,27 @@ export default function FabMessagesAdminPage() {
                                                     </TableHead>
                                                     <TableHead>Nome</TableHead>
                                                     <TableHead>Email</TableHead>
+                                                    <TableHead>Área</TableHead>
+                                                    <TableHead>Cargo</TableHead>
+                                                    <TableHead>Segmento</TableHead>
+                                                    <TableHead>Líder</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 {filteredUsers.map(user => (
-                                                    <TableRow key={user.id}>
+                                                    <TableRow key={user.id} data-state={selectedUserIds.includes(user.id3a) ? 'selected' : ''}>
                                                         <TableCell>
                                                             <Checkbox
                                                                 checked={selectedUserIds.includes(user.id3a)}
                                                                 onCheckedChange={checked => handleSelectUser(user.id3a, !!checked)}
                                                             />
                                                         </TableCell>
-                                                        <TableCell>{user.name}</TableCell>
+                                                        <TableCell className="font-medium">{user.name}</TableCell>
                                                         <TableCell>{user.email}</TableCell>
+                                                        <TableCell>{user.area}</TableCell>
+                                                        <TableCell>{user.position}</TableCell>
+                                                        <TableCell>{user.segment}</TableCell>
+                                                        <TableCell>{user.leader}</TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>

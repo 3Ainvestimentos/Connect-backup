@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -23,14 +22,16 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLab
 import Papa from 'papaparse';
 import { Checkbox } from '../ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '../ui/scroll-area';
+
 
 const formSchema = z.object({
     pipeline: z.array(campaignSchema).min(1, "O pipeline deve ter pelo menos uma campanha."),
 });
 
 type FabMessageFormValues = z.infer<typeof formSchema>;
-type SortKey = 'name' | 'status' | 'isActive';
 type CampaignType = z.infer<typeof campaignSchema>;
+type SortKey = keyof Collaborator | 'status' | 'isActive';
 
 
 const statusOptions = {
@@ -53,14 +54,20 @@ export function ManageFabMessages() {
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [statusFilter, setStatusFilter] = useState<string[]>([]);
-    const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive'>('all');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [isImporting, setIsImporting] = useState(false);
     const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
     const [isSendingBulk, setIsSendingBulk] = useState(false);
+    
+    const [filters, setFilters] = useState<{
+        area: string[],
+        position: string[],
+        segment: string[],
+        leader: string[],
+        status: string[],
+    }>({ area: [], position: [], segment: [], leader: [], status: [] });
 
     const commercialUsers = useMemo(() => {
         const testUsers = [
@@ -69,6 +76,25 @@ export function ManageFabMessages() {
         ];
         return collaborators.filter(c => c.axis === 'Comercial' || testUsers.includes(c.email));
     }, [collaborators]);
+    
+    const { uniqueAreas, uniquePositions, uniqueSegments, uniqueLeaders } = useMemo(() => {
+        const areas = new Set<string>();
+        const positions = new Set<string>();
+        const segments = new Set<string>();
+        const leaders = new Set<string>();
+        commercialUsers.forEach(c => {
+            areas.add(c.area);
+            positions.add(c.position);
+            segments.add(c.segment);
+            leaders.add(c.leader);
+        });
+        return {
+            uniqueAreas: [...areas].sort(),
+            uniquePositions: [...positions].sort(),
+            uniqueSegments: [...segments].sort(),
+            uniqueLeaders: [...leaders].sort(),
+        }
+    }, [commercialUsers]);
 
     const userMessageMap = useMemo(() => {
         const map = new Map<string, FabMessageType>();
@@ -80,46 +106,38 @@ export function ManageFabMessages() {
         let items = [...commercialUsers];
 
         if (searchTerm) {
-            items = items.filter(user => user.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        }
-
-        if (statusFilter.length > 0) {
-            items = items.filter(user => {
-                const message = userMessageMap.get(user.id3a);
-                const status = message?.status || 'not_created';
-                return statusFilter.includes(status);
-            });
+            const lowercasedTerm = searchTerm.toLowerCase();
+            items = items.filter(user => 
+                user.name.toLowerCase().includes(lowercasedTerm) ||
+                user.email.toLowerCase().includes(lowercasedTerm)
+            );
         }
         
-        if (activeFilter !== 'all') {
-            items = items.filter(user => {
-                 const message = userMessageMap.get(user.id3a);
-                 const isActive = message?.isActive ?? false;
-                 return activeFilter === 'active' ? isActive : !isActive;
-            });
-        }
+        Object.entries(filters).forEach(([key, values]) => {
+            if (values.length > 0) {
+                 if (key === 'status') {
+                    items = items.filter(user => {
+                        const message = userMessageMap.get(user.id3a);
+                        const status = message?.status || 'not_created';
+                        return values.includes(status);
+                    });
+                } else {
+                    items = items.filter(user => values.includes(user[key as keyof Collaborator] as string));
+                }
+            }
+        });
         
         items.sort((a, b) => {
-            const messageA = userMessageMap.get(a.id3a);
-            const messageB = userMessageMap.get(b.id3a);
-
             let valA: any, valB: any;
             
-            switch (sortKey) {
-                case 'name':
-                    valA = a.name;
-                    valB = b.name;
-                    break;
-                case 'status':
-                    valA = messageA?.status || 'not_created';
-                    valB = messageB?.status || 'not_created';
-                    break;
-                case 'isActive':
-                    valA = messageA?.isActive ?? false;
-                    valB = messageB?.isActive ?? false;
-                    break;
-                default:
-                    return 0;
+            if (sortKey === 'status' || sortKey === 'isActive') {
+                 const messageA = userMessageMap.get(a.id3a);
+                 const messageB = userMessageMap.get(b.id3a);
+                 valA = sortKey === 'status' ? (messageA?.status || 'not_created') : (messageA?.isActive ?? false);
+                 valB = sortKey === 'status' ? (messageB?.status || 'not_created') : (messageB?.isActive ?? false);
+            } else {
+                 valA = a[sortKey as keyof Collaborator] as any;
+                 valB = b[sortKey as keyof Collaborator] as any;
             }
 
             let comparison = 0;
@@ -131,7 +149,7 @@ export function ManageFabMessages() {
 
 
         return items;
-    }, [commercialUsers, userMessageMap, searchTerm, statusFilter, activeFilter, sortKey, sortDirection]);
+    }, [commercialUsers, userMessageMap, searchTerm, filters, sortKey, sortDirection]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -142,10 +160,14 @@ export function ManageFabMessages() {
         }
     };
     
-    const toggleStatusFilter = (status: string) => {
-        setStatusFilter(prev => 
-            prev.includes(status) ? prev.filter(s => s !== status) : [...prev, status]
-        );
+    const handleFilterChange = (filterKey: keyof typeof filters, value: string) => {
+        setFilters(prev => {
+            const currentValues = prev[filterKey];
+            const newValues = currentValues.includes(value)
+                ? currentValues.filter(v => v !== value)
+                : [...currentValues, value];
+            return { ...prev, [filterKey]: newValues };
+        });
     };
 
     const handleBulkStartCampaign = async () => {
@@ -242,7 +264,7 @@ export function ManageFabMessages() {
             pipeline: data.pipeline,
             isActive: existingMessage?.isActive ?? true,
             status: 'ready', // Set to ready to be sent
-            activeCampaignIndex: 0,
+            activeCampaignIndex: existingMessage?.activeCampaignIndex ?? 0,
             archivedCampaigns: existingMessage?.archivedCampaigns || [],
         };
 
@@ -349,12 +371,45 @@ export function ManageFabMessages() {
         </TableHead>
     );
 
+    const FilterableHeader = ({ fkey, label, uniqueValues }: { fkey: keyof typeof filters, label: string, uniqueValues: string[] | readonly { value: string, label: string }[] }) => (
+        <TableHead>
+            <div className="flex items-center gap-2">
+                <span className="flex-grow">{label}</span>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-muted">
+                            <Filter className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuLabel>Filtrar por {label}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <ScrollArea className="max-h-60">
+                        {uniqueValues.map(item => {
+                            const value = typeof item === 'string' ? item : item.value;
+                            const displayLabel = typeof item === 'string' ? item : item.label;
+                            return (
+                            <DropdownMenuCheckboxItem
+                                key={value}
+                                checked={filters[fkey].includes(value)}
+                                onCheckedChange={() => handleFilterChange(fkey, value)}
+                            >
+                                {displayLabel}
+                            </DropdownMenuCheckboxItem>
+                        )})}
+                        </ScrollArea>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </TableHead>
+    );
+
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Gerenciamento de Mensagens por Colaborador</CardTitle>
                  <CardDescription>
-                   O status 'Pronto' indica que a campanha está aguardando o envio manual. 'Progresso' mostra quantas campanhas do pipeline foram concluídas.
+                   Crie, envie e monitore as campanhas de comunicação. O status 'Pronto' indica que a campanha está aguardando o envio manual.
                 </CardDescription>
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 pt-4">
                      <div className="relative flex-grow w-full sm:w-auto">
@@ -371,27 +426,6 @@ export function ManageFabMessages() {
                             {isSendingBulk ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
                             Enviar para Selecionados ({selectedUserIds.length})
                         </Button>
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full sm:w-auto">
-                                    <Filter className="mr-2 h-4 w-4" />
-                                    Status ({statusFilter.length || 'Todos'})
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                                <DropdownMenuLabel>Filtrar por Status</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {Object.entries(statusOptions).map(([key, { label }]) => (
-                                    <DropdownMenuCheckboxItem
-                                        key={key}
-                                        checked={statusFilter.includes(key)}
-                                        onCheckedChange={() => toggleStatusFilter(key)}
-                                    >
-                                        {label}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
                          <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
                             {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
                             Importar CSV
@@ -407,7 +441,7 @@ export function ManageFabMessages() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="border rounded-lg">
+                <div className="border rounded-lg overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -419,7 +453,11 @@ export function ManageFabMessages() {
                                     />
                                 </TableHead>
                                 <SortableHeader tKey="name" label="Colaborador" />
-                                <SortableHeader tKey="status" label="Status da Campanha" />
+                                <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas}/>
+                                <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions}/>
+                                <FilterableHeader fkey="segment" label="Segmento" uniqueValues={uniqueSegments}/>
+                                <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders}/>
+                                <FilterableHeader fkey="status" label="Status" uniqueValues={Object.entries(statusOptions).map(([value, {label}]) => ({value, label}))}/>
                                 <TableHead>Progresso</TableHead>
                                 <SortableHeader tKey="isActive" label="Ativa" />
                                 <TableHead className="text-right">Ações</TableHead>
@@ -454,6 +492,10 @@ export function ManageFabMessages() {
                                         />
                                     </TableCell>
                                     <TableCell className="font-medium">{user.name}</TableCell>
+                                    <TableCell>{user.area}</TableCell>
+                                    <TableCell>{user.position}</TableCell>
+                                    <TableCell>{user.segment}</TableCell>
+                                    <TableCell>{user.leader}</TableCell>
                                     <TableCell>
                                         <StatusBadge status={message?.status || 'not_created'} />
                                     </TableCell>
