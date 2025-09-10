@@ -44,7 +44,7 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
 };
 
 export function ManageNews() {
-    const { newsItems, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType } = useNews();
+    const { newsItems, addNewsItem, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
@@ -110,12 +110,15 @@ export function ManageNews() {
     
     const onSubmit = async (data: NewsFormValues) => {
         const { id, ...rest } = data;
-        const submissionData = { ...rest, id: editingNews?.id };
-
+        
         try {
             if (editingNews) {
+                 const submissionData = { ...rest, id: editingNews?.id };
                 await updateNewsItem(submissionData);
                 toast({ title: "Notícia atualizada com sucesso." });
+            } else {
+                await addNewsItem(rest as any);
+                toast({ title: "Notícia criada com sucesso." });
             }
             setIsDialogOpen(false);
         } catch (error) {
@@ -143,6 +146,10 @@ export function ManageNews() {
                          <Button variant="outline" onClick={() => setShowArchived(!showArchived)}>
                             {showArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
                             {showArchived ? "Mostrar Ativas" : "Ver Arquivadas"}
+                        </Button>
+                        <Button onClick={() => handleDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Notícia
                         </Button>
                     </div>
                 </CardHeader>
