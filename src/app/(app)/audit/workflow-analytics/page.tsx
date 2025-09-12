@@ -51,7 +51,7 @@ export default function WorkflowAnalyticsPage() {
         const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
         const currentStatusDef = definition.statuses.find(s => s.id === req.status);
         
-        if (req.status === initialStatusId) {
+        if (req.status === initialStatusId && req.history.length <= 1) {
             statusCounts['Em aberto']++;
         } else if (currentStatusDef && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
             statusCounts['Finalizado']++;
@@ -82,66 +82,75 @@ export default function WorkflowAnalyticsPage() {
       const definition = workflowDefinitions.find(d => d.name === req.type);
       if (!definition) return;
 
-      const finalStatusIds = definition.statuses.filter(s => s.label.toLowerCase().includes('aprovado') || s.label.toLowerCase().includes('reprovado') || s.label.toLowerCase().includes('concluído')).map(s => s.id);
-      if (!finalStatusIds.includes(req.status)) return; // Only consider completed requests
-
-      const submissionDate = parseISO(req.submittedAt);
-      const completionDate = parseISO(req.lastUpdatedAt);
-      const businessDays = differenceInBusinessDays(completionDate, submissionDate);
+      const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+      const currentStatusDef = definition.statuses.find(s => s.id === req.status);
       
-      if (!resolutionTimes[req.type]) {
-        resolutionTimes[req.type] = { totalDays: 0, count: 0 };
+      if (currentStatusDef && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
+          const submissionDate = parseISO(req.submittedAt);
+          const completionDate = parseISO(req.lastUpdatedAt);
+          const businessDays = differenceInBusinessDays(completionDate, submissionDate);
+          
+          if (!resolutionTimes[req.type]) {
+            resolutionTimes[req.type] = { totalDays: 0, count: 0 };
+          }
+          resolutionTimes[req.type].totalDays += businessDays;
+          resolutionTimes[req.type].count++;
       }
-      resolutionTimes[req.type].totalDays += businessDays;
-      resolutionTimes[req.type].count++;
     });
 
     return Object.entries(resolutionTimes).map(([name, data]) => ({
       name,
       'Tempo Médio (dias)': parseFloat((data.totalDays / data.count).toFixed(2))
-    }));
+    })).filter(item => item.count > 0);
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
   
   const averageTimePerStatus = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
-    
-    const timePerStatus: { [type: string]: { [statusId: string]: { totalDays: number, count: number } } } = {};
+
+    const timePerType: { [typeName: string]: { 'Em aberto': number[], 'Em processamento': number[], 'Finalizado': number[] } } = {};
 
     filteredRequests.forEach(req => {
-      if (!timePerStatus[req.type]) timePerStatus[req.type] = {};
-      
-      for (let i = 0; i < req.history.length - 1; i++) {
-        const currentLog = req.history[i];
-        const nextLog = req.history[i+1];
-
-        const startDate = parseISO(currentLog.timestamp);
-        const endDate = parseISO(nextLog.timestamp);
-        const businessDays = differenceInBusinessDays(endDate, startDate);
-        
-        const statusId = currentLog.status;
-        if (!timePerStatus[req.type][statusId]) {
-            timePerStatus[req.type][statusId] = { totalDays: 0, count: 0 };
+        const definition = workflowDefinitions.find(d => d.name === req.type);
+        if (!definition) return;
+        if (!timePerType[req.type]) {
+            timePerType[req.type] = { 'Em aberto': [], 'Em processamento': [], 'Finalizado': [] };
         }
-        timePerStatus[req.type][statusId].totalDays += businessDays;
-        timePerStatus[req.type][statusId].count++;
-      }
+
+        const initialStatusId = definition.statuses[0].id;
+        const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+
+        for (let i = 0; i < req.history.length; i++) {
+            const currentLog = req.history[i];
+            const nextLog = req.history[i + 1];
+            const startDate = parseISO(currentLog.timestamp);
+            const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date();
+            const businessDays = differenceInBusinessDays(endDate, startDate);
+
+            const statusDef = definition.statuses.find(s => s.id === currentLog.status);
+            
+            if (currentLog.status === initialStatusId && i === 0) {
+                timePerType[req.type]['Em aberto'].push(businessDays);
+            } else if (statusDef && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
+                // This state is final, its duration is 0 for this graph. We are measuring time *in* a state.
+            } else {
+                 timePerType[req.type]['Em processamento'].push(businessDays);
+            }
+        }
     });
 
-    const allStatuses = new Map<string, string>();
-    workflowDefinitions.forEach(def => def.statuses.forEach(s => allStatuses.set(s.id, s.label)));
-    
-    const result: any[] = [];
-    Object.entries(timePerStatus).forEach(([typeName, statuses]) => {
-      const typeResult: {[key: string]: any} = { name: typeName };
-      Object.entries(statuses).forEach(([statusId, data]) => {
-        const statusLabel = allStatuses.get(statusId) || statusId;
-        typeResult[statusLabel] = parseFloat((data.totalDays / data.count).toFixed(2));
+    return Object.entries(timePerType).map(([typeName, statusTimes]) => {
+      const avgTimes: { [key: string]: any } = { name: typeName };
+      Object.entries(statusTimes).forEach(([statusName, times]) => {
+        if (times.length > 0) {
+            const total = times.reduce((acc, curr) => acc + curr, 0);
+            avgTimes[statusName] = parseFloat((total / times.length).toFixed(2));
+        } else {
+            avgTimes[statusName] = 0;
+        }
       });
-      result.push(typeResult);
+      return avgTimes;
     });
-
-    return result;
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
 
@@ -249,7 +258,7 @@ export default function WorkflowAnalyticsPage() {
                                     borderRadius: "var(--radius)",
                                 }}
                                  cursor={{fill: 'hsl(var(--muted))'}}
-                                 formatter={(value: number) => `${value} dias`}
+                                 formatter={(value: number) => `${value.toFixed(2)} dias`}
                             />
                             <Legend wrapperStyle={{fontSize: "14px"}}/>
                             {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
