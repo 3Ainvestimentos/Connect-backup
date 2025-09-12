@@ -180,36 +180,38 @@ export default function WorkflowAnalyticsPage() {
 
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
-                <CardDescription>Volume total de solicitações enviadas para cada workflow.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="border rounded-lg">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Tipo de Workflow</TableHead>
-                                <TableHead className="text-right">Total de Solicitações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {requestsByType.map((item) => (
-                                <TableRow key={item.name}>
-                                    <TableCell className="font-medium flex items-center gap-2">
-                                        <WorkflowIcon className="h-4 w-4 text-muted-foreground" />
-                                        {item.name}
-                                    </TableCell>
-                                    <TableCell className="text-right font-mono font-bold">{item.value}</TableCell>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="lg:col-span-1">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
+                    <CardDescription>Volume total de solicitações enviadas para cada workflow.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="border rounded-lg">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Tipo de Workflow</TableHead>
+                                    <TableHead className="text-right">Total de Solicitações</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+                            </TableHeader>
+                            <TableBody>
+                                {requestsByType.map((item) => (
+                                    <TableRow key={item.name}>
+                                        <TableCell className="font-medium flex items-center gap-2">
+                                            <WorkflowIcon className="h-4 w-4 text-muted-foreground" />
+                                            {item.name}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono font-bold">{item.value}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
         
         <div className="lg:col-span-1 space-y-6">
             <Card>
@@ -236,7 +238,6 @@ export default function WorkflowAnalyticsPage() {
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
-
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -259,7 +260,7 @@ export default function WorkflowAnalyticsPage() {
                                     formatter={(value: number) => `${value.toFixed(2)} dias`}
                             />
                             <Legend wrapperStyle={{fontSize: "14px"}}/>
-                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'Finalizado').map((key, index) => (
+                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
                                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
                             ))}
                         </BarChartComponent>
@@ -313,4 +314,3 @@ export default function WorkflowAnalyticsPage() {
     </div>
   );
 }
-
