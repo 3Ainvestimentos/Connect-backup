@@ -76,7 +76,7 @@ export default function WorkflowAnalyticsPage() {
   const averageResolutionTime = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
     
-    const resolutionTimes: { [type: string]: { totalDays: number, count: number } } = {};
+    const resolutionTimes: { [type: string]: { totalDays: number, count: number, totalSlaDays: number } } = {};
 
     filteredRequests.forEach(req => {
       const definition = workflowDefinitions.find(d => d.name === req.type);
@@ -91,18 +91,34 @@ export default function WorkflowAnalyticsPage() {
           const businessDays = differenceInBusinessDays(completionDate, submissionDate);
           
           if (!resolutionTimes[req.type]) {
-            resolutionTimes[req.type] = { totalDays: 0, count: 0 };
+            resolutionTimes[req.type] = { totalDays: 0, count: 0, totalSlaDays: 0 };
           }
           resolutionTimes[req.type].totalDays += businessDays;
           resolutionTimes[req.type].count++;
+          
+          let slaDays = definition.defaultSlaDays || 0;
+          if (definition.slaRules) {
+            for (const rule of definition.slaRules) {
+                if (req.formData[rule.field] === rule.value) {
+                    slaDays = rule.days;
+                    break;
+                }
+            }
+          }
+          resolutionTimes[req.type].totalSlaDays += slaDays;
       }
     });
 
     return Object.entries(resolutionTimes)
-        .map(([name, data]) => ({
-            name,
-            'Tempo Médio (dias)': data.count > 0 ? parseFloat((data.totalDays / data.count).toFixed(2)) : 0,
-        }))
+        .map(([name, data]) => {
+            const avgDays = data.count > 0 ? parseFloat((data.totalDays / data.count).toFixed(2)) : 0;
+            const avgSla = data.count > 0 ? parseFloat((data.totalSlaDays / data.count).toFixed(2)) : 0;
+            return {
+                name,
+                'Tempo Médio (dias)': avgDays,
+                'SLA Médio (dias)': avgSla,
+            };
+        })
         .filter(item => item['Tempo Médio (dias)'] >= 0)
         .sort((a, b) => b['Tempo Médio (dias)'] - a['Tempo Médio (dias)']);
 
@@ -122,23 +138,23 @@ export default function WorkflowAnalyticsPage() {
 
         const initialStatusId = definition.statuses[0].id;
         const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+        
+        let history = [...req.history].sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
 
-        for (let i = 0; i < req.history.length; i++) {
-            const currentLog = req.history[i];
-            const nextLog = req.history[i + 1];
+        for (let i = 0; i < history.length; i++) {
+            const currentLog = history[i];
+            const nextLog = history[i + 1];
             
-            // Do not calculate duration for the very last status in history if there's no next log
-            if (!nextLog) continue; 
+            const statusDef = definition.statuses.find(s => s.id === currentLog.status);
+            if (!statusDef || finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
+               continue;
+            }
 
             const startDate = parseISO(currentLog.timestamp);
-            const endDate = parseISO(nextLog.timestamp);
+            const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date(); // Use now if it's the last status
             const businessDays = differenceInBusinessDays(endDate, startDate);
 
-            const statusDef = definition.statuses.find(s => s.id === currentLog.status);
-            
-            if (statusDef && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
-               // This state is final, do not calculate duration.
-            } else if (currentLog.status === initialStatusId && i === 0) {
+            if (currentLog.status === initialStatusId && i === 0) {
                 timePerType[req.type]['Em aberto'].push(businessDays);
             } else {
                  timePerType[req.type]['Em processamento'].push(businessDays);
@@ -158,7 +174,7 @@ export default function WorkflowAnalyticsPage() {
       });
       return avgTimes;
     })
-    .sort((a,b) => (b['Em aberto'] + b['Em processamento']) - (a['Em aberto'] + a['Em processamento']));
+    .sort((a,b) => (a['Em aberto'] + a['Em processamento']) - (b['Em aberto'] + b['Em processamento']));
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
 
@@ -229,7 +245,7 @@ export default function WorkflowAnalyticsPage() {
                 </CardHeader>
                 <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
-                        <BarChartComponent data={averageTimePerStatus} layout="vertical">
+                        <BarChartComponent data={averageTimePerStatus} layout="vertical" margin={{ left: 50 }}>
                             <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d" />
                             <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={150} />
                             <Tooltip
@@ -242,7 +258,7 @@ export default function WorkflowAnalyticsPage() {
                                     formatter={(value: number) => `${value.toFixed(2)} dias`}
                             />
                             <Legend wrapperStyle={{fontSize: "14px"}}/>
-                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'Finalizado').map((key, index) => (
+                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
                                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
                             ))}
                         </BarChartComponent>
@@ -255,6 +271,7 @@ export default function WorkflowAnalyticsPage() {
                         <Timer className="h-5 w-5" />
                         Tempo Médio de Resolução (Dias Úteis)
                     </CardTitle>
+                    <CardDescription>A barra fica vermelha se o tempo médio excede o SLA médio.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ResponsiveContainer width="100%" height={350}>
@@ -276,9 +293,16 @@ export default function WorkflowAnalyticsPage() {
                                     borderRadius: "var(--radius)",
                                 }}
                                 cursor={{fill: 'hsl(var(--muted))'}}
-                                formatter={(value: number) => `${value} dias`}
+                                formatter={(value: number, name: string) => [`${value} dias`, name === 'Tempo Médio (dias)' ? 'Tempo Médio' : 'SLA Médio']}
                             />
-                            <Bar dataKey="Tempo Médio (dias)" fill="hsl(var(--admin-primary))" radius={[0, 4, 4, 0]} />
+                            <Legend />
+                            <Bar dataKey="Tempo Médio (dias)" radius={[0, 4, 4, 0]}>
+                                {averageResolutionTime.map((entry, index) => {
+                                    const isOverSla = entry['Tempo Médio (dias)'] > entry['SLA Médio (dias)'];
+                                    return <Cell key={`cell-${index}`} fill={isOverSla ? 'hsl(var(--destructive))' : 'hsl(var(--admin-primary))'} />;
+                                })}
+                            </Bar>
+                             <Bar dataKey="SLA Médio (dias)" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
                         </BarChartComponent>
                     </ResponsiveContainer>
                 </CardContent>
