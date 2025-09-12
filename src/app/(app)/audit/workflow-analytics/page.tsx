@@ -116,7 +116,7 @@ export default function WorkflowAnalyticsPage() {
             return {
                 name,
                 'Tempo Médio (dias)': avgDays,
-                'SLA Médio (dias)': avgSla,
+                'SLA Definido': avgSla,
             };
         })
         .filter(item => item['Tempo Médio (dias)'] >= 0)
@@ -174,14 +174,14 @@ export default function WorkflowAnalyticsPage() {
       });
       return avgTimes;
     })
-    .sort((a,b) => (a['Em aberto'] + a['Em processamento']) - (b['Em aberto'] + b['Em processamento']));
+    .sort((a,b) => (b['Em aberto'] + b['Em processamento']) - (a['Em aberto'] + a['Em processamento']));
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
 
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="lg:col-span-1">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
                 <CardDescription>Volume total de solicitações enviadas para cada workflow.</CardDescription>
@@ -236,6 +236,7 @@ export default function WorkflowAnalyticsPage() {
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -258,20 +259,21 @@ export default function WorkflowAnalyticsPage() {
                                     formatter={(value: number) => `${value.toFixed(2)} dias`}
                             />
                             <Legend wrapperStyle={{fontSize: "14px"}}/>
-                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
+                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'Finalizado').map((key, index) => (
                                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
                             ))}
                         </BarChartComponent>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
+
              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Timer className="h-5 w-5" />
                         Tempo Médio de Resolução (Dias Úteis)
                     </CardTitle>
-                    <CardDescription>A barra fica vermelha se o tempo médio excede o SLA médio.</CardDescription>
+                    <CardDescription>A barra fica vermelha se o tempo médio excede o SLA definido.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ResponsiveContainer width="100%" height={350}>
@@ -293,16 +295,16 @@ export default function WorkflowAnalyticsPage() {
                                     borderRadius: "var(--radius)",
                                 }}
                                 cursor={{fill: 'hsl(var(--muted))'}}
-                                formatter={(value: number, name: string) => [`${value} dias`, name === 'Tempo Médio (dias)' ? 'Tempo Médio' : 'SLA Médio']}
+                                formatter={(value: number, name: string) => [`${value} dias`, name === 'Tempo Médio (dias)' ? 'Tempo Médio' : 'SLA Definido']}
                             />
                             <Legend />
                             <Bar dataKey="Tempo Médio (dias)" radius={[0, 4, 4, 0]}>
                                 {averageResolutionTime.map((entry, index) => {
-                                    const isOverSla = entry['Tempo Médio (dias)'] > entry['SLA Médio (dias)'];
+                                    const isOverSla = entry['Tempo Médio (dias)'] > entry['SLA Definido'];
                                     return <Cell key={`cell-${index}`} fill={isOverSla ? 'hsl(var(--destructive))' : 'hsl(var(--admin-primary))'} />;
                                 })}
                             </Bar>
-                             <Bar dataKey="SLA Médio (dias)" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
+                             <Bar dataKey="SLA Definido" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
                         </BarChartComponent>
                     </ResponsiveContainer>
                 </CardContent>
@@ -311,3 +313,4 @@ export default function WorkflowAnalyticsPage() {
     </div>
   );
 }
+
