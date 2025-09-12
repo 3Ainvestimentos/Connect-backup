@@ -98,10 +98,12 @@ export default function WorkflowAnalyticsPage() {
       }
     });
 
-    return Object.entries(resolutionTimes).map(([name, data]) => ({
-      name,
-      'Tempo Médio (dias)': parseFloat((data.totalDays / data.count).toFixed(2))
-    })).filter(item => item.count > 0);
+    return Object.entries(resolutionTimes)
+        .map(([name, data]) => ({
+            name,
+            'Tempo Médio (dias)': parseFloat((data.totalDays / data.count).toFixed(2)),
+        }))
+        .filter(item => item['Tempo Médio (dias)'] >= 0);
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
   
