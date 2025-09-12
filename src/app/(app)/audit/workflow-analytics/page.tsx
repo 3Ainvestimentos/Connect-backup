@@ -53,7 +53,7 @@ export default function WorkflowAnalyticsPage() {
         
         if (req.status === initialStatusId && req.history.length <= 1) {
             statusCounts['Em aberto']++;
-        } else if (currentStatusDef && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
+        } else if (currentStatusDef && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
             statusCounts['Finalizado']++;
         } else {
             statusCounts['Em processamento']++;
@@ -85,7 +85,7 @@ export default function WorkflowAnalyticsPage() {
       const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
       const currentStatusDef = definition.statuses.find(s => s.id === req.status);
       
-      if (currentStatusDef && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
+      if (currentStatusDef && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
           const submissionDate = parseISO(req.submittedAt);
           const completionDate = parseISO(req.lastUpdatedAt);
           const businessDays = differenceInBusinessDays(completionDate, submissionDate);
@@ -236,7 +236,7 @@ export default function WorkflowAnalyticsPage() {
                                 cursor={{fill: 'hsl(var(--muted))'}}
                                 formatter={(value: number) => `${value} dias`}
                             />
-                            <Bar dataKey="Tempo Médio (dias)" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="Tempo Médio (dias)" fill="hsl(var(--admin-primary))" radius={[4, 4, 0, 0]} />
                         </BarChartComponent>
                     </ResponsiveContainer>
                 </CardContent>
@@ -274,4 +274,3 @@ export default function WorkflowAnalyticsPage() {
     </section>
   );
 }
-
