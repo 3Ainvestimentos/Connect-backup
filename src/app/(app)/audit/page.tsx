@@ -18,6 +18,7 @@ import Papa from 'papaparse';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAudit } from '@/contexts/AuditContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view' | 'search_term_used';
@@ -31,6 +32,7 @@ type AuditLogEvent = WithId<{
 export default function AuditPage() {
     const queryClient = useQueryClient();
     const { dateRange } = useAudit();
+    const [loginView, setLoginView] = useState<'total' | 'unique'>('total');
     
     React.useEffect(() => {
         const unsubscribe = listenToCollection<AuditLogEvent>(
@@ -272,7 +274,15 @@ export default function AuditPage() {
                     </Card>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-lg"><BarChartIcon className="h-5 w-5"/>Logins no Período</CardTitle>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="flex items-center gap-2 text-lg"><BarChartIcon className="h-5 w-5"/>Logins no Período</CardTitle>
+                                <Tabs defaultValue="total" onValueChange={(v) => setLoginView(v as 'total' | 'unique')}>
+                                    <TabsList className="h-8">
+                                        <TabsTrigger value="total" className="text-xs h-6">Total</TabsTrigger>
+                                        <TabsTrigger value="unique" className="text-xs h-6">Único</TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
@@ -282,8 +292,8 @@ export default function AuditPage() {
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                                     <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "var(--radius)" }} cursor={{fill: 'hsl(var(--muted))'}} />
                                     <Legend />
-                                    <Bar dataKey="Logins Totais" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="Logins Únicos" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                                    {loginView === 'total' && <Bar dataKey="Logins Totais" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />}
+                                    {loginView === 'unique' && <Bar dataKey="Logins Únicos" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />}
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
