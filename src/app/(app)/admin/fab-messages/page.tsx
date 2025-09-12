@@ -1,6 +1,6 @@
 "use client";
 
-import AdminGuard from "@/components/auth/AdminGuard";
+import SuperAdminGuard from "@/components/auth/SuperAdminGuard";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ManageFabMessages } from "@/components/admin/ManageFabMessages";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -154,7 +154,7 @@ export default function FabMessagesAdminPage() {
     );
 
     return (
-        <AdminGuard>
+        <SuperAdminGuard>
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
                     title="Mensagens FAB"
@@ -255,6 +255,6 @@ export default function FabMessagesAdminPage() {
                     </TabsContent>
                 </Tabs>
             </div>
-        </AdminGuard>
+        </SuperAdminGuard>
     );
 }
