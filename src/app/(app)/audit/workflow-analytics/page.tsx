@@ -103,7 +103,8 @@ export default function WorkflowAnalyticsPage() {
             name,
             'Tempo Médio (dias)': data.count > 0 ? parseFloat((data.totalDays / data.count).toFixed(2)) : 0,
         }))
-        .filter(item => item['Tempo Médio (dias)'] >= 0);
+        .filter(item => item['Tempo Médio (dias)'] >= 0)
+        .sort((a, b) => b['Tempo Médio (dias)'] - a['Tempo Médio (dias)']);
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
   
@@ -131,10 +132,10 @@ export default function WorkflowAnalyticsPage() {
 
             const statusDef = definition.statuses.find(s => s.id === currentLog.status);
             
-            if (currentLog.status === initialStatusId && i === 0) {
+            if (statusDef && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
+               // This state is final, do not calculate duration for this graph.
+            } else if (currentLog.status === initialStatusId && i === 0) {
                 timePerType[req.type]['Em aberto'].push(businessDays);
-            } else if (statusDef && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
-                // This state is final, its duration is 0 for this graph. We are measuring time *in* a state.
             } else {
                  timePerType[req.type]['Em processamento'].push(businessDays);
             }
@@ -152,7 +153,8 @@ export default function WorkflowAnalyticsPage() {
         }
       });
       return avgTimes;
-    });
+    })
+    .sort((a,b) => (b['Em aberto'] + b['Em processamento']) - (a['Em aberto'] + a['Em processamento']));
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
 
@@ -214,7 +216,6 @@ export default function WorkflowAnalyticsPage() {
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
-
              <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -262,6 +263,7 @@ export default function WorkflowAnalyticsPage() {
                                 fontSize={12} 
                                 tickLine={false} 
                                 axisLine={false}
+                                width={150}
                             />
                             <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d"/>
                             <Tooltip
@@ -282,4 +284,3 @@ export default function WorkflowAnalyticsPage() {
     </section>
   );
 }
-
