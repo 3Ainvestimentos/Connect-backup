@@ -125,59 +125,66 @@ export default function WorkflowAnalyticsPage() {
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
   
-  const averageTimePerStatus = useMemo(() => {
+ const averageTimePerStatus = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
 
     const timePerType: { [typeName: string]: { 'Em aberto': number[], 'Em processamento': number[] } } = {};
 
     filteredRequests.forEach(req => {
-        const definition = workflowDefinitions.find(d => d.name === req.type);
-        if (!definition) return;
-        if (!timePerType[req.type]) {
-            timePerType[req.type] = { 'Em aberto': [], 'Em processamento': [] };
+      const definition = workflowDefinitions.find(d => d.name === req.type);
+      if (!definition || !definition.statuses?.length) return;
+      if (!timePerType[req.type]) {
+        timePerType[req.type] = { 'Em aberto': [], 'Em processamento': [] };
+      }
+
+      const initialStatusId = definition.statuses[0].id;
+      const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+
+      let history = [...req.history].sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
+
+      for (let i = 0; i < history.length; i++) {
+        const currentLog = history[i];
+        const nextLog = history[i + 1];
+
+        const statusDef = definition.statuses.find(s => s.id === currentLog.status);
+        if (!statusDef || finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
+          continue;
         }
 
-        const initialStatusId = definition.statuses[0].id;
-        const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
-        
-        let history = [...req.history].sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
+        const startDate = parseISO(currentLog.timestamp);
+        const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date(); // Use now if it's the last status
+        const businessDays = differenceInBusinessDays(endDate, startDate);
 
-        for (let i = 0; i < history.length; i++) {
-            const currentLog = history[i];
-            const nextLog = history[i + 1];
-            
-            const statusDef = definition.statuses.find(s => s.id === currentLog.status);
-            if (!statusDef || finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
-               continue;
-            }
+        if (businessDays < 0) continue; // Ignore negative durations if any
 
-            const startDate = parseISO(currentLog.timestamp);
-            const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date(); // Use now if it's the last status
-            const businessDays = differenceInBusinessDays(endDate, startDate);
-
-            if (currentLog.status === initialStatusId && i === 0) {
-                timePerType[req.type]['Em aberto'].push(businessDays);
-            } else {
-                 timePerType[req.type]['Em processamento'].push(businessDays);
-            }
+        if (currentLog.status === initialStatusId && i === 0) {
+          timePerType[req.type]['Em aberto'].push(businessDays);
+        } else {
+          timePerType[req.type]['Em processamento'].push(businessDays);
         }
+      }
     });
 
     return Object.entries(timePerType).map(([typeName, statusTimes]) => {
       const avgTimes: { [key: string]: any } = { name: typeName };
+      let totalTime = 0;
       Object.entries(statusTimes).forEach(([statusName, times]) => {
         if (times.length > 0) {
-            const total = times.reduce((acc, curr) => acc + curr, 0);
-            avgTimes[statusName] = parseFloat((total / times.length).toFixed(2));
+          const total = times.reduce((acc, curr) => acc + curr, 0);
+          const avg = parseFloat((total / times.length).toFixed(2));
+          avgTimes[statusName] = avg;
+          totalTime += avg;
         } else {
-            avgTimes[statusName] = 0;
+          avgTimes[statusName] = 0;
         }
       });
+      avgTimes.totalTime = totalTime;
       return avgTimes;
     })
-    .sort((a,b) => (b['Em aberto'] + b['Em processamento']) - (a['Em aberto'] + a['Em processamento']));
+    .sort((a, b) => b.totalTime - a.totalTime);
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
+
 
   const resolutionChartHeight = Math.max(350, (averageResolutionTime.length || 0) * 40);
   const timePerStatusChartHeight = Math.max(250, (averageTimePerStatus.length || 0) * 40);
@@ -242,6 +249,7 @@ export default function WorkflowAnalyticsPage() {
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -264,8 +272,8 @@ export default function WorkflowAnalyticsPage() {
                                     cursor={{fill: 'hsl(var(--muted))'}}
                                     formatter={(value: number) => `${value.toFixed(2)} dias`}
                             />
-                            <Legend wrapperStyle={{fontSize: "14px"}}/>
-                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
+                            <Legend payload={Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'totalTime').map((key, index) => ({ value: key, type: 'rect', color: COLORS[index % COLORS.length] }))} />
+                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'totalTime').map((key, index) => (
                                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
                             ))}
                         </BarChartComponent>
@@ -293,7 +301,7 @@ export default function WorkflowAnalyticsPage() {
                                 fontSize={12} 
                                 tickLine={false} 
                                 axisLine={false}
-                                width={150}
+                                width={250}
                             />
                             <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d"/>
                             <Tooltip
@@ -305,7 +313,11 @@ export default function WorkflowAnalyticsPage() {
                                 cursor={{fill: 'hsl(var(--muted))'}}
                                 formatter={(value: number, name: string) => [`${value} dias`, name === 'Tempo Médio (dias)' ? 'Tempo Médio' : 'SLA Definido']}
                             />
-                            <Legend />
+                           <Legend payload={[
+                                { value: 'Dentro do SLA', type: 'rect', color: 'hsl(var(--admin-primary))' },
+                                { value: 'Fora do SLA', type: 'rect', color: 'hsl(var(--destructive))' },
+                                { value: 'SLA Definido', type: 'rect', color: 'hsl(var(--muted-foreground))' },
+                            ]}/>
                             <Bar dataKey="Tempo Médio (dias)" radius={[0, 4, 4, 0]}>
                                 {averageResolutionTime.map((entry, index) => {
                                     const isOverSla = entry['Tempo Médio (dias)'] > entry['SLA Definido'];
@@ -322,3 +334,4 @@ export default function WorkflowAnalyticsPage() {
     </div>
   );
 }
+
