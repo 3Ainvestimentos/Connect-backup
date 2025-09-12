@@ -90,7 +90,7 @@ export function ManageCollaborators() {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-    const [filters, setFilters] = useState<{ area: string[], position: string[] }>({ area: [], position: [] });
+    const [filters, setFilters] = useState<{ area: string[], position: string[], axis: string[], segment: string[], leader: string[], city: string[] }>({ area: [], position: [], axis: [], segment: [], leader: [], city: [] });
 
     const { control, register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
@@ -100,9 +100,31 @@ export function ManageCollaborators() {
         control,
         name: "biLinks",
     });
-
-    const uniqueAreas = useMemo(() => [...new Set(collaborators.map(c => c.area))].sort(), [collaborators]);
-    const uniquePositions = useMemo(() => [...new Set(collaborators.map(c => c.position))].sort(), [collaborators]);
+    
+    const { uniqueAreas, uniquePositions, uniqueAxes, uniqueSegments, uniqueLeaders, uniqueCities } = useMemo(() => {
+        const areas = new Set<string>();
+        const positions = new Set<string>();
+        const axes = new Set<string>();
+        const segments = new Set<string>();
+        const leaders = new Set<string>();
+        const cities = new Set<string>();
+        collaborators.forEach(c => {
+            if(c.area) areas.add(c.area);
+            if(c.position) positions.add(c.position);
+            if(c.axis) axes.add(c.axis);
+            if(c.segment) segments.add(c.segment);
+            if(c.leader) leaders.add(c.leader);
+            if(c.city) cities.add(c.city);
+        });
+        return {
+            uniqueAreas: [...areas].sort(),
+            uniquePositions: [...positions].sort(),
+            uniqueAxes: [...axes].sort(),
+            uniqueSegments: [...segments].sort(),
+            uniqueLeaders: [...leaders].sort(),
+            uniqueCities: [...cities].sort()
+        };
+    }, [collaborators]);
 
     const filteredAndSortedCollaborators = useMemo(() => {
         let items = [...collaborators];
@@ -117,13 +139,12 @@ export function ManageCollaborators() {
             });
         }
         
-        if (filters.area.length > 0) {
-            items = items.filter(c => filters.area.includes(c.area));
-        }
+        Object.entries(filters).forEach(([key, values]) => {
+            if (values.length > 0) {
+                items = items.filter(c => values.includes(c[key as keyof Collaborator] as string));
+            }
+        });
 
-        if (filters.position.length > 0) {
-            items = items.filter(c => filters.position.includes(c.position));
-        }
 
         if (sortKey) {
             items.sort((a, b) => {
@@ -148,7 +169,7 @@ export function ManageCollaborators() {
         }
     };
     
-    const handleFilterChange = (filterKey: 'area' | 'position', value: string) => {
+    const handleFilterChange = (filterKey: keyof typeof filters, value: string) => {
         setFilters(prev => {
             const currentValues = prev[filterKey];
             const newValues = currentValues.includes(value)
@@ -318,7 +339,7 @@ export function ManageCollaborators() {
         </TableHead>
     );
     
-    const FilterableHeader = ({ fkey, label, uniqueValues }: { fkey: 'area' | 'position', label: string, uniqueValues: string[] }) => (
+    const FilterableHeader = ({ fkey, label, uniqueValues }: { fkey: keyof typeof filters, label: string, uniqueValues: string[] }) => (
         <TableHead>
             <div className="flex items-center gap-2">
                 <span className="flex-grow">{label}</span>
@@ -386,8 +407,12 @@ export function ManageCollaborators() {
                             <TableHeader>
                                 <TableRow>
                                     <SortableHeader tkey="name" label="Colaborador" />
+                                    <FilterableHeader fkey="axis" label="Eixo" uniqueValues={uniqueAxes} />
                                     <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas} />
                                     <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions} />
+                                    <FilterableHeader fkey="segment" label="Segmento" uniqueValues={uniqueSegments} />
+                                    <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders} />
+                                    <FilterableHeader fkey="city" label="Cidade" uniqueValues={uniqueCities} />
                                     <TableHead>Google Drive</TableHead>
                                     <TableHead>Links de BI</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
@@ -397,8 +422,12 @@ export function ManageCollaborators() {
                                 {filteredAndSortedCollaborators.map(item => (
                                     <TableRow key={item.id}>
                                         <TableCell className="font-medium">{item.name}<br/><span className="text-xs text-muted-foreground">{item.email}</span></TableCell>
+                                        <TableCell>{item.axis}</TableCell>
                                         <TableCell>{item.area}</TableCell>
                                         <TableCell>{item.position}</TableCell>
+                                        <TableCell>{item.segment}</TableCell>
+                                        <TableCell>{item.leader}</TableCell>
+                                        <TableCell>{item.city}</TableCell>
                                         <TableCell>
                                             {item.googleDriveLinks && item.googleDriveLinks.length > 0 ? (
                                                 <Badge variant="secondary" className="flex items-center w-fit gap-1.5">
@@ -614,4 +643,3 @@ export function ManageCollaborators() {
         </>
     );
 }
-
