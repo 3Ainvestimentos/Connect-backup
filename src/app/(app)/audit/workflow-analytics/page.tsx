@@ -110,13 +110,13 @@ export default function WorkflowAnalyticsPage() {
   const averageTimePerStatus = useMemo(() => {
     if (loadingRequests || !workflowDefinitions.length) return [];
 
-    const timePerType: { [typeName: string]: { 'Em aberto': number[], 'Em processamento': number[], 'Finalizado': number[] } } = {};
+    const timePerType: { [typeName: string]: { 'Em aberto': number[], 'Em processamento': number[] } } = {};
 
     filteredRequests.forEach(req => {
         const definition = workflowDefinitions.find(d => d.name === req.type);
         if (!definition) return;
         if (!timePerType[req.type]) {
-            timePerType[req.type] = { 'Em aberto': [], 'Em processamento': [], 'Finalizado': [] };
+            timePerType[req.type] = { 'Em aberto': [], 'Em processamento': [] };
         }
 
         const initialStatusId = definition.statuses[0].id;
@@ -159,7 +159,7 @@ export default function WorkflowAnalyticsPage() {
 
   return (
     <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="lg:col-span-1">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
                 <CardDescription>Volume total de solicitações enviadas para cada workflow.</CardDescription>
@@ -189,7 +189,7 @@ export default function WorkflowAnalyticsPage() {
             </CardContent>
         </Card>
         
-        <div className="space-y-6">
+        <div className="lg:col-span-1 space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Solicitações por Status</CardTitle>
@@ -282,3 +282,4 @@ export default function WorkflowAnalyticsPage() {
     </section>
   );
 }
+
