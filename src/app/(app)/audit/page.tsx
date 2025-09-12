@@ -121,27 +121,32 @@ export default function AuditPage() {
     }, [events, isLoading, dateRange]);
 
     const loginsLast7Days = useMemo(() => {
-         if (isLoading || events.length === 0 || !dateRange?.from || !dateRange.to) return [];
-        
+        if (isLoading || events.length === 0 || !dateRange?.from || !dateRange.to) return [];
+    
         const endDate = endOfDay(dateRange.to);
         const startDate = startOfDay(dateRange.from);
         
         const dateRangeInterval = eachDayOfInterval({ start: startDate, end: endDate });
 
-        const loginsByDay: { [key: string]: number } = {};
+        const loginsByDay: { [key: string]: { total: number, uniqueUsers: Set<string> } } = {};
         events.forEach(event => {
             const eventDate = parseISO(event.timestamp);
             if (isWithinInterval(eventDate, { start: startDate, end: endDate })) {
                 const dayKey = format(startOfDay(eventDate), 'yyyy-MM-dd');
-                loginsByDay[dayKey] = (loginsByDay[dayKey] || 0) + 1;
+                if (!loginsByDay[dayKey]) {
+                    loginsByDay[dayKey] = { total: 0, uniqueUsers: new Set() };
+                }
+                loginsByDay[dayKey].total += 1;
+                loginsByDay[dayKey].uniqueUsers.add(event.userId);
             }
         });
-
+    
         return dateRangeInterval.map(day => {
             const dayKey = format(day, 'yyyy-MM-dd');
             return {
                 date: format(day, 'dd/MM'),
-                Logins: loginsByDay[dayKey] || 0,
+                'Logins Totais': loginsByDay[dayKey]?.total || 0,
+                'Logins Únicos': loginsByDay[dayKey]?.uniqueUsers.size || 0,
             };
         });
     }, [events, isLoading, dateRange]);
@@ -272,10 +277,13 @@ export default function AuditPage() {
                         <CardContent>
                             <ResponsiveContainer width="100%" height={300}>
                                 <BarChart data={loginsLast7Days}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                                     <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                                     <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "var(--radius)" }} cursor={{fill: 'hsl(var(--muted))'}} />
-                                    <Bar dataKey="Logins" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                                    <Legend />
+                                    <Bar dataKey="Logins Totais" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="Logins Únicos" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
