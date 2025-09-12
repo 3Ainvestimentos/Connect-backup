@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown, ThumbsUp, ThumbsDown, Trophy } from 'lucide-react';
+import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown, ThumbsUp, ThumbsDown, Trophy, Filter } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
 import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -19,6 +19,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useAudit } from '@/contexts/AuditContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
 
 type AuditLogEvent = WithId<{
     eventType: 'document_download' | 'login' | 'page_view' | 'content_view' | 'search_term_used';
@@ -33,6 +36,7 @@ export default function AuditPage() {
     const queryClient = useQueryClient();
     const { dateRange } = useAudit();
     const [loginView, setLoginView] = useState<'total' | 'unique'>('total');
+    const [axisFilter, setAxisFilter] = useState<string[]>([]);
     
     React.useEffect(() => {
         const unsubscribe = listenToCollection<AuditLogEvent>(
@@ -69,6 +73,10 @@ export default function AuditPage() {
         });
     }, [allEvents, dateRange]);
     
+    const uniqueAxes = useMemo(() => {
+        return [...new Set(collaborators.map(c => c.axis))].sort();
+    }, [collaborators]);
+
     const { userLoginStats } = useMemo(() => {
         if (isLoading || collaborators.length === 0) return { userLoginStats: [] };
 
@@ -77,7 +85,11 @@ export default function AuditPage() {
             return acc;
         }, {} as Record<string, number>);
         
-        const allUserStats = collaborators.map(collab => ({
+        const filteredCollaborators = axisFilter.length > 0 
+            ? collaborators.filter(c => axisFilter.includes(c.axis))
+            : collaborators;
+
+        const allUserStats = filteredCollaborators.map(collab => ({
             id: collab.id3a,
             name: collab.name,
             photoURL: collab.photoURL,
@@ -86,7 +98,7 @@ export default function AuditPage() {
         
         return { userLoginStats: allUserStats };
 
-    }, [events, collaborators, isLoading]);
+    }, [events, collaborators, isLoading, axisFilter]);
 
 
     const cumulativeLogins = useMemo(() => {
@@ -188,10 +200,35 @@ export default function AuditPage() {
         document.body.removeChild(link);
     };
     
-    const UserEngagementList = ({ users, title, icon: Icon }: { users: typeof userLoginStats, title: string, icon: React.ElementType }) => (
+    const UserEngagementList = ({ users, title, icon: Icon, onFilterChange }: { users: typeof userLoginStats, title: string, icon: React.ElementType, onFilterChange: (axis: string) => void }) => (
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Icon className="h-5 w-5"/>{title}</CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2"><Icon className="h-5 w-5"/>{title}</CardTitle>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filtrar Eixo ({axisFilter.length || 'Todos'})
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                            <DropdownMenuLabel>Filtrar por Eixo</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                             <ScrollArea className="max-h-60">
+                                {uniqueAxes.map(axis => (
+                                    <DropdownMenuCheckboxItem
+                                        key={axis}
+                                        checked={axisFilter.includes(axis)}
+                                        onCheckedChange={() => onFilterChange(axis)}
+                                    >
+                                        {axis}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                            </ScrollArea>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </CardHeader>
             <CardContent>
                  <div className="border rounded-lg overflow-hidden">
@@ -250,8 +287,18 @@ export default function AuditPage() {
                 </Card>
                 
                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <UserEngagementList users={userLoginStats.slice(0, 20)} title="Mais Engajados (Top 20)" icon={ThumbsUp} />
-                    <UserEngagementList users={[...userLoginStats].sort((a,b) => a.count - b.count).slice(0, 20)} title="Menos Engajados (Top 20)" icon={ThumbsDown} />
+                    <UserEngagementList 
+                        users={userLoginStats.slice(0, 20)} 
+                        title="Mais Engajados (Top 20)" 
+                        icon={ThumbsUp} 
+                        onFilterChange={(axis) => setAxisFilter(prev => prev.includes(axis) ? prev.filter(a => a !== axis) : [...prev, axis])}
+                    />
+                    <UserEngagementList 
+                        users={[...userLoginStats].sort((a,b) => a.count - b.count).slice(0, 20)} 
+                        title="Menos Engajados (Top 20)" 
+                        icon={ThumbsDown} 
+                        onFilterChange={(axis) => setAxisFilter(prev => prev.includes(axis) ? prev.filter(a => a !== axis) : [...prev, axis])}
+                    />
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
