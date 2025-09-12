@@ -120,7 +120,7 @@ export default function WorkflowAnalyticsPage() {
                 'SLA Definido': avgSla,
             };
         })
-        .filter(item => item.count > 0)
+        .filter(item => (item['Tempo Médio (dias)'] || 0) > 0)
         .sort((a, b) => b['Tempo Médio (dias)'] - a['Tempo Médio (dias)']);
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
@@ -144,26 +144,22 @@ export default function WorkflowAnalyticsPage() {
         const nextLog = history[i + 1];
 
         const statusDef = definition.statuses.find(s => s.id === currentLog.status);
-        if (!statusDef) continue; // Should not happen with valid data
+        if (!statusDef) continue;
         
-        // This is a terminal status, so it has no duration. Stop processing for this request.
         const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
         if (finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
            break;
         }
 
         const startDate = parseISO(currentLog.timestamp);
-        // If it's the last status in history, duration is from its start until now.
         const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date(); 
         const businessDays = differenceInBusinessDays(endDate, startDate);
 
-        if (businessDays < 0) continue; // Ignore negative durations if any
+        if (businessDays < 0) continue;
 
-        // The very first status in history is always "Em Aberto"
         if (i === 0) {
           timePerType[req.type]['Em aberto'].push(businessDays);
         } else {
-          // All other non-terminal statuses are "Em Processamento"
           timePerType[req.type]['Em processamento'].push(businessDays);
         }
       }
@@ -267,7 +263,7 @@ export default function WorkflowAnalyticsPage() {
                 <CardContent>
                   <ScrollArea className="h-[250px] w-full">
                     <ResponsiveContainer width="100%" height={timePerStatusChartHeight}>
-                        <BarChartComponent data={averageTimePerStatus} layout="vertical" margin={{ left: 50 }}>
+                        <BarChartComponent data={averageTimePerStatus} layout="vertical" margin={{ left: 10 }}>
                             <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d" />
                             <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={250} />
                             <Tooltip
@@ -279,8 +275,8 @@ export default function WorkflowAnalyticsPage() {
                                     cursor={{fill: 'hsl(var(--muted))'}}
                                     formatter={(value: number) => `${value.toFixed(2)} dias`}
                             />
-                            <Legend payload={Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'totalTime').map((key, index) => ({ value: key, type: 'rect', color: COLORS[index % COLORS.length] }))} />
-                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'totalTime').map((key, index) => (
+                             <Legend payload={Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'totalTime' && k !== 'Finalizado').map((key, index) => ({ value: key, type: 'rect', color: COLORS[index % COLORS.length] }))} />
+                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'totalTime' && k !== 'Finalizado').map((key, index) => (
                                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
                             ))}
                         </BarChartComponent>
@@ -341,3 +337,4 @@ export default function WorkflowAnalyticsPage() {
     </div>
   );
 }
+
