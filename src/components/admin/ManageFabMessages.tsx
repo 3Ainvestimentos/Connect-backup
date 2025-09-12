@@ -69,6 +69,7 @@ export function ManageFabMessages() {
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
     const [logViewingUser, setLogViewingUser] = useState<FabMessageType | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [pipelineSearchTerm, setPipelineSearchTerm] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('name');
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -239,6 +240,19 @@ export function ManageFabMessages() {
     const { formState: { isSubmitting }, reset, handleSubmit, control, setValue } = form;
     const { fields, append, remove, move } = useFieldArray({ control, name: "pipeline" });
     
+    const filteredPipelineFields = useMemo(() => {
+        if (!pipelineSearchTerm) {
+            return fields.map((field, index) => ({ ...field, originalIndex: index }));
+        }
+        const lowercasedTerm = pipelineSearchTerm.toLowerCase();
+        return fields
+            .map((field, index) => ({ ...field, originalIndex: index }))
+            .filter(field => 
+                field.ctaMessage.toLowerCase().includes(lowercasedTerm) || 
+                field.followUpMessage.toLowerCase().includes(lowercasedTerm)
+            );
+    }, [fields, pipelineSearchTerm]);
+
     const handleArchiveCampaignClick = async () => {
         if (!editingUser || selectedCampaignIds.length === 0) return;
         setIsArchiving(true);
@@ -262,6 +276,7 @@ export function ManageFabMessages() {
     const handleOpenForm = (user: Collaborator) => {
         setEditingUser(user);
         setSelectedCampaignIds([]);
+        setPipelineSearchTerm(''); // Reset search on open
         const existingMessage = userMessageMap.get(user.id3a);
         if (existingMessage && existingMessage.pipeline) {
             reset({ pipeline: existingMessage.pipeline });
@@ -533,6 +548,15 @@ export function ManageFabMessages() {
                     <DialogTitle>Configurar Pipeline para</DialogTitle>
                     <DialogDescription>{editingUser?.name}</DialogDescription>
                 </DialogHeader>
+                 <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Buscar campanha por código ou palavra-chave..."
+                        value={pipelineSearchTerm}
+                        onChange={(e) => setPipelineSearchTerm(e.target.value)}
+                        className="pl-10"
+                    />
+                </div>
                 <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
                     <div className="flex-grow overflow-y-auto pr-4 -mr-4">
                        <DragDropContext onDragEnd={onDragEnd}>
@@ -544,9 +568,9 @@ export function ManageFabMessages() {
                                             <TableHead className="w-10"><GripVertical className="h-4 w-4 text-muted-foreground"/></TableHead>
                                             <TableHead className="w-10">
                                                 <Checkbox
-                                                    checked={selectedCampaignIds.length > 0 && selectedCampaignIds.length === fields.length}
+                                                    checked={selectedCampaignIds.length > 0 && selectedCampaignIds.length === filteredPipelineFields.length}
                                                     onCheckedChange={(checked) => {
-                                                        setSelectedCampaignIds(checked ? fields.map(f => f.id) : []);
+                                                        setSelectedCampaignIds(checked ? filteredPipelineFields.map(f => f.id) : []);
                                                     }}
                                                 />
                                             </TableHead>
@@ -559,8 +583,8 @@ export function ManageFabMessages() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {fields.map((field, index) => (
-                                            <Draggable key={field.id} draggableId={field.id} index={index}>
+                                        {filteredPipelineFields.map((field, index) => (
+                                            <Draggable key={field.id} draggableId={field.id} index={field.originalIndex}>
                                             {(provided) => (
                                                 <TableRow ref={provided.innerRef} {...provided.draggableProps}>
                                                     <TableCell {...provided.dragHandleProps} className="cursor-grab"><GripVertical className="h-4 w-4 text-muted-foreground"/></TableCell>
@@ -574,14 +598,14 @@ export function ManageFabMessages() {
                                                     </TableCell>
                                                     <TableCell className="font-mono text-xs text-muted-foreground">{field.id.slice(-8)}</TableCell>
                                                     <TableCell>
-                                                        <Textarea {...form.register(`pipeline.${index}.ctaMessage`)} rows={2} disabled={field.status === 'completed'} />
+                                                        <Textarea {...form.register(`pipeline.${field.originalIndex}.ctaMessage`)} rows={2} disabled={field.status === 'completed'} />
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Textarea {...form.register(`pipeline.${index}.followUpMessage`)} rows={2} disabled={field.status === 'completed'} />
+                                                        <Textarea {...form.register(`pipeline.${field.originalIndex}.followUpMessage`)} rows={2} disabled={field.status === 'completed'} />
                                                     </TableCell>
                                                     <TableCell>
                                                         <Controller
-                                                            name={`pipeline.${index}.tag`}
+                                                            name={`pipeline.${field.originalIndex}.tag`}
                                                             control={control}
                                                             render={({ field: controllerField }) => (
                                                                 <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value} disabled={field.status === 'completed'}>
@@ -598,7 +622,7 @@ export function ManageFabMessages() {
                                                     </TableCell>
                                                     <TableCell>
                                                         <Controller
-                                                            name={`pipeline.${index}.effectiveAt`}
+                                                            name={`pipeline.${field.originalIndex}.effectiveAt`}
                                                             control={control}
                                                             render={({ field: { value, onChange } }) => (
                                                                 <Checkbox 
@@ -624,7 +648,7 @@ export function ManageFabMessages() {
 
                     <Separator className="my-4" />
                     
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ id: `campaign_${Date.now()}_${Math.random()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                     </Button>
 
