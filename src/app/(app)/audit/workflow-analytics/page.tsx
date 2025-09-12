@@ -120,7 +120,7 @@ export default function WorkflowAnalyticsPage() {
                 'SLA Definido': avgSla,
             };
         })
-        .filter(item => item['Tempo Médio (dias)'] >= 0)
+        .filter(item => item.count > 0)
         .sort((a, b) => b['Tempo Médio (dias)'] - a['Tempo Médio (dias)']);
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
@@ -137,8 +137,6 @@ export default function WorkflowAnalyticsPage() {
         timePerType[req.type] = { 'Em aberto': [], 'Em processamento': [] };
       }
 
-      const initialStatusId = definition.statuses[0].id;
-      
       let history = [...req.history].sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
 
       for (let i = 0; i < history.length; i++) {
@@ -271,7 +269,7 @@ export default function WorkflowAnalyticsPage() {
                     <ResponsiveContainer width="100%" height={timePerStatusChartHeight}>
                         <BarChartComponent data={averageTimePerStatus} layout="vertical" margin={{ left: 50 }}>
                             <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d" />
-                            <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={150} />
+                            <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={250} />
                             <Tooltip
                                 contentStyle={{ 
                                     backgroundColor: "hsl(var(--background))",
@@ -310,7 +308,7 @@ export default function WorkflowAnalyticsPage() {
                                 fontSize={12} 
                                 tickLine={false} 
                                 axisLine={false}
-                                width={250}
+                                width={300}
                             />
                             <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d"/>
                             <Tooltip
