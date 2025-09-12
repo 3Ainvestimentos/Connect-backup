@@ -138,8 +138,7 @@ export default function WorkflowAnalyticsPage() {
       }
 
       const initialStatusId = definition.statuses[0].id;
-      const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
-
+      
       let history = [...req.history].sort((a, b) => compareAsc(parseISO(a.timestamp), parseISO(b.timestamp)));
 
       for (let i = 0; i < history.length; i++) {
@@ -147,19 +146,26 @@ export default function WorkflowAnalyticsPage() {
         const nextLog = history[i + 1];
 
         const statusDef = definition.statuses.find(s => s.id === currentLog.status);
-        if (!statusDef || finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
-          continue;
+        if (!statusDef) continue; // Should not happen with valid data
+        
+        // This is a terminal status, so it has no duration. Stop processing for this request.
+        const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+        if (finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
+           break;
         }
 
         const startDate = parseISO(currentLog.timestamp);
-        const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date(); // Use now if it's the last status
+        // If it's the last status in history, duration is from its start until now.
+        const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date(); 
         const businessDays = differenceInBusinessDays(endDate, startDate);
 
         if (businessDays < 0) continue; // Ignore negative durations if any
 
-        if (currentLog.status === initialStatusId && i === 0) {
+        // The very first status in history is always "Em Aberto"
+        if (i === 0) {
           timePerType[req.type]['Em aberto'].push(businessDays);
         } else {
+          // All other non-terminal statuses are "Em Processamento"
           timePerType[req.type]['Em processamento'].push(businessDays);
         }
       }
@@ -168,8 +174,11 @@ export default function WorkflowAnalyticsPage() {
     return Object.entries(timePerType).map(([typeName, statusTimes]) => {
       const avgTimes: { [key: string]: any } = { name: typeName };
       let totalTime = 0;
-      Object.entries(statusTimes).forEach(([statusName, times]) => {
-        if (times.length > 0) {
+      let categories = ['Em aberto', 'Em processamento'] as const;
+
+      categories.forEach(statusName => {
+        const times = statusTimes[statusName];
+         if (times.length > 0) {
           const total = times.reduce((acc, curr) => acc + curr, 0);
           const avg = parseFloat((total / times.length).toFixed(2));
           avgTimes[statusName] = avg;
@@ -232,7 +241,7 @@ export default function WorkflowAnalyticsPage() {
                 <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
-                            <Pie data={requestsByStatus.filter(item => item.name !== 'Finalizado')} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
+                            <Pie data={requestsByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
                                 {requestsByStatus.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
@@ -250,7 +259,7 @@ export default function WorkflowAnalyticsPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Hourglass className="h-5 w-5" />
@@ -293,7 +302,7 @@ export default function WorkflowAnalyticsPage() {
                 <CardContent>
                   <ScrollArea className="h-[350px] w-full">
                     <ResponsiveContainer width="100%" height={resolutionChartHeight}>
-                        <BarChartComponent data={averageResolutionTime} layout="vertical" margin={{ top: 5, right: 20, left: 100, bottom: 5 }}>
+                        <BarChartComponent data={averageResolutionTime} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
                             <YAxis 
                                 dataKey="name" 
                                 type="category" 
@@ -334,4 +343,3 @@ export default function WorkflowAnalyticsPage() {
     </div>
   );
 }
-
