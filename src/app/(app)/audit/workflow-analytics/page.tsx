@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { FileClock, Timer, Hourglass, ListChecks, Workflow as WorkflowIcon } from 'lucide-react';
 import { differenceInBusinessDays, parseISO, compareAsc, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { useAudit } from '@/contexts/AuditContext';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF19AF'];
 
@@ -178,6 +179,9 @@ export default function WorkflowAnalyticsPage() {
 
   }, [filteredRequests, loadingRequests, workflowDefinitions]);
 
+  const resolutionChartHeight = Math.max(350, (averageResolutionTime.length || 0) * 40);
+  const timePerStatusChartHeight = Math.max(250, (averageTimePerStatus.length || 0) * 40);
+
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -221,7 +225,7 @@ export default function WorkflowAnalyticsPage() {
                 <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
                         <PieChart>
-                            <Pie data={requestsByStatus} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
+                            <Pie data={requestsByStatus.filter(item => item.name !== 'Finalizado')} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
                                 {requestsByStatus.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
@@ -246,7 +250,8 @@ export default function WorkflowAnalyticsPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
+                  <ScrollArea className="h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height={timePerStatusChartHeight}>
                         <BarChartComponent data={averageTimePerStatus} layout="vertical" margin={{ left: 50 }}>
                             <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d" />
                             <YAxis dataKey="name" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={150} />
@@ -265,6 +270,7 @@ export default function WorkflowAnalyticsPage() {
                             ))}
                         </BarChartComponent>
                     </ResponsiveContainer>
+                  </ScrollArea>
                 </CardContent>
             </Card>
 
@@ -277,7 +283,8 @@ export default function WorkflowAnalyticsPage() {
                     <CardDescription>A barra fica vermelha se o tempo médio excede o SLA definido.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ResponsiveContainer width="100%" height={350}>
+                  <ScrollArea className="h-[350px] w-full">
+                    <ResponsiveContainer width="100%" height={resolutionChartHeight}>
                         <BarChartComponent data={averageResolutionTime} layout="vertical" margin={{ top: 5, right: 20, left: 100, bottom: 5 }}>
                             <YAxis 
                                 dataKey="name" 
@@ -308,6 +315,7 @@ export default function WorkflowAnalyticsPage() {
                              <Bar dataKey="SLA Definido" fill="hsl(var(--muted-foreground))" radius={[0, 4, 4, 0]} />
                         </BarChartComponent>
                     </ResponsiveContainer>
+                  </ScrollArea>
                 </CardContent>
             </Card>
         </div>
