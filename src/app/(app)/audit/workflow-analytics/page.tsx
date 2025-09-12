@@ -126,14 +126,18 @@ export default function WorkflowAnalyticsPage() {
         for (let i = 0; i < req.history.length; i++) {
             const currentLog = req.history[i];
             const nextLog = req.history[i + 1];
+            
+            // Do not calculate duration for the very last status in history if there's no next log
+            if (!nextLog) continue; 
+
             const startDate = parseISO(currentLog.timestamp);
-            const endDate = nextLog ? parseISO(nextLog.timestamp) : new Date();
+            const endDate = parseISO(nextLog.timestamp);
             const businessDays = differenceInBusinessDays(endDate, startDate);
 
             const statusDef = definition.statuses.find(s => s.id === currentLog.status);
             
             if (statusDef && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
-               // This state is final, do not calculate duration for this graph.
+               // This state is final, do not calculate duration.
             } else if (currentLog.status === initialStatusId && i === 0) {
                 timePerType[req.type]['Em aberto'].push(businessDays);
             } else {
@@ -160,7 +164,7 @@ export default function WorkflowAnalyticsPage() {
 
 
   return (
-    <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="lg:col-span-1">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><ListChecks className="h-5 w-5"/>Tabela Sintética de Solicitações</CardTitle>
@@ -216,7 +220,7 @@ export default function WorkflowAnalyticsPage() {
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
-             <Card>
+            <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Hourglass className="h-5 w-5" />
@@ -238,15 +242,14 @@ export default function WorkflowAnalyticsPage() {
                                     formatter={(value: number) => `${value.toFixed(2)} dias`}
                             />
                             <Legend wrapperStyle={{fontSize: "14px"}}/>
-                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
+                            {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name' && k !== 'Finalizado').map((key, index) => (
                                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
                             ))}
                         </BarChartComponent>
                     </ResponsiveContainer>
                 </CardContent>
             </Card>
-
-            <Card>
+             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Timer className="h-5 w-5" />
@@ -281,6 +284,6 @@ export default function WorkflowAnalyticsPage() {
                 </CardContent>
             </Card>
         </div>
-    </section>
+    </div>
   );
 }
