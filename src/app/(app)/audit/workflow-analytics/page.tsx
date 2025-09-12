@@ -101,7 +101,7 @@ export default function WorkflowAnalyticsPage() {
     return Object.entries(resolutionTimes)
         .map(([name, data]) => ({
             name,
-            'Tempo Médio (dias)': parseFloat((data.totalDays / data.count).toFixed(2)),
+            'Tempo Médio (dias)': data.count > 0 ? parseFloat((data.totalDays / data.count).toFixed(2)) : 0,
         }))
         .filter(item => item['Tempo Médio (dias)'] >= 0);
 
@@ -215,33 +215,7 @@ export default function WorkflowAnalyticsPage() {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Timer className="h-5 w-5" />
-                        Tempo Médio de Resolução (Dias Úteis)
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <BarChartComponent data={averageResolutionTime}>
-                            <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false}/>
-                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d"/>
-                            <Tooltip
-                                contentStyle={{ 
-                                    backgroundColor: "hsl(var(--background))",
-                                    borderColor: "hsl(var(--border))",
-                                    borderRadius: "var(--radius)",
-                                }}
-                                cursor={{fill: 'hsl(var(--muted))'}}
-                                formatter={(value: number) => `${value} dias`}
-                            />
-                            <Bar dataKey="Tempo Médio (dias)" fill="hsl(var(--admin-primary))" radius={[4, 4, 0, 0]} />
-                        </BarChartComponent>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-            <Card>
+             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Hourglass className="h-5 w-5" />
@@ -266,6 +240,40 @@ export default function WorkflowAnalyticsPage() {
                             {Object.keys(averageTimePerStatus[0] || {}).filter(k => k !== 'name').map((key, index) => (
                                 <Bar key={key} dataKey={key} stackId="a" fill={COLORS[index % COLORS.length]} />
                             ))}
+                        </BarChartComponent>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Timer className="h-5 w-5" />
+                        Tempo Médio de Resolução (Dias Úteis)
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ResponsiveContainer width="100%" height={350}>
+                        <BarChartComponent data={averageResolutionTime} layout="vertical" margin={{ top: 5, right: 20, left: 100, bottom: 5 }}>
+                            <YAxis 
+                                dataKey="name" 
+                                type="category" 
+                                stroke="#888888" 
+                                fontSize={12} 
+                                tickLine={false} 
+                                axisLine={false}
+                            />
+                            <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="d"/>
+                            <Tooltip
+                                contentStyle={{ 
+                                    backgroundColor: "hsl(var(--background))",
+                                    borderColor: "hsl(var(--border))",
+                                    borderRadius: "var(--radius)",
+                                }}
+                                cursor={{fill: 'hsl(var(--muted))'}}
+                                formatter={(value: number) => `${value} dias`}
+                            />
+                            <Bar dataKey="Tempo Médio (dias)" fill="hsl(var(--admin-primary))" radius={[0, 4, 4, 0]} />
                         </BarChartComponent>
                     </ResponsiveContainer>
                 </CardContent>
