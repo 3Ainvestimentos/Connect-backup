@@ -48,7 +48,6 @@ import { useApplications } from '@/contexts/ApplicationsContext';
 import PollTrigger from '@/components/polls/PollTrigger';
 import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { TermsOfUseModal } from '../auth/TermsOfUseModal';
-import MessageFAB from '../fab/MessageFAB';
 import NotificationFAB from '../fab/NotificationFAB';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
 
@@ -257,11 +256,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
+    const currentUserCollab = collaborators.find(c => c.email === user.email);
+    if (!currentUserCollab) return false;
+
     return requests.some(req => {
-        if (req.ownerEmail !== user.email) return false;
-        return !req.assignee;
+        // Notificação para o proprietário: workflow dele com tarefa não atribuída
+        const isOwnerWithUnassignedTask = (req.ownerEmail === user.email) && !req.assignee;
+        
+        // Notificação para o responsável: foi atribuído a ele mas ainda não visualizou
+        const isNewAssignee = (req.assignee?.id === currentUserCollab.id3a) && !req.viewedBy.includes(currentUserCollab.id3a);
+
+        return isOwnerWithUnassignedTask || isNewAssignee;
     });
-  }, [user, requests, workflowsLoading, permissions.canManageRequests]);
+  }, [user, requests, workflowsLoading, permissions.canManageRequests, collaborators]);
   
   const hasPendingTasks = useMemo(() => {
     if (!user || workflowsLoading || !requests.length) return false;
@@ -432,11 +439,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
           {children}
-          {hasActiveCampaign ? (
-            <MessageFAB />
-          ) : (
             <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />
-          )}
         </main>
       </div>
       <PollTrigger />
