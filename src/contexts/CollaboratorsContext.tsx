@@ -37,6 +37,7 @@ export interface Collaborator {
   googleDriveLinks?: string[]; // Array de links para pastas do Google Drive
   biLinks?: BILink[]; // Link para o painel de BI específico do usuário
   acceptedTermsVersion?: number; // Versão dos termos aceitos pelo usuário
+  createdAt?: string; // ISO String for creation timestamp
 }
 
 interface CollaboratorsContextType {
@@ -90,14 +91,17 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   }, [queryClient]);
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
-    mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, collaboratorData),
+    mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, { ...collaboratorData, createdAt: new Date().toISOString() }),
     onSuccess: () => {
       // Invalidation not strictly needed due to listener
     },
   });
 
   const addMultipleCollaboratorsMutation = useMutation<void, Error, Omit<Collaborator, 'id'>[]>({
-    mutationFn: (collaboratorsData: Omit<Collaborator, 'id'>[]) => addMultipleDocumentsToCollection(COLLECTION_NAME, collaboratorsData),
+    mutationFn: (collaboratorsData: Omit<Collaborator, 'id'>[]) => {
+        const dataWithTimestamp = collaboratorsData.map(c => ({ ...c, createdAt: new Date().toISOString() }));
+        return addMultipleDocumentsToCollection(COLLECTION_NAME, dataWithTimestamp);
+    },
     onSuccess: () => {
       // Invalidation not strictly needed due to listener
     },

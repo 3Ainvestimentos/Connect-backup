@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
 import Papa from 'papaparse';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '../ui/badge';
 import { Textarea } from '../ui/textarea';
@@ -101,6 +101,15 @@ export function ManageCollaborators() {
         name: "biLinks",
     });
     
+    const lastAddedCollaborator = useMemo(() => {
+        if (collaborators.length === 0) return null;
+        
+        return [...collaborators]
+            .filter(c => c.createdAt)
+            .sort((a, b) => parseISO(b.createdAt!).getTime() - parseISO(a.createdAt!).getTime())[0];
+            
+    }, [collaborators]);
+
     const { uniqueAreas, uniquePositions, uniqueAxes, uniqueSegments, uniqueLeaders, uniqueCities } = useMemo(() => {
         const areas = new Set<string>();
         const positions = new Set<string>();
@@ -377,6 +386,12 @@ export function ManageCollaborators() {
                         <CardTitle>Gerenciar Colaboradores</CardTitle>
                         <CardDescription>
                             Exibindo {filteredAndSortedCollaborators.length} de {collaborators.length} colaborador(es).
+                             {lastAddedCollaborator && (
+                                <span className="hidden sm:inline-flex items-center text-xs text-muted-foreground ml-2">
+                                    <Clock className="h-3 w-3 mr-1.5"/>
+                                    Última adição: {lastAddedCollaborator.name} ({formatDistanceToNow(parseISO(lastAddedCollaborator.createdAt!), { addSuffix: true, locale: ptBR })})
+                                </span>
+                             )}
                         </CardDescription>
                     </div>
                      <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
