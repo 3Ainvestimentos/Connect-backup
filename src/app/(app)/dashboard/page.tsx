@@ -248,7 +248,7 @@ export default function DashboardV2Page() {
                     )}
                 </div>
             </div>
-             <Card className="shadow-sm flex flex-col w-full">
+             <Card id="messages-card" className="shadow-sm flex flex-col w-full">
                 <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
