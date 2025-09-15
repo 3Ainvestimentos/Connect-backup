@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -8,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { useRouter } from 'next/navigation';
 import { useIdleFabMessages } from '@/contexts/IdleFabMessagesContext';
+import { X } from 'lucide-react';
 
 // --- Ícone do Bob ---
 function BobIcon({ isAnimated }: { isAnimated: boolean }) {
@@ -16,11 +18,13 @@ function BobIcon({ isAnimated }: { isAnimated: boolean }) {
             <style>
             {`
                 @keyframes lamp-on-off {
-                0%, 100% { opacity: 1; }
+                0%, 25% { opacity: 1; }
                 50% { opacity: 0.1; }
+                50.01%, 75% { opacity: 0.1; }
+                100% { opacity: 1; }
                 }
                 .animate-lamp {
-                animation: lamp-on-off 4s ease-in-out infinite;
+                animation: lamp-on-off 2s infinite ease-in-out;
                 }
             `}
             </style>
@@ -49,35 +53,62 @@ function BobIcon({ isAnimated }: { isAnimated: boolean }) {
 interface MessageBubbleProps {
   children: React.ReactNode;
   onClick?: () => void;
+  onClose?: (e: React.MouseEvent) => void;
+  hasCloseButton?: boolean;
+  variant?: 'primary' | 'secondary';
   className?: string;
 }
 
-const MessageBubble = ({ children, onClick, className }: MessageBubbleProps) => {
+const MessageBubble = ({ children, onClick, onClose, hasCloseButton, variant = 'primary', className }: MessageBubbleProps) => {
     const bubbleColor = 'hsl(170, 60%, 50%)';
+    const borderColor = 'hsl(170, 60%, 50%)';
+
+    const baseClasses = "w-64 rounded-lg p-4 shadow-lg transition-all";
+    const variantClasses = {
+        primary: "bg-[hsl(170,60%,50%)] text-white font-semibold cursor-pointer",
+        secondary: "bg-white text-black border-2",
+    };
 
     return (
-        <div className="relative animate-in fade-in-50 cursor-pointer" onClick={onClick}>
+        <div className="relative animate-in fade-in-50" onClick={onClick}>
             <div
-                className={cn("w-64 rounded-lg p-4 shadow-lg transition-all bg-[hsl(170,60%,50%)] text-white font-semibold", className)}
+                className={cn(baseClasses, variantClasses[variant], hasCloseButton && "pr-8", className)}
+                style={{ borderColor: variant === 'secondary' ? borderColor : 'transparent' }}
             >
                 {children}
+                {hasCloseButton && (
+                    <button 
+                        onClick={onClose}
+                        className="absolute top-1 right-1 p-1 text-black/50 hover:text-black/80 rounded-full"
+                        aria-label="Fechar mensagem"
+                    >
+                        <X size={16} />
+                    </button>
+                )}
             </div>
             <div 
                 className="absolute top-4 -right-2 w-0 h-0"
                 style={{
                     borderTop: '8px solid transparent',
                     borderBottom: '8px solid transparent',
-                    borderLeft: `8px solid ${bubbleColor}`,
+                    borderLeft: `8px solid ${variant === 'secondary' ? borderColor : bubbleColor}`,
                 }}
             />
         </div>
     );
 };
 
+
 interface NotificationFABProps {
   hasPendingRequests: boolean;
   hasPendingTasks: boolean;
 }
+
+const removeUrls = (text: string) => {
+  if (!text) return '';
+  return text.replace(/https?:\/\/[^\s)]+/g, '');
+};
+
 
 export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }: NotificationFABProps) {
   const { messages, markMessageAsRead } = useMessages();
@@ -139,7 +170,6 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   }, [hasAnyNotification]);
 
   const handleNotificationBubbleClick = () => {
-    // This click is only for the notification bubble
     setIsIconAnimated(false);
     setShowNotificationBubble(false);
     setShowIdleBubble(false);
@@ -168,22 +198,25 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   };
 
   const handleFabClick = () => {
-     // Clicking the FAB itself always deals with idle messages
      setIsIconAnimated(false);
-     setShowNotificationBubble(false); // Hide notification if it was showing
+     setShowNotificationBubble(false);
 
      if (idleMessages.length > 0) {
         setShowIdleBubble(true);
         setCurrentIdleIndex(prev => (prev + 1) % idleMessages.length);
      } else {
-        // Fallback action if no idle messages are configured
         router.push('/chatbot');
      }
+  };
+
+  const handleIdleClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowIdleBubble(false);
   };
   
   const idleMessageText = useMemo(() => {
       if (!showIdleBubble || idleMessages.length === 0) return null;
-      return idleMessages[currentIdleIndex]?.text;
+      return removeUrls(idleMessages[currentIdleIndex]?.text);
   }, [showIdleBubble, currentIdleIndex, idleMessages]);
 
 
@@ -195,8 +228,13 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
                    <p className="text-sm whitespace-pre-line">{notificationText}</p>
                 </MessageBubble>
             )}
-             {showIdleBubble && idleMessageText && (
-                <MessageBubble>
+            {showIdleBubble && idleMessageText && (
+                <MessageBubble 
+                    variant="secondary"
+                    onClose={handleIdleClose}
+                    hasCloseButton
+                    onClick={() => setShowIdleBubble(false)} // Click anywhere on bubble closes it
+                >
                    <p className="text-sm whitespace-pre-line">{idleMessageText}</p>
                 </MessageBubble>
             )}
