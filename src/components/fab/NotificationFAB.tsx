@@ -136,7 +136,8 @@ export default function NotificationFAB() {
             aria-label="Ver novas mensagens"
         >
             <div className={cn(
-              "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"
+              "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl",
+              showNotification && 'animate-pulse-bg'
             )}></div>
             <div className="relative z-10 w-full h-full flex items-center justify-center">
                 <BobIcon />
