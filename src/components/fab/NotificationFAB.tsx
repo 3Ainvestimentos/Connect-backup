@@ -231,8 +231,11 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
                     hasCloseButton
                     onClick={() => setShowIdleBubble(false)} // Click anywhere on bubble closes it
                 >
-                   <div className="prose prose-sm dark:prose-invert">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                   <div className="text-sm dark:prose-invert">
+                        <ReactMarkdown 
+                            remarkPlugins={[remarkGfm]}
+                            components={{ a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline" /> }}
+                        >
                             {idleMessageText}
                         </ReactMarkdown>
                    </div>
