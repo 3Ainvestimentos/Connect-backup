@@ -13,7 +13,20 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 function BobIcon() {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" fill="none" className="h-9 w-9">
-            <g transform="translate(0, 1.5)">
+            <style>
+            {`
+                @keyframes lamp-on-off {
+                0%, 25% { opacity: 1; }
+                50% { opacity: 0.1; }
+                50.01%, 75% { opacity: 0.1; }
+                100% { opacity: 1; }
+                }
+                .animate-lamp {
+                animation: lamp-on-off 2s infinite ease-in-out;
+                }
+            `}
+            </style>
+            <g className="animate-lamp" transform="translate(0, 1.5)">
                 <circle cx="12" cy="6.5" r="5.5" fill="#FFFFE0" opacity="0.3"/>
                 <circle cx="12" cy="6.5" r="4.5" fill="#FFFFE0" opacity="0.5"/>
                 <path d="M12 11.5C9.23858 11.5 7 9.26142 7 6.5C7 3.73858 9.23858 1.5 12 1.5C14.7614 1.5 17 3.73858 17 6.5C17 9.26142 14.7614 11.5 12 11.5Z" stroke="#374151" strokeWidth="0.75" fill="rgba(209, 213, 219, 0.3)"/>
@@ -131,14 +144,18 @@ export default function NotificationFAB() {
         )}
 
         <div
-            className="relative h-14 w-14 cursor-pointer"
+            className={cn(
+                "relative h-14 w-14 cursor-pointer",
+                showNotification && 'animate-pulse-bg'
+            )}
             onClick={handleFabClick}
             aria-label="Ver novas mensagens"
         >
-            <div className={cn(
-              "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl",
-              showNotification && 'animate-pulse-bg'
-            )}></div>
+            <div
+              className={cn(
+                "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"
+              )}
+            ></div>
             <div className="relative z-10 w-full h-full flex items-center justify-center">
                 <BobIcon />
             </div>
