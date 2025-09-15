@@ -1,14 +1,13 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
 import { useMessages } from '@/contexts/MessagesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { useRouter } from 'next/navigation';
+import { useIdleFabMessages } from '@/contexts/IdleFabMessagesContext';
 
 // --- Ícone do Bob ---
 function BobIcon({ isAnimated }: { isAnimated: boolean }) {
@@ -82,12 +81,15 @@ interface NotificationFABProps {
 
 export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }: NotificationFABProps) {
   const { messages, markMessageAsRead } = useMessages();
+  const { idleMessages } = useIdleFabMessages();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
   const router = useRouter();
   
-  const [showNotification, setShowNotification] = useState(false);
-  const [isIconAnimated, setIsIconAnimated] = useState(true);
+  const [showNotificationBubble, setShowNotificationBubble] = useState(false);
+  const [isIconAnimated, setIsIconAnimated] = useState(false);
+  const [showIdleBubble, setShowIdleBubble] = useState(false);
+  const [currentIdleIndex, setCurrentIdleIndex] = useState(0);
 
   const unreadMessages = useMemo(() => {
     if (!user) return [];
@@ -107,24 +109,40 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   const hasUnreadMessages = unreadMessages.length > 0;
   const hasWorkflowNotifications = hasPendingRequests || hasPendingTasks;
   const hasAnyNotification = hasUnreadMessages || hasWorkflowNotifications;
+  
+  const notificationText = useMemo(() => {
+      if (hasPendingTasks) {
+          return `Você tem novas tarefas pendentes.\nClique para ver.`;
+      }
+      if (hasPendingRequests) {
+          return `Há solicitações aguardando sua gestão.\nClique para ver.`;
+      }
+      const count = unreadMessages.length;
+      if (count > 0) {
+          const messageText = count > 1 ? `${count} novas mensagens` : '1 nova mensagem';
+          return `Você tem ${messageText}.\nClique para ver.`;
+      }
+      return null;
+  }, [hasPendingTasks, hasPendingRequests, unreadMessages.length]);
 
   useEffect(() => {
     if (hasAnyNotification) {
       const timer = setTimeout(() => {
-        setShowNotification(true);
+        setShowNotificationBubble(true);
         setIsIconAnimated(true);
       }, 2000);
       return () => clearTimeout(timer);
     } else {
-      setShowNotification(false);
+      setShowNotificationBubble(false);
       setIsIconAnimated(false);
     }
   }, [hasAnyNotification]);
 
-  const handleFabClick = () => {
-    // Stop animations and hide bubble on any click
-    setShowNotification(false);
+  const handleNotificationBubbleClick = () => {
+    // This click is only for the notification bubble
     setIsIconAnimated(false);
+    setShowNotificationBubble(false);
+    setShowIdleBubble(false);
 
     if (hasPendingTasks) {
         router.push('/me/tasks');
@@ -146,36 +164,43 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
           });
         }
       }
-    } else {
-        // Default action if no specific notification is active
-        router.push('/chatbot');
     }
   };
+
+  const handleFabClick = () => {
+     // Clicking the FAB itself always deals with idle messages
+     setIsIconAnimated(false);
+     setShowNotificationBubble(false); // Hide notification if it was showing
+
+     if (idleMessages.length > 0) {
+        setShowIdleBubble(true);
+        setCurrentIdleIndex(prev => (prev + 1) % idleMessages.length);
+     } else {
+        // Fallback action if no idle messages are configured
+        router.push('/chatbot');
+     }
+  };
   
-  const notificationText = useMemo(() => {
-      if (hasPendingTasks) {
-          return `Você tem novas tarefas pendentes.\nClique para ver.`;
-      }
-      if (hasPendingRequests) {
-          return `Há solicitações aguardando sua gestão.\nClique para ver.`;
-      }
-      const count = unreadMessages.length;
-      if (count > 0) {
-          const messageText = count > 1 ? `${count} novas mensagens` : '1 nova mensagem';
-          return `Você tem ${messageText}.\nClique para ver.`;
-      }
-      return null;
-  }, [hasPendingTasks, hasPendingRequests, unreadMessages.length]);
+  const idleMessageText = useMemo(() => {
+      if (!showIdleBubble || idleMessages.length === 0) return null;
+      return idleMessages[currentIdleIndex]?.text;
+  }, [showIdleBubble, currentIdleIndex, idleMessages]);
+
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
-        {showNotification && notificationText && (
-             <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
-                <MessageBubble onClick={handleFabClick}>
+        <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
+            {showNotificationBubble && notificationText && (
+                <MessageBubble onClick={handleNotificationBubbleClick}>
                    <p className="text-sm whitespace-pre-line">{notificationText}</p>
                 </MessageBubble>
-             </div>
-        )}
+            )}
+             {showIdleBubble && idleMessageText && (
+                <MessageBubble>
+                   <p className="text-sm whitespace-pre-line">{idleMessageText}</p>
+                </MessageBubble>
+            )}
+        </div>
 
         <div
             className="relative h-14 w-14 cursor-pointer"
@@ -184,8 +209,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
         >
             <div
               className={cn(
-                "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl",
-                 showNotification && "animate-pulse-bg"
+                "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"
               )}
             ></div>
             <div className="relative z-10 w-full h-full flex items-center justify-center">
@@ -195,5 +219,3 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
     </div>
   );
 }
-
-    
