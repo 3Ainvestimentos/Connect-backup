@@ -65,7 +65,7 @@ const MessageBubble = ({ children, onClick, onClose, hasCloseButton, variant = '
     const bubbleColor = 'hsl(170, 60%, 50%)';
     const borderColor = 'hsl(170, 60%, 50%)';
 
-    const baseClasses = "w-64 rounded-lg p-4 shadow-lg transition-all";
+    const baseClasses = "w-72 rounded-lg p-4 shadow-lg transition-all";
     const variantClasses = {
         primary: "bg-[hsl(170,60%,50%)] text-white font-semibold cursor-pointer",
         secondary: "bg-white text-black border-2",
