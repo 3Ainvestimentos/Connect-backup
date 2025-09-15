@@ -432,7 +432,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
           {children}
-          {pathname === '/dashboard' && (hasActiveCampaign ? <MessageFAB /> : <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />)}
+          {hasActiveCampaign ? (
+            <MessageFAB />
+          ) : (
+            <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />
+          )}
         </main>
       </div>
       <PollTrigger />
@@ -457,5 +461,3 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
     </SidebarProvider>
   )
 }
-
-    
