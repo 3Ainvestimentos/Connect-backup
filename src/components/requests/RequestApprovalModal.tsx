@@ -455,7 +455,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
 
     return (
-      <div className="prose prose-sm dark:prose-invert max-w-none">
+      <div className="prose prose-sm dark:prose-invert max-w-none break-words whitespace-pre-wrap">
         <strong>{fieldDef.label}:</strong>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayValue?.toString() || ''}</ReactMarkdown>
       </div>
