@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useMemo } from 'react';
@@ -65,7 +66,7 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
     }
 
     return (
-       <div className="prose prose-sm dark:prose-invert max-w-none">
+       <div className="prose prose-sm dark:prose-invert max-w-none break-words whitespace-pre-wrap">
         <strong>{fieldDef.label}:</strong>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayValue?.toString() || ''}</ReactMarkdown>
       </div>
@@ -143,7 +144,7 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
             
             <div>
                 <h3 className="font-semibold text-lg mb-2">Dados Enviados</h3>
-                <div className="p-4 bg-muted/50 rounded-md text-sm">
+                <div className="p-4 bg-muted/50 rounded-md text-sm break-words whitespace-pre-wrap">
                     {renderFormData()}
                 </div>
             </div>

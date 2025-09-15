@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -626,7 +627,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
               
               <div>
                   <h3 className="font-semibold text-lg mb-2">Dados da Solicitação</h3>
-                  <div className="p-4 bg-muted/50 rounded-md text-sm">
+                  <div className="p-4 bg-muted/50 rounded-md text-sm break-words whitespace-pre-wrap">
                       {renderFormData()}
                   </div>
               </div>
@@ -711,7 +712,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                                       <Badge variant="secondary" className="font-semibold">{definition?.statuses.find(s => s.id === log.status)?.label || log.status}</Badge>
                                       {index !== request.history.length - 1 && <div className="w-px h-6 bg-border" />}
                                   </div>
-                                  <div className="pt-0.5 flex-grow prose prose-sm dark:prose-invert max-w-none">
+                                  <div className="pt-0.5 flex-grow prose prose-sm dark:prose-invert max-w-none break-words whitespace-pre-wrap">
                                       <p className="font-semibold">{log.userName} <span className="text-muted-foreground font-normal">({format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')})</span></p>
                                       <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-muted-foreground">{log.notes}</ReactMarkdown>
                                       {attachmentUrl && fileName && (
