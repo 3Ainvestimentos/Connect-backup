@@ -72,8 +72,6 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   if (loading) return <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
 
-  const hasAnyNotification = hasPendingRequests || hasPendingTasks;
-  
   const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel;
   const hasAdminPanels = permissions.canManageContent || permissions.canManageWorkflows || isSuperAdmin;
 
@@ -81,11 +79,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className={cn(
-          "relative h-10 w-10 rounded-full p-0 transition-all duration-300",
-          "focus-visible:ring-0 focus-visible:ring-offset-0",
-          hasAnyNotification && "ring-2 ring-offset-2 ring-offset-header-DEFAULT ring-admin-primary",
-        )}>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 focus-visible:ring-0 focus-visible:ring-offset-0">
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
             <AvatarFallback>
@@ -438,7 +432,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
           {children}
-          {pathname === '/dashboard' && (hasActiveCampaign ? <MessageFAB /> : <NotificationFAB />)}
+          {pathname === '/dashboard' && (hasActiveCampaign ? <MessageFAB /> : <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />)}
         </main>
       </div>
       <PollTrigger />
@@ -463,3 +457,5 @@ export default function AppLayoutWrapper({ children }: { children: React.ReactNo
     </SidebarProvider>
   )
 }
+
+    

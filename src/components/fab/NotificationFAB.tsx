@@ -8,6 +8,7 @@ import { X } from 'lucide-react';
 import { useMessages } from '@/contexts/MessagesContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { useRouter } from 'next/navigation';
 
 // --- Ícone do Bob ---
 function BobIcon({ isAnimated }: { isAnimated: boolean }) {
@@ -16,10 +17,8 @@ function BobIcon({ isAnimated }: { isAnimated: boolean }) {
             <style>
             {`
                 @keyframes lamp-on-off {
-                0%, 25% { opacity: 1; }
+                0%, 100% { opacity: 1; }
                 50% { opacity: 0.1; }
-                50.01%, 75% { opacity: 0.1; }
-                100% { opacity: 1; }
                 }
                 .animate-lamp {
                 animation: lamp-on-off 4s ease-in-out infinite;
@@ -76,10 +75,16 @@ const MessageBubble = ({ children, onClick, className }: MessageBubbleProps) => 
     );
 };
 
-export default function NotificationFAB() {
+interface NotificationFABProps {
+  hasPendingRequests: boolean;
+  hasPendingTasks: boolean;
+}
+
+export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }: NotificationFABProps) {
   const { messages, markMessageAsRead } = useMessages();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
+  const router = useRouter();
   
   const [showNotification, setShowNotification] = useState(false);
   const [isIconAnimated, setIsIconAnimated] = useState(true);
@@ -99,42 +104,68 @@ export default function NotificationFAB() {
     });
   }, [messages, user, collaborators]);
 
+  const hasUnreadMessages = unreadMessages.length > 0;
+  const hasWorkflowNotifications = hasPendingRequests || hasPendingTasks;
+  const hasAnyNotification = hasUnreadMessages || hasWorkflowNotifications;
+
   useEffect(() => {
-    // Show notification only if there are unread messages.
-    if (unreadMessages.length > 0) {
+    if (hasAnyNotification) {
       const timer = setTimeout(() => {
         setShowNotification(true);
-        setIsIconAnimated(true); // Ensure icon animates when new messages arrive
-      }, 2000); // Delay showing the bubble to be less intrusive
+        setIsIconAnimated(true);
+      }, 2000);
       return () => clearTimeout(timer);
     } else {
       setShowNotification(false);
+      setIsIconAnimated(false);
     }
-  }, [unreadMessages.length]);
+  }, [hasAnyNotification]);
 
   const handleFabClick = () => {
-    const messagesCard = document.getElementById('messages-card');
-    if (messagesCard) {
-      messagesCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // Mark all unread messages as read upon interaction
-      const currentUser = collaborators.find(c => c.email === user?.email);
-      if (currentUser) {
-        unreadMessages.forEach(msg => {
-          markMessageAsRead(msg.id, currentUser.id3a);
-        });
-      }
-    }
+    // Stop animations and hide bubble on any click
     setShowNotification(false);
-    setIsIconAnimated(false); // Stop icon animation on click
+    setIsIconAnimated(false);
+
+    if (hasPendingTasks) {
+        router.push('/me/tasks');
+        return;
+    }
+    if (hasPendingRequests) {
+        router.push('/requests');
+        return;
+    }
+    if (hasUnreadMessages) {
+      const messagesCard = document.getElementById('messages-card');
+      if (messagesCard) {
+        messagesCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        const currentUser = collaborators.find(c => c.email === user?.email);
+        if (currentUser) {
+          unreadMessages.forEach(msg => {
+            markMessageAsRead(msg.id, currentUser.id3a);
+          });
+        }
+      }
+    } else {
+        // Default action if no specific notification is active
+        router.push('/chatbot');
+    }
   };
   
   const notificationText = useMemo(() => {
+      if (hasPendingTasks) {
+          return `Você tem novas tarefas pendentes.\nClique para ver.`;
+      }
+      if (hasPendingRequests) {
+          return `Há solicitações aguardando sua gestão.\nClique para ver.`;
+      }
       const count = unreadMessages.length;
-      if (count === 0) return null;
-      const messageText = count > 1 ? `${count} novas mensagens` : '1 nova mensagem';
-      return `Você tem ${messageText}.\nClique para ver.`;
-  }, [unreadMessages.length]);
+      if (count > 0) {
+          const messageText = count > 1 ? `${count} novas mensagens` : '1 nova mensagem';
+          return `Você tem ${messageText}.\nClique para ver.`;
+      }
+      return null;
+  }, [hasPendingTasks, hasPendingRequests, unreadMessages.length]);
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
@@ -149,11 +180,12 @@ export default function NotificationFAB() {
         <div
             className="relative h-14 w-14 cursor-pointer"
             onClick={handleFabClick}
-            aria-label="Ver novas mensagens"
+            aria-label="Ver notificações"
         >
             <div
               className={cn(
-                "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"
+                "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl",
+                 showNotification && "animate-pulse-bg"
               )}
             ></div>
             <div className="relative z-10 w-full h-full flex items-center justify-center">
@@ -163,3 +195,5 @@ export default function NotificationFAB() {
     </div>
   );
 }
+
+    
