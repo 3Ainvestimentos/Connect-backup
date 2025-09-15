@@ -10,6 +10,8 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { useRouter } from 'next/navigation';
 import { useIdleFabMessages } from '@/contexts/IdleFabMessagesContext';
 import { X } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // --- Ícone do Bob ---
 function BobIcon({ isAnimated }: { isAnimated: boolean }) {
@@ -103,12 +105,6 @@ interface NotificationFABProps {
   hasPendingRequests: boolean;
   hasPendingTasks: boolean;
 }
-
-const removeUrls = (text: string) => {
-  if (!text) return '';
-  return text.replace(/https?:\/\/[^\s)]+/g, '');
-};
-
 
 export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }: NotificationFABProps) {
   const { messages, markMessageAsRead } = useMessages();
@@ -216,7 +212,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   
   const idleMessageText = useMemo(() => {
       if (!showIdleBubble || idleMessages.length === 0) return null;
-      return removeUrls(idleMessages[currentIdleIndex]?.text);
+      return idleMessages[currentIdleIndex]?.text;
   }, [showIdleBubble, currentIdleIndex, idleMessages]);
 
 
@@ -235,7 +231,11 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
                     hasCloseButton
                     onClick={() => setShowIdleBubble(false)} // Click anywhere on bubble closes it
                 >
-                   <p className="text-sm whitespace-pre-line">{idleMessageText}</p>
+                   <div className="prose prose-sm dark:prose-invert">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {idleMessageText}
+                        </ReactMarkdown>
+                   </div>
                 </MessageBubble>
             )}
         </div>
