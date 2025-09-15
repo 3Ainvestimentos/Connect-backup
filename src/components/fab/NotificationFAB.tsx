@@ -10,7 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
 // --- Ícone do Bob ---
-function BobIcon() {
+function BobIcon({ isAnimated }: { isAnimated: boolean }) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 28" fill="none" className="h-9 w-9">
             <style>
@@ -22,11 +22,11 @@ function BobIcon() {
                 100% { opacity: 1; }
                 }
                 .animate-lamp {
-                animation: lamp-on-off 2s infinite ease-in-out;
+                animation: lamp-on-off 4s ease-in-out infinite;
                 }
             `}
             </style>
-            <g className="animate-lamp" transform="translate(0, 1.5)">
+            <g className={cn(isAnimated && "animate-lamp")} transform="translate(0, 1.5)">
                 <circle cx="12" cy="6.5" r="5.5" fill="#FFFFE0" opacity="0.3"/>
                 <circle cx="12" cy="6.5" r="4.5" fill="#FFFFE0" opacity="0.5"/>
                 <path d="M12 11.5C9.23858 11.5 7 9.26142 7 6.5C7 3.73858 9.23858 1.5 12 1.5C14.7614 1.5 17 3.73858 17 6.5C17 9.26142 14.7614 11.5 12 11.5Z" stroke="#374151" strokeWidth="0.75" fill="rgba(209, 213, 219, 0.3)"/>
@@ -82,6 +82,7 @@ export default function NotificationFAB() {
   const { collaborators } = useCollaborators();
   
   const [showNotification, setShowNotification] = useState(false);
+  const [isIconAnimated, setIsIconAnimated] = useState(true);
 
   const unreadMessages = useMemo(() => {
     if (!user) return [];
@@ -103,6 +104,7 @@ export default function NotificationFAB() {
     if (unreadMessages.length > 0) {
       const timer = setTimeout(() => {
         setShowNotification(true);
+        setIsIconAnimated(true); // Ensure icon animates when new messages arrive
       }, 2000); // Delay showing the bubble to be less intrusive
       return () => clearTimeout(timer);
     } else {
@@ -124,6 +126,7 @@ export default function NotificationFAB() {
       }
     }
     setShowNotification(false);
+    setIsIconAnimated(false); // Stop icon animation on click
   };
   
   const notificationText = useMemo(() => {
@@ -154,7 +157,7 @@ export default function NotificationFAB() {
               )}
             ></div>
             <div className="relative z-10 w-full h-full flex items-center justify-center">
-                <BobIcon />
+                <BobIcon isAnimated={isIconAnimated} />
             </div>
         </div>
     </div>
