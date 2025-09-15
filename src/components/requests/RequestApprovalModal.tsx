@@ -463,14 +463,35 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }
 
   const renderFormData = () => {
+    if (!definition || !definition.fields) return <p>Sem definição de formulário encontrada.</p>;
     if (!request.formData || Object.keys(request.formData).length === 0) return <p>Sem dados de formulário.</p>;
+    
+    const renderedKeys = new Set<string>();
+
     return (
         <div className="space-y-2">
-            {Object.entries(request.formData).map(([key, value]) => (
-                <div key={key}>
-                  {renderFieldValue(key, value)}
-                </div>
-            ))}
+            {definition.fields.map(field => {
+                const value = request.formData[field.id];
+                if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
+                    return null;
+                }
+                renderedKeys.add(field.id);
+                return (
+                    <div key={field.id}>
+                        {renderFieldValue(field.id, value)}
+                    </div>
+                );
+            })}
+            {Object.entries(request.formData).map(([key, value]) => {
+              if (!renderedKeys.has(key)) {
+                return (
+                  <div key={key}>
+                    {renderFieldValue(key, value)}
+                  </div>
+                )
+              }
+              return null;
+            })}
         </div>
     );
   };
