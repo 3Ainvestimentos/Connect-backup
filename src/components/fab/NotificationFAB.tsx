@@ -117,7 +117,7 @@ export default function NotificationFAB() {
       const count = unreadMessages.length;
       if (count === 0) return null;
       const messageText = count > 1 ? `${count} novas mensagens` : '1 nova mensagem';
-      return `Você tem ${messageText}. \nClique para ver.`;
+      return `Você tem ${messageText}.\nClique para ver.`;
   }, [unreadMessages.length]);
 
   return (
@@ -136,8 +136,7 @@ export default function NotificationFAB() {
             aria-label="Ver novas mensagens"
         >
             <div className={cn(
-              "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl",
-              showNotification && "animate-pulse-bg"
+              "absolute inset-0 bg-background rounded-full border-2 border-[hsl(170,60%,50%)] transition-all duration-200 group-hover:scale-[1.03] group-hover:shadow-xl"
             )}></div>
             <div className="relative z-10 w-full h-full flex items-center justify-center">
                 <BobIcon />
