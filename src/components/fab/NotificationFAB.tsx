@@ -112,13 +112,20 @@ export default function NotificationFAB() {
     }
     setShowNotification(false);
   };
+  
+  const notificationText = useMemo(() => {
+      const count = unreadMessages.length;
+      if (count === 0) return null;
+      const messageText = count > 1 ? `${count} novas mensagens` : '1 nova mensagem';
+      return `Você tem ${messageText}. \nClique para ver.`;
+  }, [unreadMessages.length]);
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
-        {showNotification && (
+        {showNotification && notificationText && (
              <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
                 <MessageBubble onClick={handleFabClick}>
-                   <p className="text-sm">Você tem {unreadMessages.length > 1 ? `${unreadMessages.length} novas mensagens` : '1 nova mensagem'}. Clique para ver.</p>
+                   <p className="text-sm whitespace-pre-line">{notificationText}</p>
                 </MessageBubble>
              </div>
         )}
@@ -135,11 +142,6 @@ export default function NotificationFAB() {
             <div className="relative z-10 w-full h-full flex items-center justify-center">
                 <BobIcon />
             </div>
-            {unreadMessages.length > 0 && (
-                <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground">
-                    {unreadMessages.length}
-                </div>
-            )}
         </div>
     </div>
   );
