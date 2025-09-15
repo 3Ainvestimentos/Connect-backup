@@ -50,6 +50,7 @@ import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { TermsOfUseModal } from '../auth/TermsOfUseModal';
 import MessageFAB from '../fab/MessageFAB';
 import NotificationFAB from '../fab/NotificationFAB';
+import { useFabMessages } from '@/contexts/FabMessagesContext';
 
 
 export const navItems = [
@@ -205,6 +206,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { settings, loading: settingsLoading } = useSystemSettings();
   const { theme, setTheme } = useTheme();
   const { requests, loading: workflowsLoading } = useWorkflows();
+  const { fabMessages } = useFabMessages();
   const { workflowDefinitions } = useApplications();
   const router = useRouter();
   const pathname = usePathname();
@@ -220,6 +222,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (!user) return null;
     return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
+
+  const hasActiveCampaign = useMemo(() => {
+    if (!currentUserCollab) return false;
+    const messageForUser = fabMessages.find(msg => msg.userId === currentUserCollab.id3a);
+    return messageForUser && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up');
+  }, [fabMessages, currentUserCollab]);
+
 
   useEffect(() => {
     if (loading || collaboratorsLoading || settingsLoading || isSuperAdmin) return;
@@ -429,8 +438,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
           {children}
-          {pathname === '/dashboard' && <NotificationFAB />}
-          <MessageFAB />
+          {pathname === '/dashboard' && (hasActiveCampaign ? <MessageFAB /> : <NotificationFAB />)}
         </main>
       </div>
       <PollTrigger />

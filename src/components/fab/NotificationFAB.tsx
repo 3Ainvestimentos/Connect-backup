@@ -112,11 +112,6 @@ export default function NotificationFAB() {
     }
     setShowNotification(false);
   };
-  
-  // Do not render the FAB if there are no unread messages and the bubble is hidden
-  if (unreadMessages.length === 0 && !showNotification) {
-      return null;
-  }
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
