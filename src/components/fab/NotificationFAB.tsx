@@ -12,6 +12,8 @@ import { useIdleFabMessages } from '@/contexts/IdleFabMessagesContext';
 import { X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { useFabMessages } from '@/contexts/FabMessagesContext';
+
 
 // --- Ícone do Bob ---
 function BobIcon({ isAnimated }: { isAnimated: boolean }) {
@@ -107,10 +109,11 @@ interface NotificationFABProps {
 }
 
 export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }: NotificationFABProps) {
-  const { messages, markMessageAsRead } = useMessages();
-  const { idleMessages } = useIdleFabMessages();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
+  const { messages, markMessageAsRead } = useMessages();
+  const { idleMessages } = useIdleFabMessages();
+  const { fabMessages, markCampaignAsClicked, completeFollowUp } = useFabMessages();
   const router = useRouter();
   
   const [showNotificationBubble, setShowNotificationBubble] = useState(false);
@@ -118,11 +121,20 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   const [showIdleBubble, setShowIdleBubble] = useState(false);
   const [currentIdleIndex, setCurrentIdleIndex] = useState(0);
 
+  const currentUser = useMemo(() => {
+    if (!user) return null;
+    return collaborators.find(c => c.email === user.email);
+  }, [user, collaborators]);
+
+  const activeCampaign = useMemo(() => {
+    if (!currentUser) return null;
+    const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
+    const isActiveState = messageForUser && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up');
+    return isActiveState ? messageForUser : null;
+  }, [fabMessages, currentUser]);
+
   const unreadMessages = useMemo(() => {
-    if (!user) return [];
-    const currentUser = collaborators.find(c => c.email === user.email);
-    if (!currentUser) return [];
-    
+    if (!user || !currentUser) return [];
     return messages.filter(msg => {
       if ((msg.deletedBy || []).includes(currentUser.id3a)) {
         return false;
@@ -131,29 +143,22 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
       const isUnread = !msg.readBy.includes(currentUser.id3a);
       return isRecipient && isUnread;
     });
-  }, [messages, user, collaborators]);
+  }, [messages, user, currentUser]);
 
   const hasUnreadMessages = unreadMessages.length > 0;
   const hasWorkflowNotifications = hasPendingRequests || hasPendingTasks;
-  const hasAnyNotification = hasUnreadMessages || hasWorkflowNotifications;
+  const hasPrimaryAction = !!activeCampaign || hasWorkflowNotifications || hasUnreadMessages;
   
   const notificationText = useMemo(() => {
-      if (hasPendingTasks) {
-          return `Você tem novas tarefas pendentes.\nClique para ver.`;
-      }
-      if (hasPendingRequests) {
-          return `Há solicitações aguardando sua gestão.\nClique para ver.`;
-      }
+      if (hasPendingTasks) return `Você tem novas tarefas pendentes.\nClique para ver.`;
+      if (hasPendingRequests) return `Há solicitações aguardando sua gestão.\nClique para ver.`;
       const count = unreadMessages.length;
-      if (count > 0) {
-          const messageText = count > 1 ? `${count} novas mensagens` : '1 nova mensagem';
-          return `Você tem ${messageText}.\nClique para ver.`;
-      }
+      if (count > 0) return `Você tem ${count > 1 ? `${count} novas mensagens` : '1 nova mensagem'}.\nClique para ver.`;
       return null;
   }, [hasPendingTasks, hasPendingRequests, unreadMessages.length]);
 
   useEffect(() => {
-    if (hasAnyNotification) {
+    if (notificationText) {
       const timer = setTimeout(() => {
         setShowNotificationBubble(true);
         setIsIconAnimated(true);
@@ -163,13 +168,24 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
       setShowNotificationBubble(false);
       setIsIconAnimated(false);
     }
-  }, [hasAnyNotification]);
+  }, [notificationText]);
 
-  const handleNotificationBubbleClick = () => {
+  const handlePrimaryAction = () => {
     setIsIconAnimated(false);
     setShowNotificationBubble(false);
     setShowIdleBubble(false);
 
+    // Campaign Actions
+    if (activeCampaign && currentUser) {
+        if (activeCampaign.status === 'pending_cta') {
+            markCampaignAsClicked(currentUser.id3a);
+        } else if (activeCampaign.status === 'pending_follow_up') {
+            completeFollowUp(currentUser.id3a);
+        }
+        return;
+    }
+
+    // Workflow Notifications
     if (hasPendingTasks) {
         router.push('/me/tasks');
         return;
@@ -178,12 +194,12 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
         router.push('/requests');
         return;
     }
+    
+    // Unread Messages Notification
     if (hasUnreadMessages) {
       const messagesCard = document.getElementById('messages-card');
       if (messagesCard) {
         messagesCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        
-        const currentUser = collaborators.find(c => c.email === user?.email);
         if (currentUser) {
           unreadMessages.forEach(msg => {
             markMessageAsRead(msg.id, currentUser.id3a);
@@ -193,10 +209,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
     }
   };
 
-  const handleFabClick = () => {
-     setIsIconAnimated(false);
-     setShowNotificationBubble(false);
-
+  const handleIdleAction = () => {
      if (idleMessages.length > 0) {
         setShowIdleBubble(true);
         setCurrentIdleIndex(prev => (prev + 1) % idleMessages.length);
@@ -205,38 +218,52 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
      }
   };
 
+  const handleFabClick = () => {
+      if (hasPrimaryAction) {
+          handlePrimaryAction();
+      } else {
+          handleIdleAction();
+      }
+  };
+  
   const handleIdleClose = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowIdleBubble(false);
   };
   
-  const idleMessageText = useMemo(() => {
-      if (!showIdleBubble || idleMessages.length === 0) return null;
-      return idleMessages[currentIdleIndex]?.text;
-  }, [showIdleBubble, currentIdleIndex, idleMessages]);
-
+  const currentCampaign = activeCampaign?.pipeline[activeCampaign.activeCampaignIndex];
 
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
         <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
-            {showNotificationBubble && notificationText && (
-                <MessageBubble onClick={handleNotificationBubbleClick}>
+            {activeCampaign && currentCampaign && activeCampaign.status === 'pending_cta' && (
+                <MessageBubble variant="primary" onClick={handlePrimaryAction}>
+                    <p className="text-sm">{currentCampaign.ctaMessage}</p>
+                </MessageBubble>
+            )}
+            {activeCampaign && currentCampaign && activeCampaign.status === 'pending_follow_up' && (
+                <MessageBubble variant="secondary" onClose={handlePrimaryAction} hasCloseButton>
+                    <p className="text-sm">{currentCampaign.followUpMessage}</p>
+                </MessageBubble>
+            )}
+            {!activeCampaign && showNotificationBubble && notificationText && (
+                <MessageBubble onClick={handlePrimaryAction}>
                    <p className="text-sm whitespace-pre-line">{notificationText}</p>
                 </MessageBubble>
             )}
-            {showIdleBubble && idleMessageText && (
+            {showIdleBubble && (
                 <MessageBubble 
                     variant="secondary"
                     onClose={handleIdleClose}
                     hasCloseButton
-                    onClick={() => setShowIdleBubble(false)} // Click anywhere on bubble closes it
+                    onClick={() => setShowIdleBubble(false)}
                 >
                    <div className="text-sm dark:prose-invert">
                         <ReactMarkdown 
                             remarkPlugins={[remarkGfm]}
                             components={{ a: ({node, ...props}) => <a {...props} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline" /> }}
                         >
-                            {idleMessageText}
+                            {idleMessages[currentIdleIndex]?.text || ''}
                         </ReactMarkdown>
                    </div>
                 </MessageBubble>
@@ -246,7 +273,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
         <div
             className="relative h-14 w-14 cursor-pointer"
             onClick={handleFabClick}
-            aria-label="Ver notificações"
+            aria-label={hasPrimaryAction ? "Ver notificação" : "Abrir assistente"}
         >
             <div
               className={cn(
