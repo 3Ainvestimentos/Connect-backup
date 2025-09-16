@@ -121,10 +121,25 @@ export function AllRequestsView() {
         );
     };
 
-    const getStatusLabel = (request: WorkflowRequest) => {
+    const getStatusInfo = (request: WorkflowRequest) => {
         const definition = workflowDefinitions.find(d => d.name === request.type);
         const status = definition?.statuses.find(s => s.id === request.status);
-        return status?.label || request.status;
+        const label = status?.label || request.status;
+
+        if (!definition || !definition.statuses || definition.statuses.length === 0) {
+            return { label, color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-800' };
+        }
+        
+        const initialStatusId = definition.statuses[0].id;
+        const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+
+        if (request.status === initialStatusId && request.history.length <= 1) {
+            return { label, color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-200 dark:border-red-800' }; // Aberto - Vermelho
+        } else if (status && finalStatusLabels.some(l => status.label.toLowerCase().includes(l))) {
+            return { label, color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800' }; // Finalizado - Verde
+        } else {
+            return { label, color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-800' }; // Intermediário - Laranja
+        }
     };
     
     const getOwnerName = (email: string) => {
@@ -144,7 +159,7 @@ export function AllRequestsView() {
             return {
                 ID_Solicitacao: req.requestId,
                 Tipo: req.type,
-                Status: getStatusLabel(req),
+                Status: getStatusInfo(req).label,
                 Responsavel: req.assignee?.name || 'Não atribuído',
                 Proprietario_Workflow: getOwnerName(req.ownerEmail),
                 Solicitante: req.submittedBy.userName,
@@ -271,6 +286,7 @@ export function AllRequestsView() {
                                             ar.status === 'pending' && differenceInHours(new Date(), parseISO(ar.requestedAt)) > 24
                                         );
                                         const needsAttention = !req.isArchived && (isUnassignedForTooLong || hasOverdueActionRequest);
+                                        const statusInfo = getStatusInfo(req);
 
                                         return (
                                         <TableRow key={req.id} className={cn(
@@ -280,8 +296,8 @@ export function AllRequestsView() {
                                             <TableCell className="font-mono text-xs">{req.requestId}</TableCell>
                                             <TableCell className="font-medium">{req.type}</TableCell>
                                             <TableCell>
-                                                <Badge variant="secondary" className="font-semibold">
-                                                    {getStatusLabel(req)}
+                                                <Badge variant="outline" className={cn("font-semibold", statusInfo.color)}>
+                                                    {statusInfo.label}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell>{req.submittedBy.userName}</TableCell>
@@ -336,3 +352,4 @@ export function AllRequestsView() {
         </>
     );
 }
+
