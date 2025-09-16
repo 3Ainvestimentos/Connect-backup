@@ -298,7 +298,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     if (!originalRequest) return;
     
     const definition = workflowDefinitions.find(def => def.name === originalRequest.type);
-    const isFinalStatus = definition ? definition.statuses[definition.statuses.length - 1]?.id === requestUpdate.status : false;
+    const isFinalStatus = definition?.statuses.some(s => s.id === requestUpdate.status && ['finalizado', 'concluído', 'aprovado', 'reprovado', 'cancelado'].some(term => s.label.toLowerCase().includes(term))) ?? false;
 
     // Always notify the requester (submittedBy)
     if (notificationMessage && originalRequest.submittedBy.userId) {
@@ -345,6 +345,3 @@ export const useWorkflows = (): WorkflowsContextType => {
   }
   return context;
 };
-
-
-    

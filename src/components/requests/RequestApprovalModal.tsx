@@ -114,14 +114,20 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return definition.statuses.find(s => s.id === request.status);
   }, [definition, request]);
 
+  const isCurrentStatusFinal = useMemo(() => {
+    if (!currentStatusDefinition) return false;
+    const finalLabels = ['finalizado', 'concluído', 'aprovado', 'reprovado', 'cancelado'];
+    return finalLabels.some(label => currentStatusDefinition.label.toLowerCase().includes(label));
+  }, [currentStatusDefinition]);
+
   const nextStatus = useMemo((): WorkflowStatusDefinition | null => {
-    if (!definition || !request) return null;
+    if (!definition || !request || isCurrentStatusFinal) return null;
     const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
     if (currentIndex === -1 || currentIndex >= definition.statuses.length - 1) {
       return null;
     }
     return definition.statuses[currentIndex + 1];
-  }, [definition, request]);
+  }, [definition, request, isCurrentStatusFinal]);
 
 
   const hasPendingActions = useMemo(() => {
@@ -764,7 +770,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         key={nextStatus?.id || 'no-next-status'}
                         className="bg-admin-primary hover:bg-admin-primary/90"
                         onClick={() => nextStatus && handleStatusChange(nextStatus)} 
-                        disabled={isSubmitting || !nextStatus}
+                        disabled={isSubmitting || !nextStatus || hasPendingActions}
                     >
                         {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus?.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
