@@ -339,7 +339,7 @@ export function AllRequestsView() {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={requester?.photoURL || undefined} alt={requester?.name}/>
+                                                        <AvatarImage src={requester?.photoURL} alt={requester?.name}/>
                                                         <AvatarFallback className="text-xs">
                                                             {requester?.name.charAt(0) || '?'}
                                                         </AvatarFallback>
@@ -351,7 +351,7 @@ export function AllRequestsView() {
                                                 {req.assignee ? (
                                                     <div className="flex items-center gap-2">
                                                         <Avatar className="h-6 w-6">
-                                                            <AvatarImage src={getCollaborator(req.assignee.id)?.photoURL || undefined} alt={req.assignee.name}/>
+                                                            <AvatarImage src={getCollaborator(req.assignee.id)?.photoURL} alt={req.assignee.name}/>
                                                             <AvatarFallback className="text-xs">
                                                                 {req.assignee.name.charAt(0)}
                                                             </AvatarFallback>
@@ -365,7 +365,7 @@ export function AllRequestsView() {
                                             <TableCell>
                                                  <div className="flex items-center gap-2">
                                                     <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={owner?.photoURL || undefined} alt={owner?.name}/>
+                                                        <AvatarImage src={owner?.photoURL} alt={owner?.name}/>
                                                         <AvatarFallback className="text-xs">
                                                             {owner?.name.charAt(0) || '?'}
                                                         </AvatarFallback>
