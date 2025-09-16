@@ -94,7 +94,7 @@ export function AllRequestsView() {
                         break;
                     case 'submittedAt':
                         valA = new Date(a.submittedAt).getTime();
-                        valB = new Date(b.submittedAt).getTime();
+                        valB = b.submittedAt ? new Date(b.submittedAt).getTime() : 0;
                         break;
                     case 'requestId':
                         valA = parseInt(a.requestId, 10);
@@ -323,6 +323,7 @@ export function AllRequestsView() {
                                         const statusInfo = getStatusInfo(req);
                                         const requester = getCollaborator(req.submittedBy.userId);
                                         const owner = getOwner(req.ownerEmail);
+                                        const assigneeCollab = req.assignee ? getCollaborator(req.assignee.id) : null;
 
                                         return (
                                         <TableRow key={req.id} className={cn(
@@ -339,7 +340,7 @@ export function AllRequestsView() {
                                             <TableCell>
                                                 <div className="flex items-center gap-2">
                                                     <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={requester?.photoURL} alt={requester?.name}/>
+                                                        {requester?.photoURL && <AvatarImage src={requester.photoURL} alt={requester.name} />}
                                                         <AvatarFallback className="text-xs">
                                                             {requester?.name.charAt(0) || '?'}
                                                         </AvatarFallback>
@@ -351,7 +352,7 @@ export function AllRequestsView() {
                                                 {req.assignee ? (
                                                     <div className="flex items-center gap-2">
                                                         <Avatar className="h-6 w-6">
-                                                            <AvatarImage src={getCollaborator(req.assignee.id)?.photoURL} alt={req.assignee.name}/>
+                                                            {assigneeCollab?.photoURL && <AvatarImage src={assigneeCollab.photoURL} alt={req.assignee.name} />}
                                                             <AvatarFallback className="text-xs">
                                                                 {req.assignee.name.charAt(0)}
                                                             </AvatarFallback>
@@ -365,7 +366,7 @@ export function AllRequestsView() {
                                             <TableCell>
                                                  <div className="flex items-center gap-2">
                                                     <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={owner?.photoURL} alt={owner?.name}/>
+                                                        {owner?.photoURL && <AvatarImage src={owner.photoURL} alt={owner.name}/>}
                                                         <AvatarFallback className="text-xs">
                                                             {owner?.name.charAt(0) || '?'}
                                                         </AvatarFallback>
