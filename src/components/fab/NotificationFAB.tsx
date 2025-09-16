@@ -13,6 +13,7 @@ import { X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
+import { parseISO } from 'date-fns';
 
 
 // --- Ícone do Bob ---
@@ -113,7 +114,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   const { collaborators } = useCollaborators();
   const { messages, markMessageAsRead } = useMessages();
   const { idleMessages } = useIdleFabMessages();
-  const { fabMessages, markCampaignAsClicked, completeFollowUp } = useFabMessages();
+  const { fabMessages, markCampaignAsClicked, completeFollowUp, interruptCampaign } = useFabMessages();
   const router = useRouter();
   
   const [showNotificationBubble, setShowNotificationBubble] = useState(false);
@@ -144,6 +145,31 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
       return isRecipient && isUnread;
     });
   }, [messages, user, currentUser]);
+  
+  // Expiration logic
+  useEffect(() => {
+    if (activeCampaign && activeCampaign.status === 'pending_cta' && currentUser) {
+        const campaign = activeCampaign.pipeline[activeCampaign.activeCampaignIndex];
+        if (campaign && campaign.sentAt) {
+            const sentAtDate = parseISO(campaign.sentAt);
+            const expirationTime = sentAtDate.getTime() + 12 * 60 * 60 * 1000; // 12 hours
+            const now = Date.now();
+
+            if (now > expirationTime) {
+                // Campaign expired, interrupt immediately
+                interruptCampaign(currentUser.id3a);
+                return; // No need to set a timer
+            }
+
+            const timeoutId = setTimeout(() => {
+                interruptCampaign(currentUser.id3a);
+            }, expirationTime - now);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }
+  }, [activeCampaign, currentUser, interruptCampaign]);
+
 
   const hasUnreadMessages = unreadMessages.length > 0;
   const hasWorkflowNotifications = hasPendingRequests || hasPendingTasks;

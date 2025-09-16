@@ -17,7 +17,7 @@ export const campaignSchema = z.object({
   ctaMessage: z.string().min(1, "A mensagem de CTA é obrigatória."),
   followUpMessage: z.string().min(1, "A mensagem de acompanhamento é obrigatória."),
   tag: z.enum(campaignTags).default('Relacionamento'),
-  status: z.enum(['loaded', 'active', 'completed']).default('loaded'),
+  status: z.enum(['loaded', 'active', 'completed', 'interrupted']).default('loaded'),
   sentAt: z.string().optional(),
   clickedAt: z.string().optional(),
   followUpClosedAt: z.string().optional(), // Data de fechamento do follow-up
@@ -50,6 +50,7 @@ interface FabMessagesContextType {
   markCampaignAsClicked: (userId: string) => Promise<void>;
   completeFollowUp: (userId: string) => Promise<void>;
   startCampaign: (userId: string) => Promise<void>;
+  interruptCampaign: (userId: string) => Promise<void>;
   archiveIndividualCampaign: (userId: string, campaignId: string) => Promise<void>;
   archiveMultipleCampaigns: (userId: string, campaignIds: string[]) => Promise<void>;
 }
@@ -326,6 +327,34 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
           });
       },
   });
+
+  const interruptCampaignMutation = useMutation<void, Error, string>({
+    mutationFn: async (userId: string) => {
+        const message = fabMessages.find(m => m.userId === userId);
+        if (!message || message.status !== 'pending_cta') {
+          console.warn("Attempted to interrupt a campaign that was not in 'pending_cta' state.");
+          return;
+        }
+
+        const newPipeline = [...message.pipeline];
+        const interruptedCampaign = { 
+            ...newPipeline[message.activeCampaignIndex], 
+            status: 'interrupted' as const,
+        };
+
+        const remainingPipeline = newPipeline.filter(c => c.id !== interruptedCampaign.id);
+        const newArchived = [...(message.archivedCampaigns || []), interruptedCampaign];
+
+        const hasMoreCampaigns = remainingPipeline.some(c => c.status === 'loaded');
+        
+        await updateDocumentInCollection(COLLECTION_NAME, userId, {
+            pipeline: remainingPipeline,
+            archivedCampaigns: newArchived,
+            status: hasMoreCampaigns ? 'ready' : 'completed',
+            updatedAt: formatISO(new Date()),
+        });
+    },
+  });
   
 
   const value = useMemo(() => ({
@@ -336,9 +365,10 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     markCampaignAsClicked: (userId) => markCampaignAsClickedMutation.mutateAsync(userId),
     completeFollowUp: (userId) => completeFollowUpMutation.mutateAsync(userId),
     startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
+    interruptCampaign: (userId) => interruptCampaignMutation.mutateAsync(userId),
     archiveIndividualCampaign: (userId, campaignId) => archiveIndividualCampaignMutation.mutateAsync({ userId, campaignId }),
     archiveMultipleCampaigns: (userId, campaignIds) => archiveMultipleCampaignsMutation.mutateAsync({userId, campaignIds}),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markCampaignAsClickedMutation, completeFollowUpMutation, startCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markCampaignAsClickedMutation, completeFollowUpMutation, startCampaignMutation, interruptCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>
