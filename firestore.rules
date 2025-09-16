@@ -2,7 +2,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Apenas usuários autenticados podem ler ou escrever
+    // Regra padrão: Exige que o usuário esteja autenticado para qualquer leitura ou escrita.
+    // Esta é uma linha de base de segurança. Regras mais específicas por coleção
+    // devem ser adicionadas abaixo conforme necessário.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
