@@ -19,7 +19,7 @@ import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
 import { useApplications, WorkflowStatusDefinition } from '@/contexts/ApplicationsContext';
 import { AssigneeSelectionModal } from './AssigneeSelectionModal';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Input } from '../ui/input';
@@ -651,6 +651,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                             {assignee ? (
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-6 w-6">
+                                        {assignee.photoURL ? <AvatarImage src={assignee.photoURL} alt={assignee.name} /> : null}
                                         <AvatarFallback className="text-xs">
                                             {assignee.name.charAt(0)}
                                         </AvatarFallback>
@@ -802,7 +803,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
           isOpen={isAssigneeModalOpen}
           onClose={() => setIsAssigneeModalOpen(false)}
           allCollaborators={collaborators}
-          currentAssigneeId={assignee?.id}
+          currentAssigneeId={assignee?.id3a}
           onConfirm={(selected) => {
               setAssignee(selected);
               setIsAssigneeModalOpen(false);
