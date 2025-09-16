@@ -648,7 +648,7 @@ export function ManageFabMessages() {
 
                     <Separator className="my-4" />
                     
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })}>
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ id: `campaign_${Date.now()}`, ctaMessage: '', followUpMessage: '', tag: 'Relacionamento', status: 'loaded' })} className="mt-2 bg-gray-200 hover:bg-gray-300 font-bold">
                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Campanha ao Pipeline
                     </Button>
 
@@ -726,3 +726,5 @@ export function ManageFabMessages() {
         </>
     );
 }
+
+    
