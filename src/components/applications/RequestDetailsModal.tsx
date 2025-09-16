@@ -55,7 +55,8 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
       );
     }
     else if (fieldDef.type === 'date' && value) {
-      const date = parseISO(value);
+      // Handle both Date objects and ISO strings
+      const date = typeof value === 'string' ? parseISO(value) : value;
       displayValue = isValid(date) ? format(date, 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida';
     } else if (fieldDef.type === 'date-range' && value) {
       const from = value.from ? parseISO(value.from) : null;

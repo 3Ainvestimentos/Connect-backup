@@ -451,7 +451,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       );
     }
     else if (fieldDef.type === 'date' && value) {
-      const date = parseISO(value);
+      const date = typeof value === 'string' ? parseISO(value) : value;
       displayValue = isValid(date) ? format(date, 'dd/MM/yyyy', { locale: ptBR }) : 'Data inválida';
     } else if (fieldDef.type === 'date-range' && value) {
       const from = value.from ? parseISO(value.from) : null;
