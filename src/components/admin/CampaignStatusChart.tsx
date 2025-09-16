@@ -18,12 +18,14 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
         let sentCampaigns = 0;
         let completedCampaigns = 0;
         let effectiveCampaigns = 0;
+        let interruptedCampaigns = 0;
 
         messages.forEach(message => {
             // Count campaigns that have been sent
             sentCampaigns += message.pipeline.filter(c => !!c.sentAt).length;
             completedCampaigns += message.pipeline.filter(c => c.status === 'completed').length;
             effectiveCampaigns += message.pipeline.filter(c => !!c.effectiveAt).length;
+            interruptedCampaigns += message.pipeline.filter(c => c.status === 'interrupted').length;
         });
         
         return [
@@ -32,6 +34,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
                 'Campanhas Enviadas': sentCampaigns,
                 'Campanhas Concluídas': completedCampaigns,
                 'Campanhas com Efetividade': effectiveCampaigns,
+                'Campanhas Interrompidas': interruptedCampaigns,
             }
         ];
 
@@ -75,6 +78,7 @@ export default function CampaignStatusChart({ messages }: CampaignStatusChartPro
                              <Bar dataKey="Campanhas Enviadas" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
                              <Bar dataKey="Campanhas Concluídas" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
                              <Bar dataKey="Campanhas com Efetividade" fill="#FF8042" radius={[4, 4, 0, 0]} />
+                             <Bar dataKey="Campanhas Interrompidas" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 ) : (

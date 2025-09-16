@@ -337,19 +337,16 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const newPipeline = [...message.pipeline];
-        const interruptedCampaign = { 
-            ...newPipeline[message.activeCampaignIndex], 
-            status: 'interrupted' as const,
-        };
+        const interruptedCampaignIndex = message.activeCampaignIndex;
+        
+        if (newPipeline[interruptedCampaignIndex]) {
+            newPipeline[interruptedCampaignIndex].status = 'interrupted';
+        }
 
-        const remainingPipeline = newPipeline.filter(c => c.id !== interruptedCampaign.id);
-        const newArchived = [...(message.archivedCampaigns || []), interruptedCampaign];
-
-        const hasMoreCampaigns = remainingPipeline.some(c => c.status === 'loaded');
+        const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
         
         await updateDocumentInCollection(COLLECTION_NAME, userId, {
-            pipeline: remainingPipeline,
-            archivedCampaigns: newArchived,
+            pipeline: newPipeline,
             status: hasMoreCampaigns ? 'ready' : 'completed',
             updatedAt: formatISO(new Date()),
         });

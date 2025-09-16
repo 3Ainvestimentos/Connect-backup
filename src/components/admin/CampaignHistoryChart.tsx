@@ -16,27 +16,33 @@ interface CampaignHistoryChartProps {
 export default function CampaignHistoryChart({ messages }: CampaignHistoryChartProps) {
     
     const chartData = useMemo(() => {
-        const dailyStats: { [date: string]: { total: number, concluidas: number, efetivas: number } } = {};
+        const dailyStats: { [date: string]: { total: number, concluidas: number, efetivas: number, interrompidas: number } } = {};
 
         messages.forEach(message => {
             message.pipeline.forEach(campaign => {
                 // Total de Campanhas (quando foi enviada)
                 if (campaign.sentAt) {
                     const date = format(startOfDay(parseISO(campaign.sentAt)), 'yyyy-MM-dd');
-                    if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0 };
+                    if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0, interrompidas: 0 };
                     dailyStats[date].total++;
                 }
                 // Campanhas Concluídas (quando o follow-up foi fechado)
                 if (campaign.followUpClosedAt) {
                      const date = format(startOfDay(parseISO(campaign.followUpClosedAt)), 'yyyy-MM-dd');
-                     if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0 };
+                     if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0, interrompidas: 0 };
                      dailyStats[date].concluidas++;
                 }
                 // Campanhas com Efetividade
                 if (campaign.effectiveAt) {
                      const date = format(startOfDay(parseISO(campaign.effectiveAt)), 'yyyy-MM-dd');
-                     if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0 };
+                     if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0, interrompidas: 0 };
                      dailyStats[date].efetivas++;
+                }
+                // Campanhas Interrompidas
+                if (campaign.status === 'interrupted' && campaign.sentAt) {
+                     const date = format(startOfDay(parseISO(campaign.sentAt)), 'yyyy-MM-dd');
+                     if (!dailyStats[date]) dailyStats[date] = { total: 0, concluidas: 0, efetivas: 0, interrompidas: 0 };
+                     dailyStats[date].interrompidas++;
                 }
             });
         });
@@ -46,7 +52,8 @@ export default function CampaignHistoryChart({ messages }: CampaignHistoryChartP
                 date: format(parseISO(date), 'dd/MM'),
                 'Campanhas Enviadas': stats.total,
                 'Campanhas Concluídas': stats.concluidas,
-                'Campanhas com Efetividade': stats.efetivas
+                'Campanhas com Efetividade': stats.efetivas,
+                'Campanhas Interrompidas': stats.interrompidas,
             }))
             .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -89,7 +96,8 @@ export default function CampaignHistoryChart({ messages }: CampaignHistoryChartP
                             <Legend />
                             <Line type="monotone" dataKey="Campanhas Enviadas" stroke="hsl(var(--chart-1))" strokeWidth={2} activeDot={{ r: 8 }} />
                             <Line type="monotone" dataKey="Campanhas Concluídas" stroke="hsl(var(--chart-2))" strokeWidth={2} activeDot={{ r: 8 }}/>
-                             <Line type="monotone" dataKey="Campanhas com Efetividade" stroke="#FF8042" strokeWidth={2} activeDot={{ r: 8 }}/>
+                            <Line type="monotone" dataKey="Campanhas com Efetividade" stroke="#FF8042" strokeWidth={2} activeDot={{ r: 8 }}/>
+                            <Line type="monotone" dataKey="Campanhas Interrompidas" stroke="hsl(var(--destructive))" strokeWidth={2} activeDot={{ r: 8 }} />
                         </LineChart>
                     </ResponsiveContainer>
                 ) : (

@@ -50,6 +50,7 @@ const campaignStatusBadgeClasses: Record<CampaignType['status'], string> = {
     loaded: "bg-gray-200 text-gray-800 hover:bg-gray-200",
     active: "bg-yellow-200 text-yellow-800 hover:bg-yellow-200",
     completed: "bg-green-200 text-green-800 hover:bg-green-200",
+    interrupted: "bg-red-200 text-red-800 hover:bg-red-200",
 };
 
 
@@ -726,5 +727,3 @@ export function ManageFabMessages() {
         </>
     );
 }
-
-    
