@@ -3,105 +3,16 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper Functions
-    // ----------------
-    // Checks if the user is authenticated.
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Checks if the user has admin privileges by looking up their permissions.
-    // This assumes a 'collaborators' collection where permissions are stored.
-    function isAdmin() {
-      return isSignedIn() && 
-             (get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true ||
-              get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageWorkflows == true);
-    }
-
-    // Checks if the user is a super admin based on a hardcoded list of emails.
-    function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.email in ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ariva.com.br'];
-    }
-
-    // Default Deny: No access to any document unless explicitly allowed.
+    // Regra de fallback: Nega acesso a qualquer coleção que não tenha uma regra específica.
     match /{document=**} {
       allow read, write: if false;
     }
-
-    // Collections Rules
-    // -----------------
-
-    // Collaborators: Read-only for users, write access for super admins.
-    match /collaborators/{userId} {
-      allow read: if isSignedIn();
-      // Users can update their own 'acceptedTermsVersion' but nothing else.
-      allow update: if isSignedIn() && request.auth.uid == userId 
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['acceptedTermsVersion']);
-      // Super admins can create, update, and delete collaborators fully.
-      allow write: if isSuperAdmin();
-    }
     
-    // System-wide settings: Read/write for admins only.
-    match /systemSettings/config {
-        allow read: if isSignedIn(); // All users need to read terms version, etc.
-        allow write: if isSuperAdmin();
-    }
-    
-    // Public content collections: Read for all, write for admins.
-    match /(documents|labs|newsItems|quickLinks|rankings|workflowAreas)/{docId} {
-      allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
-    }
-
-    // Messages: Read for recipients, write for admins.
-    match /messages/{messageId} {
-      allow read: if isSignedIn() && 
-                   ('all' in resource.data.recipientIds || request.auth.uid in resource.data.recipientIds);
-      // Allow users to update only their own read/deleted status.
-      allow update: if isSignedIn() && 
-                     (request.resource.data.diff(resource.data).affectedKeys().hasAny(['readBy', 'deletedBy']));
-      allow create, delete: if isSuperAdmin();
-    }
-
-    // Polls & Responses
-    match /polls/{pollId} {
-        allow read, create: if isAdmin(); // Admins can create and read polls
-        allow update, delete: if isAdmin();
-        
-        match /responses/{responseId} {
-            allow read: if isAdmin(); // Admins can read all responses
-            // Users can only create a response for themselves and cannot update it.
-            allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-            allow update, delete: if false;
-        }
-    }
-
-    // Workflows (Requests)
-    match /workflows/{requestId} {
-      // Allow create if user is signed in. Further validation happens in backend logic.
-      allow create: if isSignedIn();
-      // Allow read if user is the submitter, assignee, or owner.
-      allow read: if isSignedIn() && 
-                   (resource.data.submittedBy.userId == request.auth.uid || 
-                    resource.data.assignee.id == request.auth.uid || 
-                    resource.data.ownerEmail == request.auth.token.email);
-      // Allow update if user is assignee or owner.
-      allow update: if isSignedIn() && 
-                     (resource.data.assignee.id == request.auth.uid || 
-                      resource.data.ownerEmail == request.auth.token.email);
-      allow delete: if false; // Disallow deletion of workflow history.
-    }
-
-    // Audit Logs: Append-only for users, readable by super admins.
-    match /audit_logs/{logId} {
-      allow create: if isSignedIn();
-      allow read: if isSuperAdmin();
-      allow update, delete: if false;
-    }
-    
-    // Counters: Internal use only, callable functions will manage this.
-    match /counters/{counterId} {
-      allow read, write: if false; 
+    // Permite que qualquer usuário autenticado leia e escreva em qualquer coleção.
+    // Esta é uma regra de segurança básica. Para um controle mais fino,
+    // regras específicas por coleção seriam necessárias (ex: um usuário só pode editar o próprio perfil).
+    match /{path=**}/{document} {
+      allow read, write: if request.auth != null;
     }
   }
 }
