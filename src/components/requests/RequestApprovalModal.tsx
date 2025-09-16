@@ -766,7 +766,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
-                {canTakeAction && (
+                {canTakeAction && !isCurrentStatusFinal && (
                      <Button 
                         key={nextStatus?.id || 'no-next-status'}
                         className="bg-admin-primary hover:bg-admin-primary/90"
@@ -781,7 +781,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         Mover para "{nextStatus?.label || 'Etapa Final'}"
                     </Button>
                 )}
-                {canTakeAction && currentStatusDefinition?.action?.type && (
+                {canTakeAction && currentStatusDefinition?.action?.type && !isCurrentStatusFinal && (
                     <Button 
                         variant="outline" 
                         size="sm"
