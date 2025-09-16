@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ListChecks, User, Search, FileDown, ChevronUp, ChevronDown, Archive, Eye, Filter, AlertTriangle } from 'lucide-react';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import Papa from 'papaparse';
@@ -159,9 +159,14 @@ export function AllRequestsView() {
         }
     };
     
+    const getOwner = (email: string) => {
+        return collaborators.find(c => c.email === email);
+    }
     const getOwnerName = (email: string) => {
-        const owner = collaborators.find(c => c.email === email);
-        return owner?.name || email;
+        return getOwner(email)?.name || email;
+    }
+    const getCollaborator = (userId: string) => {
+        return collaborators.find(c => c.id3a === userId);
     }
 
     const handleExportCSV = () => {
@@ -316,6 +321,8 @@ export function AllRequestsView() {
                                         );
                                         const needsAttention = !req.isArchived && (isUnassignedForTooLong || hasOverdueActionRequest);
                                         const statusInfo = getStatusInfo(req);
+                                        const requester = getCollaborator(req.submittedBy.userId);
+                                        const owner = getOwner(req.ownerEmail);
 
                                         return (
                                         <TableRow key={req.id} className={cn(
@@ -329,11 +336,22 @@ export function AllRequestsView() {
                                                     {statusInfo.label}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>{req.submittedBy.userName}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarImage src={requester?.photoURL || undefined} alt={requester?.name}/>
+                                                        <AvatarFallback className="text-xs">
+                                                            {requester?.name.charAt(0) || '?'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="text-sm">{req.submittedBy.userName}</span>
+                                                </div>
+                                            </TableCell>
                                             <TableCell>
                                                 {req.assignee ? (
                                                     <div className="flex items-center gap-2">
                                                         <Avatar className="h-6 w-6">
+                                                            <AvatarImage src={getCollaborator(req.assignee.id)?.photoURL || undefined} alt={req.assignee.name}/>
                                                             <AvatarFallback className="text-xs">
                                                                 {req.assignee.name.charAt(0)}
                                                             </AvatarFallback>
@@ -346,7 +364,12 @@ export function AllRequestsView() {
                                             </TableCell>
                                             <TableCell>
                                                  <div className="flex items-center gap-2">
-                                                    <User className="h-4 w-4"/>
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarImage src={owner?.photoURL || undefined} alt={owner?.name}/>
+                                                        <AvatarFallback className="text-xs">
+                                                            {owner?.name.charAt(0) || '?'}
+                                                        </AvatarFallback>
+                                                    </Avatar>
                                                     <span className="text-sm">{getOwnerName(req.ownerEmail)}</span>
                                                 </div>
                                             </TableCell>
