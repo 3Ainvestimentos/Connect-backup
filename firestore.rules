@@ -2,16 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regra de fallback: Nega acesso a qualquer coleção que não tenha uma regra específica.
+    // Apenas usuários autenticados podem ler ou escrever
     match /{document=**} {
-      allow read, write: if false;
-    }
-    
-    // Permite que qualquer usuário autenticado leia e escreva em qualquer coleção.
-    // Esta é uma regra de segurança básica. Para um controle mais fino,
-    // regras específicas por coleção seriam necessárias (ex: um usuário só pode editar o próprio perfil).
-    match /{path=**}/{document} {
       allow read, write: if request.auth != null;
     }
   }
