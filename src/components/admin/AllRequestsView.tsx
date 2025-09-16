@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format, parseISO, differenceInHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ListChecks, User, Search, FileDown, ChevronUp, ChevronDown, Archive, Eye, Filter } from 'lucide-react';
+import { ListChecks, User, Search, FileDown, ChevronUp, ChevronDown, Archive, Eye, Filter, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -34,6 +34,8 @@ export function AllRequestsView() {
     const [showArchived, setShowArchived] = useState(false);
     const [viewingRequest, setViewingRequest] = useState<WorkflowRequest | null>(null);
     const [ownerFilter, setOwnerFilter] = useState<string[]>([]);
+    const [attentionFilter, setAttentionFilter] = useState(false);
+
 
     const uniqueOwners = useMemo(() => {
         const ownerEmails = new Set(requests.map(req => req.ownerEmail));
@@ -46,6 +48,17 @@ export function AllRequestsView() {
         if (!showArchived) {
             items = items.filter(req => !req.isArchived);
         }
+
+        if (attentionFilter) {
+            items = items.filter(req => {
+                const isUnassignedForTooLong = !req.assignee && differenceInHours(new Date(), parseISO(req.submittedAt)) > 24;
+                const hasOverdueActionRequest = (req.actionRequests?.[req.status] || []).some(ar =>
+                    ar.status === 'pending' && differenceInHours(new Date(), parseISO(ar.requestedAt)) > 24
+                );
+                return !req.isArchived && (isUnassignedForTooLong || hasOverdueActionRequest);
+            });
+        }
+
 
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
@@ -75,6 +88,10 @@ export function AllRequestsView() {
                         valA = a.assignee?.name || '';
                         valB = b.assignee?.name || '';
                         break;
+                    case 'ownerEmail':
+                        valA = getOwnerName(a.ownerEmail);
+                        valB = getOwnerName(b.ownerEmail);
+                        break;
                     case 'submittedAt':
                         valA = new Date(a.submittedAt).getTime();
                         valB = new Date(b.submittedAt).getTime();
@@ -88,8 +105,8 @@ export function AllRequestsView() {
                         valB = b.isArchived ?? false;
                         break;
                     default:
-                        valA = a[sortKey];
-                        valB = b[sortKey];
+                        valA = a[sortKey as keyof WorkflowRequest];
+                        valB = b[sortKey as keyof WorkflowRequest];
                 }
 
                 let comparison = 0;
@@ -104,7 +121,7 @@ export function AllRequestsView() {
         }
 
         return items;
-    }, [requests, searchTerm, sortKey, sortDirection, showArchived, ownerFilter]);
+    }, [requests, searchTerm, sortKey, sortDirection, showArchived, ownerFilter, attentionFilter]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -220,37 +237,23 @@ export function AllRequestsView() {
                                     className="pl-10 w-full"
                                 />
                             </div>
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline">
-                                        <Filter className="mr-2 h-4 w-4" />
-                                        Proprietário
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent>
-                                    <DropdownMenuLabel>Filtrar por Proprietário</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <ScrollArea className="max-h-60">
-                                        {uniqueOwners.map(owner => (
-                                            <DropdownMenuCheckboxItem
-                                                key={owner.id}
-                                                checked={ownerFilter.includes(owner.email)}
-                                                onCheckedChange={() => handleOwnerFilterChange(owner.email)}
-                                            >
-                                                {owner.name}
-                                            </DropdownMenuCheckboxItem>
-                                        ))}
-                                    </ScrollArea>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                             <Button 
+                                variant="outline"
+                                onClick={() => setAttentionFilter(!attentionFilter)}
+                                className={cn(
+                                    "transition-colors",
+                                    attentionFilter && "bg-destructive/10 text-destructive border-destructive"
+                                )}
+                             >
+                                <AlertTriangle className="mr-2 h-4 w-4" />
+                                Atenção
+                            </Button>
                             <Button 
                                 variant="outline"
                                 onClick={() => setShowArchived(!showArchived)}
                                 className={cn(
                                     "transition-colors",
-                                    showArchived 
-                                    ? "bg-red-100 text-red-800 border-red-200 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-900/60"
-                                    : "bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-800 dark:hover:bg-yellow-900/60"
+                                    showArchived && "bg-muted text-foreground"
                                 )}
                             >
                                 <Archive className="mr-2 h-4 w-4"/>
@@ -274,7 +277,33 @@ export function AllRequestsView() {
                                         <TableHead>Status</TableHead>
                                         <TableHead>Solicitante</TableHead>
                                         <TableHead>Responsável</TableHead>
-                                        <TableHead>Proprietário</TableHead>
+                                        <TableHead>
+                                            <div className="flex items-center gap-2">
+                                                <span className="flex-grow">Proprietário</span>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 hover:bg-muted">
+                                                            <Filter className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DropdownMenuLabel>Filtrar por Proprietário</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <ScrollArea className="max-h-60">
+                                                            {uniqueOwners.map(owner => (
+                                                                <DropdownMenuCheckboxItem
+                                                                    key={owner.id}
+                                                                    checked={ownerFilter.includes(owner.email)}
+                                                                    onCheckedChange={() => handleOwnerFilterChange(owner.email)}
+                                                                >
+                                                                    {owner.name}
+                                                                </DropdownMenuCheckboxItem>
+                                                            ))}
+                                                        </ScrollArea>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </TableHead>
                                         <SortableHeader tkey="submittedAt" label="Data" />
                                         <TableHead className="text-right">Ações</TableHead>
                                     </TableRow>
@@ -352,4 +381,3 @@ export function AllRequestsView() {
         </>
     );
 }
-
