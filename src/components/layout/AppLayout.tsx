@@ -260,13 +260,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (!currentUserCollab) return false;
 
     return requests.some(req => {
-        // Notificação para o proprietário: workflow dele com tarefa não atribuída
+        if (req.isArchived) return false;
+        
         const isOwnerWithUnassignedTask = (req.ownerEmail === user.email) && !req.assignee;
         
-        // Notificação para o responsável: foi atribuído a ele mas ainda não visualizou
-        const isNewAssignee = (req.assignee?.id === currentUserCollab.id3a) && !req.viewedBy.includes(currentUserCollab.id3a);
-
-        return isOwnerWithUnassignedTask || isNewAssignee;
+        return isOwnerWithUnassignedTask;
     });
   }, [user, requests, workflowsLoading, permissions.canManageRequests, collaborators]);
   
