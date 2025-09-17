@@ -222,7 +222,7 @@ export function SectionManager({ section, title }: SectionManagerProps) {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(user)}>
+                                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(user)} className="hover:bg-muted">
                                                     <Edit className="mr-2 h-4 w-4"/>
                                                     Editar
                                                 </Button>
