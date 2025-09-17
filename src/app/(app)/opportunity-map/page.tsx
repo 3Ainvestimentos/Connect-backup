@@ -7,9 +7,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useOpportunityMap } from '@/contexts/OpportunityMapContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Compass, AlertCircle, TrendingUp } from 'lucide-react';
+import { Compass, AlertCircle, TrendingUp, CheckSquare, Zap } from 'lucide-react';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList } from 'recharts';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -74,7 +76,7 @@ function SectionDisplay({ title, data, isCurrency = false }: { title: string, da
                            Total Estimado de Missões
                         </h4>
                         <ResponsiveContainer width="100%" height={80}>
-                            <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 100 }}>
+                            <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 120 }}>
                                 <XAxis type="number" hide />
                                 <YAxis type="category" dataKey="name" hide />
                                 <Tooltip
@@ -108,7 +110,7 @@ export default function OpportunityMapPage() {
 
     const currentUserCollab = React.useMemo(() => {
         if (!user || collabLoading) return null;
-        return collaborators.find(c => c.email === user.email);
+        return collaborators.find(c => c.id === user.uid);
     }, [user, collaborators, collabLoading]);
 
     const userData = React.useMemo(() => {
@@ -150,10 +152,24 @@ export default function OpportunityMapPage() {
                 description={`Visualização do seu resultado mensal, ${userData.userName}.`}
             />
             
-            <div className="space-y-6">
-                <SectionDisplay title="Missões XP" data={userData.missionsXp} isCurrency={true} />
-                <SectionDisplay title="PAP" data={userData.pap} />
-            </div>
+            <Tabs defaultValue="missionsXp" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="missionsXp">
+                        <Zap className="mr-2 h-4 w-4" />
+                        Missões XP
+                    </TabsTrigger>
+                    <TabsTrigger value="pap">
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        PAP
+                    </TabsTrigger>
+                </TabsList>
+                <TabsContent value="missionsXp" className="mt-6">
+                     <SectionDisplay title="Missões XP" data={userData.missionsXp} isCurrency={true} />
+                </TabsContent>
+                <TabsContent value="pap" className="mt-6">
+                    <SectionDisplay title="PAP (Plano de Ação Pessoal)" data={userData.pap} />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
