@@ -50,6 +50,7 @@ interface FabMessagesContextType {
   markCampaignAsClicked: (userId: string) => Promise<void>;
   startCampaign: (userId: string) => Promise<void>;
   interruptCampaign: (userId: string) => Promise<void>;
+  completeFollowUpPeriod: (userId: string) => Promise<void>;
   archiveIndividualCampaign: (userId: string, campaignId: string) => Promise<void>;
   archiveMultipleCampaigns: (userId: string, campaignIds: string[]) => Promise<void>;
 }
@@ -222,16 +223,28 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         clickedAt: formatISO(new Date()),
       };
       
-      const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
-
       return updateDocumentInCollection(COLLECTION_NAME, userId, {
-        status: hasMoreCampaigns ? 'ready' : 'completed',
+        status: 'completed', // Campaign is complete, user status reflects this.
         pipeline: newPipeline,
-        activeCampaignIndex: 0, // Reset for next run
         updatedAt: formatISO(new Date()),
       });
     },
   });
+  
+  const completeFollowUpPeriodMutation = useMutation<void, Error, string>({
+    mutationFn: async (userId: string) => {
+        const message = fabMessages.find(m => m.userId === userId);
+        if (!message) return; // No message, nothing to do.
+
+        const hasMoreLoaded = message.pipeline.some(c => c.status === 'loaded');
+        
+        return updateDocumentInCollection(COLLECTION_NAME, userId, {
+            status: hasMoreLoaded ? 'ready' : 'completed',
+            updatedAt: formatISO(new Date()),
+        });
+    },
+});
+
 
   const archiveIndividualCampaignMutation = useMutation<void, Error, { userId: string; campaignId: string }>({
     mutationFn: ({ userId, campaignId }) => {
@@ -343,9 +356,10 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     markCampaignAsClicked: (userId) => markCampaignAsClickedMutation.mutateAsync(userId),
     startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
     interruptCampaign: (userId) => interruptCampaignMutation.mutateAsync(userId),
+    completeFollowUpPeriod: (userId) => completeFollowUpPeriodMutation.mutateAsync(userId),
     archiveIndividualCampaign: (userId, campaignId) => archiveIndividualCampaignMutation.mutateAsync({ userId, campaignId }),
     archiveMultipleCampaigns: (userId, campaignIds) => archiveMultipleCampaignsMutation.mutateAsync({userId, campaignIds}),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markCampaignAsClickedMutation, startCampaignMutation, interruptCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markCampaignAsClickedMutation, startCampaignMutation, interruptCampaignMutation, completeFollowUpPeriodMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>

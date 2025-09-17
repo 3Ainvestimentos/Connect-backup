@@ -114,14 +114,14 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   const { collaborators } = useCollaborators();
   const { messages, markMessageAsRead } = useMessages();
   const { idleMessages } = useIdleFabMessages();
-  const { fabMessages, markCampaignAsClicked, interruptCampaign } = useFabMessages();
+  const { fabMessages, markCampaignAsClicked, interruptCampaign, completeFollowUpPeriod } = useFabMessages();
   const router = useRouter();
   
   const [showNotificationBubble, setShowNotificationBubble] = useState(false);
   const [isIconAnimated, setIsIconAnimated] = useState(false);
   const [showIdleBubble, setShowIdleBubble] = useState(false);
+  const [showFollowUpBubble, setShowFollowUpBubble] = useState(false);
   const [currentIdleIndex, setCurrentIdleIndex] = useState(0);
-  const [isFollowUpDismissed, setIsFollowUpDismissed] = useState(false);
 
   const currentUser = useMemo(() => {
     if (!user) return null;
@@ -132,47 +132,57 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
     if (!currentUser) return null;
     return fabMessages.find(msg => msg.userId === currentUser.id3a);
   }, [fabMessages, currentUser]);
-
-  // Determine what to display based on priority: CTA > Follow-up > Notification
+  
+  // Decide what to display based on priority: CTA > Follow-up > Notification
   const activeCampaign = useMemo(() => {
-    if (!activeMessage || activeMessage.status !== 'pending_cta') return null;
+    if (!activeMessage) return null;
     return activeMessage.pipeline.find(c => c.status === 'active');
   }, [activeMessage]);
   
   const lastCompletedCampaign = useMemo(() => {
     if (!activeMessage) return null;
-    // Find the most recently clicked campaign
-    const completed = activeMessage.pipeline
+    return activeMessage.pipeline
       .filter(c => c.status === 'completed' && c.clickedAt)
-      .sort((a,b) => parseISO(b.clickedAt!).getTime() - parseISO(a.clickedAt!).getTime());
-    return completed[0] || null;
+      .sort((a,b) => parseISO(b.clickedAt!).getTime() - parseISO(a.clickedAt!).getTime())[0] || null;
   }, [activeMessage]);
 
-  const shouldShowFollowUp = useMemo(() => {
+  const isFollowUpWindowActive = useMemo(() => {
     if (!lastCompletedCampaign?.clickedAt) return false;
     const clickedAtDate = parseISO(lastCompletedCampaign.clickedAt);
-    const expirationTime = clickedAtDate.getTime() + 12 * 60 * 60 * 1000;
+    const expirationTime = clickedAtDate.getTime() + 6 * 60 * 60 * 1000;
     return Date.now() < expirationTime;
   }, [lastCompletedCampaign]);
 
   // CTA Expiration logic
   useEffect(() => {
     if (!currentUser || !activeCampaign?.sentAt) return;
-
     const sentAtDate = parseISO(activeCampaign.sentAt);
-    const expirationTime = sentAtDate.getTime() + 12 * 60 * 60 * 1000;
+    const expirationTime = sentAtDate.getTime() + 6 * 60 * 60 * 1000;
     
     if (Date.now() > expirationTime) {
       interruptCampaign(currentUser.id3a);
       return;
     }
-
     const timeoutId = setTimeout(() => {
       interruptCampaign(currentUser.id3a);
     }, expirationTime - Date.now());
-
     return () => clearTimeout(timeoutId);
   }, [activeCampaign, currentUser, interruptCampaign]);
+
+  // Follow-up period expiration logic
+  useEffect(() => {
+    if (!currentUser || !isFollowUpWindowActive || !lastCompletedCampaign?.clickedAt) return;
+
+    const clickedAtDate = parseISO(lastCompletedCampaign.clickedAt);
+    const expirationTime = clickedAtDate.getTime() + 6 * 60 * 60 * 1000;
+
+    const timeoutId = setTimeout(() => {
+        completeFollowUpPeriod(currentUser.id3a);
+        setShowFollowUpBubble(false);
+    }, expirationTime - Date.now());
+
+    return () => clearTimeout(timeoutId);
+  }, [isFollowUpWindowActive, lastCompletedCampaign, currentUser, completeFollowUpPeriod]);
   
   const unreadMessages = useMemo(() => {
     if (!user || !currentUser) return [];
@@ -197,7 +207,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   }, [hasPendingTasks, hasPendingRequests, unreadMessages.length]);
 
   useEffect(() => {
-    if (notificationText) {
+    if (activeCampaign || notificationText) {
       const timer = setTimeout(() => {
         setShowNotificationBubble(true);
         setIsIconAnimated(true);
@@ -207,24 +217,19 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
       setShowNotificationBubble(false);
       setIsIconAnimated(false);
     }
-  }, [notificationText]);
-  
-  useEffect(() => {
-      setIsFollowUpDismissed(false);
-  }, [activeMessage?.id]);
-
+  }, [activeCampaign, notificationText]);
 
   const handlePrimaryAction = () => {
     setIsIconAnimated(false);
     setShowNotificationBubble(false);
     setShowIdleBubble(false);
+    setShowFollowUpBubble(false);
 
     if (activeCampaign && currentUser) {
         markCampaignAsClicked(currentUser.id3a);
         return;
     }
 
-    // Workflow Notifications
     if (hasPendingTasks) {
         router.push('/me/tasks');
         return;
@@ -234,7 +239,6 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
         return;
     }
     
-    // Unread Messages Notification
     if (unreadMessages.length > 0) {
       const messagesCard = document.getElementById('messages-card');
       if (messagesCard) {
@@ -248,35 +252,35 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
     }
   };
 
-  const handleIdleAction = () => {
-     if (idleMessages.length > 0) {
-        setShowIdleBubble(true);
-        setCurrentIdleIndex(prev => (prev + 1) % idleMessages.length);
-     } else {
-        router.push('/chatbot');
-     }
-  };
-
   const handleFabClick = () => {
-      if (isFollowUpDismissed) {
-          setIsFollowUpDismissed(false);
-          return;
-      }
-      
-      if (shouldShowFollowUp) {
-          return;
-      }
+    // If a primary action CTA or notification is showing, the FAB click triggers it.
+    if (activeCampaign || notificationText) {
+        handlePrimaryAction();
+        return;
+    }
+    
+    // If the follow-up window is active, toggle its visibility.
+    if (isFollowUpWindowActive) {
+        setShowFollowUpBubble(prev => !prev);
+        setShowIdleBubble(false);
+        return;
+    }
 
-      if (hasPrimaryAction) {
-          handlePrimaryAction();
-      } else {
-          handleIdleAction();
-      }
+    // Otherwise, handle idle messages.
+    if (idleMessages.length > 0) {
+        setShowIdleBubble(prev => !prev);
+        if (!showIdleBubble) { // If we are opening it, cycle the message
+            setCurrentIdleIndex(prev => (prev + 1) % idleMessages.length);
+        }
+        setShowFollowUpBubble(false);
+    } else {
+        router.push('/chatbot');
+    }
   };
   
   const handleFollowUpClose = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setIsFollowUpDismissed(true);
+    setShowFollowUpBubble(false);
   };
   
   const handleIdleClose = (e: React.MouseEvent) => {
@@ -288,21 +292,21 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
     <div className="fixed top-20 right-8 z-50 flex items-start group">
         <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
             {/* CTA Message Bubble */}
-            {activeCampaign && (
+            {activeCampaign && showNotificationBubble && (
                 <MessageBubble variant="primary" onClick={handlePrimaryAction}>
                     <p className="text-sm">{activeCampaign.ctaMessage}</p>
                 </MessageBubble>
             )}
 
-            {/* Follow-up Message Bubble (only shows if no active campaign) */}
-            {!activeCampaign && shouldShowFollowUp && lastCompletedCampaign && !isFollowUpDismissed && (
+            {/* Follow-up Message Bubble */}
+            {isFollowUpWindowActive && showFollowUpBubble && lastCompletedCampaign && (
                 <MessageBubble variant="secondary" onClose={handleFollowUpClose} hasCloseButton>
                      <p className="text-sm cursor-default">{lastCompletedCampaign.followUpMessage}</p>
                 </MessageBubble>
             )}
 
             {/* Other Notifications (only shows if no campaign messages) */}
-            {!activeCampaign && !shouldShowFollowUp && showNotificationBubble && notificationText && (
+            {!activeCampaign && !isFollowUpWindowActive && showNotificationBubble && notificationText && (
                 <MessageBubble onClick={handlePrimaryAction}>
                    <p className="text-sm whitespace-pre-line">{notificationText}</p>
                 </MessageBubble>
