@@ -1,27 +1,24 @@
-
 "use client";
 
 import { useTheme } from '@/contexts/ThemeContext';
-import React, { useEffect, useRef, memo } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-const _TradingViewWidget: React.FC = () => {
+const TradingViewWidget: React.FC = () => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const scriptRef = useRef<HTMLScriptElement | null>(null);
     const { theme } = useTheme();
 
-    // Effect for creating the widget script, runs only once on mount
     useEffect(() => {
-        if (!containerRef.current || containerRef.current.hasChildNodes()) {
-            return;
-        }
+        const container = containerRef.current;
+        if (!container) return;
+
+        // Limpa o conteúdo anterior para evitar widgets duplicados
+        container.innerHTML = '';
 
         const script = document.createElement('script');
         script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
         script.async = true;
         script.type = 'text/javascript';
-        scriptRef.current = script; // Store the script element in a ref
-
-        // The widget configuration is appended inside the script's innerHTML
+        
         script.innerHTML = JSON.stringify({
             "colorTheme": theme,
             "dateRange": "12M",
@@ -74,23 +71,16 @@ const _TradingViewWidget: React.FC = () => {
             "height": "100%"
         });
 
-        containerRef.current.appendChild(script);
+        container.appendChild(script);
 
-        // No cleanup function here to avoid destroying the widget
-    }, []); // Empty dependency array ensures this runs only once
+        // Função de limpeza para remover o script quando o componente for desmontado
+        return () => {
+            if (container) {
+                container.innerHTML = '';
+            }
+        };
 
-    // Effect for updating the theme, runs when theme changes
-    useEffect(() => {
-        const iframe = containerRef.current?.querySelector('iframe');
-        if (iframe && iframe.contentWindow) {
-            iframe.contentWindow.postMessage({
-                name: 'set-theme',
-                data: {
-                    theme: theme,
-                }
-            }, '*');
-        }
-    }, [theme]); // Only re-run when the theme changes
+    }, [theme]); // Recria o widget quando o tema muda
 
     return (
         <div ref={containerRef} className="tradingview-widget-container h-full">
@@ -98,8 +88,5 @@ const _TradingViewWidget: React.FC = () => {
         </div>
     );
 };
-
-const TradingViewWidget = memo(_TradingViewWidget);
-TradingViewWidget.displayName = 'TradingViewWidget';
 
 export default TradingViewWidget;
