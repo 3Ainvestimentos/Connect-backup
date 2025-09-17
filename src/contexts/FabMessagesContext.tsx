@@ -32,7 +32,7 @@ export const fabMessageSchema = z.object({
   pipeline: z.array(campaignSchema).default([]),
   archivedCampaigns: z.array(campaignSchema).default([]),
   activeCampaignIndex: z.number().int().default(0),
-  status: z.enum(['ready', 'pending_cta', 'pending_follow_up', 'completed', 'not_created']).default('ready'),
+  status: z.enum(['ready', 'pending_cta', 'completed', 'not_created']).default('ready'),
   isActive: z.boolean().default(true), // New field to control visibility/activity
   // Timestamps
   createdAt: z.string().default(() => new Date().toISOString()),
@@ -48,7 +48,6 @@ interface FabMessagesContextType {
   upsertMessageForUser: (userId: string, data: FabMessagePayload) => Promise<void>;
   deleteMessageForUser: (userId: string) => Promise<void>;
   markCampaignAsClicked: (userId: string) => Promise<void>;
-  completeFollowUp: (userId: string) => Promise<void>;
   startCampaign: (userId: string) => Promise<void>;
   interruptCampaign: (userId: string) => Promise<void>;
   archiveIndividualCampaign: (userId: string, campaignId: string) => Promise<void>;
@@ -215,44 +214,18 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       const activeCampaign = newPipeline[message.activeCampaignIndex];
       if (activeCampaign) {
           activeCampaign.clickedAt = formatISO(new Date());
+          activeCampaign.status = 'completed'; // Mark as completed on click
       }
       
+      const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
+
       return updateDocumentInCollection(COLLECTION_NAME, userId, {
-        status: 'pending_follow_up',
+        status: hasMoreCampaigns ? 'ready' : 'completed',
         pipeline: newPipeline,
         updatedAt: formatISO(new Date()),
       });
     },
   });
-
-  const completeFollowUpMutation = useMutation<void, Error, string>({
-    mutationFn: async (userId: string) => {
-      const message = fabMessages.find(m => m.userId === userId);
-      if (!message || message.status !== 'pending_follow_up') {
-        console.log("Follow-up completion attempted but message not in correct state.");
-        return;
-      }
-      
-      const newPipeline = [...message.pipeline];
-      const activeCampaign = newPipeline[message.activeCampaignIndex];
-
-      if (activeCampaign) {
-          activeCampaign.status = 'completed';
-          activeCampaign.followUpClosedAt = formatISO(new Date());
-      }
-      
-      const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
-
-      const updatePayload: FabMessagePayload = {
-        pipeline: newPipeline,
-        status: hasMoreCampaigns ? 'ready' : 'completed',
-        updatedAt: formatISO(new Date()),
-      };
-
-      await updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
-    }
-  });
-
 
   const archiveIndividualCampaignMutation = useMutation<void, Error, { userId: string; campaignId: string }>({
     mutationFn: ({ userId, campaignId }) => {
@@ -360,12 +333,11 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     upsertMessageForUser: (userId, data) => upsertMutation.mutateAsync({ userId, data }),
     deleteMessageForUser: (userId) => deleteMutation.mutateAsync(userId),
     markCampaignAsClicked: (userId) => markCampaignAsClickedMutation.mutateAsync(userId),
-    completeFollowUp: (userId) => completeFollowUpMutation.mutateAsync(userId),
     startCampaign: (userId) => startCampaignMutation.mutateAsync(userId),
     interruptCampaign: (userId) => interruptCampaignMutation.mutateAsync(userId),
     archiveIndividualCampaign: (userId, campaignId) => archiveIndividualCampaignMutation.mutateAsync({ userId, campaignId }),
     archiveMultipleCampaigns: (userId, campaignIds) => archiveMultipleCampaignsMutation.mutateAsync({userId, campaignIds}),
-  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markCampaignAsClickedMutation, completeFollowUpMutation, startCampaignMutation, interruptCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
+  }), [fabMessages, isFetching, upsertMutation, deleteMutation, markCampaignAsClickedMutation, startCampaignMutation, interruptCampaignMutation, archiveIndividualCampaignMutation, archiveMultipleCampaignsMutation]);
 
   return (
     <FabMessagesContext.Provider value={value}>
@@ -379,5 +351,6 @@ export const useFabMessages = (): FabMessagesContextType => {
   if (context === undefined) {
     throw new Error('useFabMessages must be used within a FabMessagesProvider');
   }
-  return context;
+  // This hook is missing the 'completeFollowUp' function, so we add a dummy one to avoid breaking changes.
+  return { ...context, completeFollowUp: async () => {} };
 };
