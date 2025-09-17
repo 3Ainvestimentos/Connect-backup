@@ -3,16 +3,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Permite que qualquer pessoa leia as configurações do sistema.
-    // Isso é necessário para que a tela de login possa verificar o modo de manutenção.
-    // A escrita continua protegida.
+    // Permite que qualquer um leia as configurações do sistema para verificar o modo de manutenção.
+    // A escrita continua protegida e deve ser feita por um backend seguro (como Cloud Functions) ou
+    // por um painel de admin que valide as permissões de Super Admin.
     match /systemSettings/config {
       allow read: if true;
-      allow write: if request.auth != null; // A lógica de Super Admin é verificada no backend/regras de UI.
+      allow write: if false; 
     }
 
-    // REGRA GERAL para todas as outras coleções:
-    // Exige que o usuário esteja autenticado para qualquer leitura ou escrita.
+    // REGRA GERAL: Para todos os outros documentos, exige que o usuário esteja autenticado.
+    // Esta regra garante que coleções como 'collaborators', 'newsItems', 'workflows', etc.,
+    // permaneçam protegidas contra acesso anônimo.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
