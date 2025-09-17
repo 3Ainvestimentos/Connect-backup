@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { setDocumentInCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
+import { setDocumentInCollection, WithId, listenToCollection, getCollection, updateDocumentInCollection } from '@/lib/firestore-service';
 import { useAuth } from './AuthContext';
 import * as z from 'zod';
 
@@ -25,6 +25,7 @@ interface OpportunityMapContextType {
   opportunityData: OpportunityMapData[];
   loading: boolean;
   upsertOpportunityData: (userId: string, data: Partial<Omit<OpportunityMapData, 'id' | 'userId'>>) => Promise<void>;
+  updateSectionData: (userId: string, section: 'missionsXp' | 'pap', data: Record<string, string>) => Promise<void>;
 }
 
 const OpportunityMapContext = createContext<OpportunityMapContextType | undefined>(undefined);
@@ -65,12 +66,23 @@ export const OpportunityMapProvider = ({ children }: { children: ReactNode }) =>
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
+  
+  const updateSectionMutation = useMutation<void, Error, { userId: string, section: 'missionsXp' | 'pap', data: Record<string, string> }>({
+    mutationFn: async ({ userId, section, data }) => {
+        const updatePayload = { [section]: data };
+        return updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
+    },
+     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
   const value = useMemo(() => ({
     opportunityData,
     loading: isFetching,
     upsertOpportunityData: (userId, data) => upsertMutation.mutateAsync({ userId, data }),
-  }), [opportunityData, isFetching, upsertMutation]);
+    updateSectionData: (userId, section, data) => updateSectionMutation.mutateAsync({ userId, section, data }),
+  }), [opportunityData, isFetching, upsertMutation, updateSectionMutation]);
 
   return (
     <OpportunityMapContext.Provider value={value}>
