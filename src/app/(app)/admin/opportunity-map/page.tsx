@@ -71,7 +71,11 @@ export default function OpportunityMapAdminPage() {
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const commercialUsers = useMemo(() => {
-        return collaborators.filter(c => c.axis === 'Comercial');
+        const testUsers = [
+            'desenvolvedor@3ariva.com.br',
+            'matheus@3ainvestimentos.com.br'
+        ];
+        return collaborators.filter(c => c.axis === 'Comercial' || testUsers.includes(c.email));
     }, [collaborators]);
     
     const form = useForm<any>({
@@ -200,3 +204,6 @@ export default function OpportunityMapAdminPage() {
     );
 }
 
+
+
+    
