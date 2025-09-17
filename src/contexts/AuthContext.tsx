@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false); 
     });
     return () => unsubscribe();
-  }, [auth, settings, pathname]);
+  }, [auth, settings.maintenanceMode, settings.superAdminEmails, settings.allowedUserIds, pathname]);
 
   
   const signInWithGoogle = async () => {
@@ -215,7 +215,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, loadingSettings, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
+  }), [user, loading, loadingSettings, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

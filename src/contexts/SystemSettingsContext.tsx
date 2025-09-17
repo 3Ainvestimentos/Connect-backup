@@ -44,10 +44,8 @@ export const SystemSettingsProvider = ({ children }: { children: ReactNode }) =>
   const { data: settings = defaultSettings, isFetching } = useQuery<SystemSettings>({
     queryKey: [COLLECTION_NAME, DOC_ID],
     queryFn: async () => {
-        // This query should be publicly readable even without auth to check maintenance mode
         const doc = await getDocument<SystemSettings>(COLLECTION_NAME, DOC_ID);
         if (!doc) {
-            // Attempt to create the document if it doesn't exist, this might fail depending on rules
             try {
                 await setDocumentInCollection(COLLECTION_NAME, DOC_ID, defaultSettings);
                 return defaultSettings;
@@ -56,16 +54,14 @@ export const SystemSettingsProvider = ({ children }: { children: ReactNode }) =>
                 return defaultSettings;
             }
         }
-        // Merge fetched doc with defaults to ensure all keys are present
         return { ...defaultSettings, ...doc };
     },
-    staleTime: 5 * 60 * 1000, // Stale after 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 
   const updateSettingsMutation = useMutation<void, Error, Partial<SystemSettings>>({
     mutationFn: (newSettings) => setDocumentInCollection(COLLECTION_NAME, DOC_ID, newSettings),
     onSuccess: (data, variables) => {
-        // Optimistically update the cache
         queryClient.setQueryData([COLLECTION_NAME, DOC_ID], (old: SystemSettings | undefined) => ({
             ...(old || defaultSettings),
             ...variables,
