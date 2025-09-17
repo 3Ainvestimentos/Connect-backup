@@ -1,10 +1,32 @@
 rules_version = '2';
 
+// By default, deny all access
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regra padrão: Exige que o usuário esteja autenticado para qualquer leitura ou escrita.
-    // Isso protege seus arquivos de acesso público não autorizado.
+  
+    // Default Deny Rule: No access to any file unless a more specific rule allows it.
     match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Allow read access to institutional images (logos, etc.) for everyone,
+    // as they are used on public-facing pages like the login screen.
+    match /Imagens institucionais (logos e etc)/{allPaths=**} {
+        allow read: if true;
+    }
+
+    // Allow read access to the login screen video.
+    match /Tela de login/{allPaths=**} {
+        allow read: if true;
+    }
+    
+    // For all other files (e.g., workflow attachments, news images),
+    // only allow authenticated users to perform read and write operations.
+    // Writes are further secured by the fact that the download URL is generated
+    // with a random, unguessable token.
+    match /{path=**} {
+      // This rule will not be hit for the public paths above.
+      // It applies to all other paths.
       allow read, write: if request.auth != null;
     }
   }

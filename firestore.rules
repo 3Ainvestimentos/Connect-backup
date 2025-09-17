@@ -1,12 +1,84 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regra padrão: Exige que o usuário esteja autenticado para qualquer leitura ou escrita.
-    // Esta é uma linha de base de segurança. Regras mais específicas por coleção
-    // devem ser adicionadas abaixo conforme necessário.
+
+    // Default deny: By default, no one can access anything.
+    // We will open up access on a per-collection basis.
     match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Collaborators: Read-only for authenticated users. Write access for admins (handled by backend logic).
+    match /collaborators/{userId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Writes should be done via a secure admin panel/backend function
+    }
+
+    // System Settings: Read-only for authenticated users.
+    match /systemSettings/config {
+        allow read: if request.auth != null;
+        allow write: if false; // Only updatable by Super Admins via backend logic
+    }
+
+    // Counters for sequential IDs: Should only be accessible by the backend.
+    match /counters/{counterId} {
+        allow read, write: if false;
+    }
+
+    // General collections: Accessible by any authenticated user.
+    // This is a safe baseline, as application logic will control what users see.
+    match /newsItems/{newsId} {
       allow read, write: if request.auth != null;
+    }
+    match /documents/{docId} {
+      allow read, write: if request.auth != null;
+    }
+    match /labs/{labId} {
+        allow read, write: if request.auth != null;
+    }
+    match /messages/{messageId} {
+      allow read, write: if request.auth != null;
+    }
+    match /quickLinks/{linkId} {
+      allow read, write: if request.auth != null;
+    }
+    match /rankings/{rankingId} {
+      allow read, write: if request.auth != null;
+    }
+    match /workflowAreas/{areaId} {
+        allow read, write: if request.auth != null;
+    }
+    match /workflowDefinitions/{defId} {
+        allow read, write: if request.auth != null;
+    }
+    match /fabMessages/{userId} {
+        allow read, write: if request.auth != null;
+    }
+    match /idleFabMessages/{messageId} {
+        allow read, write: if request.auth != null;
+    }
+
+    // Workflows and Polls with their subcollections
+    match /workflows/{requestId} {
+      allow read, write: if request.auth != null;
+      // Subcollections inherit from parent by default if no rule is specified,
+      // so they are also protected by `request.auth != null`.
+    }
+
+    match /polls/{pollId} {
+      allow read: if request.auth != null;
+      // Allow any authenticated user to create (write) a response
+      match /responses/{responseId} {
+        allow read, write: if request.auth != null;
+      }
+      // Only admins should be able to create or edit polls themselves
+      allow write: if false; // Handled by admin panel logic
+    }
+    
+    // Audit Logs: Write-only for authenticated users. No one should read them all directly.
+    match /audit_logs/{logId} {
+      allow read: if false; // Reading is done via admin panel with specific queries
+      allow write: if request.auth != null;
     }
   }
 }

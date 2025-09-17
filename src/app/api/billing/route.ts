@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
 
 // Exemplo de dados de faturamento. Em um cenário real, estes dados viriam
 // de uma consulta ao BigQuery onde os dados de faturamento do Google Cloud são exportados.
@@ -21,7 +22,6 @@ const mockBillingData = {
 export async function GET(request: Request) {
   try {
     // --- Autenticação e Autorização ---
-    // Esta é uma etapa crucial para proteger seu endpoint de custos.
     const authorizationHeader = request.headers.get('Authorization');
     if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Não autorizado: Token não fornecido.' }, { status: 401 });
@@ -33,15 +33,25 @@ export async function GET(request: Request) {
     const auth = getAuth(app);
     const decodedToken = await auth.verifyIdToken(idToken);
 
-    // TODO: Adicionar lógica para verificar se o usuário (decodedToken.uid) é um Super Admin.
-    // Você precisará buscar os dados do usuário no Firestore a partir do UID
-    // e verificar se ele tem a permissão de Super Admin.
-    // Por enquanto, vamos assumir que a verificação do token é suficiente para o exemplo.
+    // --- Verificação de Super Admin ---
+    // Busca as configurações do sistema para obter a lista de Super Admins
+    const db = getFirestore(app);
+    const settingsDoc = await db.collection('systemSettings').doc('config').get();
+    
+    if (!settingsDoc.exists) {
+        throw new Error('Documento de configuração do sistema não encontrado.');
+    }
 
+    const settingsData = settingsDoc.data();
+    const superAdminEmails = settingsData?.superAdminEmails || [];
+
+    // Verifica se o email do usuário autenticado está na lista de Super Admins
+    if (!decodedToken.email || !superAdminEmails.includes(decodedToken.email)) {
+        return NextResponse.json({ error: 'Acesso negado: Requer permissão de Super Administrador.' }, { status: 403 });
+    }
 
     // --- Lógica de Busca de Dados ---
     // Aqui você implementaria a lógica para buscar os dados de faturamento do Google BigQuery.
-    // Isso envolveria usar a biblioteca `@google-cloud/bigquery`.
     //
     // Exemplo de como seria a lógica (requer configuração prévia):
     //
@@ -72,5 +82,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Erro interno do servidor ao buscar dados de faturamento.' }, { status: 500 });
   }
 }
-
-    
