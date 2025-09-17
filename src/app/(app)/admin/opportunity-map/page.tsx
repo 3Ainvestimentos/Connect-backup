@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -14,7 +13,7 @@ export default function OpportunityMapAdminPage() {
         <SuperAdminGuard>
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
-                    title="Admin: Mapa de Oportunidades"
+                    title="Gestão de Mapa de Oportunidades"
                     description="Gerencie os dados de resultado mensal dos colaboradores."
                 />
 
