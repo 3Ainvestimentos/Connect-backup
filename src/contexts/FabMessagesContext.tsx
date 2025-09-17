@@ -211,10 +211,12 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const newPipeline = [...message.pipeline];
-      const activeCampaign = newPipeline[message.activeCampaignIndex];
+      const activeCampaign = newPipeline.find(c => c.status === 'active');
       if (activeCampaign) {
           activeCampaign.clickedAt = formatISO(new Date());
           activeCampaign.status = 'completed'; // Mark as completed on click
+      } else {
+          throw new Error("Nenhuma campanha ativa encontrada para marcar como clicada.");
       }
       
       const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
@@ -222,6 +224,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, userId, {
         status: hasMoreCampaigns ? 'ready' : 'completed',
         pipeline: newPipeline,
+        activeCampaignIndex: 0, // Reset index, the next `startCampaign` will find the next `loaded`
         updatedAt: formatISO(new Date()),
       });
     },
@@ -281,20 +284,18 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
           if (!message) throw new Error("Campanha não encontrada para este usuário.");
           if (message.status !== 'ready') throw new Error("A campanha não está pronta para ser enviada.");
           
-          const campaignToStart = message.pipeline.find(c => c.status === 'loaded');
-          if (!campaignToStart) {
+          const campaignToStartIndex = message.pipeline.findIndex(c => c.status === 'loaded');
+          if (campaignToStartIndex === -1) {
             throw new Error("Nenhuma campanha carregada para iniciar.");
           }
 
-          const newPipeline = message.pipeline.map(p => 
-            p.id === campaignToStart.id ? { ...p, status: 'active' as const, sentAt: formatISO(new Date()) } : p
+          const newPipeline = message.pipeline.map((p, index) => 
+            index === campaignToStartIndex ? { ...p, status: 'active' as const, sentAt: formatISO(new Date()) } : p
           );
           
-          const activeIndex = newPipeline.findIndex(p => p.id === campaignToStart.id);
-
           return updateDocumentInCollection(COLLECTION_NAME, userId, {
               pipeline: newPipeline,
-              activeCampaignIndex: activeIndex,
+              activeCampaignIndex: campaignToStartIndex,
               status: 'pending_cta',
               updatedAt: formatISO(new Date()),
           });
@@ -310,10 +311,13 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const newPipeline = [...message.pipeline];
-        const interruptedCampaignIndex = message.activeCampaignIndex;
+        const interruptedCampaignIndex = newPipeline.findIndex(c => c.status === 'active');
         
-        if (newPipeline[interruptedCampaignIndex]) {
+        if (interruptedCampaignIndex !== -1) {
             newPipeline[interruptedCampaignIndex].status = 'interrupted';
+        } else {
+            console.warn("Could not find an 'active' campaign to interrupt.");
+            return; // Exit if no active campaign found
         }
 
         const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
@@ -321,6 +325,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         await updateDocumentInCollection(COLLECTION_NAME, userId, {
             pipeline: newPipeline,
             status: hasMoreCampaigns ? 'ready' : 'completed',
+            activeCampaignIndex: 0,
             updatedAt: formatISO(new Date()),
         });
     },
@@ -351,6 +356,5 @@ export const useFabMessages = (): FabMessagesContextType => {
   if (context === undefined) {
     throw new Error('useFabMessages must be used within a FabMessagesProvider');
   }
-  // This hook is missing the 'completeFollowUp' function, so we add a dummy one to avoid breaking changes.
-  return { ...context, completeFollowUp: async () => {} };
+  return context;
 };
