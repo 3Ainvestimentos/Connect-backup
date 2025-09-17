@@ -41,6 +41,15 @@ function SectionDisplay({ title, data, isCurrency = false }: { title: string, da
         : 0;
 
     const chartData = [{ name: 'Total', value: totalValue }];
+    
+    const sortedKeys = React.useMemo(() => {
+        // Sort keys based on numbers in the key string, e.g., "Teste 1", "Teste 2"
+        return Object.keys(data).sort((a, b) => {
+            const numA = parseInt(a.match(/\d+/)?.[0] || '0', 10);
+            const numB = parseInt(b.match(/\d+/)?.[0] || '0', 10);
+            return numA - numB;
+        });
+    }, [data]);
 
     return (
         <Card>
@@ -49,11 +58,11 @@ function SectionDisplay({ title, data, isCurrency = false }: { title: string, da
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="flex gap-4 overflow-x-auto pb-4">
-                    {Object.entries(data).map(([key, value]) => (
+                    {sortedKeys.map((key) => (
                         <div key={key} className="bg-muted/50 p-3 rounded-lg flex-shrink-0 w-48 text-center">
                             <dt className="text-sm font-medium text-muted-foreground truncate">{key}</dt>
                             <dd className="text-xl font-bold text-foreground">
-                                {isCurrency ? formatCurrency(parseFloat(value) || 0) : value}
+                                {isCurrency ? formatCurrency(parseFloat(data[key]) || 0) : data[key]}
                             </dd>
                         </div>
                     ))}
@@ -65,7 +74,7 @@ function SectionDisplay({ title, data, isCurrency = false }: { title: string, da
                            Total Estimado de Missões
                         </h4>
                         <ResponsiveContainer width="100%" height={80}>
-                            <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 50 }}>
+                            <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 100 }}>
                                 <XAxis type="number" hide />
                                 <YAxis type="category" dataKey="name" hide />
                                 <Tooltip
