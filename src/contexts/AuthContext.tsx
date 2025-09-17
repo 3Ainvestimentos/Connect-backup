@@ -7,10 +7,9 @@ import { getFirebaseApp, googleProvider } from '@/lib/firebase';
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { useCollaborators } from './CollaboratorsContext';
-import type { CollaboratorPermissions } from './CollaboratorsContext';
+import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
 import { useSystemSettings } from './SystemSettingsContext';
-import { addDocumentToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, getCollection } from '@/lib/firestore-service';
 
 const scopes = [
   'https://www.googleapis.com/auth/calendar.readonly',
@@ -42,7 +41,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const { collaborators, loading: loadingCollaborators } = useCollaborators();
   const { settings, loading: loadingSettings } = useSystemSettings();
   
   const app = getFirebaseApp(); 
@@ -62,80 +60,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      setLoading(false); 
-    });
-    return () => unsubscribe();
-  }, [auth]);
-
-
-  useEffect(() => {
-    // Wait until firebase auth state and all dependent data is loaded
-    if (loading || loadingCollaborators || loadingSettings) {
-      return;
-    }
-
-    if (user) {
-        const normalizedEmail = normalizeEmail(user.email);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
+      if (firebaseUser) {
+        // Fetch collaborators here directly since this provider is now at the top level
+        const collaborators = await getCollection<Collaborator>('collaborators');
+        const normalizedEmail = normalizeEmail(firebaseUser.email);
         const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
-        const isSuper = !!user.email && settings.superAdminEmails.includes(user.email);
+        const isSuper = !!firebaseUser.email && settings.superAdminEmails.includes(firebaseUser.email);
+        
         const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 
         if (settings.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
-             firebaseSignOut(auth); // This will trigger the onAuthStateChanged listener to set user to null
-             return;
-        }
-
-        // Check for collaborator validity ONLY if we are NOT on the login page,
-        // to avoid showing errors before an explicit login attempt.
-        if (pathname !== '/login' && !collaborator && !isSuper) {
-            firebaseSignOut(auth);
-            // The toast is now only shown on explicit sign-in failure.
-            return;
-        }
-
-        // --- User is valid, set permissions ---
-        setIsSuperAdmin(isSuper);
-        const currentUserCollab = collaborator;
-        const userPermissions = currentUserCollab?.permissions || {};
-        
-        if (isSuper) {
-            const allPermissions: CollaboratorPermissions = {
-                canManageWorkflows: true,
-                canManageRequests: true,
-                canManageContent: true,
-                canViewTasks: true,
-                canViewBI: true,
-                canViewRankings: true,
-                canViewCRM: true,
-                canViewStrategicPanel: true,
-            };
-            setPermissions(allPermissions);
-            setIsAdmin(true);
+            await firebaseSignOut(auth);
+            setUser(null);
+        } else if (!collaborator && !isSuper && pathname !== '/login') {
+            await firebaseSignOut(auth);
+            setUser(null);
         } else {
-            setPermissions(userPermissions);
-            const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
-            setIsAdmin(hasAnyPermission);
+            setUser(firebaseUser);
+            setIsSuperAdmin(isSuper);
+            const userPermissions = collaborator?.permissions || {};
+             if (isSuper) {
+                const allPermissions: CollaboratorPermissions = {
+                    canManageWorkflows: true,
+                    canManageRequests: true,
+                    canManageContent: true,
+                    canViewTasks: true,
+                    canViewBI: true,
+                    canViewRankings: true,
+                    canViewCRM: true,
+                    canViewStrategicPanel: true,
+                };
+                setPermissions(allPermissions);
+                setIsAdmin(true);
+            } else {
+                setPermissions(userPermissions);
+                const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
+                setIsAdmin(hasAnyPermission);
+            }
         }
-
-    } else {
-      // No user is logged in
-      setIsAdmin(false);
-      setIsSuperAdmin(false);
-      setPermissions({
-        canManageWorkflows: false,
-        canManageRequests: false,
-        canManageContent: false,
-        canViewTasks: false,
-        canViewBI: false,
-        canViewRankings: false,
-        canViewCRM: false,
-        canViewStrategicPanel: false,
-      });
-    }
-
-  }, [user, loading, collaborators, loadingCollaborators, settings, loadingSettings, auth, pathname]);
+      } else {
+        setUser(null);
+        setIsAdmin(false);
+        setIsSuperAdmin(false);
+        setPermissions({
+            canManageWorkflows: false, canManageRequests: false, canManageContent: false,
+            canViewTasks: false, canViewBI: false, canViewRankings: false,
+            canViewCRM: false, canViewStrategicPanel: false,
+        });
+      }
+      setLoading(false); 
+    });
+    return () => unsubscribe();
+  }, [auth, settings, pathname]);
 
   
   const signInWithGoogle = async () => {
@@ -152,6 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const normalizedEmail = normalizeEmail(email);
 
       const isSuperAdminLogin = !!email && settings.superAdminEmails.includes(email);
+      const collaborators = await getCollection<Collaborator>('collaborators');
       const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
       const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 
@@ -229,14 +208,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = useMemo(() => ({
       user,
-      loading: loading || loadingCollaborators || loadingSettings,
+      loading: loading || loadingSettings,
       isAdmin,
       isSuperAdmin,
       permissions,
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, loadingCollaborators, loadingSettings, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
+  }), [user, loading, loadingSettings, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

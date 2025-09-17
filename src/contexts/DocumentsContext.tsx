@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
+import { useAuth } from './AuthContext';
 
 export interface DocumentType {
   id: string;
@@ -29,14 +30,17 @@ const COLLECTION_NAME = 'documents';
 
 export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: documents = [], isFetching } = useQuery<DocumentType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<DocumentType>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
   });
 
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<DocumentType>(
       COLLECTION_NAME,
       (newData) => {
@@ -47,7 +51,7 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
 
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({

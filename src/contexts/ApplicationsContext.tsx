@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { useWorkflowAreas } from './WorkflowAreasContext';
+import { useAuth } from './AuthContext';
 
 const workflowActionSchema = z.object({
   type: z.enum(['approval', 'acknowledgement', 'execution']),
@@ -100,11 +101,13 @@ const COLLECTION_NAME = 'workflowDefinitions';
 export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { workflowAreas } = useWorkflowAreas();
+  const { user } = useAuth();
     
   const { data: workflowDefinitions = [], isFetching } = useQuery<WorkflowDefinition[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<WorkflowDefinition>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => {
       const areaOrderMap = new Map<string, string[]>();
       workflowAreas.forEach(area => {
@@ -138,6 +141,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
   });
   
     React.useEffect(() => {
+        if (!user) return;
         const unsubscribe = listenToCollection<WorkflowDefinition>(
             COLLECTION_NAME,
             (newData) => {
@@ -148,7 +152,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
             }
         );
         return () => unsubscribe();
-    }, [queryClient]);
+    }, [queryClient, user]);
 
   const addWorkflowDefinitionMutation = useMutation<WithId<Omit<WorkflowDefinition, 'id'>>, Error, Omit<WorkflowDefinition, 'id'>>({
     mutationFn: (definitionData) => addDocumentToCollection(COLLECTION_NAME, definitionData),

@@ -4,6 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection, listenToCollection, getCollection } from '@/lib/firestore-service';
+import { useAuth } from './AuthContext';
 
 export interface CollaboratorPermissions {
   canManageWorkflows: boolean;
@@ -66,11 +67,13 @@ const defaultPermissions: CollaboratorPermissions = {
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth(); // Depend on user for enabling queries
 
   const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => data.map(c => ({
         ...c,
         permissions: { ...defaultPermissions, ...c.permissions }
@@ -78,6 +81,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   });
   
   React.useEffect(() => {
+    if (!user) return; // Don't listen if no user
     const unsubscribe = listenToCollection<Collaborator>(
       COLLECTION_NAME,
       (newData) => {
@@ -88,7 +92,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, { ...collaboratorData, createdAt: new Date().toISOString() }),

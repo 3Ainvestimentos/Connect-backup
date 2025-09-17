@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import type { Collaborator } from './CollaboratorsContext';
+import { useAuth } from './AuthContext';
 
 export const quickLinkSchema = z.object({
   name: z.string().optional(),
@@ -40,17 +41,20 @@ const COLLECTION_NAME = 'quickLinks';
 
 export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: quickLinks = [], isFetching } = useQuery<QuickLinkType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<QuickLinkType>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => data
       .map(link => ({ ...link, recipientIds: link.recipientIds || ['all'], order: link.order ?? 0 }))
       .sort((a, b) => a.order - b.order),
   });
 
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<QuickLinkType>(
       COLLECTION_NAME,
       (newData) => {
@@ -64,7 +68,7 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const getVisibleLinksForUser = useCallback((user: Collaborator | null, allCollaborators: Collaborator[]): QuickLinkType[] => {
     if (!user) return [];

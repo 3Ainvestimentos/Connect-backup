@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useMemo, useCallback } fro
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
+import { useAuth } from './AuthContext';
 
 export type NewsStatus = 'draft' | 'approved' | 'published' | 'archived';
 
@@ -41,11 +42,13 @@ const COLLECTION_NAME = 'newsItems';
 
 export const NewsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: newsItems = [], isFetching } = useQuery<NewsItemType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => data.map(item => ({
       ...item,
       order: item.order ?? 0,
@@ -54,6 +57,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<NewsItemType>(
       COLLECTION_NAME,
       (newData) => {
@@ -69,7 +73,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const addNewsItemMutation = useMutation<WithId<Omit<NewsItemType, 'id'>>, Error, Omit<NewsItemType, 'id'>>({
     mutationFn: (itemData) => {

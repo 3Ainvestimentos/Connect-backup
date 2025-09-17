@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
+import { useAuth } from './AuthContext';
 
 export const workflowAreaSchema = z.object({
     name: z.string().min(1, "O nome da área é obrigatório."),
@@ -28,15 +29,18 @@ const COLLECTION_NAME = 'workflowAreas';
 
 export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => {
     const queryClient = useQueryClient();
+    const { user } = useAuth();
 
     const { data: workflowAreas = [], isFetching } = useQuery<WorkflowArea[]>({
         queryKey: [COLLECTION_NAME],
         queryFn: () => getCollection<WorkflowArea>(COLLECTION_NAME),
         staleTime: Infinity,
+        enabled: !!user,
         select: (data) => data.sort((a, b) => a.name.localeCompare(b.name)),
     });
 
     React.useEffect(() => {
+        if (!user) return;
         const unsubscribe = listenToCollection<WorkflowArea>(
             COLLECTION_NAME,
             (newData) => {
@@ -48,7 +52,7 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
             }
         );
         return () => unsubscribe();
-    }, [queryClient]);
+    }, [queryClient, user]);
 
     const addWorkflowAreaMutation = useMutation<WithId<Omit<WorkflowArea, 'id'>>, Error, Omit<WorkflowArea, 'id'>>({
         mutationFn: (areaData) => addDocumentToCollection(COLLECTION_NAME, areaData),

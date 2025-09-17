@@ -58,6 +58,7 @@ export const PollsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<PollType>(COLLECTION_NAME),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!user,
   });
 
   const { data: pollResponses = {}, isFetching: loadingResponses } = useQuery<{ [key: string]: PollResponseType[] }>({

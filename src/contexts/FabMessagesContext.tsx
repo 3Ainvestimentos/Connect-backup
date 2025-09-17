@@ -7,6 +7,7 @@ import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollecti
 import * as z from 'zod';
 import { formatISO, subDays } from 'date-fns';
 import { useCollaborators, type Collaborator } from './CollaboratorsContext';
+import { useAuth } from './AuthContext';
 
 // Define a lista de tags permitidas
 export const campaignTags = ['Captação', 'ROA', 'Relacionamento', 'Campanhas e Missões', 'Engajamento'] as const;
@@ -60,12 +61,13 @@ const COLLECTION_NAME = 'fabMessages';
 
 export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
-  const { collaborators, loading: loadingCollaborators } = useCollaborators();
+  const { user } = useAuth();
 
   const { data: fabMessages = [], isFetching } = useQuery<FabMessageType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<FabMessageType>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
   });
 
   const upsertMutation = useMutation<void, Error, { userId: string; data: FabMessagePayload }>({
@@ -101,6 +103,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   });
   
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<FabMessageType>(
       COLLECTION_NAME,
       (newData) => {
@@ -111,7 +114,7 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const deleteMutation = useMutation<void, Error, string>({
     mutationFn: (userId: string) => deleteDocumentFromCollection(COLLECTION_NAME, userId),

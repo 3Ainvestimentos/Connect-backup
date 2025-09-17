@@ -56,9 +56,9 @@ export default function RootLayout({
       <body className={cn("font-sans antialiased", fontRoboto.variable, fontArchivo.variable)}>
         <ThemeProvider>
           <ReactQueryProvider>
-            <CollaboratorsProvider>
-                <SystemSettingsProvider>
-                  <AuthProvider>
+            <SystemSettingsProvider>
+                <AuthProvider>
+                  <CollaboratorsProvider>
                     <WorkflowAreasProvider>
                       <ApplicationsProvider>
                         <DocumentsProvider>
@@ -85,9 +85,9 @@ export default function RootLayout({
                         </DocumentsProvider>
                       </ApplicationsProvider>
                     </WorkflowAreasProvider>
-                  </AuthProvider>
-                </SystemSettingsProvider>
-            </CollaboratorsProvider>
+                  </CollaboratorsProvider>
+                </AuthProvider>
+            </SystemSettingsProvider>
           </ReactQueryProvider>
         </ThemeProvider>
       </body>

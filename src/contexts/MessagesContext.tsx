@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useCallback, useMemo } fro
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
+import { useAuth } from './AuthContext';
 
 export interface MessageType {
   id: string;
@@ -35,15 +36,18 @@ const COLLECTION_NAME = 'messages';
 
 export const MessagesProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: messages = [], isFetching } = useQuery<MessageType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => data.map(m => ({ ...m, readBy: m.readBy || [], deletedBy: m.deletedBy || [] })),
   });
   
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<MessageType>(
       COLLECTION_NAME,
       (newData) => {
@@ -54,7 +58,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const getMessageRecipients = useCallback((message: MessageType, allCollaborators: Collaborator[]): Collaborator[] => {
     if (message.recipientIds.includes('all')) {

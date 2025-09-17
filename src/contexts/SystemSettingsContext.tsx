@@ -44,16 +44,22 @@ export const SystemSettingsProvider = ({ children }: { children: ReactNode }) =>
   const { data: settings = defaultSettings, isFetching } = useQuery<SystemSettings>({
     queryKey: [COLLECTION_NAME, DOC_ID],
     queryFn: async () => {
+        // This query should be publicly readable even without auth to check maintenance mode
         const doc = await getDocument<SystemSettings>(COLLECTION_NAME, DOC_ID);
         if (!doc) {
-            // If the config doesn't exist, create it with defaults.
-            await setDocumentInCollection(COLLECTION_NAME, DOC_ID, defaultSettings);
-            return defaultSettings;
+            // Attempt to create the document if it doesn't exist, this might fail depending on rules
+            try {
+                await setDocumentInCollection(COLLECTION_NAME, DOC_ID, defaultSettings);
+                return defaultSettings;
+            } catch(e) {
+                console.warn("Could not create default system settings. This may be due to security rules.");
+                return defaultSettings;
+            }
         }
         // Merge fetched doc with defaults to ensure all keys are present
         return { ...defaultSettings, ...doc };
     },
-    staleTime: Infinity,
+    staleTime: 5 * 60 * 1000, // Stale after 5 minutes
   });
 
   const updateSettingsMutation = useMutation<void, Error, Partial<SystemSettings>>({

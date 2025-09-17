@@ -88,6 +88,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<WorkflowRequest>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => data.map(r => ({
         ...r,
         viewedBy: r.viewedBy || []
@@ -95,6 +96,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   });
 
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<WorkflowRequest>(
       COLLECTION_NAME,
       (newData) => {
@@ -109,7 +111,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const hasNewAssignedTasks = useMemo(() => {
     if (!user) return false;

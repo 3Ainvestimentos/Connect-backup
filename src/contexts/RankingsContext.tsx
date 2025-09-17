@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
+import { useAuth } from './AuthContext';
 
 export const rankingSchema = z.object({
   name: z.string().min(1, "O nome da aba é obrigatório."),
@@ -28,17 +29,20 @@ const COLLECTION_NAME = 'rankings';
 
 export const RankingsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: rankings = [], isFetching } = useQuery<RankingType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<RankingType>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => data
       .map(r => ({ ...r, recipientIds: r.recipientIds || ['all'] }))
       .sort((a, b) => (a.order || 0) - (b.order || 0)),
   });
 
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<RankingType>(
       COLLECTION_NAME,
       (newData) => {
@@ -52,7 +56,7 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const addRankingMutation = useMutation<WithId<Omit<RankingType, 'id'>>, Error, Omit<RankingType, 'id'>>({
     mutationFn: (rankingData) => addDocumentToCollection(COLLECTION_NAME, rankingData),

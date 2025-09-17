@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
+import { useAuth } from './AuthContext';
 
 export const idleFabMessageSchema = z.object({
   text: z.string().min(10, "A mensagem deve ter pelo menos 10 caracteres."),
@@ -26,15 +27,18 @@ const COLLECTION_NAME = 'idleFabMessages';
 
 export const IdleFabMessagesProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: idleMessages = [], isFetching } = useQuery<IdleFabMessageType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<IdleFabMessageType>(COLLECTION_NAME),
     staleTime: Infinity,
+    enabled: !!user,
     select: (data) => data.sort((a, b) => (a.order || 0) - (b.order || 0)),
   });
 
   React.useEffect(() => {
+    if (!user) return;
     const unsubscribe = listenToCollection<IdleFabMessageType>(
       COLLECTION_NAME,
       (newData) => {
@@ -46,7 +50,7 @@ export const IdleFabMessagesProvider = ({ children }: { children: ReactNode }) =
       }
     );
     return () => unsubscribe();
-  }, [queryClient]);
+  }, [queryClient, user]);
 
   const addMutation = useMutation<WithId<Omit<IdleFabMessageType, 'id'>>, Error, Omit<IdleFabMessageType, 'id'>>({
     mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, messageData),
