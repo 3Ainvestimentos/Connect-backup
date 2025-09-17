@@ -57,36 +57,36 @@ export default function RootLayout({
         <ThemeProvider>
           <ReactQueryProvider>
             <SystemSettingsProvider>
-              <AuthProvider>
-                <CollaboratorsProvider>
-                  <WorkflowAreasProvider>
-                    <ApplicationsProvider>
-                      <DocumentsProvider>
-                        <NewsProvider>
-                            <MessagesProvider>
-                              <LabsProvider>
-                                <WorkflowsProvider>
-                                  <QuickLinksProvider>
-                                    <PollsProvider>
-                                      <RankingsProvider>
-                                        <FabMessagesProvider>
-                                          <IdleFabMessagesProvider>
-                                            {children}
-                                          </IdleFabMessagesProvider>
-                                        </FabMessagesProvider>
-                                      </RankingsProvider>
-                                    </PollsProvider>
-                                  </QuickLinksProvider>
-                                </WorkflowsProvider>
-                              </LabsProvider>
-                              <Toaster />
-                            </MessagesProvider>
-                        </NewsProvider>
-                      </DocumentsProvider>
-                    </ApplicationsProvider>
-                  </WorkflowAreasProvider>
-                </CollaboratorsProvider>
-              </AuthProvider>
+                <AuthProvider>
+                    <CollaboratorsProvider>
+                        <WorkflowAreasProvider>
+                            <ApplicationsProvider>
+                            <DocumentsProvider>
+                                <NewsProvider>
+                                    <MessagesProvider>
+                                    <LabsProvider>
+                                        <WorkflowsProvider>
+                                        <QuickLinksProvider>
+                                            <PollsProvider>
+                                            <RankingsProvider>
+                                                <FabMessagesProvider>
+                                                <IdleFabMessagesProvider>
+                                                    {children}
+                                                </IdleFabMessagesProvider>
+                                                </FabMessagesProvider>
+                                            </RankingsProvider>
+                                            </PollsProvider>
+                                        </QuickLinksProvider>
+                                        </WorkflowsProvider>
+                                    </LabsProvider>
+                                    <Toaster />
+                                    </MessagesProvider>
+                                </NewsProvider>
+                            </DocumentsProvider>
+                            </ApplicationsProvider>
+                        </WorkflowAreasProvider>
+                    </CollaboratorsProvider>
+                </AuthProvider>
             </SystemSettingsProvider>
           </ReactQueryProvider>
         </ThemeProvider>

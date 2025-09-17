@@ -4,6 +4,8 @@
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDocument, setDocumentInCollection } from '@/lib/firestore-service';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getFirebaseApp } from '@/lib/firebase';
 
 export interface SystemSettings {
   maintenanceMode: boolean;
@@ -40,24 +42,44 @@ const defaultSettings: SystemSettings = {
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
+  const auth = getAuth(getFirebaseApp());
 
   const { data: settings = defaultSettings, isFetching } = useQuery<SystemSettings>({
     queryKey: [COLLECTION_NAME, DOC_ID],
     queryFn: async () => {
-        const doc = await getDocument<SystemSettings>(COLLECTION_NAME, DOC_ID);
-        if (!doc) {
-            try {
-                await setDocumentInCollection(COLLECTION_NAME, DOC_ID, defaultSettings);
-                return defaultSettings;
-            } catch(e) {
-                console.warn("Could not create default system settings. This may be due to security rules.");
-                return defaultSettings;
-            }
-        }
-        return { ...defaultSettings, ...doc };
+      // This query now runs immediately, but its internal logic depends on the auth state.
+      const currentUser = auth.currentUser;
+      
+      // If there's no user (e.g., on the login page), we can't fetch.
+      // Return default settings to avoid permission errors. The query will refetch once auth state changes.
+      if (!currentUser) {
+        return defaultSettings;
+      }
+      
+      const doc = await getDocument<SystemSettings>(COLLECTION_NAME, DOC_ID);
+      if (!doc) {
+          try {
+              // Attempt to create the settings doc if it doesn't exist. This might fail if rules are strict.
+              await setDocumentInCollection(COLLECTION_NAME, DOC_ID, defaultSettings);
+              return defaultSettings;
+          } catch(e) {
+              console.warn("Could not create default system settings. This may be due to security rules.");
+              return defaultSettings;
+          }
+      }
+      return { ...defaultSettings, ...doc };
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  // This effect will re-trigger the query when the user logs in or out.
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, DOC_ID] });
+    });
+    return () => unsubscribe();
+  }, [auth, queryClient]);
+
 
   const updateSettingsMutation = useMutation<void, Error, Partial<SystemSettings>>({
     mutationFn: (newSettings) => setDocumentInCollection(COLLECTION_NAME, DOC_ID, newSettings),

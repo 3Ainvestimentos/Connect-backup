@@ -63,9 +63,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        // Fetch collaborators here directly since this provider is now at the top level
-        const collaborators = await getCollection<Collaborator>('collaborators');
         const normalizedEmail = normalizeEmail(firebaseUser.email);
+        // Fetch collaborators directly to break dependency cycle
+        const collaborators = await getCollection<Collaborator>('collaborators');
         const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
         const isSuper = !!firebaseUser.email && settings.superAdminEmails.includes(firebaseUser.email);
         
@@ -128,9 +128,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const email = result.user.email;
       const normalizedEmail = normalizeEmail(email);
-
-      const isSuperAdminLogin = !!email && settings.superAdminEmails.includes(email);
+      
+      // Fetch collaborators directly on sign-in
       const collaborators = await getCollection<Collaborator>('collaborators');
+      const isSuperAdminLogin = !!email && settings.superAdminEmails.includes(email);
       const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
       const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 
