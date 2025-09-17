@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, Banknote, ListChecks, Award, MessageSquarePlus } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, Banknote, ListChecks, Award, MessageSquarePlus, Map } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -56,6 +56,7 @@ export const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false, permission: null },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false, permission: null },
   { href: '/applications', label: 'Solicitações', icon: Workflow, external: false, permission: null },
+  { href: '/opportunity-map', label: 'Mapa de Oportunidades', icon: Map, external: false, permission: 'canViewOpportunityMap' },
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false, permission: null },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
   { href: '/rankings', label: 'Rankings e Campanhas', icon: Award, external: false, permission: 'canViewRankings' },
@@ -179,6 +180,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Painéis de controle</DropdownMenuLabel>
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/fab-messages" className="cursor-pointer font-body"><MessageSquarePlus className="mr-2 h-4 w-4" /><span>Mensagens FAB</span></Link></DropdownMenuItem>}
+                {isSuperAdmin && <DropdownMenuItem asChild><Link href="/admin/opportunity-map" className="cursor-pointer font-body"><Map className="mr-2 h-4 w-4" /><span>Mapa de Oportunidades</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>
@@ -265,7 +267,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
-    const currentUserCollab = collaborators.find(c => c.email === user.email);
+    const currentUserCollab = collaborators.find(c => c.email === user?.email);
     if (!currentUserCollab) return false;
 
     return requests.some(req => {
