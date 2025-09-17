@@ -32,18 +32,22 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
   }, [user, collaborators]);
 
   if (!user) return null;
+  
+  const displayName = currentUserCollaborator?.name || user.displayName;
+  const displayAvatarInitial = displayName ? displayName.charAt(0).toUpperCase() : <User size={48} />;
+  const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg font-body">
         <DialogHeader className="text-center items-center">
             <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={currentUserCollaborator?.photoURL || user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
+                <AvatarImage src={displayPhotoUrl} alt={displayName || "User Avatar"} />
                 <AvatarFallback className="text-4xl">
-                {user.displayName ? user.displayName.charAt(0).toUpperCase() : <User size={48} />}
+                {displayAvatarInitial}
                 </AvatarFallback>
             </Avatar>
-            <DialogTitle className="font-headline text-3xl">{user.displayName}</DialogTitle>
+            <DialogTitle className="font-headline text-3xl">{displayName}</DialogTitle>
             <DialogDescription>{user.email}</DialogDescription>
         </DialogHeader>
         
