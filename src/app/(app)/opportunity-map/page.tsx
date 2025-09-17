@@ -8,7 +8,7 @@ import { useOpportunityMap } from '@/contexts/OpportunityMapContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Map, AlertCircle } from 'lucide-react';
-import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
 function SectionDisplay({ title, data }: { title: string, data: Record<string, string> | undefined }) {
     if (!data || Object.keys(data).length === 0) {
@@ -47,14 +47,20 @@ function SectionDisplay({ title, data }: { title: string, data: Record<string, s
 export default function OpportunityMapPage() {
     const { user } = useAuth();
     const { opportunityData, loading } = useOpportunityMap();
+    const { collaborators, loading: collabLoading } = useCollaborators();
+
+    const currentUserCollab = React.useMemo(() => {
+        if (!user || collabLoading) return null;
+        return collaborators.find(c => c.email === user.email);
+    }, [user, collaborators, collabLoading]);
 
     const userData = React.useMemo(() => {
-        if (!user || !user.email) return null;
-        // This relies on the document ID in Firestore being the user's ID.
-        return opportunityData.find(d => d.id === user.uid);
-    }, [opportunityData, user]);
+        if (!currentUserCollab) return null;
+        // Use the collaborator's document ID to find the correct opportunity data
+        return opportunityData.find(d => d.id === currentUserCollab.id);
+    }, [opportunityData, currentUserCollab]);
 
-    if (loading) {
+    if (loading || collabLoading) {
         return (
              <div className="space-y-6 p-6 md:p-8">
                 <PageHeader title="Mapa de Oportunidades" description="Carregando seus resultados mensais..." />
@@ -82,18 +88,16 @@ export default function OpportunityMapPage() {
     }
     
     return (
-        <SuperAdminGuard>
-            <div className="space-y-6 p-6 md:p-8">
-                <PageHeader
-                    title="Mapa de Oportunidades"
-                    description={`Visualização do seu resultado mensal, ${userData.userName}.`}
-                />
-                
-                <div className="space-y-6">
-                    <SectionDisplay title="Missões XP" data={userData.missionsXp} />
-                    <SectionDisplay title="PAP" data={userData.pap} />
-                </div>
+        <div className="space-y-6 p-6 md:p-8">
+            <PageHeader
+                title="Mapa de Oportunidades"
+                description={`Visualização do seu resultado mensal, ${userData.userName}.`}
+            />
+            
+            <div className="space-y-6">
+                <SectionDisplay title="Missões XP" data={userData.missionsXp} />
+                <SectionDisplay title="PAP" data={userData.pap} />
             </div>
-        </SuperAdminGuard>
+        </div>
     );
 }
