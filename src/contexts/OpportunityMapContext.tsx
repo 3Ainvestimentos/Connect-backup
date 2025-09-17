@@ -70,7 +70,8 @@ export const OpportunityMapProvider = ({ children }: { children: ReactNode }) =>
   const updateSectionMutation = useMutation<void, Error, { userId: string, section: 'missionsXp' | 'pap', data: Record<string, string> }>({
     mutationFn: async ({ userId, section, data }) => {
         const updatePayload = { [section]: data };
-        return updateDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
+        // Use set with merge: true to handle both creation and updates gracefully.
+        return setDocumentInCollection(COLLECTION_NAME, userId, updatePayload);
     },
      onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
