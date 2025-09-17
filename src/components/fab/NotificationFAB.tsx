@@ -149,27 +149,47 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   
   // Expiration logic
   useEffect(() => {
-    if (activeCampaign && activeCampaign.status === 'pending_cta' && currentUser) {
-        const campaign = activeCampaign.pipeline[activeCampaign.activeCampaignIndex];
-        if (campaign && campaign.sentAt) {
-            const sentAtDate = parseISO(campaign.sentAt);
-            const expirationTime = sentAtDate.getTime() + 12 * 60 * 60 * 1000; // 12 hours
-            const now = Date.now();
+    if (!currentUser || !activeCampaign) return;
 
-            if (now > expirationTime) {
-                // Campaign expired, interrupt immediately
-                interruptCampaign(currentUser.id3a);
-                return; // No need to set a timer
-            }
+    const campaign = activeCampaign.pipeline[activeCampaign.activeCampaignIndex];
+    
+    // Logic for CTA expiration
+    if (activeCampaign.status === 'pending_cta' && campaign?.sentAt) {
+      const sentAtDate = parseISO(campaign.sentAt);
+      const expirationTime = sentAtDate.getTime() + 12 * 60 * 60 * 1000; // 12 hours
+      const now = Date.now();
 
-            const timeoutId = setTimeout(() => {
-                interruptCampaign(currentUser.id3a);
-            }, expirationTime - now);
+      if (now > expirationTime) {
+        interruptCampaign(currentUser.id3a);
+        return;
+      }
 
-            return () => clearTimeout(timeoutId);
-        }
+      const timeoutId = setTimeout(() => {
+        interruptCampaign(currentUser.id3a);
+      }, expirationTime - now);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [activeCampaign, currentUser, interruptCampaign]);
+    
+    // Logic for Follow-up expiration
+    if (activeCampaign.status === 'pending_follow_up' && campaign?.clickedAt) {
+        const clickedAtDate = parseISO(campaign.clickedAt);
+        const expirationTime = clickedAtDate.getTime() + 12 * 60 * 60 * 1000; // 12 hours after click
+        const now = Date.now();
+
+        if (now > expirationTime) {
+            completeFollowUp(currentUser.id3a);
+            return;
+        }
+
+        const timeoutId = setTimeout(() => {
+            completeFollowUp(currentUser.id3a);
+        }, expirationTime - now);
+        
+        return () => clearTimeout(timeoutId);
+    }
+
+  }, [activeCampaign, currentUser, interruptCampaign, completeFollowUp]);
 
 
   const hasUnreadMessages = unreadMessages.length > 0;
