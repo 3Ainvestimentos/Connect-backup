@@ -56,9 +56,10 @@ export default function DashboardV2Page() {
   }, []);
 
   const pageTitle = useMemo(() => {
-    if (!greeting || !user?.displayName) return "Bem-vindo(a)!";
-    return `${greeting}, ${user.displayName.split(' ')[0]}!`;
-  }, [greeting, user]);
+    const userName = currentUserCollab?.name?.split(' ')[0] || user?.displayName?.split(' ')[0];
+    if (!greeting || !userName) return "Bem-vindo(a)!";
+    return `${greeting}, ${userName}!`;
+  }, [greeting, user, currentUserCollab]);
 
   const userMessages = useMemo(() => {
     if (!currentUserCollab) return [];
