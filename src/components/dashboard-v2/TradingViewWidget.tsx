@@ -6,17 +6,22 @@ import React, { useEffect, useRef, memo } from 'react';
 
 const _TradingViewWidget: React.FC = () => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const scriptRef = useRef<HTMLScriptElement | null>(null);
     const { theme } = useTheme();
 
+    // Effect for creating the widget script, runs only once on mount
     useEffect(() => {
-        if (!containerRef.current) return;
+        if (!containerRef.current || containerRef.current.hasChildNodes()) {
+            return;
+        }
 
-        // Limpa o container antes de adicionar o novo script para evitar duplicação
-        containerRef.current.innerHTML = '';
-        
         const script = document.createElement('script');
         script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-market-overview.js';
         script.async = true;
+        script.type = 'text/javascript';
+        scriptRef.current = script; // Store the script element in a ref
+
+        // The widget configuration is appended inside the script's innerHTML
         script.innerHTML = JSON.stringify({
             "colorTheme": theme,
             "dateRange": "12M",
@@ -71,17 +76,24 @@ const _TradingViewWidget: React.FC = () => {
 
         containerRef.current.appendChild(script);
 
-        // Cleanup function para remover o script quando o componente é desmontado
-        return () => {
-            if (containerRef.current) {
-                containerRef.current.innerHTML = '';
-            }
-        };
-    }, [theme]); // Re-executa o efeito quando o tema muda
+        // No cleanup function here to avoid destroying the widget
+    }, []); // Empty dependency array ensures this runs only once
+
+    // Effect for updating the theme, runs when theme changes
+    useEffect(() => {
+        const iframe = containerRef.current?.querySelector('iframe');
+        if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.postMessage({
+                name: 'set-theme',
+                data: {
+                    theme: theme,
+                }
+            }, '*');
+        }
+    }, [theme]); // Only re-run when the theme changes
 
     return (
         <div ref={containerRef} className="tradingview-widget-container h-full">
-            {/* O script irá criar um div filho aqui, então podemos deixar um placeholder */}
             <div className="tradingview-widget-container__widget h-full"></div>
         </div>
     );
