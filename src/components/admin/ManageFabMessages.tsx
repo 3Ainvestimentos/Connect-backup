@@ -494,9 +494,9 @@ export function ManageFabMessages() {
                             {filteredAndSortedUsers.map(user => {
                                 const message = userMessageMap.get(user.id3a);
                                 
-                                const completedInPipeline = message?.pipeline.filter(c => c.status === 'completed').length || 0;
+                                const finishedCampaigns = message?.pipeline.filter(c => c.status === 'completed' || c.status === 'interrupted').length || 0;
                                 const totalInPipeline = message?.pipeline.length || 0;
-                                const progressText = `${completedInPipeline}/${totalInPipeline}`;
+                                const progressText = `${finishedCampaigns}/${totalInPipeline}`;
 
                                 const isReady = message?.status === 'ready';
                                 return (
