@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection, getDocument } from '@/lib/firestore-service';
+import { setDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, updateDocumentInCollection, getDocument, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { formatISO, subDays } from 'date-fns';
 import { useCollaborators, type Collaborator } from './CollaboratorsContext';
@@ -58,81 +58,13 @@ interface FabMessagesContextType {
 const FabMessagesContext = createContext<FabMessagesContextType | undefined>(undefined);
 const COLLECTION_NAME = 'fabMessages';
 
-// --- Início: Lógica de Mock Data ---
-const createMockData = async (
-  user: Collaborator,
-  upsertFn: (userId: string, data: FabMessagePayload) => Promise<void>
-) => {
-  const mockCampaigns: CampaignType[] = [];
-  const baseDate = new Date('2025-09-09T12:00:00Z');
-
-  // Gerar 20 campanhas concluídas em dias diferentes
-  for (let i = 0; i < 20; i++) {
-      const sentDate = subDays(baseDate, Math.floor(i / 2)); // 2 campanhas por dia
-      const clickDate = new Date(sentDate.getTime() + Math.random() * 2 * 60 * 60 * 1000); // Click até 2h depois
-      const closeDate = new Date(clickDate.getTime() + Math.random() * 24 * 60 * 60 * 1000); // Close até 24h depois
-      const isEffective = Math.random() > 0.5;
-      const effectiveDate = isEffective ? new Date(closeDate.getTime() - Math.random() * 12 * 60 * 60 * 1000) : undefined;
-      const tagIndex = i % campaignTags.length;
-
-      mockCampaigns.push({
-          id: `mock_campaign_${i}`,
-          ctaMessage: `Campanha de teste #${i + 1} sobre ${campaignTags[tagIndex]}.`,
-          followUpMessage: `Acompanhamento da campanha de teste #${i + 1}.`,
-          tag: campaignTags[tagIndex],
-          status: 'completed',
-          sentAt: formatISO(sentDate),
-          clickedAt: formatISO(clickDate),
-          followUpClosedAt: formatISO(closeDate),
-          effectiveAt: effectiveDate ? formatISO(effectiveDate) : undefined,
-      });
-  }
-
-  // Adicionar algumas campanhas em estágios diferentes
-  mockCampaigns.push({
-    id: `mock_campaign_21`,
-    ctaMessage: 'Esta campanha está pronta para envio.',
-    followUpMessage: 'Follow-up da campanha pronta.',
-    tag: 'Engajamento',
-    status: 'loaded',
-  });
-   mockCampaigns.push({
-    id: `mock_campaign_22`,
-    ctaMessage: 'Esta campanha também está pronta.',
-    followUpMessage: 'Follow-up da segunda campanha pronta.',
-    tag: 'Captação',
-    status: 'loaded',
-  });
-
-
-  const payload: FabMessagePayload = {
-      userId: user.id3a,
-      userName: user.name,
-      pipeline: mockCampaigns,
-      status: 'ready',
-      activeCampaignIndex: 0,
-      archivedCampaigns: [],
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-  };
-
-  try {
-      await upsertFn(user.id3a, payload);
-      console.log(`Dados de teste para ${user.name} foram criados com sucesso.`);
-  } catch (error) {
-      console.error("Falha ao criar dados de teste:", error);
-  }
-};
-// --- Fim: Lógica de Mock Data ---
-
 export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { collaborators, loading: loadingCollaborators } = useCollaborators();
 
   const { data: fabMessages = [], isFetching } = useQuery<FabMessageType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<FabMessageType>(COLLECTION_NAME),
     staleTime: Infinity,
   });
 
@@ -163,25 +95,11 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         }
         return setDocumentInCollection(COLLECTION_NAME, userId, payload);
     },
-     onSuccess: () => {},
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
   
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && !loadingCollaborators && collaborators.length > 0) {
-        const devUser = collaborators.find(c => c.email === 'desenvolvedor@3ariva.com.br');
-        if (devUser) {
-            const devMessage = fabMessages.find(m => m.userId === devUser.id3a);
-            const hasMockData = devMessage?.pipeline.some(c => c.id.startsWith('mock_campaign'));
-
-            if (!isFetching && !devMessage || (devMessage && !hasMockData)) {
-                console.log("Iniciando criação de dados de teste para FAB Messages...");
-                createMockData(devUser, (userId, data) => upsertMutation.mutateAsync({ userId, data }));
-            }
-        }
-    }
-}, [isFetching, fabMessages, collaborators, loadingCollaborators, upsertMutation]);
-
-
   React.useEffect(() => {
     const unsubscribe = listenToCollection<FabMessageType>(
       COLLECTION_NAME,
@@ -195,18 +113,16 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [queryClient]);
 
-
-
   const deleteMutation = useMutation<void, Error, string>({
     mutationFn: (userId: string) => deleteDocumentFromCollection(COLLECTION_NAME, userId),
     onSuccess: () => {
-      // Listener will update the cache
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const markCampaignAsClickedMutation = useMutation<void, Error, string>({
     mutationFn: async (userId: string) => {
-      const message = fabMessages.find(m => m.userId === userId);
+      const message = (await queryClient.getQueryData<FabMessageType[]>([COLLECTION_NAME]))?.find(m => m.userId === userId);
       if (!message || message.status !== 'pending_cta') {
         throw new Error("A campanha não está aguardando um clique.");
       }
@@ -229,11 +145,14 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
         updatedAt: formatISO(new Date()),
       });
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
   
   const completeFollowUpPeriodMutation = useMutation<void, Error, string>({
     mutationFn: async (userId: string) => {
-        const message = fabMessages.find(m => m.userId === userId);
+        const message = (await queryClient.getQueryData<FabMessageType[]>([COLLECTION_NAME]))?.find(m => m.userId === userId);
         if (!message) return; // No message, nothing to do.
 
         const hasMoreLoaded = message.pipeline.some(c => c.status === 'loaded');
@@ -243,36 +162,14 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
             updatedAt: formatISO(new Date()),
         });
     },
-});
-
-
-  const archiveIndividualCampaignMutation = useMutation<void, Error, { userId: string; campaignId: string }>({
-    mutationFn: ({ userId, campaignId }) => {
-      const message = fabMessages.find(m => m.userId === userId);
-      if (!message) throw new Error("Mensagem não encontrada para o usuário");
-      
-      const campaignToArchive = message.pipeline.find(c => c.id === campaignId);
-      if (!campaignToArchive) {
-        throw new Error("Campanha não encontrada no pipeline para arquivar.");
-      }
-
-      const newPipeline = message.pipeline.filter(c => c.id !== campaignId);
-      const newArchived = [...(message.archivedCampaigns || []), campaignToArchive];
-      
-      const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
-
-      return updateDocumentInCollection(COLLECTION_NAME, userId, {
-        pipeline: newPipeline,
-        archivedCampaigns: newArchived,
-        status: hasMoreCampaigns ? 'ready' : 'completed',
-        updatedAt: formatISO(new Date()),
-      });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
-  
+
   const archiveMultipleCampaignsMutation = useMutation<void, Error, { userId: string; campaignIds: string[] }>({
-    mutationFn: ({ userId, campaignIds }) => {
-        const message = fabMessages.find(m => m.userId === userId);
+    mutationFn: async ({ userId, campaignIds }) => {
+        const message = (await queryClient.getQueryData<FabMessageType[]>([COLLECTION_NAME]))?.find(m => m.userId === userId);
         if (!message) throw new Error("Mensagem não encontrada para o usuário");
 
         const campaignsToArchive = message.pipeline.filter(c => campaignIds.includes(c.id));
@@ -291,12 +188,14 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
             updatedAt: formatISO(new Date()),
         });
     },
-});
-
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+  });
 
   const startCampaignMutation = useMutation<void, Error, string>({
-      mutationFn: (userId: string) => {
-          const message = fabMessages.find(m => m.userId === userId);
+      mutationFn: async (userId: string) => {
+          const message = (await queryClient.getQueryData<FabMessageType[]>([COLLECTION_NAME]))?.find(m => m.userId === userId);
           if (!message) throw new Error("Campanha não encontrada para este usuário.");
           if (message.status !== 'ready') throw new Error("A campanha não está pronta para ser enviada.");
           
@@ -316,11 +215,14 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
               updatedAt: formatISO(new Date()),
           });
       },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      },
   });
 
   const interruptCampaignMutation = useMutation<void, Error, string>({
     mutationFn: async (userId: string) => {
-        const message = fabMessages.find(m => m.userId === userId);
+        const message = (await queryClient.getQueryData<FabMessageType[]>([COLLECTION_NAME]))?.find(m => m.userId === userId);
         if (!message || message.status !== 'pending_cta') {
           console.warn("Attempted to interrupt a campaign that was not in 'pending_cta' state.");
           return;
@@ -345,8 +247,16 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
             updatedAt: formatISO(new Date()),
         });
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
   
+  const archiveIndividualCampaignMutation = useMutation<void, Error, { userId: string; campaignId: string }>({
+    mutationFn: ({ userId, campaignId }) => {
+      throw new Error("Function not implemented.");
+    }
+  });
 
   const value = useMemo(() => ({
     fabMessages,

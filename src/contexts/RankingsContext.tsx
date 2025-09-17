@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
 export const rankingSchema = z.object({
@@ -31,7 +31,7 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: rankings = [], isFetching } = useQuery<RankingType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<RankingType>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => data
       .map(r => ({ ...r, recipientIds: r.recipientIds || ['all'] }))
@@ -57,7 +57,7 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
   const addRankingMutation = useMutation<WithId<Omit<RankingType, 'id'>>, Error, Omit<RankingType, 'id'>>({
     mutationFn: (rankingData) => addDocumentToCollection(COLLECTION_NAME, rankingData),
     onSuccess: () => {
-        // Listener handles update, no invalidation needed
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
@@ -67,14 +67,14 @@ export const RankingsProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: () => {
-      // Listener handles update, no invalidation needed
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteRankingMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      // Listener handles update, no invalidation needed
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 

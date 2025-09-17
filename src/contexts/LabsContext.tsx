@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 
 export interface LabType {
   id: string;
@@ -30,7 +30,7 @@ export const LabsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: labs = [], isFetching } = useQuery<LabType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<LabType>(COLLECTION_NAME),
     staleTime: Infinity,
   });
 

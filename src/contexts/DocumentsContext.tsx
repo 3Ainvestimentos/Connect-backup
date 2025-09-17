@@ -53,21 +53,21 @@ export const DocumentsProvider = ({ children }: { children: ReactNode }) => {
   const addDocumentMutation = useMutation<WithId<Omit<DocumentType, 'id'>>, Error, Omit<DocumentType, 'id'>>({
     mutationFn: (docData: Omit<DocumentType, 'id'>) => addDocumentToCollection(COLLECTION_NAME, docData),
     onSuccess: () => {
-        // Listener handles the update, no need to invalidate
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const updateDocumentMutation = useMutation<void, Error, DocumentType>({
     mutationFn: (updatedDoc: DocumentType) => updateDocumentInCollection(COLLECTION_NAME, updatedDoc.id, updatedDoc),
     onSuccess: () => {
-        // Listener handles the update, no need to invalidate
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteDocumentMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      // Listener handles the update, no need to invalidate
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 

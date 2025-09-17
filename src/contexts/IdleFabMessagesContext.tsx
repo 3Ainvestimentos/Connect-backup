@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 
 export const idleFabMessageSchema = z.object({
@@ -29,7 +29,7 @@ export const IdleFabMessagesProvider = ({ children }: { children: ReactNode }) =
 
   const { data: idleMessages = [], isFetching } = useQuery<IdleFabMessageType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<IdleFabMessageType>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => data.sort((a, b) => (a.order || 0) - (b.order || 0)),
   });
@@ -51,7 +51,7 @@ export const IdleFabMessagesProvider = ({ children }: { children: ReactNode }) =
   const addMutation = useMutation<WithId<Omit<IdleFabMessageType, 'id'>>, Error, Omit<IdleFabMessageType, 'id'>>({
     mutationFn: (messageData) => addDocumentToCollection(COLLECTION_NAME, messageData),
     onSuccess: () => {
-      // Listener will update the cache
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
@@ -61,14 +61,14 @@ export const IdleFabMessagesProvider = ({ children }: { children: ReactNode }) =
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: () => {
-      // Listener will update the cache
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      // Listener will update the cache
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 

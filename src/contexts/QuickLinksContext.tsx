@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import type { Collaborator } from './CollaboratorsContext';
 
@@ -43,7 +43,7 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: quickLinks = [], isFetching } = useQuery<QuickLinkType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<QuickLinkType>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => data
       .map(link => ({ ...link, recipientIds: link.recipientIds || ['all'], order: link.order ?? 0 }))
@@ -94,7 +94,7 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
       return addDocumentToCollection(COLLECTION_NAME, dataWithOrder);
     },
     onSuccess: () => {
-      // Listener will handle update
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
@@ -104,14 +104,14 @@ export const QuickLinksProvider = ({ children }: { children: ReactNode }) => {
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
     onSuccess: () => {
-      // Listener will handle update
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteQuickLinkMutation = useMutation<void, Error, string>({
     mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      // Listener will handle update
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 

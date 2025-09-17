@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 
 export interface MessageType {
   id: string;
@@ -38,7 +38,7 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: messages = [], isFetching } = useQuery<MessageType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<MessageType>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => data.map(m => ({ ...m, readBy: m.readBy || [], deletedBy: m.deletedBy || [] })),
   });
@@ -75,19 +75,15 @@ export const MessagesProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedMessage;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: (_, variables) => {
-      // Optimistic update for faster UI response
-      queryClient.setQueryData([COLLECTION_NAME], (oldData: MessageType[] | undefined) => {
-        return oldData ? oldData.map(msg => msg.id === variables.id ? variables : msg) : [];
-      });
-      // Listener will handle invalidation
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteMessageMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      // Listener will handle invalidation
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 

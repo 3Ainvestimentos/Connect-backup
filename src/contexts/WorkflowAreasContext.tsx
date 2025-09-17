@@ -52,6 +52,9 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
 
     const addWorkflowAreaMutation = useMutation<WithId<Omit<WorkflowArea, 'id'>>, Error, Omit<WorkflowArea, 'id'>>({
         mutationFn: (areaData) => addDocumentToCollection(COLLECTION_NAME, areaData),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        },
     });
 
     const updateWorkflowAreaMutation = useMutation<void, Error, Partial<WorkflowArea> & { id: string }>({
@@ -59,10 +62,16 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
             const { id, ...data } = updatedArea;
             return updateDocumentInCollection(COLLECTION_NAME, id, data);
         },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        },
     });
 
     const deleteWorkflowAreaMutation = useMutation<void, Error, string>({
         mutationFn: (id) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        },
     });
 
     const value = useMemo(() => ({

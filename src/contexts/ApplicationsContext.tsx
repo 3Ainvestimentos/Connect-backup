@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { useWorkflowAreas } from './WorkflowAreasContext';
 
@@ -103,7 +103,7 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
     
   const { data: workflowDefinitions = [], isFetching } = useQuery<WorkflowDefinition[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<WorkflowDefinition>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => {
       const areaOrderMap = new Map<string, string[]>();
@@ -162,12 +162,16 @@ export const ApplicationsProvider = ({ children }: { children: ReactNode }) => {
       const { id, ...data } = updatedDefinition;
       return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: (_, variables) => {},
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const deleteWorkflowDefinitionMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {},
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
   
   const value = useMemo(() => ({

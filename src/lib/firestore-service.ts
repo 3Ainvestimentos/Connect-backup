@@ -265,12 +265,12 @@ export const updateDocumentInCollection = async <T extends object>(collectionNam
  * @returns A promise that resolves to void on success.
  */
 export const deleteDocumentFromCollection = async (collectionName: string, id: string): Promise<void> => {
-    const docRef = doc(db, collectionName, id);
     try {
+        const docRef = doc(db, collectionName, id);
         await deleteDoc(docRef);
     } catch (error) {
         console.error(`Error deleting document ${id} from ${collectionName}:`, error);
-        throw new Error('Não foi possível remover o item. Verifique suas permissões ou tente novamente.');
+        throw new Error('Não foi possível remover o item.');
     }
 };
 

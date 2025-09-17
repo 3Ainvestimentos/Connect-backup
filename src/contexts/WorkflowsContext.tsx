@@ -202,7 +202,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       return { ...newDoc, requestId };
     },
     onSuccess: () => {
-        // Invalidation not needed due to listener
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
   
@@ -253,14 +253,14 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
         return updateDocumentInCollection(COLLECTION_NAME, id, payload);
     },
     onSuccess: (data, variables) => {
-       // Listener handles update
+       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
 });
   
   const archiveRequestMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => updateDocumentInCollection(COLLECTION_NAME, id, { isArchived: true }),
     onSuccess: (data, id) => {
-        // Listener handles update
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     }
   });
 
@@ -283,10 +283,9 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         await batch.commit();
-        // Listener will handle the updates in the UI
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     } catch (error) {
         console.error("Failed to mark requests as viewed:", error);
-        // If the batch fails, React Query will not have been updated, so no rollback needed.
     }
   }, [requests, queryClient]);
 

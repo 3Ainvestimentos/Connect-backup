@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection, listenToCollection, getCollection } from '@/lib/firestore-service';
 
 export interface CollaboratorPermissions {
   canManageWorkflows: boolean;
@@ -69,7 +69,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
 
   const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [],
+    queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => data.map(c => ({
         ...c,
@@ -93,7 +93,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, { ...collaboratorData, createdAt: new Date().toISOString() }),
     onSuccess: () => {
-      // Invalidation not strictly needed due to listener
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
@@ -103,7 +103,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
         return addMultipleDocumentsToCollection(COLLECTION_NAME, dataWithTimestamp);
     },
     onSuccess: () => {
-      // Invalidation not strictly needed due to listener
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
@@ -112,22 +112,22 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
         const { id, ...data } = updatedCollaborator;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: (_, variables) => {
-      // Listener will handle update
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const updateCollaboratorPermissionsMutation = useMutation<void, Error, { id: string; permissions: CollaboratorPermissions }>({
     mutationFn: ({ id, permissions }) => updateDocumentInCollection(COLLECTION_NAME, id, { permissions }),
-    onSuccess: (_, variables) => {
-        // Listener will handle update
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const deleteCollaboratorMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
     onSuccess: () => {
-      // Listener will handle update
+      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
