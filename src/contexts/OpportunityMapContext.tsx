@@ -7,25 +7,32 @@ import { setDocumentInCollection, WithId, listenToCollection, getCollection, upd
 import { useAuth } from './AuthContext';
 import * as z from 'zod';
 
-// Zod schema for a section, allowing dynamic keys
-export const sectionSchema = z.record(z.string(), z.string());
+// Zod schema for a single mission with status
+export const missionSchema = z.object({
+  value: z.string().default('0'),
+  status: z.enum(['elegivel', 'premiado']).default('elegivel'),
+});
+
+// Zod schema for PAP section (simple key-value)
+export const papSchema = z.record(z.string(), z.string());
 
 // Zod schema for the entire opportunity map data for a user
 export const opportunityMapSchema = z.object({
     userId: z.string(),
     userName: z.string(),
-    missionsXp: sectionSchema.default({}),
-    pap: sectionSchema.default({}),
-    // Allows other dynamic sections to be added
-}).catchall(sectionSchema);
+    missionsXp: z.record(z.string(), missionSchema).default({}),
+    pap: papSchema.default({}),
+}).catchall(z.lazy(() => z.union([missionSchema, papSchema]))); // Allow other dynamic sections
+
 
 export type OpportunityMapData = WithId<z.infer<typeof opportunityMapSchema>>;
+export type MissionData = z.infer<typeof missionSchema>;
 
 interface OpportunityMapContextType {
   opportunityData: OpportunityMapData[];
   loading: boolean;
   upsertOpportunityData: (userId: string, data: Partial<Omit<OpportunityMapData, 'id' | 'userId'>>) => Promise<void>;
-  updateSectionData: (userId: string, section: 'missionsXp' | 'pap', data: Record<string, string>) => Promise<void>;
+  updateSectionData: (userId: string, section: 'missionsXp' | 'pap', data: Record<string, any>) => Promise<void>;
 }
 
 const OpportunityMapContext = createContext<OpportunityMapContextType | undefined>(undefined);
@@ -67,7 +74,7 @@ export const OpportunityMapProvider = ({ children }: { children: ReactNode }) =>
     },
   });
   
-  const updateSectionMutation = useMutation<void, Error, { userId: string, section: 'missionsXp' | 'pap', data: Record<string, string> }>({
+  const updateSectionMutation = useMutation<void, Error, { userId: string, section: 'missionsXp' | 'pap', data: Record<string, any> }>({
     mutationFn: async ({ userId, section, data }) => {
         const updatePayload = { [section]: data };
         // Use set with merge: true to handle both creation and updates gracefully.
