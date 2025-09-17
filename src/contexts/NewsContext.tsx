@@ -81,7 +81,9 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
         };
         return addDocumentToCollection(COLLECTION_NAME, dataWithDefaults);
     },
-    onSuccess: () => {},
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const updateNewsItemMutation = useMutation<void, Error, Partial<NewsItemType> & { id: string }>({
@@ -89,12 +91,23 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
         const { id, ...data } = updatedItem;
         return updateDocumentInCollection(COLLECTION_NAME, id, data);
     },
-    onSuccess: () => {}
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
+    onError: (error) => {
+        toast({
+            title: "Erro ao Salvar",
+            description: "Não foi possível salvar a notícia. Verifique suas permissões ou a conexão.",
+            variant: "destructive",
+        });
+    }
   });
 
   const deleteNewsItemMutation = useMutation<void, Error, string>({
     mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
-    onSuccess: () => {},
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+    },
   });
 
   const updateNewsStatus = useCallback(async (id: string, status: NewsStatus) => {
