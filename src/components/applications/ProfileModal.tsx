@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '../ui/separator';
 import { User, Building, Briefcase, Pyramid, MapPin, Users, Fingerprint } from 'lucide-react';
 
 interface ProfileModalProps {
@@ -33,9 +33,12 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   if (!user) return null;
   
+  // Prioritize data from the collaborators collection
   const displayName = currentUserCollaborator?.name || user.displayName;
+  const displayEmail = currentUserCollaborator?.email || user.email;
+  const displayPhotoUrl = currentUserCollaborator?.photoURL; // Prefer collaborator photo
   const displayAvatarInitial = displayName ? displayName.charAt(0).toUpperCase() : <User size={48} />;
-  const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -48,7 +51,7 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                 </AvatarFallback>
             </Avatar>
             <DialogTitle className="font-headline text-3xl">{displayName}</DialogTitle>
-            <DialogDescription>{user.email}</DialogDescription>
+            <DialogDescription>{displayEmail}</DialogDescription>
         </DialogHeader>
         
         {currentUserCollaborator ? (

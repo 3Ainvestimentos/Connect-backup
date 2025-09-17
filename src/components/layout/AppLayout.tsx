@@ -67,22 +67,31 @@ export const navItems = [
 function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
   const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { collaborators } = useCollaborators();
+
+  const currentUserCollaborator = useMemo(() => {
+    if (!user) return null;
+    return collaborators.find(c => c.email === user.email);
+  }, [user, collaborators]);
 
   if (loading) return <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />;
   if (!user) return null;
 
+  const displayName = currentUserCollaborator?.name || user.displayName;
+  const displayEmail = currentUserCollaborator?.email || user.email;
+  const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
+
   const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel;
   const hasAdminPanels = permissions.canManageContent || permissions.canManageWorkflows || isSuperAdmin;
-
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 focus-visible:ring-0 focus-visible:ring-offset-0">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user.photoURL || undefined} alt={user.displayName || "User Avatar"} />
+            <AvatarImage src={displayPhotoUrl} alt={displayName || "User Avatar"} />
             <AvatarFallback>
-              {user.displayName ? user.displayName.charAt(0).toUpperCase() : <UserCircle size={24} />}
+              {displayName ? displayName.charAt(0).toUpperCase() : <UserCircle size={24} />}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -91,10 +100,10 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none font-headline">
-              {user.displayName || "Usuário"}
+              {displayName || "Usuário"}
             </p>
             <p className="text-xs leading-none text-muted-foreground font-body">
-              {user.email}
+              {displayEmail}
             </p>
           </div>
         </DropdownMenuLabel>
