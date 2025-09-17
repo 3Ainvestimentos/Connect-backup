@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useOpportunityMap } from '@/contexts/OpportunityMapContext';
 import { Button } from '@/components/ui/button';
 import { Loader2, Upload, FileDown, AlertTriangle, FileText } from 'lucide-react';
