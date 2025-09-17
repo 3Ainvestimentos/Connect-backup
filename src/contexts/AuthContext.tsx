@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false); 
     });
     return () => unsubscribe();
-  }, [auth, settings.maintenanceMode, settings.superAdminEmails, settings.allowedUserIds, pathname]);
+  }, [auth, settings.maintenanceMode, settings.superAdminEmails, settings.allowedUserIds, pathname, settings]);
 
   
   const signInWithGoogle = async () => {
