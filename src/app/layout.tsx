@@ -22,6 +22,7 @@ import { RankingsProvider } from '@/contexts/RankingsContext';
 import { FabMessagesProvider } from '@/contexts/FabMessagesContext';
 import { IdleFabMessagesProvider } from '@/contexts/IdleFabMessagesContext';
 import { OpportunityMapProvider } from '@/contexts/OpportunityMapContext';
+import { OpportunityMapMissionsProvider } from '@/contexts/OpportunityMapMissionsContext';
 
 
 const fontRoboto = Roboto({
@@ -72,9 +73,11 @@ export default function RootLayout({
                                             <RankingsProvider>
                                                 <FabMessagesProvider>
                                                 <IdleFabMessagesProvider>
-                                                  <OpportunityMapProvider>
-                                                    {children}
-                                                  </OpportunityMapProvider>
+                                                  <OpportunityMapMissionsProvider>
+                                                    <OpportunityMapProvider>
+                                                      {children}
+                                                    </OpportunityMapProvider>
+                                                  </OpportunityMapMissionsProvider>
                                                 </IdleFabMessagesProvider>
                                                 </FabMessagesProvider>
                                             </RankingsProvider>
