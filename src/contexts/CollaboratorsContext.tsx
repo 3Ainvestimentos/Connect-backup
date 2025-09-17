@@ -64,7 +64,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewRankings: false,
   canViewCRM: false,
   canViewStrategicPanel: false,
-  canViewOpportunityMap: false,
+  canViewOpportunityMap: true, // Habilitar por padrão
 };
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
