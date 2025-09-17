@@ -260,35 +260,16 @@ export const updateDocumentInCollection = async <T extends object>(collectionNam
 
 /**
  * Deletes a document from a specified collection.
- * It first verifies if the document exists before attempting to delete it.
  * @param collectionName The name of the collection.
  * @param id The ID of the document to delete.
  * @returns A promise that resolves to void on success.
  */
 export const deleteDocumentFromCollection = async (collectionName: string, id: string): Promise<void> => {
-     const docRef = doc(db, collectionName, id);
+    const docRef = doc(db, collectionName, id);
     try {
-        // First, check if the document exists to provide a better error message.
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-             // If the document doesn't exist, there's nothing to delete.
-             // This can happen in race conditions where two users try to delete the same item.
-             throw new Error("Documento não encontrado. Ele pode já ter sido excluído.");
-        }
-        
-        // If the document exists, attempt to delete it.
         await deleteDoc(docRef);
     } catch (error) {
-        // Log the full error for debugging purposes.
         console.error(`Error deleting document ${id} from ${collectionName}:`, error);
-        
-        // Re-throw a more user-friendly error message.
-        // If the original error was our "Not Found" error, re-throw it.
-        if (error instanceof Error && error.message.includes("Documento não encontrado")) {
-             throw error;
-        }
-
-        // For other errors (like permission denied), provide a generic failure message.
         throw new Error('Não foi possível remover o item. Verifique suas permissões ou tente novamente.');
     }
 };

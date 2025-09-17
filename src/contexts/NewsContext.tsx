@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 
 export type NewsStatus = 'draft' | 'approved' | 'published' | 'archived';
 
@@ -44,7 +44,7 @@ export const NewsProvider = ({ children }: { children: ReactNode }) => {
 
   const { data: newsItems = [], isFetching } = useQuery<NewsItemType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: async () => [], // The listener will populate the data
+    queryFn: () => getCollection<NewsItemType>(COLLECTION_NAME),
     staleTime: Infinity,
     select: (data) => data.map(item => ({
       ...item,
