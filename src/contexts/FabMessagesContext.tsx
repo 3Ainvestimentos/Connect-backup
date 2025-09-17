@@ -211,20 +211,23 @@ export const FabMessagesProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const newPipeline = [...message.pipeline];
-      const activeCampaign = newPipeline.find(c => c.status === 'active');
-      if (activeCampaign) {
-          activeCampaign.clickedAt = formatISO(new Date());
-          activeCampaign.status = 'completed'; // Mark as completed on click
-      } else {
+      const activeCampaignIndex = newPipeline.findIndex(c => c.status === 'active');
+      if (activeCampaignIndex === -1) {
           throw new Error("Nenhuma campanha ativa encontrada para marcar como clicada.");
       }
+      
+      newPipeline[activeCampaignIndex] = {
+        ...newPipeline[activeCampaignIndex],
+        status: 'completed',
+        clickedAt: formatISO(new Date()),
+      };
       
       const hasMoreCampaigns = newPipeline.some(c => c.status === 'loaded');
 
       return updateDocumentInCollection(COLLECTION_NAME, userId, {
         status: hasMoreCampaigns ? 'ready' : 'completed',
         pipeline: newPipeline,
-        activeCampaignIndex: 0, // Reset index, the next `startCampaign` will find the next `loaded`
+        activeCampaignIndex: 0, // Reset for next run
         updatedAt: formatISO(new Date()),
       });
     },

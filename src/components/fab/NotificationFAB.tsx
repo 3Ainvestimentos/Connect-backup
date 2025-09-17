@@ -13,7 +13,7 @@ import { X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
-import { parseISO } from 'date-fns';
+import { parseISO, isAfter } from 'date-fns';
 
 
 // --- Ícone do Bob ---
@@ -130,45 +130,46 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
 
   const activeMessage = useMemo(() => {
     if (!currentUser) return null;
-    const messageForUser = fabMessages.find(msg => msg.userId === currentUser.id3a);
-    return messageForUser || null;
+    return fabMessages.find(msg => msg.userId === currentUser.id3a);
   }, [fabMessages, currentUser]);
 
+  // Determine what to display based on priority: CTA > Follow-up > Notification
   const activeCampaign = useMemo(() => {
     if (!activeMessage || activeMessage.status !== 'pending_cta') return null;
     return activeMessage.pipeline.find(c => c.status === 'active');
   }, [activeMessage]);
-
+  
   const lastCompletedCampaign = useMemo(() => {
     if (!activeMessage) return null;
-    const completed = activeMessage.pipeline.filter(c => c.status === 'completed' && c.clickedAt);
-    if (completed.length === 0) return null;
-    return completed.sort((a,b) => parseISO(b.clickedAt!).getTime() - parseISO(a.clickedAt!).getTime())[0];
+    // Find the most recently clicked campaign
+    const completed = activeMessage.pipeline
+      .filter(c => c.status === 'completed' && c.clickedAt)
+      .sort((a,b) => parseISO(b.clickedAt!).getTime() - parseISO(a.clickedAt!).getTime());
+    return completed[0] || null;
   }, [activeMessage]);
 
   const shouldShowFollowUp = useMemo(() => {
-    if (!lastCompletedCampaign || !lastCompletedCampaign.clickedAt) return false;
+    if (!lastCompletedCampaign?.clickedAt) return false;
     const clickedAtDate = parseISO(lastCompletedCampaign.clickedAt);
     const expirationTime = clickedAtDate.getTime() + 12 * 60 * 60 * 1000;
     return Date.now() < expirationTime;
   }, [lastCompletedCampaign]);
 
-  // Expiration logic for CTA
+  // CTA Expiration logic
   useEffect(() => {
     if (!currentUser || !activeCampaign?.sentAt) return;
 
     const sentAtDate = parseISO(activeCampaign.sentAt);
     const expirationTime = sentAtDate.getTime() + 12 * 60 * 60 * 1000;
-    const now = Date.now();
-
-    if (now > expirationTime) {
+    
+    if (Date.now() > expirationTime) {
       interruptCampaign(currentUser.id3a);
       return;
     }
 
     const timeoutId = setTimeout(() => {
       interruptCampaign(currentUser.id3a);
-    }, expirationTime - now);
+    }, expirationTime - Date.now());
 
     return () => clearTimeout(timeoutId);
   }, [activeCampaign, currentUser, interruptCampaign]);
@@ -286,21 +287,28 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
         <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
-            {activeCampaign && !shouldShowFollowUp && (
+            {/* CTA Message Bubble */}
+            {activeCampaign && (
                 <MessageBubble variant="primary" onClick={handlePrimaryAction}>
                     <p className="text-sm">{activeCampaign.ctaMessage}</p>
                 </MessageBubble>
             )}
-            {shouldShowFollowUp && lastCompletedCampaign && !isFollowUpDismissed && (
+
+            {/* Follow-up Message Bubble (only shows if no active campaign) */}
+            {!activeCampaign && shouldShowFollowUp && lastCompletedCampaign && !isFollowUpDismissed && (
                 <MessageBubble variant="secondary" onClose={handleFollowUpClose} hasCloseButton>
                      <p className="text-sm cursor-default">{lastCompletedCampaign.followUpMessage}</p>
                 </MessageBubble>
             )}
+
+            {/* Other Notifications (only shows if no campaign messages) */}
             {!activeCampaign && !shouldShowFollowUp && showNotificationBubble && notificationText && (
                 <MessageBubble onClick={handlePrimaryAction}>
                    <p className="text-sm whitespace-pre-line">{notificationText}</p>
                 </MessageBubble>
             )}
+
+            {/* Idle Message Bubble */}
             {showIdleBubble && (
                 <MessageBubble 
                     variant="secondary"
