@@ -121,6 +121,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   const [isIconAnimated, setIsIconAnimated] = useState(false);
   const [showIdleBubble, setShowIdleBubble] = useState(false);
   const [currentIdleIndex, setCurrentIdleIndex] = useState(0);
+  const [isFollowUpDismissed, setIsFollowUpDismissed] = useState(false);
 
   const currentUser = useMemo(() => {
     if (!user) return null;
@@ -195,6 +196,12 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
       setIsIconAnimated(false);
     }
   }, [notificationText]);
+  
+  // Reset dismissed state when campaign changes
+  useEffect(() => {
+      setIsFollowUpDismissed(false);
+  }, [activeCampaign?.id]);
+
 
   const handlePrimaryAction = () => {
     setIsIconAnimated(false);
@@ -245,11 +252,23 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   };
 
   const handleFabClick = () => {
+      // If there's an active follow-up campaign that the user has dismissed,
+      // clicking the FAB should simply re-show the bubble.
+      if (activeCampaign && activeCampaign.status === 'pending_follow_up' && isFollowUpDismissed) {
+          setIsFollowUpDismissed(false);
+          return;
+      }
+
       if (hasPrimaryAction) {
           handlePrimaryAction();
       } else {
           handleIdleAction();
       }
+  };
+  
+  const handleFollowUpClose = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFollowUpDismissed(true);
   };
   
   const handleIdleClose = (e: React.MouseEvent) => {
@@ -267,9 +286,9 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
                     <p className="text-sm">{currentCampaign.ctaMessage}</p>
                 </MessageBubble>
             )}
-            {activeCampaign && currentCampaign && activeCampaign.status === 'pending_follow_up' && (
-                <MessageBubble variant="secondary" onClose={handlePrimaryAction} hasCloseButton>
-                    <p className="text-sm">{currentCampaign.followUpMessage}</p>
+            {activeCampaign && currentCampaign && activeCampaign.status === 'pending_follow_up' && !isFollowUpDismissed && (
+                <MessageBubble variant="secondary" onClose={handleFollowUpClose} hasCloseButton>
+                     <p className="text-sm cursor-pointer" onClick={handlePrimaryAction}>{currentCampaign.followUpMessage}</p>
                 </MessageBubble>
             )}
             {!activeCampaign && showNotificationBubble && notificationText && (
