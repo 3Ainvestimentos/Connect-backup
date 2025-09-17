@@ -136,7 +136,11 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
 
   const activeCampaign = useMemo(() => {
     if (!activeMessage) return null;
-    return activeMessage.pipeline[activeMessage.activeCampaignIndex];
+    const campaign = activeMessage.pipeline[activeMessage.activeCampaignIndex];
+    if (activeMessage.status === 'pending_cta' && campaign?.status === 'active') {
+        return campaign;
+    }
+    return null;
   }, [activeMessage]);
 
   // Expiration logic for CTA
@@ -285,7 +289,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
   return (
     <div className="fixed top-20 right-8 z-50 flex items-start group">
         <div className="absolute right-full mr-4 flex flex-col items-end gap-4">
-            {activeMessage?.status === 'pending_cta' && activeCampaign && (
+            {activeMessage?.status === 'pending_cta' && activeCampaign && !shouldShowFollowUp && (
                 <MessageBubble variant="primary" onClick={handlePrimaryAction}>
                     <p className="text-sm">{activeCampaign.ctaMessage}</p>
                 </MessageBubble>
