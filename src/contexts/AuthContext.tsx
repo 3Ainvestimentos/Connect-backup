@@ -35,6 +35,19 @@ const normalizeEmail = (email: string | null | undefined): string | null => {
     return email.replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
 }
 
+const defaultPermissions: CollaboratorPermissions = {
+  canManageWorkflows: false,
+  canManageRequests: false,
+  canManageContent: false,
+  canViewTasks: false,
+  canViewBI: false,
+  canViewRankings: false,
+  canViewCRM: false,
+  canViewStrategicPanel: false,
+  canViewOpportunityMap: true,
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -46,16 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const app = getFirebaseApp(); 
   const auth = getAuth(app);
   
-  const [permissions, setPermissions] = useState<CollaboratorPermissions>({
-    canManageWorkflows: false,
-    canManageRequests: false,
-    canManageContent: false,
-    canViewTasks: false,
-    canViewBI: false,
-    canViewRankings: false,
-    canViewCRM: false,
-    canViewStrategicPanel: false,
-  });
+  const [permissions, setPermissions] = useState<CollaboratorPermissions>(defaultPermissions);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -64,7 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       if (firebaseUser) {
         const normalizedEmail = normalizeEmail(firebaseUser.email);
-        // Fetch collaborators directly to break dependency cycle
         const collaborators = await getCollection<Collaborator>('collaborators');
         const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
         const isSuper = !!firebaseUser.email && settings.superAdminEmails.includes(firebaseUser.email);
@@ -80,7 +83,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
             setUser(firebaseUser);
             setIsSuperAdmin(isSuper);
-            const userPermissions = collaborator?.permissions || {};
+            
+            const userPermissions = { ...defaultPermissions, ...(collaborator?.permissions || {}) };
+
              if (isSuper) {
                 const allPermissions: CollaboratorPermissions = {
                     canManageWorkflows: true,
@@ -91,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     canViewRankings: true,
                     canViewCRM: true,
                     canViewStrategicPanel: true,
+                    canViewOpportunityMap: true,
                 };
                 setPermissions(allPermissions);
                 setIsAdmin(true);
@@ -104,11 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setIsAdmin(false);
         setIsSuperAdmin(false);
-        setPermissions({
-            canManageWorkflows: false, canManageRequests: false, canManageContent: false,
-            canViewTasks: false, canViewBI: false, canViewRankings: false,
-            canViewCRM: false, canViewStrategicPanel: false,
-        });
+        setPermissions(defaultPermissions);
       }
       setLoading(false); 
     });
@@ -129,7 +131,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const email = result.user.email;
       const normalizedEmail = normalizeEmail(email);
       
-      // Fetch collaborators directly on sign-in
       const collaborators = await getCollection<Collaborator>('collaborators');
       const isSuperAdminLogin = !!email && settings.superAdminEmails.includes(email);
       const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
