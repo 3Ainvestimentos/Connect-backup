@@ -110,7 +110,7 @@ export default function OpportunityMapPage() {
 
     const currentUserCollab = React.useMemo(() => {
         if (!user || collabLoading) return null;
-        return collaborators.find(c => c.id === user.uid);
+        return collaborators.find(c => c.email === user.email);
     }, [user, collaborators, collabLoading]);
 
     const userData = React.useMemo(() => {
