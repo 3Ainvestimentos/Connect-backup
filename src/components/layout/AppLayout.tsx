@@ -56,12 +56,12 @@ export const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false, permission: null },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false, permission: null },
   { href: '/applications', label: 'Solicitações', icon: Workflow, external: false, permission: null },
-  { href: '/opportunity-map', label: 'Mapa de Oportunidades', icon: Map, external: false, permission: 'canViewOpportunityMap' },
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false, permission: null },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
   { href: '/rankings', label: 'Rankings e Campanhas', icon: Award, external: false, permission: 'canViewRankings' },
   { href: '/bi', label: 'Business Intelligence', icon: BarChart, external: false, permission: 'canViewBI' },
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true, permission: null },
+  { href: '/opportunity-map', label: 'Mapa de Oportunidades', icon: Map, external: false, permission: 'canViewOpportunityMap' },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false, permission: null },
 ];
 
