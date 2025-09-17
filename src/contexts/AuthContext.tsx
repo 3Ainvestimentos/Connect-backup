@@ -31,6 +31,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const normalizeEmail = (email: string | null | undefined): string | null => {
+    if (!email) return null;
+    return email.replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -72,7 +77,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     if (user) {
-        const collaborator = collaborators.find(c => c.email === user.email);
+        const normalizedEmail = normalizeEmail(user.email);
+        const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
         const isSuper = !!user.email && settings.superAdminEmails.includes(user.email);
         const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 
@@ -143,8 +149,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       const email = result.user.email;
+      const normalizedEmail = normalizeEmail(email);
+
       const isSuperAdminLogin = !!email && settings.superAdminEmails.includes(email);
-      const collaborator = collaborators.find(c => c.email === email);
+      const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
       const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
 
       if (settings.maintenanceMode && !isSuperAdminLogin && !isAllowedDuringMaintenance) {
