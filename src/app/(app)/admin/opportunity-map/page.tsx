@@ -1,209 +1,193 @@
-
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import { useOpportunityMap, opportunityMapSchema, sectionSchema } from '@/contexts/OpportunityMapContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { useOpportunityMap } from '@/contexts/OpportunityMapContext';
 import { Button } from '@/components/ui/button';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Loader2, PlusCircle, Save, Trash2 } from 'lucide-react';
+import { Loader2, Upload, FileDown, AlertTriangle, FileText } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import Papa from 'papaparse';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 
-const formSchema = opportunityMapSchema.omit({ id: true, userId: true, userName: true });
-type FormValues = z.infer<typeof formSchema>;
-
-function SectionForm({ nest, control, register, errors }: { nest: any, control: any, register: any, errors: any }) {
-    const { fields, append, remove } = useFieldArray({
-        control,
-        name: nest,
-    });
-
-    return (
-        <div className="space-y-4">
-            {fields.map((item, index) => (
-                <div key={item.id} className="flex items-end gap-2">
-                    <div className="grid grid-cols-2 gap-2 flex-grow">
-                        <div className="space-y-1">
-                           <Label htmlFor={`${nest}.${index}.key`}>Chave</Label>
-                           <Input
-                             {...register(`${nest}.${index}.key`)}
-                             placeholder="Ex: Novos Contratos"
-                           />
-                        </div>
-                        <div className="space-y-1">
-                           <Label htmlFor={`${nest}.${index}.value`}>Valor</Label>
-                           <Input
-                             {...register(`${nest}.${index}.value`)}
-                             placeholder="Ex: R$ 1.500,00"
-                           />
-                        </div>
-                    </div>
-                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ))}
-             <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => append({ key: '', value: '' })}
-            >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Campo
-            </Button>
-        </div>
-    );
-}
-
+type CsvRow = { [key: string]: string };
 
 export default function OpportunityMapAdminPage() {
-    const { collaborators } = useCollaborators();
-    const { opportunityData, upsertOpportunityData, loading } = useOpportunityMap();
-    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-
-    const commercialUsers = useMemo(() => {
-        const testUsers = [
-            'desenvolvedor@3ariva.com.br',
-            'matheus@3ainvestimentos.com.br'
-        ];
-        return collaborators.filter(c => c.axis === 'Comercial' || testUsers.includes(c.email));
-    }, [collaborators]);
+    const { upsertOpportunityData, loading: mapLoading } = useOpportunityMap();
+    const { collaborators, loading: collabLoading } = useCollaborators();
+    const [isImportingXP, setIsImportingXP] = useState(false);
+    const [isImportingPAP, setIsImportingPAP] = useState(false);
+    const xpFileInputRef = useRef<HTMLInputElement>(null);
+    const papFileInputRef = useRef<HTMLInputElement>(null);
     
-    const form = useForm<any>({
-        defaultValues: {
-            missionsXp: [],
-            pap: [],
-        },
-    });
-    
-    const { register, control, handleSubmit, reset, formState: { isSubmitting, errors } } = form;
+    const loading = mapLoading || collabLoading;
 
-    const missionsXpArray = useFieldArray({ control, name: "missionsXp" });
-    const papArray = useFieldArray({ control, name: "pap" });
-    
-    useEffect(() => {
-        if (selectedUserId) {
-            const data = opportunityData.find(d => d.userId === selectedUserId);
-            const formatForFieldArray = (sectionData: Record<string, string> | undefined) => {
-                return sectionData ? Object.entries(sectionData).map(([key, value]) => ({ key, value })) : [];
-            };
+    const handleFileImport = async (
+        event: React.ChangeEvent<HTMLInputElement>,
+        section: 'missionsXp' | 'pap'
+    ) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
 
-            reset({
-                missionsXp: formatForFieldArray(data?.missionsXp),
-                pap: formatForFieldArray(data?.pap),
-            });
-        } else {
-            reset({
-                missionsXp: [],
-                pap: [],
-            });
-        }
-    }, [selectedUserId, opportunityData, reset]);
+        const setIsImporting = section === 'missionsXp' ? setIsImportingXP : setIsImportingPAP;
+        setIsImporting(true);
 
-    const onSubmit = async (data: any) => {
-        if (!selectedUserId) return;
+        Papa.parse<CsvRow>(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: async (results) => {
+                const { data, meta } = results;
+
+                if (!meta.fields?.includes('userEmail')) {
+                    toast({
+                        title: "Erro no Cabeçalho",
+                        description: `O arquivo CSV deve conter uma coluna chamada "userEmail".`,
+                        variant: "destructive",
+                    });
+                    setIsImporting(false);
+                    return;
+                }
+
+                const promises = data.map(row => {
+                    const email = row.userEmail?.trim().toLowerCase();
+                    if (!email) return Promise.resolve();
+
+                    const user = collaborators.find(c => c.email.toLowerCase() === email);
+                    if (!user) {
+                        console.warn(`Usuário não encontrado para o email: ${email}`);
+                        return Promise.resolve();
+                    }
+                    
+                    const { userEmail, ...sectionData } = row;
+
+                    const payload = {
+                        userName: user.name,
+                        [section]: sectionData,
+                    };
+                    
+                    return upsertOpportunityData(user.id, payload);
+                });
+
+                try {
+                    await Promise.all(promises);
+                    toast({
+                        title: "Importação Concluída!",
+                        description: `Os dados da seção ${section === 'missionsXp' ? 'Missões XP' : 'PAP'} foram atualizados para ${data.length} usuários.`,
+                    });
+                } catch (error) {
+                     toast({
+                        title: "Erro na Importação",
+                        description: (error as Error).message,
+                        variant: "destructive",
+                    });
+                } finally {
+                    setIsImporting(false);
+                }
+            },
+            error: (error) => {
+                toast({
+                    title: "Erro ao Ler o Arquivo",
+                    description: error.message,
+                    variant: "destructive",
+                });
+                setIsImporting(false);
+            },
+        });
         
-        const selectedUser = commercialUsers.find(c => c.id3a === selectedUserId);
-        if (!selectedUser) return;
-
-        // Convert field arrays back to objects
-        const formatForFirestore = (arr: { key: string, value: string }[] | undefined) => {
-            if (!arr) return {};
-            return arr.reduce((acc, { key, value }) => {
-                if (key) acc[key] = value;
-                return acc;
-            }, {} as Record<string, string>);
-        };
-        
-        const payload = {
-            userName: selectedUser.name,
-            missionsXp: formatForFirestore(data.missionsXp),
-            pap: formatForFirestore(data.pap),
-        };
-
-        try {
-            await upsertOpportunityData(selectedUserId, payload);
-            toast({ title: 'Sucesso!', description: `Dados para ${selectedUser.name} foram salvos.` });
-        } catch (error) {
-            toast({ title: 'Erro!', description: `Não foi possível salvar os dados.`, variant: 'destructive' });
-            console.error(error);
+        if (event.target) {
+            event.target.value = '';
         }
     };
-    
+
     return (
         <SuperAdminGuard>
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
                     title="Admin: Mapa de Oportunidades"
-                    description="Gerencie os dados de resultado mensal dos colaboradores do Eixo Comercial."
+                    description="Faça o upload de arquivos CSV para carregar os dados de resultado mensal dos colaboradores."
                 />
+                
+                <div className="p-4 rounded-lg bg-muted/50 border text-sm text-muted-foreground space-y-2">
+                    <p className="font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4"/>Instruções Gerais</p>
+                    <ol className="list-decimal list-inside space-y-1 pl-2">
+                        <li>Prepare uma planilha para cada seção (Missões XP, PAP).</li>
+                        <li>A primeira coluna **deve** se chamar `userEmail`. As colunas seguintes serão as chaves e os valores da seção.</li>
+                        <li>Exporte sua planilha como um arquivo CSV.</li>
+                        <li>Use os botões abaixo para importar o arquivo na seção correspondente.</li>
+                    </ol>
+                </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Seleção de Colaborador</CardTitle>
-                        <div className="w-full md:w-1/3">
-                            <Label htmlFor="collaborator-select">Colaborador Comercial</Label>
-                             <Select onValueChange={setSelectedUserId} value={selectedUserId || undefined}>
-                                <SelectTrigger id="collaborator-select">
-                                    <SelectValue placeholder="Selecione um colaborador..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {commercialUsers.map(user => (
-                                        <SelectItem key={user.id} value={user.id3a}>
-                                            {user.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </CardHeader>
-                    {selectedUserId && (
+
+                <div className="grid md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Missões XP</CardTitle>
+                            <CardDescription>
+                                Importe o arquivo CSV com os dados da seção "Missões XP".
+                                A primeira coluna deve ser 'userEmail'.
+                            </CardDescription>
+                        </CardHeader>
                         <CardContent>
-                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Missões XP</CardTitle>
-                                        <CardDescription>Insira os dados relacionados às missões de XP.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <SectionForm nest="missionsXp" control={control} register={register} errors={errors} />
-                                    </CardContent>
-                                </Card>
-
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>PAP (Plano de Ação Pessoal)</CardTitle>
-                                        <CardDescription>Insira os dados relacionados ao PAP.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                         <SectionForm nest="pap" control={control} register={register} errors={errors} />
-                                    </CardContent>
-                                </Card>
-                                
-                                <div className="flex justify-end">
-                                    <Button type="submit" disabled={isSubmitting}>
-                                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                                        Salvar Dados
-                                    </Button>
-                                </div>
-                            </form>
+                             <input
+                                type="file"
+                                ref={xpFileInputRef}
+                                className="hidden"
+                                accept=".csv"
+                                onChange={(e) => handleFileImport(e, 'missionsXp')}
+                            />
+                            <Button onClick={() => xpFileInputRef.current?.click()} disabled={isImportingXP || loading} className="w-full">
+                                {isImportingXP ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                {isImportingXP ? 'Importando...' : 'Importar CSV de Missões XP'}
+                            </Button>
                         </CardContent>
-                    )}
-                </Card>
+                         <CardFooter>
+                            <a href="/templates/modelo_mapa_oportunidades.csv" download="modelo_missoes_xp.csv" className="w-full">
+                                <Button variant="secondary" className="w-full">
+                                    <FileDown className="mr-2 h-4 w-4"/>
+                                    Baixar Modelo CSV
+                                </Button>
+                            </a>
+                        </CardFooter>
+                    </Card>
+
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>PAP (Plano de Ação Pessoal)</CardTitle>
+                            <CardDescription>
+                                Importe o arquivo CSV com os dados da seção "PAP". A primeira coluna deve ser 'userEmail'.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <input
+                                type="file"
+                                ref={papFileInputRef}
+                                className="hidden"
+                                accept=".csv"
+                                onChange={(e) => handleFileImport(e, 'pap')}
+                            />
+                            <Button onClick={() => papFileInputRef.current?.click()} disabled={isImportingPAP || loading} className="w-full">
+                                {isImportingPAP ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4" />}
+                                {isImportingPAP ? 'Importando...' : 'Importar CSV de PAP'}
+                            </Button>
+                        </CardContent>
+                         <CardFooter>
+                             <a href="/templates/modelo_mapa_oportunidades.csv" download="modelo_pap.csv" className="w-full">
+                                <Button variant="secondary" className="w-full">
+                                    <FileDown className="mr-2 h-4 w-4"/>
+                                    Baixar Modelo CSV
+                                </Button>
+                            </a>
+                        </CardFooter>
+                    </Card>
+                </div>
+                 <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-center">
+                    <p className="text-sm text-yellow-700 flex items-center justify-center gap-2">
+                        <AlertTriangle className="h-4 w-4"/>
+                        A importação de um novo arquivo para uma seção irá **sobrescrever completamente** os dados anteriores daquela seção para os usuários listados no arquivo.
+                    </p>
+                </div>
             </div>
         </SuperAdminGuard>
     );
 }
-
-
-
-    
