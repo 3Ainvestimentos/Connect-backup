@@ -2,9 +2,9 @@
 "use client";
 
 import { useTheme } from '@/contexts/ThemeContext';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, memo } from 'react';
 
-const TradingViewWidget: React.FC = () => {
+const _TradingViewWidget: React.FC = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const { theme } = useTheme();
 
@@ -86,5 +86,8 @@ const TradingViewWidget: React.FC = () => {
         </div>
     );
 };
+
+const TradingViewWidget = memo(_TradingViewWidget);
+TradingViewWidget.displayName = 'TradingViewWidget';
 
 export default TradingViewWidget;
