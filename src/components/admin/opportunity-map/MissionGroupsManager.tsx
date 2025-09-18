@@ -147,7 +147,7 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
 
 
   return (
-    <TooltipProvider>
+    <>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -200,47 +200,52 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
       
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingGroup ? 'Editar Grupo de Objetivos' : 'Novo Grupo de Objetivos'}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-              <Label htmlFor="name">Nome do Grupo</Label>
-              <Input id="name" {...register('name')} placeholder="Ex: GRUPO_ASSESSOR" />
-              {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="logicType">Tipo de Lógica</Label>
-              <Select onValueChange={(value) => setValue('logicType', value)} defaultValue={watchLogicType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                    {availableLogicTypes.map(logic => (
-                        <Tooltip key={logic.value} delayDuration={300}>
-                            <TooltipTrigger asChild>
-                                <SelectItem value={logic.value}>{logic.label}</SelectItem>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" align="start" className="max-w-xs">
-                                <p>{logic.description}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    ))}
-                </SelectContent>
-              </Select>
-              {errors.logicType && <p className="text-sm text-destructive mt-1">{errors.logicType.message}</p>}
-            </div>
-            <div>
-              <Label>Regras de Premiação</Label>
-              {renderRulesForLogicType()}
-               {errors.rules?.root && <p className="text-sm text-destructive mt-1">{errors.rules?.root?.message}</p>}
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancelar</Button>
-              <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Salvar Grupo
-              </Button>
-            </DialogFooter>
-          </form>
+            <TooltipProvider>
+                <DialogHeader><DialogTitle>{editingGroup ? 'Editar Grupo de Objetivos' : 'Novo Grupo de Objetivos'}</DialogTitle></DialogHeader>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div>
+                    <Label htmlFor="name">Nome do Grupo</Label>
+                    <Input id="name" {...register('name')} placeholder="Ex: GRUPO_ASSESSOR" />
+                    {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                    </div>
+                    <div>
+                    <Label htmlFor="logicType">Tipo de Lógica</Label>
+                    <Select onValueChange={(value) => setValue('logicType', value)} defaultValue={watchLogicType}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {availableLogicTypes.map(logic => (
+                                <SelectItem key={logic.value} value={logic.value}>
+                                <Tooltip delayDuration={100}>
+                                    <TooltipTrigger asChild>
+                                        <div className="w-full text-left">{logic.label}</div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" align="start" className="max-w-xs z-[60]">
+                                        <p className="font-medium text-sm mb-1">{logic.label}</p>
+                                        <p className="text-xs text-muted-foreground">{logic.description}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    {errors.logicType && <p className="text-sm text-destructive mt-1">{errors.logicType.message}</p>}
+                    </div>
+                    <div>
+                    <Label>Regras de Premiação</Label>
+                    {renderRulesForLogicType()}
+                    {errors.rules?.root && <p className="text-sm text-destructive mt-1">{errors.rules?.root?.message}</p>}
+                    </div>
+                    <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+                    <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Salvar Grupo
+                    </Button>
+                    </DialogFooter>
+                </form>
+            </TooltipProvider>
         </DialogContent>
       </Dialog>
-    </TooltipProvider>
+    </>
   );
 }
