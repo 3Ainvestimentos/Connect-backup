@@ -26,7 +26,7 @@ export function MissionGroupsManager() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<MissionGroup | null>(null);
 
-  const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<MissionGroupFormValues>({
+  const { control, register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<MissionGroupFormValues>({
     resolver: zodResolver(missionGroupSchema),
     defaultValues: { name: '', logicType: '', rules: [{ count: 1, reward: 0 }] },
   });
