@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -21,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 
 type MissionGroupFormValues = z.infer<typeof missionGroupSchema>;
@@ -38,7 +40,7 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
 
   const { control, register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<MissionGroupFormValues>({
     resolver: zodResolver(missionGroupSchema),
-    defaultValues: { name: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }], objectives: [] },
+    defaultValues: { name: '', description: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }], objectives: [] },
   });
 
   const { fields, append, remove, replace } = useFieldArray({ control, name: 'rules' });
@@ -52,7 +54,7 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
     if (group) {
       reset(group);
     } else {
-      reset({ name: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }], objectives: [] });
+      reset({ name: '', description: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }], objectives: [] });
     }
     setIsFormOpen(true);
   };
@@ -223,12 +225,18 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
               <ScrollArea className="flex-grow px-6">
-                <div className="space-y-6">
+                <div className="space-y-6 pb-6">
                   <div>
                     <Label htmlFor="name">Nome do Grupo</Label>
                     <Input id="name" {...register('name')} placeholder="Ex: VENDAS_TIME_A" />
                     {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
                   </div>
+
+                  <div>
+                    <Label htmlFor="description">Descrição</Label>
+                    <Textarea id="description" {...register('description')} placeholder="Explique as regras e o funcionamento deste grupo..." />
+                  </div>
+                  
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <Label htmlFor="logicType">Tipo de Lógica</Label>

@@ -28,6 +28,7 @@ const rewardRuleSchema = z.object({
 // Zod schema for a mission group
 export const missionGroupSchema = z.object({
   name: z.string().min(1, "O nome do grupo é obrigatório.").transform(normalizeGroupName),
+  description: z.string().optional(),
   logicType: z.string().min(1, "O tipo de lógica é obrigatório."),
   rules: z.array(rewardRuleSchema).min(1, "Pelo menos uma regra de premiação é necessária."),
   objectives: z.array(z.string()).optional().default([]),
