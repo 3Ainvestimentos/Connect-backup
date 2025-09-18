@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -7,6 +8,17 @@ import { useAuth } from './AuthContext';
 import * as z from 'zod';
 import { RewardRule } from '@/lib/gamification-logics';
 
+// Função para normalizar o nome do grupo
+const normalizeGroupName = (name: string) => {
+  return name
+    .normalize("NFD") // Normaliza para decompor acentos
+    .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+    .toUpperCase() // Converte para maiúsculas
+    .replace(/\s+/g, '_') // Substitui espaços por underscore
+    .replace(/[^A-Z0-9_]/g, ''); // Remove caracteres não permitidos
+};
+
+
 // Zod schema for a single reward rule
 const rewardRuleSchema = z.object({
     count: z.coerce.number().min(1, "A contagem deve ser no mínimo 1."),
@@ -15,7 +27,7 @@ const rewardRuleSchema = z.object({
 
 // Zod schema for a mission group
 export const missionGroupSchema = z.object({
-  name: z.string().min(1, "O nome do grupo é obrigatório.").regex(/^[A-Z0-9_]+$/, "O nome do grupo deve ser em maiúsculas, sem espaços (use underscore). Ex: GRUPO_X"),
+  name: z.string().min(1, "O nome do grupo é obrigatório.").transform(normalizeGroupName),
   logicType: z.string().min(1, "O tipo de lógica é obrigatório."),
   rules: z.array(rewardRuleSchema).min(1, "Pelo menos uma regra de premiação é necessária."),
 });
