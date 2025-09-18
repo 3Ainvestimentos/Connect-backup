@@ -1,19 +1,17 @@
-
 "use client";
 
 import React from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOpportunityMap, MissionStatus } from '@/contexts/OpportunityMapContext';
+import { useOpportunityMap, OpportunityMapData } from '@/contexts/OpportunityMapContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, TrendingUp, CheckSquare, Zap, CheckCircle2, CircleDashed } from 'lucide-react';
+import { AlertCircle, TrendingUp, CheckSquare, Zap, CheckCircle2, CircleDashed, Compass } from 'lucide-react';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useOpportunityMapMissions } from '@/contexts/OpportunityMapMissionsContext';
+import { useOpportunityTypes, OpportunityType } from '@/contexts/OpportunityMapMissionsContext';
 import { useMissionGroups } from '@/contexts/MissionGroupsContext';
-import { missionLogics } from '@/lib/gamification-logics';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -22,15 +20,17 @@ const formatCurrency = (value: number) => {
     }).format(value);
 };
 
-function PapSection({ data }: { data: Record<string, string> | undefined }) {
-    if (!data || Object.keys(data).length === 0) {
+function OpportunitySection({ opportunityType, userData }: { opportunityType: OpportunityType, userData: OpportunityMapData | undefined }) {
+    const sectionData = userData?.[opportunityType.id] || {};
+    
+    if (!sectionData || Object.keys(sectionData).length === 0) {
         return (
-             <Card>
+            <Card>
                 <CardHeader>
-                    <CardTitle>PAP (Plano de Ação Pessoal)</CardTitle>
+                    <CardTitle>{opportunityType.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm text-muted-foreground">Nenhum dado de PAP disponível para este período.</p>
+                    <p className="text-sm text-muted-foreground">Nenhum dado disponível para esta oportunidade no momento.</p>
                 </CardContent>
             </Card>
         );
@@ -39,149 +39,29 @@ function PapSection({ data }: { data: Record<string, string> | undefined }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>PAP (Plano de Ação Pessoal)</CardTitle>
+                <CardTitle>{opportunityType.name}</CardTitle>
+                <CardDescription>{opportunityType.description}</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {Object.entries(data).map(([key, value]) => (
-                    <div key={key} className="bg-muted/50 p-3 rounded-lg text-center">
-                        <dt className="text-sm font-medium text-muted-foreground truncate">{key}</dt>
-                        <dd className="text-2xl font-bold text-foreground">{value}</dd>
-                    </div>
-                ))}
-            </CardContent>
-        </Card>
-    );
-}
-
-function MissionsXpSection({ userMissionsStatus }: { userMissionsStatus: Record<string, MissionStatus> | undefined }) {
-    const { missions: missionDefinitions, loading: loadingMissions } = useOpportunityMapMissions();
-    const { missionGroups } = useMissionGroups();
-
-    const { eligibleMissions, totalEstimated, totalAwarded } = React.useMemo(() => {
-        if (!userMissionsStatus || missionDefinitions.length === 0) {
-            return { eligibleMissions: [], totalEstimated: 0, totalAwarded: 0 };
-        }
-
-        let individualMissionsEstimate = 0;
-        let individualMissionsAward = 0;
-        const missionsByGroup: Record<string, { definition: any, status: MissionStatus }[]> = {};
-
-        const sortedDefinitions = [...missionDefinitions].sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
-
-        sortedDefinitions.forEach(def => {
-            const status = userMissionsStatus[def.title];
-            if (status?.eligible) {
-                if (def.group) {
-                    if (!missionsByGroup[def.group]) missionsByGroup[def.group] = [];
-                    missionsByGroup[def.group].push({ definition: def, status });
-                } else {
-                    const value = parseFloat(def.maxValue) || 0;
-                    individualMissionsEstimate += value;
-                    if (status.achieved) {
-                        individualMissionsAward += value;
-                    }
-                }
-            }
-        });
-        
-        let groupEstimates = 0;
-        let groupAwards = 0;
-
-        Object.keys(missionsByGroup).forEach(groupName => {
-            const groupDef = missionGroups.find(g => g.name === groupName);
-            if (!groupDef) return;
-
-            const groupMissions = missionsByGroup[groupName];
-            const logicFunction = missionLogics[groupDef.logicType];
-
-            const groupEstimateValue = groupMissions.reduce((sum, m) => sum + (parseFloat(m.definition.maxValue) || 0), 0);
-            groupEstimates += logicFunction ? logicFunction(groupMissions.length, groupDef.rules) : groupEstimateValue;
-            
-            if (logicFunction) {
-                const achievedCount = groupMissions.filter(m => m.status.achieved).length;
-                groupAwards += logicFunction(achievedCount, groupDef.rules);
-            }
-        });
-
-        const missions = sortedDefinitions
-            .map(def => {
-                const status = userMissionsStatus[def.title];
-                return { ...def, isEligible: !!status?.eligible, isAchieved: !!status?.achieved };
-            })
-            .filter(m => m.isEligible);
-            
-        return {
-            eligibleMissions: missions,
-            totalEstimated: individualMissionsEstimate + groupEstimates,
-            totalAwarded: individualMissionsAward + groupAwards,
-        };
-    }, [userMissionsStatus, missionDefinitions, missionGroups]);
-    
-
-    if (loadingMissions) return <Skeleton className="h-64 w-full" />;
-
-    if (eligibleMissions.length === 0) {
-         return (
-            <Card>
-                <CardHeader><CardTitle>Missões XP</CardTitle></CardHeader>
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">Você não está elegível para nenhuma Missão XP no momento.</p>
-                </CardContent>
-            </Card>
-        );
-    }
-
-    const chartData = [{ name: 'Total', 'Total Premiado': totalAwarded, 'Total Estimado': totalEstimated }];
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Missões XP</CardTitle>
-                <CardDescription>Acompanhe suas metas e os valores que pode conquistar este mês.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex overflow-x-auto pb-4 gap-4">
-                    {eligibleMissions.map(mission => (
-                        <div key={mission.id} className="border rounded-lg p-4 flex flex-col justify-between bg-background hover:bg-muted/50 transition-colors flex-shrink-0 w-64">
-                            <div>
-                                <div className="flex justify-between items-start">
-                                    <h4 className="font-bold text-foreground text-base pr-4">{mission.title}</h4>
-                                    {mission.isAchieved ? (
-                                        <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0" />
-                                    ) : (
-                                        <CircleDashed className="h-6 w-6 text-muted-foreground flex-shrink-0" />
-                                    )}
-                                </div>
-                                <p className="text-2xl font-bold text-primary mt-2">{formatCurrency(parseFloat(mission.maxValue) || 0)}</p>
-                                {mission.notes && <p className="text-xs text-muted-foreground mt-1">{mission.notes}</p>}
+                {Object.entries(sectionData).map(([key, value]) => {
+                    if (typeof value === 'object' && value !== null) {
+                         const status = (value as any).status;
+                         const val = (value as any).value;
+                         return (
+                            <div key={key} className="bg-muted/50 p-3 rounded-lg text-center">
+                                <dt className="text-sm font-medium text-muted-foreground truncate">{key}</dt>
+                                <dd className="text-2xl font-bold text-foreground">{val}</dd>
+                                {status && <span className={`text-xs font-semibold ${status === 'premiado' ? 'text-green-500' : 'text-blue-500'}`}>({status})</span>}
                             </div>
+                         )
+                    }
+                    return (
+                        <div key={key} className="bg-muted/50 p-3 rounded-lg text-center">
+                            <dt className="text-sm font-medium text-muted-foreground truncate">{key}</dt>
+                            <dd className="text-2xl font-bold text-foreground">{String(value)}</dd>
                         </div>
-                    ))}
-                </div>
-                <div className="pt-4 border-t">
-                    <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                       <TrendingUp className="h-5 w-5 text-muted-foreground" />
-                       Resultado Geral das Missões
-                    </h4>
-                    <ResponsiveContainer width="100%" height={80}>
-                       <BarChart data={chartData} layout="vertical" margin={{ right: 120 }}>
-                            <XAxis type="number" hide />
-                            <YAxis type="category" dataKey="name" hide />
-                            <Tooltip
-                                cursor={{ fill: 'transparent' }}
-                                contentStyle={{ background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                                formatter={(value: number) => formatCurrency(value)}
-                            />
-                             <Legend verticalAlign="top" wrapperStyle={{paddingBottom: '1rem'}}/>
-                             <Bar dataKey="Total Estimado" fill="hsl(var(--primary))" radius={[4, 4, 4, 4]} barSize={25}>
-                                 <LabelList dataKey="Total Estimado" position="right" offset={10} formatter={(value: number) => formatCurrency(value)} className="font-semibold fill-foreground" />
-                            </Bar>
-                             <Bar dataKey="Total Premiado" fill="hsl(var(--admin-primary))" radius={[4, 4, 4, 4]} barSize={25}>
-                                 <LabelList dataKey="Total Premiado" position="right" offset={10} formatter={(value: number) => formatCurrency(value)} className="font-semibold fill-foreground" />
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
+                    );
+                })}
             </CardContent>
         </Card>
     );
@@ -191,14 +71,25 @@ export default function OpportunityMapPage() {
     const { user } = useAuth();
     const { opportunityData, loading } = useOpportunityMap();
     const { collaborators, loading: collabLoading } = useCollaborators();
+    const { opportunityTypes } = useOpportunityTypes();
 
     const currentUserData = React.useMemo(() => {
         if (!user || collabLoading || !collaborators.length) return null;
         const currentUserCollab = collaborators.find(c => c.email === user.email);
         if (!currentUserCollab) return null;
-        // Use the collaborator's document ID to find the data
         return opportunityData.find(d => d.id === currentUserCollab.id);
     }, [opportunityData, user, collaborators, collabLoading]);
+
+    const visibleOpportunities = React.useMemo(() => {
+        if (!user || collabLoading || !currentUserData) return [];
+        const currentUserCollab = collaborators.find(c => c.email === user.email);
+        if (!currentUserCollab) return [];
+        
+        return opportunityTypes.filter(op => {
+            if (op.recipientIds.includes('all')) return true;
+            return op.recipientIds.includes(currentUserCollab.id3a);
+        });
+    }, [opportunityTypes, user, collaborators, collabLoading, currentUserData]);
 
     if (loading || collabLoading) {
         return (
@@ -212,11 +103,11 @@ export default function OpportunityMapPage() {
         );
     }
 
-    if (!currentUserData) {
+    if (!currentUserData || visibleOpportunities.length === 0) {
          return (
              <div className="space-y-6 p-6 md:p-8 flex flex-col items-center justify-center text-center h-[calc(100vh-var(--header-height))]">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4"/>
-                <PageHeader title="Dados Não Encontrados" description="Seu Mapa de Oportunidades ainda não foi configurado. Por favor, entre em contato com seu gestor." />
+                <PageHeader title="Nenhuma Oportunidade Encontrada" description="Nenhuma oportunidade foi configurada para você no momento. Por favor, entre em contato com seu gestor." />
             </div>
         );
     }
@@ -228,23 +119,20 @@ export default function OpportunityMapPage() {
                 description={`Visualização do seu resultado mensal, ${currentUserData.userName}.`}
             />
             
-            <Tabs defaultValue="missionsXp" className="w-full">
+            <Tabs defaultValue={visibleOpportunities[0]?.id} className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="missionsXp">
-                        <Zap className="mr-2 h-4 w-4" />
-                        Missões XP
-                    </TabsTrigger>
-                    <TabsTrigger value="pap">
-                        <CheckSquare className="mr-2 h-4 w-4" />
-                        PAP
-                    </TabsTrigger>
+                     {visibleOpportunities.map(op => (
+                        <TabsTrigger key={op.id} value={op.id}>
+                            <Compass className="mr-2 h-4 w-4" />
+                            {op.name}
+                        </TabsTrigger>
+                     ))}
                 </TabsList>
-                <TabsContent value="missionsXp" className="mt-6">
-                     <MissionsXpSection userMissionsStatus={currentUserData.missionsXp} />
-                </TabsContent>
-                <TabsContent value="pap" className="mt-6">
-                    <PapSection data={currentUserData.pap} />
-                </TabsContent>
+                 {visibleOpportunities.map(op => (
+                     <TabsContent key={op.id} value={op.id} className="mt-6">
+                        <OpportunitySection opportunityType={op} userData={currentUserData} />
+                    </TabsContent>
+                 ))}
             </Tabs>
         </div>
     );

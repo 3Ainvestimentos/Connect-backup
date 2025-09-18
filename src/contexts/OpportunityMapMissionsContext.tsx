@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -8,41 +7,40 @@ import { useAuth } from './AuthContext';
 import * as z from 'zod';
 import { formatISO } from 'date-fns';
 
-export const missionDefinitionSchema = z.object({
-  title: z.string().min(1, "O título é obrigatório."),
-  maxValue: z.string().min(1, "O valor máximo é obrigatório."),
-  notes: z.string().optional(),
-  group: z.string().optional(), // Novo campo para agrupar missões
+export const opportunityTypeSchema = z.object({
+  name: z.string().min(1, "O nome da oportunidade é obrigatório."),
+  description: z.string().optional(),
+  recipientIds: z.array(z.string()).min(1, "É necessário selecionar um público-alvo."),
   createdAt: z.string().optional(),
 });
 
-export type MissionDefinition = WithId<z.infer<typeof missionDefinitionSchema>>;
+export type OpportunityType = WithId<z.infer<typeof opportunityTypeSchema>>;
 
-interface OpportunityMapMissionsContextType {
-  missions: MissionDefinition[];
+interface OpportunityTypesContextType {
+  opportunityTypes: OpportunityType[];
   loading: boolean;
-  addMission: (mission: Omit<MissionDefinition, 'id'>) => Promise<MissionDefinition>;
-  updateMission: (mission: Partial<MissionDefinition> & { id: string }) => Promise<void>;
-  deleteMission: (missionId: string) => Promise<void>;
+  addOpportunityType: (opportunityType: Omit<OpportunityType, 'id'>) => Promise<OpportunityType>;
+  updateOpportunityType: (opportunityType: Partial<OpportunityType> & { id: string }) => Promise<void>;
+  deleteOpportunityType: (opportunityTypeId: string) => Promise<void>;
 }
 
-const OpportunityMapMissionsContext = createContext<OpportunityMapMissionsContextType | undefined>(undefined);
-const COLLECTION_NAME = 'opportunityMapMissions';
+const OpportunityTypesContext = createContext<OpportunityTypesContextType | undefined>(undefined);
+const COLLECTION_NAME = 'opportunityTypes';
 
-export const OpportunityMapMissionsProvider = ({ children }: { children: ReactNode }) => {
+export const OpportunityTypesProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
-  const { data: missions = [], isFetching } = useQuery<MissionDefinition[]>({
+  const { data: opportunityTypes = [], isFetching } = useQuery<OpportunityType[]>({
     queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<MissionDefinition>(COLLECTION_NAME),
+    queryFn: () => getCollection<OpportunityType>(COLLECTION_NAME),
     staleTime: 5 * 60 * 1000,
     enabled: !!user,
   });
 
   React.useEffect(() => {
     if (!user) return;
-    const unsubscribe = listenToCollection<MissionDefinition>(
+    const unsubscribe = listenToCollection<OpportunityType>(
       COLLECTION_NAME,
       (newData) => {
         queryClient.setQueryData([COLLECTION_NAME], newData);
@@ -54,9 +52,9 @@ export const OpportunityMapMissionsProvider = ({ children }: { children: ReactNo
     return () => unsubscribe();
   }, [queryClient, user]);
 
-  const addMissionMutation = useMutation<WithId<Omit<MissionDefinition, 'id'>>, Error, Omit<MissionDefinition, 'id'>>({
-    mutationFn: (missionData) => {
-      const dataWithTimestamp = { ...missionData, createdAt: formatISO(new Date()) };
+  const addMutation = useMutation<WithId<Omit<OpportunityType, 'id'>>, Error, Omit<OpportunityType, 'id'>>({
+    mutationFn: (opportunityTypeData) => {
+      const dataWithTimestamp = { ...opportunityTypeData, createdAt: formatISO(new Date()) };
       return addDocumentToCollection(COLLECTION_NAME, dataWithTimestamp);
     },
     onSuccess: () => {
@@ -64,39 +62,39 @@ export const OpportunityMapMissionsProvider = ({ children }: { children: ReactNo
     },
   });
 
-  const updateMissionMutation = useMutation<void, Error, Partial<MissionDefinition> & { id: string }>({
-    mutationFn: (updatedMission) => updateDocumentInCollection(COLLECTION_NAME, updatedMission.id, updatedMission),
+  const updateMutation = useMutation<void, Error, Partial<OpportunityType> & { id: string }>({
+    mutationFn: (updatedData) => updateDocumentInCollection(COLLECTION_NAME, updatedData.id, updatedData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
   
-  const deleteMissionMutation = useMutation<void, Error, string>({
-    mutationFn: (missionId) => deleteDocumentFromCollection(COLLECTION_NAME, missionId),
+  const deleteMutation = useMutation<void, Error, string>({
+    mutationFn: (opportunityTypeId) => deleteDocumentFromCollection(COLLECTION_NAME, opportunityTypeId),
      onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },
   });
 
   const value = useMemo(() => ({
-    missions,
+    opportunityTypes,
     loading: isFetching,
-    addMission: (mission) => addMissionMutation.mutateAsync(mission) as Promise<MissionDefinition>,
-    updateMission: (mission) => updateMissionMutation.mutateAsync(mission),
-    deleteMission: (missionId) => deleteMissionMutation.mutateAsync(missionId),
-  }), [missions, isFetching, addMissionMutation, updateMissionMutation, deleteMissionMutation]);
+    addOpportunityType: (data) => addMutation.mutateAsync(data) as Promise<OpportunityType>,
+    updateOpportunityType: (data) => updateMutation.mutateAsync(data),
+    deleteOpportunityType: (id) => deleteMutation.mutateAsync(id),
+  }), [opportunityTypes, isFetching, addMutation, updateMutation, deleteMutation]);
 
   return (
-    <OpportunityMapMissionsContext.Provider value={value}>
+    <OpportunityTypesContext.Provider value={value}>
       {children}
-    </OpportunityMapMissionsContext.Provider>
+    </OpportunityTypesContext.Provider>
   );
 };
 
-export const useOpportunityMapMissions = (): OpportunityMapMissionsContextType => {
-  const context = useContext(OpportunityMapMissionsContext);
+export const useOpportunityTypes = (): OpportunityTypesContextType => {
+  const context = useContext(OpportunityTypesContext);
   if (context === undefined) {
-    throw new Error('useOpportunityMapMissions must be used within an OpportunityMapMissionsProvider');
+    throw new Error('useOpportunityTypes must be used within a OpportunityTypesProvider');
   }
   return context;
 };

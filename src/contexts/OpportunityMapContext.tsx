@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -7,21 +6,13 @@ import { setDocumentInCollection, WithId, listenToCollection, getCollection } fr
 import { useAuth } from './AuthContext';
 import * as z from 'zod';
 
-// Zod schema for a single mission status within a user's document
-export const missionStatusSchema = z.object({
-  eligible: z.boolean().default(false),
-  achieved: z.boolean().default(false),
-});
-
-// Zod schema for the entire opportunity map data for a user
+// This is now a generic data structure. Each key is an opportunityTypeId.
+// The value is another record where keys are specific data points for that opportunity.
 export const opportunityMapSchema = z.object({
     userName: z.string(),
-    missionsXp: z.record(z.string(), missionStatusSchema).default({}),
-    pap: z.record(z.string(), z.string()).default({}),
-});
+}).catchall(z.record(z.string(), z.any()));
 
 export type OpportunityMapData = WithId<z.infer<typeof opportunityMapSchema>>;
-export type MissionStatus = z.infer<typeof missionStatusSchema>;
 
 interface OpportunityMapContextType {
   opportunityData: OpportunityMapData[];

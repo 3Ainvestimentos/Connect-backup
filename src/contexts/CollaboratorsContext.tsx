@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
@@ -15,7 +14,6 @@ export interface CollaboratorPermissions {
   canViewRankings: boolean;
   canViewCRM: boolean;
   canViewStrategicPanel: boolean;
-  canViewOpportunityMap: boolean;
 }
 
 export interface BILink {
@@ -64,7 +62,6 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewRankings: false,
   canViewCRM: false,
   canViewStrategicPanel: false,
-  canViewOpportunityMap: true,
 };
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {

@@ -22,7 +22,7 @@ import { RankingsProvider } from '@/contexts/RankingsContext';
 import { FabMessagesProvider } from '@/contexts/FabMessagesContext';
 import { IdleFabMessagesProvider } from '@/contexts/IdleFabMessagesContext';
 import { OpportunityMapProvider } from '@/contexts/OpportunityMapContext';
-import { OpportunityMapMissionsProvider } from '@/contexts/OpportunityMapMissionsContext';
+import { OpportunityTypesProvider } from '@/contexts/OpportunityMapMissionsContext';
 import { MissionGroupsProvider } from '@/contexts/MissionGroupsContext';
 
 
@@ -75,11 +75,11 @@ export default function RootLayout({
                                                 <FabMessagesProvider>
                                                 <IdleFabMessagesProvider>
                                                   <MissionGroupsProvider>
-                                                    <OpportunityMapMissionsProvider>
+                                                    <OpportunityTypesProvider>
                                                       <OpportunityMapProvider>
                                                         {children}
                                                       </OpportunityMapProvider>
-                                                    </OpportunityMapMissionsProvider>
+                                                    </OpportunityTypesProvider>
                                                   </MissionGroupsProvider>
                                                 </IdleFabMessagesProvider>
                                                 </FabMessagesProvider>
