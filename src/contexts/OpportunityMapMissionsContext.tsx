@@ -12,7 +12,8 @@ export const missionDefinitionSchema = z.object({
   title: z.string().min(1, "O título é obrigatório."),
   maxValue: z.string().min(1, "O valor máximo é obrigatório."),
   notes: z.string().optional(),
-  createdAt: z.string().optional(), // Added for sorting
+  group: z.string().optional(), // Novo campo para agrupar missões
+  createdAt: z.string().optional(),
 });
 
 export type MissionDefinition = WithId<z.infer<typeof missionDefinitionSchema>>;

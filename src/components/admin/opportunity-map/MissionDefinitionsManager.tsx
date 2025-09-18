@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Info } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 
 type MissionFormValues = z.infer<typeof missionDefinitionSchema>;
 
@@ -25,7 +26,7 @@ export function MissionDefinitionsManager() {
 
   const { control, register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<MissionFormValues>({
     resolver: zodResolver(missionDefinitionSchema),
-    defaultValues: { title: '', maxValue: '0', notes: '' },
+    defaultValues: { title: '', maxValue: '0', notes: '', group: '' },
   });
   
   const sortedMissions = useMemo(() => {
@@ -42,7 +43,7 @@ export function MissionDefinitionsManager() {
     if (mission) {
       reset(mission);
     } else {
-      reset({ title: '', maxValue: '0', notes: '' });
+      reset({ title: '', maxValue: '0', notes: '', group: '' });
     }
     setIsFormOpen(true);
   };
@@ -78,6 +79,7 @@ export function MissionDefinitionsManager() {
             <TableCell><Skeleton className="h-4 w-3/4" /></TableCell>
             <TableCell><Skeleton className="h-4 w-1/4" /></TableCell>
             <TableCell><Skeleton className="h-4 w-1/2" /></TableCell>
+            <TableCell><Skeleton className="h-4 w-1/4" /></TableCell>
             <TableCell className="text-right"><Skeleton className="h-8 w-16 inline-block" /></TableCell>
         </TableRow>
     ))
@@ -102,6 +104,7 @@ export function MissionDefinitionsManager() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Título da Missão</TableHead>
+                  <TableHead>Grupo</TableHead>
                   <TableHead>Valor Máximo (R$)</TableHead>
                   <TableHead>Observações</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -111,6 +114,9 @@ export function MissionDefinitionsManager() {
                 {loading ? renderSkeleton() : sortedMissions.map(mission => (
                   <TableRow key={mission.id}>
                     <TableCell className="font-medium">{mission.title}</TableCell>
+                    <TableCell>
+                      {mission.group ? <Badge variant="secondary">{mission.group}</Badge> : '-'}
+                    </TableCell>
                     <TableCell>{mission.maxValue}</TableCell>
                     <TableCell className="max-w-xs truncate">{mission.notes}</TableCell>
                     <TableCell className="text-right">
@@ -141,8 +147,18 @@ export function MissionDefinitionsManager() {
               {errors.title && <p className="text-sm text-destructive mt-1">{errors.title.message}</p>}
             </div>
             <div>
+              <Label htmlFor="group">Grupo (Opcional)</Label>
+              <Input id="group" {...register('group')} placeholder="Ex: GRUPO_ASSESSOR" />
+              <p className="text-xs text-muted-foreground mt-1">
+                Agrupe missões para aplicar lógicas de premiação condicionais.
+              </p>
+            </div>
+            <div>
               <Label htmlFor="maxValue">Valor Máximo (R$)</Label>
               <Input id="maxValue" {...register('maxValue')} placeholder="Ex: 1500.00"/>
+              <p className="text-xs text-muted-foreground mt-1">
+                Se a missão faz parte de um grupo, este valor pode ser ignorado.
+              </p>
               {errors.maxValue && <p className="text-sm text-destructive mt-1">{errors.maxValue.message}</p>}
             </div>
             <div>
