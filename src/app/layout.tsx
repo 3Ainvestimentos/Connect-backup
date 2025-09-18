@@ -5,25 +5,9 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import { ApplicationsProvider } from '@/contexts/ApplicationsContext';
-import { DocumentsProvider } from '@/contexts/DocumentsContext';
-import { NewsProvider } from '@/contexts/NewsContext';
-import { MessagesProvider } from '@/contexts/MessagesContext';
-import { CollaboratorsProvider } from '@/contexts/CollaboratorsContext';
 import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
-import { LabsProvider } from '@/contexts/LabsContext';
-import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
-import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
-import { QuickLinksProvider } from '@/contexts/QuickLinksContext';
 import { SystemSettingsProvider } from '@/contexts/SystemSettingsContext';
 import { Roboto, Archivo } from 'next/font/google';
-import { PollsProvider } from '@/contexts/PollsContext';
-import { RankingsProvider } from '@/contexts/RankingsContext';
-import { FabMessagesProvider } from '@/contexts/FabMessagesContext';
-import { IdleFabMessagesProvider } from '@/contexts/IdleFabMessagesContext';
-import { OpportunityMapProvider } from '@/contexts/OpportunityMapContext';
-import { OpportunityTypesProvider } from '@/contexts/OpportunityMapMissionsContext';
-import { MissionGroupsProvider } from '@/contexts/MissionGroupsContext';
 
 
 const fontRoboto = Roboto({
@@ -61,40 +45,8 @@ export default function RootLayout({
           <ReactQueryProvider>
             <SystemSettingsProvider>
                 <AuthProvider>
-                    <CollaboratorsProvider>
-                        <WorkflowAreasProvider>
-                            <ApplicationsProvider>
-                            <DocumentsProvider>
-                                <NewsProvider>
-                                    <MessagesProvider>
-                                    <LabsProvider>
-                                        <WorkflowsProvider>
-                                        <QuickLinksProvider>
-                                            <PollsProvider>
-                                            <RankingsProvider>
-                                                <FabMessagesProvider>
-                                                <IdleFabMessagesProvider>
-                                                  <MissionGroupsProvider>
-                                                    <OpportunityTypesProvider>
-                                                      <OpportunityMapProvider>
-                                                        {children}
-                                                      </OpportunityMapProvider>
-                                                    </OpportunityTypesProvider>
-                                                  </MissionGroupsProvider>
-                                                </IdleFabMessagesProvider>
-                                                </FabMessagesProvider>
-                                            </RankingsProvider>
-                                            </PollsProvider>
-                                        </QuickLinksProvider>
-                                        </WorkflowsProvider>
-                                    </LabsProvider>
-                                    <Toaster />
-                                    </MessagesProvider>
-                                </NewsProvider>
-                            </DocumentsProvider>
-                            </ApplicationsProvider>
-                        </WorkflowAreasProvider>
-                    </CollaboratorsProvider>
+                    {children}
+                    <Toaster />
                 </AuthProvider>
             </SystemSettingsProvider>
           </ReactQueryProvider>
