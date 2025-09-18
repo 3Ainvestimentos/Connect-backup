@@ -17,6 +17,8 @@ import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { availableLogicTypes } from '@/lib/gamification-logics';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 type MissionGroupFormValues = z.infer<typeof missionGroupSchema>;
 
@@ -145,7 +147,7 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
 
 
   return (
-    <>
+    <TooltipProvider>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -210,9 +212,16 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
               <Select onValueChange={(value) => setValue('logicType', value)} defaultValue={watchLogicType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {availableLogicTypes.map(logic => (
-                    <SelectItem key={logic.value} value={logic.value}>{logic.label}</SelectItem>
-                  ))}
+                    {availableLogicTypes.map(logic => (
+                        <Tooltip key={logic.value} delayDuration={300}>
+                            <TooltipTrigger asChild>
+                                <SelectItem value={logic.value}>{logic.label}</SelectItem>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" align="start" className="max-w-xs">
+                                <p>{logic.description}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    ))}
                 </SelectContent>
               </Select>
               {errors.logicType && <p className="text-sm text-destructive mt-1">{errors.logicType.message}</p>}
@@ -232,6 +241,6 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
           </form>
         </DialogContent>
       </Dialog>
-    </>
+    </TooltipProvider>
   );
 }

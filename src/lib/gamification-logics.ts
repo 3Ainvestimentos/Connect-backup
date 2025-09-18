@@ -100,8 +100,8 @@ export const missionLogics: Record<string, (achievedCount: number, rules: Reward
 
 // Array de tipos de lógica disponíveis para a UI
 export const availableLogicTypes = [
-  { value: 'tieredReward', label: 'Prêmio por Faixas (Tiered)', ruleFields: ['count', 'reward'], ruleCount: 'multiple' },
-  { value: 'linearBonus', label: 'Bônus por Objetivo (Linear)', ruleFields: ['reward'], ruleCount: 'single' },
-  { value: 'allOrNothing', label: 'Tudo ou Nada', ruleFields: ['count', 'reward'], ruleCount: 'single' },
-  { value: 'basePlusBonus', label: 'Prêmio Base + Bônus Adicional', ruleFields: ['reward', 'reward'], ruleCount: 'dual' },
+  { value: 'tieredReward', label: 'Prêmio por Faixas (Tiered)', description: 'A recompensa aumenta conforme mais objetivos são atingidos. Ex: 1-2 objetivos = R$100, 3+ objetivos = R$250.', ruleFields: ['count', 'reward'], ruleCount: 'multiple' },
+  { value: 'linearBonus', label: 'Bônus por Objetivo (Linear)', description: 'Um valor fixo para cada objetivo concluído. Ex: R$50 por cada um dos 5 objetivos, totalizando R$250 se todos forem feitos.', ruleFields: ['reward'], ruleCount: 'single' },
+  { value: 'allOrNothing', label: 'Tudo ou Nada', description: 'Um prêmio único é pago somente se TODOS os objetivos do grupo forem concluídos. Ex: Complete os 5 objetivos para ganhar R$1000.', ruleFields: ['count', 'reward'], ruleCount: 'single' },
+  { value: 'basePlusBonus', label: 'Prêmio Base + Bônus Adicional', description: 'Um prêmio inicial pela primeira missão e um bônus para cada missão extra. Ex: R$500 pela 1ª, +R$100 por cada adicional.', ruleFields: ['reward', 'reward'], ruleCount: 'dual' },
 ];
