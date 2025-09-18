@@ -130,19 +130,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }, [definition, request, isCurrentStatusFinal]);
 
 
-  const hasPendingActions = useMemo(() => {
-    if (!currentStatusDefinition?.action) return false;
-    
-    const validActionRequests = actionRequestsForCurrentStatus.filter(ar => ar.userName !== 'Desconhecido');
-    
-    // This check is too restrictive, as it blocks moving forward if an optional action is pending.
-    // We will remove this from the button's disabled logic.
-    // if (validActionRequests.length === 0) return false;
-    
-    return validActionRequests.some(ar => ar.status === 'pending');
-  }, [actionRequestsForCurrentStatus, currentStatusDefinition]);
-
-
   useEffect(() => {
     if (request) {
       setComment('');
@@ -824,3 +811,4 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
