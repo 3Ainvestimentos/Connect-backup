@@ -121,13 +121,13 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }, [currentStatusDefinition]);
 
   const nextStatus = useMemo((): WorkflowStatusDefinition | null => {
-    if (!definition || !request || isCurrentStatusFinal) return null;
+    if (!definition || !request) return null;
     const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
     if (currentIndex === -1 || currentIndex >= definition.statuses.length - 1) {
       return null;
     }
     return definition.statuses[currentIndex + 1];
-  }, [definition, request, isCurrentStatusFinal]);
+  }, [definition, request]);
 
 
   useEffect(() => {
@@ -755,7 +755,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
-                {canTakeAction && !isCurrentStatusFinal && (
+                {canTakeAction && (
                      <Button 
                         key={nextStatus?.id || 'no-next-status'}
                         className="bg-admin-primary hover:bg-admin-primary/90"
@@ -811,4 +811,3 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
-
