@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -21,8 +20,12 @@ import { availableLogicTypes } from '@/lib/gamification-logics';
 
 type MissionGroupFormValues = z.infer<typeof missionGroupSchema>;
 
-export function MissionGroupsManager() {
-  const { missionGroups, addMissionGroup, updateMissionGroup, deleteMissionGroup, loading } = useMissionGroups();
+interface MissionGroupsManagerProps {
+    opportunityTypeId: string;
+}
+
+export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManagerProps) {
+  const { missionGroups, addMissionGroup, updateMissionGroup, deleteMissionGroup, loading } = useMissionGroups(opportunityTypeId);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<MissionGroup | null>(null);
 
@@ -46,10 +49,10 @@ export function MissionGroupsManager() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Tem certeza que deseja excluir este grupo? Missões associadas a ele perderão sua lógica de premiação especial.")) return;
+    if (!window.confirm("Tem certeza que deseja excluir este grupo? Objetivos associados a ele perderão sua lógica de premiação especial.")) return;
     try {
       await deleteMissionGroup(id);
-      toast({ title: "Grupo Excluído", description: "O grupo de missões foi removido." });
+      toast({ title: "Grupo Excluído", description: "O grupo de objetivos foi removido." });
     } catch (error) {
       toast({ title: "Erro ao Excluir", description: (error as Error).message, variant: "destructive" });
     }
@@ -59,10 +62,10 @@ export function MissionGroupsManager() {
     try {
       if (editingGroup) {
         await updateMissionGroup({ ...data, id: editingGroup.id });
-        toast({ title: "Grupo Atualizado", description: "O grupo de missões foi salvo." });
+        toast({ title: "Grupo Atualizado", description: "O grupo de objetivos foi salvo." });
       } else {
         await addMissionGroup(data);
-        toast({ title: "Grupo Criado", description: "O novo grupo de missões foi adicionado." });
+        toast({ title: "Grupo Criado", description: "O novo grupo de objetivos foi adicionado." });
       }
       setIsFormOpen(false);
     } catch (error) {
@@ -91,7 +94,7 @@ export function MissionGroupsManager() {
                  <div className="flex items-end gap-2 p-2 border rounded-md">
                     {selectedLogic.ruleFields.includes('count') && (
                         <div className="flex-grow">
-                            <Label htmlFor="rules.0.count">Total de missões no grupo</Label>
+                            <Label htmlFor="rules.0.count">Total de objetivos no grupo</Label>
                             <Input id="rules.0.count" type="number" {...register(`rules.0.count`)} />
                         </div>
                     )}
@@ -106,11 +109,11 @@ export function MissionGroupsManager() {
             return(
                 <div className="space-y-2">
                     <div className="flex-grow">
-                        <Label htmlFor="rules.0.reward">Prêmio Base (pela 1ª missão)</Label>
+                        <Label htmlFor="rules.0.reward">Prêmio Base (pelo 1º objetivo)</Label>
                         <Input id="rules.0.reward" type="number" {...register(`rules.0.reward`)} />
                     </div>
                     <div className="flex-grow">
-                        <Label htmlFor="rules.1.reward">Bônus por Missão Adicional</Label>
+                        <Label htmlFor="rules.1.reward">Bônus por Objetivo Adicional</Label>
                         <Input id="rules.1.reward" type="number" {...register(`rules.1.reward`)} />
                     </div>
                 </div>
@@ -146,8 +149,8 @@ export function MissionGroupsManager() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Gerenciar Grupos de Missões</CardTitle>
-            <CardDescription>Crie e edite grupos com lógicas de premiação condicional.</CardDescription>
+            <CardTitle>Gerenciar Grupos de Objetivos</CardTitle>
+            <CardDescription>Crie e edite grupos com lógicas de premiação condicional para esta oportunidade.</CardDescription>
           </div>
           <Button onClick={() => handleOpenForm(null)} className="bg-admin-primary hover:bg-admin-primary/90">
             <PlusCircle className="mr-2 h-4 w-4" />
@@ -172,7 +175,7 @@ export function MissionGroupsManager() {
                     <TableCell>{availableLogicTypes.find(l => l.value === group.logicType)?.label || group.logicType}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 text-xs">
-                        {group.rules.map(rule => `Se >= ${rule.count} missões, prêmio = R$ ${rule.reward}`).join('; ')}
+                        {group.rules.map(rule => `Se >= ${rule.count} objetivos, prêmio = R$ ${rule.reward}`).join('; ')}
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -187,7 +190,7 @@ export function MissionGroupsManager() {
           {!loading && missionGroups.length === 0 && (
             <div className="text-center py-10 text-muted-foreground">
                 <SlidersHorizontal className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <p className="mt-4">Nenhum grupo de missão foi criado ainda.</p>
+                <p className="mt-4">Nenhum grupo de objetivos foi criado ainda para esta oportunidade.</p>
             </div>
           )}
         </CardContent>
@@ -195,7 +198,7 @@ export function MissionGroupsManager() {
       
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{editingGroup ? 'Editar Grupo de Missões' : 'Novo Grupo de Missões'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editingGroup ? 'Editar Grupo de Objetivos' : 'Novo Grupo de Objetivos'}</DialogTitle></DialogHeader>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <Label htmlFor="name">Nome do Grupo</Label>

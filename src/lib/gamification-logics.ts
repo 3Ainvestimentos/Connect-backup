@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * Biblioteca de lógicas de gamificação genéricas para calcular recompensas.
- * Cada função representa um tipo de cálculo que pode ser associado a um grupo de missões.
+ * Cada função representa um tipo de cálculo que pode ser associado a um grupo de objetivos.
  */
 
 // Interface para a definição de uma regra de premiação
@@ -12,11 +12,11 @@ export interface RewardRule {
 
 /**
  * Lógica de "Prêmio por Faixas".
- * A recompensa é baseada no número de missões concluídas, de acordo com as faixas definidas.
+ * A recompensa é baseada no número de objetivos concluídos, de acordo com as faixas definidas.
  * A função encontra a maior faixa de contagem que foi atingida e retorna a recompensa correspondente.
- * Ex: Se as regras são [{count: 1, reward: 1000}, {count: 3, reward: 2000}] e o usuário completou 2 missões, ele ganha R$ 1000.
+ * Ex: Se as regras são [{count: 1, reward: 1000}, {count: 3, reward: 2000}] e o usuário completou 2 objetivos, ele ganha R$ 1000.
  *
- * @param achievedCount O número de missões conquistadas dentro do grupo.
+ * @param achievedCount O número de objetivos conquistados dentro do grupo.
  * @param rules Um array de regras de recompensa ordenadas pela contagem.
  * @returns O valor da recompensa em BRL.
  */
@@ -40,9 +40,9 @@ function tieredReward(achievedCount: number, rules: RewardRule[]): number {
 }
 
 /**
- * Lógica "Bônus por Missão".
- * Retorna uma recompensa fixa para cada missão concluída.
- * @param achievedCount - O número de missões concluídas.
+ * Lógica "Bônus por Objetivo".
+ * Retorna uma recompensa fixa para cada objetivo concluído.
+ * @param achievedCount - O número de objetivos concluídos.
  * @param rules - Deve conter uma regra com o valor do bônus em `reward`.
  * @returns O valor total do bônus.
  */
@@ -56,9 +56,9 @@ function linearBonus(achievedCount: number, rules: RewardRule[]): number {
 
 /**
  * Lógica "Tudo ou Nada".
- * Retorna uma grande recompensa somente se todas as missões elegíveis forem concluídas.
- * @param achievedCount - O número de missões concluídas.
- * @param rules - Deve conter uma regra com a contagem total de missões em `count` e o prêmio em `reward`.
+ * Retorna uma grande recompensa somente se todos os objetivos elegíveis forem concluídos.
+ * @param achievedCount - O número de objetivos concluídos.
+ * @param rules - Deve conter uma regra com a contagem total de objetivos em `count` e o prêmio em `reward`.
  * @returns O valor do prêmio ou 0.
  */
 function allOrNothing(achievedCount: number, rules: RewardRule[]): number {
@@ -73,7 +73,7 @@ function allOrNothing(achievedCount: number, rules: RewardRule[]): number {
 
 /**
  * Lógica "Prêmio Base + Bônus Adicional".
- * @param achievedCount - O número de missões concluídas.
+ * @param achievedCount - O número de objetivos concluídos.
  * @param rules - `rules[0]` contém o prêmio base, `rules[1]` contém o bônus adicional.
  * @returns O valor total da recompensa.
  */
@@ -101,7 +101,7 @@ export const missionLogics: Record<string, (achievedCount: number, rules: Reward
 // Array de tipos de lógica disponíveis para a UI
 export const availableLogicTypes = [
   { value: 'tieredReward', label: 'Prêmio por Faixas (Tiered)', ruleFields: ['count', 'reward'], ruleCount: 'multiple' },
-  { value: 'linearBonus', label: 'Bônus por Missão (Linear)', ruleFields: ['reward'], ruleCount: 'single' },
+  { value: 'linearBonus', label: 'Bônus por Objetivo (Linear)', ruleFields: ['reward'], ruleCount: 'single' },
   { value: 'allOrNothing', label: 'Tudo ou Nada', ruleFields: ['count', 'reward'], ruleCount: 'single' },
   { value: 'basePlusBonus', label: 'Prêmio Base + Bônus Adicional', ruleFields: ['reward', 'reward'], ruleCount: 'dual' },
 ];

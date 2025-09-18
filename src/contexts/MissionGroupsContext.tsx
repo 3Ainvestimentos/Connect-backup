@@ -1,9 +1,8 @@
-
 "use client";
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection, getSubcollection } from '@/lib/firestore-service';
 import { useAuth } from './AuthContext';
 import * as z from 'zod';
 import { RewardRule } from '@/lib/gamification-logics';
@@ -32,73 +31,69 @@ interface MissionGroupsContextType {
 }
 
 const MissionGroupsContext = createContext<MissionGroupsContextType | undefined>(undefined);
-const COLLECTION_NAME = 'missionGroups';
+const PARENT_COLLECTION_NAME = 'opportunityTypes';
+const SUBCOLLECTION_NAME = 'missionGroups';
 
 export const MissionGroupsProvider = ({ children }: { children: ReactNode }) => {
+  // This provider is a wrapper. The actual logic is now in the hook,
+  // which is parameterized by the opportunityTypeId.
+  return (
+    <>{children}</>
+  );
+};
+
+export const useMissionGroups = (opportunityTypeId: string): MissionGroupsContextType => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const queryKey = [PARENT_COLLECTION_NAME, opportunityTypeId, SUBCOLLECTION_NAME];
 
   const { data: missionGroups = [], isFetching } = useQuery<MissionGroup[]>({
-    queryKey: [COLLECTION_NAME],
-    queryFn: () => getCollection<MissionGroup>(COLLECTION_NAME),
+    queryKey,
+    queryFn: () => getSubcollection<MissionGroup>(PARENT_COLLECTION_NAME, opportunityTypeId, SUBCOLLECTION_NAME),
     staleTime: 5 * 60 * 1000,
-    enabled: !!user,
+    enabled: !!user && !!opportunityTypeId,
   });
 
   React.useEffect(() => {
-    if (!user) return;
+    if (!user || !opportunityTypeId) return;
     const unsubscribe = listenToCollection<MissionGroup>(
-      COLLECTION_NAME,
+      `${PARENT_COLLECTION_NAME}/${opportunityTypeId}/${SUBCOLLECTION_NAME}`,
       (newData) => {
-        queryClient.setQueryData([COLLECTION_NAME], newData);
+        queryClient.setQueryData(queryKey, newData);
       },
       (error) => {
-        console.error(`Failed to listen to ${COLLECTION_NAME} collection:`, error);
+        console.error(`Failed to listen to subcollection:`, error);
       }
     );
     return () => unsubscribe();
-  }, [queryClient, user]);
+  }, [queryClient, user, opportunityTypeId, queryKey]);
 
   const addMutation = useMutation<WithId<Omit<MissionGroup, 'id'>>, Error, Omit<MissionGroup, 'id'>>({
-    mutationFn: (groupData) => addDocumentToCollection(COLLECTION_NAME, groupData),
+    mutationFn: (groupData) => addDocumentToCollection(`${PARENT_COLLECTION_NAME}/${opportunityTypeId}/${SUBCOLLECTION_NAME}`, groupData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 
   const updateMutation = useMutation<void, Error, Partial<MissionGroup> & { id: string }>({
-    mutationFn: (updatedGroup) => updateDocumentInCollection(COLLECTION_NAME, updatedGroup.id, updatedGroup),
+    mutationFn: (updatedGroup) => updateDocumentInCollection(`${PARENT_COLLECTION_NAME}/${opportunityTypeId}/${SUBCOLLECTION_NAME}`, updatedGroup.id, updatedGroup),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 
   const deleteMutation = useMutation<void, Error, string>({
-    mutationFn: (groupId) => deleteDocumentFromCollection(COLLECTION_NAME, groupId),
+    mutationFn: (groupId) => deleteDocumentFromCollection(`${PARENT_COLLECTION_NAME}/${opportunityTypeId}/${SUBCOLLECTION_NAME}`, groupId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      queryClient.invalidateQueries({ queryKey });
     },
   });
 
-  const value = useMemo(() => ({
+  return useMemo(() => ({
     missionGroups,
     loading: isFetching,
     addMissionGroup: (group) => addMutation.mutateAsync(group) as Promise<MissionGroup>,
     updateMissionGroup: (group) => updateMutation.mutateAsync(group),
     deleteMissionGroup: (groupId) => deleteMutation.mutateAsync(groupId),
   }), [missionGroups, isFetching, addMutation, updateMutation, deleteMutation]);
-
-  return (
-    <MissionGroupsContext.Provider value={value}>
-      {children}
-    </MissionGroupsContext.Provider>
-  );
-};
-
-export const useMissionGroups = (): MissionGroupsContextType => {
-  const context = useContext(MissionGroupsContext);
-  if (context === undefined) {
-    throw new Error('useMissionGroups must be used within a MissionGroupsProvider');
-  }
-  return context;
 };

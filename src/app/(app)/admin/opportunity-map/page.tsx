@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -9,7 +8,7 @@ import { OpportunityTypesManager } from '@/components/admin/opportunity-map/Oppo
 import { SectionManager } from '@/components/admin/opportunity-map/SectionManager';
 import { MissionGroupsManager } from '@/components/admin/opportunity-map/MissionGroupsManager';
 import { useOpportunityTypes } from '@/contexts/OpportunityMapMissionsContext';
-import { List, SlidersHorizontal } from 'lucide-react';
+import { List, SlidersHorizontal, Compass } from 'lucide-react';
 
 export default function OpportunityMapAdminPage() {
     const { opportunityTypes, loading } = useOpportunityTypes();
@@ -17,7 +16,7 @@ export default function OpportunityMapAdminPage() {
 
     // Garante que se a aba ativa for deletada, voltamos para as definições
     React.useEffect(() => {
-        if (!loading && activeTab !== 'definitions' && activeTab !== 'groups' && !opportunityTypes.find(type => type.id === activeTab)) {
+        if (!loading && activeTab !== 'definitions' && !opportunityTypes.find(type => type.id === activeTab)) {
             setActiveTab('definitions');
         }
     }, [opportunityTypes, activeTab, loading]);
@@ -27,29 +26,25 @@ export default function OpportunityMapAdminPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
                     title="Gestão do Mapa de Oportunidades"
-                    description="Gerencie os tipos de oportunidades, grupos de missões e insira os dados para os colaboradores."
+                    description="Gerencie os tipos de oportunidades, grupos de objetivos e insira os dados para os colaboradores."
                 />
                 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6 mb-6">
-                        <TabsTrigger value="definitions"><List className="mr-2 h-4 w-4"/>Definições</TabsTrigger>
-                        <TabsTrigger value="groups"><SlidersHorizontal className="mr-2 h-4 w-4"/>Grupos</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-1 md:grid-cols-3 lg:grid-cols-4 mb-6">
+                        <TabsTrigger value="definitions"><List className="mr-2 h-4 w-4"/>Definições de Oportunidades</TabsTrigger>
                         {opportunityTypes.map(type => (
-                            <TabsTrigger key={type.id} value={type.id}>{type.name}</TabsTrigger>
+                            <TabsTrigger key={type.id} value={type.id}><Compass className="mr-2 h-4 w-4"/>{type.name}</TabsTrigger>
                         ))}
                     </TabsList>
 
                     <TabsContent value="definitions">
                         <OpportunityTypesManager />
                     </TabsContent>
-                    <TabsContent value="groups">
-                        <MissionGroupsManager />
-                    </TabsContent>
+                   
                     {opportunityTypes.map(type => (
                         <TabsContent key={type.id} value={type.id}>
                             <SectionManager
-                                section={type.id as any} // Passa o ID como a "seção" a ser gerenciada
-                                title={type.name}
+                                opportunityType={type}
                             />
                         </TabsContent>
                     ))}
