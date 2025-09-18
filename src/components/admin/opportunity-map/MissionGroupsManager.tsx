@@ -19,8 +19,8 @@ import { Badge } from '@/components/ui/badge';
 import { availableLogicTypes } from '@/lib/gamification-logics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { ScrollArea } from '../ui/scroll-area';
-import { Separator } from '../ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 
 
 type MissionGroupFormValues = z.infer<typeof missionGroupSchema>;
