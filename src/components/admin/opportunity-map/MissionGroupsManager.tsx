@@ -26,12 +26,14 @@ export function MissionGroupsManager() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<MissionGroup | null>(null);
 
-  const { control, register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<MissionGroupFormValues>({
+  const { control, register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<MissionGroupFormValues>({
     resolver: zodResolver(missionGroupSchema),
-    defaultValues: { name: '', logicType: '', rules: [{ count: 1, reward: 0 }] },
+    defaultValues: { name: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }] },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: 'rules' });
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'rules' });
+
+  const watchLogicType = watch('logicType');
 
   const handleOpenForm = (group: MissionGroup | null) => {
     setEditingGroup(group);
@@ -78,6 +80,66 @@ export function MissionGroupsManager() {
       </TableRow>
     ))
   );
+
+  const renderRulesForLogicType = () => {
+    const selectedLogic = availableLogicTypes.find(l => l.value === watchLogicType);
+
+    switch(selectedLogic?.ruleCount) {
+        case 'single':
+            if (fields.length !== 1) replace([{ count: 1, reward: 0 }]);
+            return (
+                 <div className="flex items-end gap-2 p-2 border rounded-md">
+                    {selectedLogic.ruleFields.includes('count') && (
+                        <div className="flex-grow">
+                            <Label htmlFor="rules.0.count">Total de missões no grupo</Label>
+                            <Input id="rules.0.count" type="number" {...register(`rules.0.count`)} />
+                        </div>
+                    )}
+                    <div className="flex-grow">
+                        <Label htmlFor="rules.0.reward">Valor da Recompensa (R$)</Label>
+                        <Input id="rules.0.reward" type="number" {...register(`rules.0.reward`)} />
+                    </div>
+                </div>
+            );
+        case 'dual':
+            if (fields.length !== 2) replace([{ count: 1, reward: 0 }, { count: 2, reward: 0 }]);
+            return(
+                <div className="space-y-2">
+                    <div className="flex-grow">
+                        <Label htmlFor="rules.0.reward">Prêmio Base (pela 1ª missão)</Label>
+                        <Input id="rules.0.reward" type="number" {...register(`rules.0.reward`)} />
+                    </div>
+                    <div className="flex-grow">
+                        <Label htmlFor="rules.1.reward">Bônus por Missão Adicional</Label>
+                        <Input id="rules.1.reward" type="number" {...register(`rules.1.reward`)} />
+                    </div>
+                </div>
+            )
+        case 'multiple':
+        default: // Tiered reward
+            return (
+                 <div className="space-y-2">
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="flex items-end gap-2 p-2 border rounded-md">
+                        <div className="flex-grow">
+                          <Label htmlFor={`rules.${index}.count`}>Se completar ({'>='})</Label>
+                          <Input id={`rules.${index}.count`} type="number" {...register(`rules.${index}.count`)} />
+                        </div>
+                        <div className="flex-grow">
+                          <Label htmlFor={`rules.${index}.reward`}>O prêmio é (R$)</Label>
+                          <Input id={`rules.${index}.reward`} type="number" {...register(`rules.${index}.reward`)} />
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={() => append({ count: fields.length + 1, reward: 0 })}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Faixa
+                    </Button>
+                 </div>
+            );
+    }
+  }
+
 
   return (
     <>
@@ -142,7 +204,7 @@ export function MissionGroupsManager() {
             </div>
             <div>
               <Label htmlFor="logicType">Tipo de Lógica</Label>
-              <Select onValueChange={(value) => reset({ ...watch(), logicType: value })} defaultValue={watch('logicType')}>
+              <Select onValueChange={(value) => setValue('logicType', value)} defaultValue={watchLogicType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {availableLogicTypes.map(logic => (
@@ -154,26 +216,7 @@ export function MissionGroupsManager() {
             </div>
             <div>
               <Label>Regras de Premiação</Label>
-              <div className="space-y-2">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="flex items-end gap-2 p-2 border rounded-md">
-                    <div className="flex-grow">
-                      <Label htmlFor={`rules.${index}.count`}>Se completar (>=)</Label>
-                      <Input id={`rules.${index}.count`} type="number" {...register(`rules.${index}.count`)} />
-                      {errors.rules?.[index]?.count && <p className="text-xs text-destructive mt-1">{errors.rules[index]?.count?.message}</p>}
-                    </div>
-                    <div className="flex-grow">
-                      <Label htmlFor={`rules.${index}.reward`}>O prêmio é (R$)</Label>
-                      <Input id={`rules.${index}.reward`} type="number" {...register(`rules.${index}.reward`)} />
-                       {errors.rules?.[index]?.reward && <p className="text-xs text-destructive mt-1">{errors.rules[index]?.reward?.message}</p>}
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
-                ))}
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={() => append({ count: fields.length + 1, reward: 0 })} className="mt-2">
-                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Regra
-              </Button>
+              {renderRulesForLogicType()}
                {errors.rules?.root && <p className="text-sm text-destructive mt-1">{errors.rules?.root?.message}</p>}
             </div>
             <DialogFooter>

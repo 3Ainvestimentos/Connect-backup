@@ -26,34 +26,82 @@ function tieredReward(achievedCount: number, rules: RewardRule[]): number {
   }
 
   let applicableReward = 0;
-  // Ordena as regras pela contagem para garantir que a lógica funcione corretamente
   const sortedRules = [...rules].sort((a, b) => a.count - b.count);
 
   for (const rule of sortedRules) {
     if (achievedCount >= rule.count) {
-      applicableReward = rule.reward; // A recompensa da maior faixa atingida é aplicada
+      applicableReward = rule.reward;
     } else {
-      break; // Para de procurar assim que uma contagem não for atingida
+      break;
     }
   }
 
   return applicableReward;
 }
 
+/**
+ * Lógica "Bônus por Missão".
+ * Retorna uma recompensa fixa para cada missão concluída.
+ * @param achievedCount - O número de missões concluídas.
+ * @param rules - Deve conter uma regra com o valor do bônus em `reward`.
+ * @returns O valor total do bônus.
+ */
+function linearBonus(achievedCount: number, rules: RewardRule[]): number {
+  if (achievedCount === 0 || !rules || rules.length === 0) {
+    return 0;
+  }
+  const bonusPerMission = rules[0]?.reward || 0;
+  return achievedCount * bonusPerMission;
+}
+
+/**
+ * Lógica "Tudo ou Nada".
+ * Retorna uma grande recompensa somente se todas as missões elegíveis forem concluídas.
+ * @param achievedCount - O número de missões concluídas.
+ * @param rules - Deve conter uma regra com a contagem total de missões em `count` e o prêmio em `reward`.
+ * @returns O valor do prêmio ou 0.
+ */
+function allOrNothing(achievedCount: number, rules: RewardRule[]): number {
+    if (achievedCount === 0 || !rules || rules.length === 0) {
+        return 0;
+    }
+    const totalMissionsRequired = rules[0]?.count || 0;
+    const finalReward = rules[0]?.reward || 0;
+    
+    return achievedCount >= totalMissionsRequired ? finalReward : 0;
+}
+
+/**
+ * Lógica "Prêmio Base + Bônus Adicional".
+ * @param achievedCount - O número de missões concluídas.
+ * @param rules - `rules[0]` contém o prêmio base, `rules[1]` contém o bônus adicional.
+ * @returns O valor total da recompensa.
+ */
+function basePlusBonus(achievedCount: number, rules: RewardRule[]): number {
+    if (achievedCount === 0 || !rules || rules.length === 0) {
+        return 0;
+    }
+    const baseReward = rules.find(r => r.count === 1)?.reward || 0;
+    const additionalBonus = rules.find(r => r.count > 1)?.reward || 0;
+
+    if (achievedCount > 0) {
+        return baseReward + (achievedCount - 1) * additionalBonus;
+    }
+    return 0;
+}
 
 // Mapeamento de tipos de lógica para suas funções de cálculo.
-// Para adicionar uma nova lógica, crie a função e adicione-a a este mapa.
 export const missionLogics: Record<string, (achievedCount: number, rules: RewardRule[]) => number> = {
-  tieredReward: tieredReward,
-  // Exemplo de outra lógica que poderia ser adicionada no futuro:
-  // 'perMissionBonus': (achievedCount, rules) => {
-  //   const bonusPerMission = rules[0]?.reward || 0;
-  //   return achievedCount * bonusPerMission;
-  // }
+  tieredReward,
+  linearBonus,
+  allOrNothing,
+  basePlusBonus,
 };
 
 // Array de tipos de lógica disponíveis para a UI
 export const availableLogicTypes = [
-  { value: 'tieredReward', label: 'Prêmio por Faixas (Tiered)' },
-  // { value: 'perMissionBonus', label: 'Bônus por Missão' },
+  { value: 'tieredReward', label: 'Prêmio por Faixas (Tiered)', ruleFields: ['count', 'reward'], ruleCount: 'multiple' },
+  { value: 'linearBonus', label: 'Bônus por Missão (Linear)', ruleFields: ['reward'], ruleCount: 'single' },
+  { value: 'allOrNothing', label: 'Tudo ou Nada', ruleFields: ['count', 'reward'], ruleCount: 'single' },
+  { value: 'basePlusBonus', label: 'Prêmio Base + Bônus Adicional', ruleFields: ['reward', 'reward'], ruleCount: 'dual' },
 ];
