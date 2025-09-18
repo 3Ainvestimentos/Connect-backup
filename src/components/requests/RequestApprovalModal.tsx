@@ -135,7 +135,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     
     const validActionRequests = actionRequestsForCurrentStatus.filter(ar => ar.userName !== 'Desconhecido');
     
-    if (validActionRequests.length === 0) return false;
+    // This check is too restrictive, as it blocks moving forward if an optional action is pending.
+    // We will remove this from the button's disabled logic.
+    // if (validActionRequests.length === 0) return false;
     
     return validActionRequests.some(ar => ar.status === 'pending');
   }, [actionRequestsForCurrentStatus, currentStatusDefinition]);
@@ -771,7 +773,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         key={nextStatus?.id || 'no-next-status'}
                         className="bg-admin-primary hover:bg-admin-primary/90"
                         onClick={() => nextStatus && handleStatusChange(nextStatus)} 
-                        disabled={isSubmitting || !nextStatus || hasPendingActions}
+                        disabled={isSubmitting || !nextStatus}
                     >
                         {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus?.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -781,7 +783,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         Mover para "{nextStatus?.label || 'Etapa Final'}"
                     </Button>
                 )}
-                {canTakeAction && currentStatusDefinition?.action?.type && !isCurrentStatusFinal && (
+                {canTakeAction && currentStatusDefinition?.action && !isCurrentStatusFinal && (
                     <Button 
                         variant="outline" 
                         size="sm"
