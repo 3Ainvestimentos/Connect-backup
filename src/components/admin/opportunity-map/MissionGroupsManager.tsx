@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -13,13 +12,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { PlusCircle, Edit, Trash2, Loader2, SlidersHorizontal, HelpCircle } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, SlidersHorizontal, HelpCircle, Target } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { availableLogicTypes } from '@/lib/gamification-logics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
 
 
 type MissionGroupFormValues = z.infer<typeof missionGroupSchema>;
@@ -41,6 +42,7 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
   });
 
   const { fields, append, remove, replace } = useFieldArray({ control, name: 'rules' });
+  const { fields: objectiveFields, append: appendObjective, remove: removeObjective } = useFieldArray({ control, name: 'objectives' });
 
   const watchLogicType = watch('logicType');
   const selectedLogicDetails = availableLogicTypes.find(l => l.value === watchLogicType);
@@ -214,55 +216,83 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
       </Card>
       
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
             <TooltipProvider>
                 <DialogHeader><DialogTitle>{editingGroup ? 'Editar Grupo de Objetivos' : 'Novo Grupo de Objetivos'}</DialogTitle></DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <div>
-                        <Label htmlFor="name">Nome do Grupo</Label>
-                        <Input id="name" {...register('name')} placeholder="Ex: VENDAS_TIME_A" />
-                        {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-                    </div>
-                     <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <Label htmlFor="logicType">Tipo de Lógica</Label>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5">
-                                        <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="right" className="max-w-xs z-[60]">
-                                    <p className="font-medium text-sm mb-1">{selectedLogicDetails?.label}</p>
-                                    <p className="text-xs text-muted-foreground">{selectedLogicDetails?.description}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </div>
-                        <Select onValueChange={(value) => setValue('logicType', value)} defaultValue={watchLogicType}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {availableLogicTypes.map(logic => (
-                                    <SelectItem key={logic.value} value={logic.value}>
-                                        {logic.label}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {errors.logicType && <p className="text-sm text-destructive mt-1">{errors.logicType.message}</p>}
-                    </div>
+                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <ScrollArea className="max-h-[65vh] pr-4">
+                    <div className="space-y-6">
+                      <div>
+                          <Label htmlFor="name">Nome do Grupo</Label>
+                          <Input id="name" {...register('name')} placeholder="Ex: Vendas Time A" />
+                          {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                      </div>
+                      <div>
+                          <div className="flex items-center gap-2 mb-1">
+                              <Label htmlFor="logicType">Tipo de Lógica</Label>
+                              <Tooltip>
+                                  <TooltipTrigger asChild>
+                                      <Button type="button" variant="ghost" size="icon" className="h-5 w-5">
+                                          <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                                      </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="right" className="max-w-xs z-[60]">
+                                      <p className="font-medium text-sm mb-1">{selectedLogicDetails?.label}</p>
+                                      <p className="text-xs text-muted-foreground">{selectedLogicDetails?.description}</p>
+                                  </TooltipContent>
+                              </Tooltip>
+                          </div>
+                          <Select onValueChange={(value) => setValue('logicType', value)} defaultValue={watchLogicType}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                  {availableLogicTypes.map(logic => (
+                                      <SelectItem key={logic.value} value={logic.value}>
+                                          {logic.label}
+                                      </SelectItem>
+                                  ))}
+                              </SelectContent>
+                          </Select>
+                          {errors.logicType && <p className="text-sm text-destructive mt-1">{errors.logicType.message}</p>}
+                      </div>
 
-                    <div>
-                        <Label>Regras de Premiação</Label>
-                        {renderRulesForLogicType()}
-                        {errors.rules?.root && <p className="text-sm text-destructive mt-1">{errors.rules?.root?.message}</p>}
+                      <div>
+                          <Label>Regras de Premiação</Label>
+                          {renderRulesForLogicType()}
+                          {errors.rules?.root && <p className="text-sm text-destructive mt-1">{errors.rules?.root?.message}</p>}
+                      </div>
+
+                      <Separator />
+
+                      <div>
+                          <Label className="flex items-center gap-2"><Target/> Objetivos do Grupo</Label>
+                          <p className="text-xs text-muted-foreground mb-2">Defina os nomes das colunas do seu CSV que fazem parte deste grupo.</p>
+                          <div className="space-y-2">
+                              {objectiveFields.map((field, index) => (
+                                <div key={field.id} className="flex items-center gap-2">
+                                  <Input
+                                      {...register(`objectives.${index}`)}
+                                      placeholder={`Ex: OBJETIVO_NPS`}
+                                  />
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeObjective(index)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              ))}
+                              {errors.objectives && <p className="text-sm text-destructive mt-1">{errors.objectives.root?.message}</p>}
+                          </div>
+                          <Button type="button" variant="outline" size="sm" onClick={() => appendObjective('')} className="mt-2">
+                              <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Objetivo
+                          </Button>
+                      </div>
                     </div>
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancelar</Button>
-                        <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Salvar Grupo
-                        </Button>
-                    </DialogFooter>
+                  </ScrollArea>
+                  <DialogFooter className="pt-4 border-t">
+                      <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)} disabled={isSubmitting}>Cancelar</Button>
+                      <Button type="submit" disabled={isSubmitting} className="bg-admin-primary hover:bg-admin-primary/90">
+                          {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Salvar Grupo
+                      </Button>
+                  </DialogFooter>
                 </form>
             </TooltipProvider>
         </DialogContent>
