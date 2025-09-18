@@ -5,10 +5,11 @@ import React from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Zap, CheckSquare, Settings } from 'lucide-react';
+import { Zap, CheckSquare, Settings, SlidersHorizontal } from 'lucide-react';
 import { MissionsXpManager } from '@/components/admin/opportunity-map/MissionsXpManager';
 import { PapManager } from '@/components/admin/opportunity-map/PapManager';
 import { MissionDefinitionsManager } from '@/components/admin/opportunity-map/MissionDefinitionsManager';
+import { MissionGroupsManager } from '@/components/admin/opportunity-map/MissionGroupsManager';
 
 
 export default function OpportunityMapAdminPage() {
@@ -17,18 +18,22 @@ export default function OpportunityMapAdminPage() {
             <div className="space-y-6 p-6 md:p-8">
                 <PageHeader
                     title="Gestão de Mapa de Oportunidades"
-                    description="Gerencie os dados de resultado mensal dos colaboradores."
+                    description="Gerencie as missões do mês, as regras de premiação e os dados de resultado dos colaboradores."
                 />
 
                 <Tabs defaultValue="missionsXp" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                          <TabsTrigger value="definitions">
                             <Settings className="mr-2 h-4 w-4" />
-                            Definir Missões do Mês
+                            Definir Missões
+                        </TabsTrigger>
+                         <TabsTrigger value="groups">
+                            <SlidersHorizontal className="mr-2 h-4 w-4" />
+                            Grupos de Missões
                         </TabsTrigger>
                         <TabsTrigger value="missionsXp">
                             <Zap className="mr-2 h-4 w-4" />
-                            Dados de Missões XP
+                            Status das Missões
                         </TabsTrigger>
                         <TabsTrigger value="pap">
                             <CheckSquare className="mr-2 h-4 w-4" />
@@ -37,6 +42,9 @@ export default function OpportunityMapAdminPage() {
                     </TabsList>
                     <TabsContent value="definitions" className="mt-6">
                         <MissionDefinitionsManager />
+                    </TabsContent>
+                     <TabsContent value="groups" className="mt-6">
+                        <MissionGroupsManager />
                     </TabsContent>
                     <TabsContent value="missionsXp" className="mt-6">
                         <MissionsXpManager />

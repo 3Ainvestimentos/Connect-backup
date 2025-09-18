@@ -12,7 +12,8 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, Legend } from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useOpportunityMapMissions } from '@/contexts/OpportunityMapMissionsContext';
-import { missionGroupLogics } from '@/lib/gamification-logics';
+import { useMissionGroups } from '@/contexts/MissionGroupsContext';
+import { missionLogics } from '@/lib/gamification-logics';
 
 const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -54,25 +55,24 @@ function PapSection({ data }: { data: Record<string, string> | undefined }) {
 
 function MissionsXpSection({ userMissionsStatus }: { userMissionsStatus: Record<string, MissionStatus> | undefined }) {
     const { missions: missionDefinitions, loading: loadingMissions } = useOpportunityMapMissions();
+    const { missionGroups } = useMissionGroups();
 
     const { eligibleMissions, totalEstimated, totalAwarded } = React.useMemo(() => {
         if (!userMissionsStatus || missionDefinitions.length === 0) {
             return { eligibleMissions: [], totalEstimated: 0, totalAwarded: 0 };
         }
 
-        const missionsByGroup: Record<string, { definition: any, status: MissionStatus }[]> = {};
-        let individualMissionsAward = 0;
         let individualMissionsEstimate = 0;
+        let individualMissionsAward = 0;
+        const missionsByGroup: Record<string, { definition: any, status: MissionStatus }[]> = {};
 
-        const sortedDefinitions = [...missionDefinitions].sort((a,b) => (a.title.match(/(\d+)/) || [])[0]?.localeCompare((b.title.match(/(\d+)/) || [])[0] || '', undefined, {numeric: true}) || 0);
+        const sortedDefinitions = [...missionDefinitions].sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
 
         sortedDefinitions.forEach(def => {
             const status = userMissionsStatus[def.title];
             if (status?.eligible) {
                 if (def.group) {
-                    if (!missionsByGroup[def.group]) {
-                        missionsByGroup[def.group] = [];
-                    }
+                    if (!missionsByGroup[def.group]) missionsByGroup[def.group] = [];
                     missionsByGroup[def.group].push({ definition: def, status });
                 } else {
                     const value = parseFloat(def.maxValue) || 0;
@@ -83,23 +83,26 @@ function MissionsXpSection({ userMissionsStatus }: { userMissionsStatus: Record<
                 }
             }
         });
-
-        let groupAwards = 0;
+        
         let groupEstimates = 0;
+        let groupAwards = 0;
 
         Object.keys(missionsByGroup).forEach(groupName => {
-            const groupMissions = missionsByGroup[groupName];
-            const logicFunction = missionGroupLogics[groupName];
-            
-            const groupEstimateValue = groupMissions.reduce((sum, m) => sum + (parseFloat(m.definition.maxValue) || 0), 0);
-            groupEstimates += groupEstimateValue;
+            const groupDef = missionGroups.find(g => g.name === groupName);
+            if (!groupDef) return;
 
+            const groupMissions = missionsByGroup[groupName];
+            const logicFunction = missionLogics[groupDef.logicType];
+
+            const groupEstimateValue = groupMissions.reduce((sum, m) => sum + (parseFloat(m.definition.maxValue) || 0), 0);
+            groupEstimates += logicFunction ? logicFunction(groupMissions.length, groupDef.rules) : groupEstimateValue;
+            
             if (logicFunction) {
                 const achievedCount = groupMissions.filter(m => m.status.achieved).length;
-                groupAwards += logicFunction(achievedCount);
+                groupAwards += logicFunction(achievedCount, groupDef.rules);
             }
         });
-        
+
         const missions = sortedDefinitions
             .map(def => {
                 const status = userMissionsStatus[def.title];
@@ -112,7 +115,7 @@ function MissionsXpSection({ userMissionsStatus }: { userMissionsStatus: Record<
             totalEstimated: individualMissionsEstimate + groupEstimates,
             totalAwarded: individualMissionsAward + groupAwards,
         };
-    }, [userMissionsStatus, missionDefinitions]);
+    }, [userMissionsStatus, missionDefinitions, missionGroups]);
     
 
     if (loadingMissions) return <Skeleton className="h-64 w-full" />;
