@@ -90,7 +90,6 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                 </div>
                 )}
                  <DialogFooter className="mt-auto pt-6">
-                    <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full hover:bg-muted">Fechar</Button>
                 </DialogFooter>
             </div>
         </div>
