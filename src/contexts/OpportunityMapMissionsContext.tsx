@@ -6,11 +6,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import { useAuth } from './AuthContext';
 import * as z from 'zod';
+import { formatISO } from 'date-fns';
 
 export const missionDefinitionSchema = z.object({
   title: z.string().min(1, "O título é obrigatório."),
   maxValue: z.string().min(1, "O valor máximo é obrigatório."),
   notes: z.string().optional(),
+  createdAt: z.string().optional(), // Added for sorting
 });
 
 export type MissionDefinition = WithId<z.infer<typeof missionDefinitionSchema>>;
@@ -52,7 +54,10 @@ export const OpportunityMapMissionsProvider = ({ children }: { children: ReactNo
   }, [queryClient, user]);
 
   const addMissionMutation = useMutation<WithId<Omit<MissionDefinition, 'id'>>, Error, Omit<MissionDefinition, 'id'>>({
-    mutationFn: (missionData) => addDocumentToCollection(COLLECTION_NAME, missionData),
+    mutationFn: (missionData) => {
+      const dataWithTimestamp = { ...missionData, createdAt: formatISO(new Date()) };
+      return addDocumentToCollection(COLLECTION_NAME, dataWithTimestamp);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
     },

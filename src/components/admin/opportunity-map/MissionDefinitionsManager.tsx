@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useOpportunityMapMissions, MissionDefinition, missionDefinitionSchema } from '@/contexts/OpportunityMapMissionsContext';
@@ -27,6 +27,15 @@ export function MissionDefinitionsManager() {
     resolver: zodResolver(missionDefinitionSchema),
     defaultValues: { title: '', maxValue: '0', notes: '' },
   });
+  
+  const sortedMissions = useMemo(() => {
+    return [...missions].sort((a, b) => {
+        if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        return 0; // Fallback if createdAt is missing
+    });
+  }, [missions]);
 
   const handleOpenForm = (mission: MissionDefinition | null) => {
     setEditingMission(mission);
@@ -99,7 +108,7 @@ export function MissionDefinitionsManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading ? renderSkeleton() : missions.map(mission => (
+                {loading ? renderSkeleton() : sortedMissions.map(mission => (
                   <TableRow key={mission.id}>
                     <TableCell className="font-medium">{mission.title}</TableCell>
                     <TableCell>{mission.maxValue}</TableCell>
