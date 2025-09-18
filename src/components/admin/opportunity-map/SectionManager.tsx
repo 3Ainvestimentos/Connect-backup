@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useRef } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Edit, Upload, FileDown, Loader2, AlertTriangle, FileText, SlidersHorizontal, Users } from 'lucide-react';
+import { Search, Edit, Upload, FileDown, Loader2, AlertTriangle, FileText, SlidersHorizontal, Users, Target } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
 import { EditDataModal } from './EditDataModal';
@@ -15,6 +16,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { OpportunityType } from '@/contexts/OpportunityMapMissionsContext';
 import { MissionGroupsManager } from './MissionGroupsManager';
 import { Separator } from '@/components/ui/separator';
+import { ObjectivesManager } from './ObjectivesManager';
+import { useMissionGroups } from '@/contexts/MissionGroupsContext';
 
 interface SectionManagerProps {
   opportunityType: OpportunityType;
@@ -30,6 +33,9 @@ export function SectionManager({ opportunityType }: SectionManagerProps) {
     const [editingUser, setEditingUser] = useState<Collaborator | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { missionGroups } = useMissionGroups(opportunityType.id);
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
 
     const loading = mapLoading || collabLoading;
 
@@ -146,10 +152,24 @@ export function SectionManager({ opportunityType }: SectionManagerProps) {
     return (
         <>
             <div className="space-y-6">
-                {/* Manager for Objective Groups */}
-                <MissionGroupsManager opportunityTypeId={opportunityType.id} />
+                <MissionGroupsManager 
+                    opportunityTypeId={opportunityType.id}
+                    onSelectGroup={setSelectedGroupId}
+                    selectedGroupId={selectedGroupId}
+                />
+                
+                {selectedGroupId && (
+                    <>
+                    <Separator/>
+                     <ObjectivesManager 
+                        opportunityTypeId={opportunityType.id}
+                        groupId={selectedGroupId}
+                    />
+                    </>
+                )}
+                
                 <Separator/>
-                {/* Manager for User Data */}
+                
                 <div className="grid md:grid-cols-2 gap-6">
                     <Card>
                         <CardHeader>
@@ -184,8 +204,8 @@ export function SectionManager({ opportunityType }: SectionManagerProps) {
                         <p className="font-semibold text-foreground flex items-center gap-2"><FileText className="h-4 w-4"/>Instruções do CSV</p>
                         <ol className="list-decimal list-inside space-y-1 pl-2">
                             <li>A primeira coluna **deve** ser `userEmail`.</li>
-                            <li>As colunas seguintes são flexíveis. Cada nome de coluna se tornará uma "chave" e o valor da célula será o "valor" para o colaborador naquela linha.</li>
-                            <li>Por exemplo, colunas como `NPS`, `CSAT`, `Volume Captado` se tornarão campos de dados para esta oportunidade.</li>
+                            <li>As colunas seguintes devem corresponder exatamente aos **nomes dos objetivos** definidos nos grupos.</li>
+                            <li>Por exemplo, se você definiu um objetivo "NPS", seu CSV deve ter uma coluna "NPS".</li>
                         </ol>
                     </div>
                 </div>

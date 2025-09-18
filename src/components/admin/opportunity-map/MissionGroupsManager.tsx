@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -18,22 +19,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { availableLogicTypes } from '@/lib/gamification-logics';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 
 type MissionGroupFormValues = z.infer<typeof missionGroupSchema>;
 
 interface MissionGroupsManagerProps {
     opportunityTypeId: string;
+    selectedGroupId: string | null;
+    onSelectGroup: (id: string | null) => void;
 }
 
-export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManagerProps) {
+export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSelectGroup }: MissionGroupsManagerProps) {
   const { missionGroups, addMissionGroup, updateMissionGroup, deleteMissionGroup, loading } = useMissionGroups(opportunityTypeId);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<MissionGroup | null>(null);
 
   const { control, register, handleSubmit, reset, watch, setValue, formState: { errors, isSubmitting } } = useForm<MissionGroupFormValues>({
     resolver: zodResolver(missionGroupSchema),
-    defaultValues: { name: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }] },
+    defaultValues: { name: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }], objectives: [] },
   });
 
   const { fields, append, remove, replace } = useFieldArray({ control, name: 'rules' });
@@ -46,7 +50,7 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
     if (group) {
       reset(group);
     } else {
-      reset({ name: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }] });
+      reset({ name: '', logicType: 'tieredReward', rules: [{ count: 1, reward: 0 }], objectives: [] });
     }
     setIsFormOpen(true);
   };
@@ -54,6 +58,9 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
   const handleDelete = async (id: string) => {
     if (!window.confirm("Tem certeza que deseja excluir este grupo? Objetivos associados a ele perderão sua lógica de premiação especial.")) return;
     try {
+      if (selectedGroupId === id) {
+        onSelectGroup(null);
+      }
       await deleteMissionGroup(id);
       toast({ title: "Grupo Excluído", description: "O grupo de objetivos foi removido." });
     } catch (error) {
@@ -152,7 +159,7 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Gerenciar Grupos de Objetivos</CardTitle>
+            <CardTitle className="flex items-center gap-2"><SlidersHorizontal/> Gerenciar Grupos de Objetivos</CardTitle>
             <CardDescription>Crie e edite grupos com lógicas de premiação condicional para esta oportunidade.</CardDescription>
           </div>
           <Button onClick={() => handleOpenForm(null)} className="bg-admin-primary hover:bg-admin-primary/90">
@@ -173,7 +180,14 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
               </TableHeader>
               <TableBody>
                 {loading ? renderSkeleton() : missionGroups.map(group => (
-                  <TableRow key={group.id}>
+                  <TableRow 
+                    key={group.id}
+                    onClick={() => onSelectGroup(group.id)}
+                    className={cn(
+                        "cursor-pointer",
+                        selectedGroupId === group.id && "bg-muted/50"
+                    )}
+                  >
                     <TableCell className="font-medium"><Badge variant="outline">{group.name}</Badge></TableCell>
                     <TableCell>{availableLogicTypes.find(l => l.value === group.logicType)?.label || group.logicType}</TableCell>
                     <TableCell>
@@ -182,8 +196,8 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenForm(group)}><Edit className="h-4 w-4" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(group.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleOpenForm(group); }}><Edit className="h-4 w-4" /></Button>
+                      <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); handleDelete(group.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -206,7 +220,7 @@ export function MissionGroupsManager({ opportunityTypeId }: MissionGroupsManager
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <div>
                         <Label htmlFor="name">Nome do Grupo</Label>
-                        <Input id="name" {...register('name')} placeholder="Ex: GRUPO_ASSESSOR" />
+                        <Input id="name" {...register('name')} placeholder="Ex: VENDAS_TIME_A" />
                         {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
                     </div>
                      <div>

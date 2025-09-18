@@ -30,6 +30,7 @@ export const missionGroupSchema = z.object({
   name: z.string().min(1, "O nome do grupo é obrigatório.").transform(normalizeGroupName),
   logicType: z.string().min(1, "O tipo de lógica é obrigatório."),
   rules: z.array(rewardRuleSchema).min(1, "Pelo menos uma regra de premiação é necessária."),
+  objectives: z.array(z.string()).optional().default([]),
 });
 
 export type MissionGroup = WithId<z.infer<typeof missionGroupSchema>>;
@@ -64,6 +65,7 @@ export const useMissionGroups = (opportunityTypeId: string): MissionGroupsContex
     queryFn: () => getSubcollection<MissionGroup>(PARENT_COLLECTION_NAME, opportunityTypeId, SUBCOLLECTION_NAME),
     staleTime: 5 * 60 * 1000,
     enabled: !!user && !!opportunityTypeId,
+    select: (data) => data.map(group => ({ ...group, objectives: group.objectives || [] })),
   });
 
   React.useEffect(() => {
@@ -71,7 +73,8 @@ export const useMissionGroups = (opportunityTypeId: string): MissionGroupsContex
     const unsubscribe = listenToCollection<MissionGroup>(
       `${PARENT_COLLECTION_NAME}/${opportunityTypeId}/${SUBCOLLECTION_NAME}`,
       (newData) => {
-        queryClient.setQueryData(queryKey, newData);
+        const dataWithDefaults = newData.map(group => ({ ...group, objectives: group.objectives || [] }));
+        queryClient.setQueryData(queryKey, dataWithDefaults);
       },
       (error) => {
         console.error(`Failed to listen to subcollection:`, error);
