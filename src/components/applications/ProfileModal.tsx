@@ -33,85 +33,67 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
 
   if (!user) return null;
   
-  // Prioritize data from the collaborators collection
   const displayName = currentUserCollaborator?.name || user.displayName;
   const displayEmail = currentUserCollaborator?.email || user.email;
-  const displayPhotoUrl = currentUserCollaborator?.photoURL; // Prefer collaborator photo
+  const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
   const displayAvatarInitial = displayName ? displayName.charAt(0).toUpperCase() : <User size={48} />;
 
+  const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => (
+    <div className="flex items-center gap-4">
+        <Icon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+        <div className="text-sm">
+            <p className="font-semibold text-foreground">{label}</p>
+            <p className="text-muted-foreground">{value || '-'}</p>
+        </div>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg font-body">
-        <DialogHeader className="text-center items-center">
-            <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={displayPhotoUrl} alt={displayName || "User Avatar"} />
-                <AvatarFallback className="text-4xl">
-                {displayAvatarInitial}
-                </AvatarFallback>
-            </Avatar>
-            <DialogTitle className="font-headline text-3xl">{displayName}</DialogTitle>
-            <DialogDescription>{displayEmail}</DialogDescription>
-        </DialogHeader>
-        
-        {currentUserCollaborator ? (
-          <div className="py-4 space-y-4">
-              <Separator />
-              <div className="grid grid-cols-2 gap-y-4 gap-x-2 text-sm">
-                   <div className="flex items-center gap-3">
-                      <Fingerprint className="h-5 w-5 text-accent" />
-                      <div>
-                          <p className="font-semibold text-foreground">ID 3A RIVA</p>
-                          <p className="text-muted-foreground">{currentUserCollaborator.id3a}</p>
-                      </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                      <Briefcase className="h-5 w-5 text-accent" />
-                      <div>
-                          <p className="font-semibold text-foreground">Cargo</p>
-                          <p className="text-muted-foreground">{currentUserCollaborator.position}</p>
-                      </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                      <Building className="h-5 w-5 text-accent" />
-                      <div>
-                          <p className="font-semibold text-foreground">Área</p>
-                          <p className="text-muted-foreground">{currentUserCollaborator.area}</p>
-                      </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                      <Users className="h-5 w-5 text-accent" />
-                      <div>
-                          <p className="font-semibold text-foreground">Líder</p>
-                          <p className="text-muted-foreground">{currentUserCollaborator.leader}</p>
-                      </div>
-                  </div>
-                   <div className="flex items-center gap-3">
-                      <Pyramid className="h-5 w-5 text-accent" />
-                       <div>
-                          <p className="font-semibold text-foreground">Eixo</p>
-                          <p className="text-muted-foreground">{currentUserCollaborator.axis}</p>
-                      </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                      <MapPin className="h-5 w-5 text-accent" />
-                       <div>
-                          <p className="font-semibold text-foreground">Cidade</p>
-                          <p className="text-muted-foreground">{currentUserCollaborator.city}</p>
-                      </div>
-                  </div>
-              </div>
-          </div>
-        ) : (
-           <div className="py-4 text-center text-muted-foreground">
-             <p>Informações detalhadas do colaborador não encontradas.</p>
-             <p className="text-xs mt-1">Verifique se o seu email está cadastrado na seção de Colaboradores no painel admin.</p>
-           </div>
-        )}
+      <DialogContent className="sm:max-w-2xl font-body p-0">
+        <div className="flex flex-col md:flex-row">
+            {/* Left side */}
+            <div className="flex flex-col items-center justify-center p-8 bg-muted/50 md:w-2/5 text-center">
+                <Avatar className="h-28 w-28 mb-4 border-4 border-background">
+                    <AvatarImage src={displayPhotoUrl} alt={displayName || "User Avatar"} />
+                    <AvatarFallback className="text-4xl bg-muted">
+                        {displayAvatarInitial}
+                    </AvatarFallback>
+                </Avatar>
+                <h2 className="font-headline text-2xl font-bold text-foreground">{displayName}</h2>
+                <p className="text-sm text-muted-foreground">{displayEmail}</p>
+            </div>
 
-        <DialogFooter>
-          <Button onClick={() => onOpenChange(false)} variant="outline" className="hover:bg-muted">Fechar</Button>
-        </DialogFooter>
+            {/* Right side */}
+            <div className="p-8 flex flex-col flex-1">
+                <DialogHeader className="mb-4">
+                    <DialogTitle className="font-headline text-xl">Detalhes do Colaborador</DialogTitle>
+                </DialogHeader>
+
+                {currentUserCollaborator ? (
+                  <div className="space-y-4">
+                      <InfoItem icon={Fingerprint} label="ID 3A RIVA" value={currentUserCollaborator.id3a} />
+                      <Separator />
+                      <InfoItem icon={Briefcase} label="Cargo" value={currentUserCollaborator.position} />
+                      <Separator />
+                      <InfoItem icon={Building} label="Área" value={currentUserCollaborator.area} />
+                      <Separator />
+                      <InfoItem icon={Users} label="Líder" value={currentUserCollaborator.leader} />
+                       <Separator />
+                      <InfoItem icon={Pyramid} label="Eixo" value={currentUserCollaborator.axis} />
+                       <Separator />
+                      <InfoItem icon={MapPin} label="Cidade" value={currentUserCollaborator.city} />
+                  </div>
+                ) : (
+                <div className="py-4 text-center text-muted-foreground">
+                    <p>Informações detalhadas do colaborador não encontradas.</p>
+                </div>
+                )}
+                 <DialogFooter className="mt-auto pt-6">
+                    <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full hover:bg-muted">Fechar</Button>
+                </DialogFooter>
+            </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
