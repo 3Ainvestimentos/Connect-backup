@@ -24,7 +24,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 
-
 type MissionGroupFormValues = z.infer<typeof missionGroupSchema>;
 
 interface MissionGroupsManagerProps {
@@ -157,7 +156,6 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
     }
   }
 
-
   return (
     <>
       <Card>
@@ -224,7 +222,7 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
               <DialogTitle>{editingGroup ? 'Editar Grupo de Objetivos' : 'Novo Grupo de Objetivos'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
-              <ScrollArea className="flex-grow px-6">
+              <ScrollArea className="px-6">
                 <div className="space-y-6 pb-6">
                   <div>
                     <Label htmlFor="name">Nome do Grupo</Label>
@@ -274,25 +272,35 @@ export function MissionGroupsManager({ opportunityTypeId, selectedGroupId, onSel
                   <Separator />
 
                   <div>
-                    <Label className="flex items-center gap-2"><Target/> Objetivos do Grupo</Label>
-                    <p className="text-xs text-muted-foreground mb-2">Defina os nomes das colunas do seu CSV que fazem parte deste grupo.</p>
-                    <div className="space-y-2">
-                      {objectiveFields.map((field, index) => (
-                        <div key={field.id} className="flex items-center gap-2">
-                          <Input
-                            {...register(`objectives.${index}`)}
-                            placeholder={`Ex: OBJETIVO_NPS`}
-                          />
-                          <Button type="button" variant="ghost" size="icon" onClick={() => removeObjective(index)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      ))}
-                      {errors.objectives && <p className="text-sm text-destructive mt-1">{errors.objectives.root?.message}</p>}
-                    </div>
-                    <Button type="button" variant="outline" size="sm" onClick={() => appendObjective('')} className="mt-2">
-                      <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Objetivo
-                    </Button>
+                      <Label className="flex items-center gap-2"><Target/> Objetivos do Grupo</Label>
+                      <p className="text-xs text-muted-foreground mb-2">Defina os nomes das colunas do seu CSV que fazem parte deste grupo.</p>
+                      <div className="space-y-3">
+                          {objectiveFields.map((field, index) => (
+                              <div key={field.id} className="p-3 border rounded-lg space-y-2 relative bg-background">
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeObjective(index)} className="absolute top-1 right-1 h-6 w-6"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2">
+                                      <div>
+                                          <Label htmlFor={`objectives.${index}.key`} className="text-xs">Chave (Coluna CSV)</Label>
+                                          <Input id={`objectives.${index}.key`} {...register(`objectives.${index}.key`)} placeholder="Ex: OBJETIVO_NPS"/>
+                                          {errors.objectives?.[index]?.key && <p className="text-xs text-destructive mt-1">{errors.objectives[index]?.key?.message}</p>}
+                                      </div>
+                                      <div>
+                                          <Label htmlFor={`objectives.${index}.title`} className="text-xs">Título (Para Usuário)</Label>
+                                          <Input id={`objectives.${index}.title`} {...register(`objectives.${index}.title`)} placeholder="Ex: NPS Geral"/>
+                                          {errors.objectives?.[index]?.title && <p className="text-xs text-destructive mt-1">{errors.objectives[index]?.title?.message}</p>}
+                                      </div>
+                                  </div>
+                                   <div>
+                                      <Label htmlFor={`objectives.${index}.description`} className="text-xs">Descrição (Para Usuário)</Label>
+                                      <Textarea id={`objectives.${index}.description`} {...register(`objectives.${index}.description`)} placeholder="Explique o que é este objetivo..." rows={2}/>
+                                  </div>
+                              </div>
+                          ))}
+                          {errors.objectives && <p className="text-sm text-destructive mt-1">{errors.objectives.root?.message}</p>}
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={() => appendObjective({ key: '', title: '', description: '' })} className="mt-3">
+                          <PlusCircle className="mr-2 h-4 w-4"/> Adicionar Objetivo
+                      </Button>
                   </div>
                 </div>
               </ScrollArea>

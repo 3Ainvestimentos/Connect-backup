@@ -3,10 +3,9 @@
 
 import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection, getSubcollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getSubcollection } from '@/lib/firestore-service';
 import { useAuth } from './AuthContext';
 import * as z from 'zod';
-import { RewardRule } from '@/lib/gamification-logics';
 
 // Função para normalizar o nome do grupo
 const normalizeGroupName = (name: string) => {
@@ -18,12 +17,19 @@ const normalizeGroupName = (name: string) => {
     .replace(/[^A-Z0-9_]/g, ''); // Remove caracteres não permitidos
 };
 
-
-// Zod schema for a single reward rule
+// Schema for a single reward rule
 const rewardRuleSchema = z.object({
     count: z.coerce.number().min(1, "A contagem deve ser no mínimo 1."),
     reward: z.coerce.number().min(0, "A recompensa deve ser um valor positivo."),
 });
+
+// Schema for a single objective
+const objectiveSchema = z.object({
+  key: z.string().min(1, "A chave do objetivo é obrigatória (ex: NOME_DA_COLUNA_CSV)."),
+  title: z.string().min(1, "O título do objetivo é obrigatório."),
+  description: z.string().optional().default(''),
+});
+export type Objective = z.infer<typeof objectiveSchema>;
 
 // Zod schema for a mission group
 export const missionGroupSchema = z.object({
@@ -31,7 +37,7 @@ export const missionGroupSchema = z.object({
   description: z.string().optional(),
   logicType: z.string().min(1, "O tipo de lógica é obrigatório."),
   rules: z.array(rewardRuleSchema).min(1, "Pelo menos uma regra de premiação é necessária."),
-  objectives: z.array(z.string()).optional().default([]),
+  objectives: z.array(objectiveSchema).optional().default([]),
 });
 
 export type MissionGroup = WithId<z.infer<typeof missionGroupSchema>>;
