@@ -10,8 +10,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Banknote, DollarSign, TrendingUp, Sparkles, Server, Users, Container, FileArchive, AlertTriangle } from "lucide-react";
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/contexts/AuthContext';
+import { getAuth } from 'firebase/auth';
+import { getFirebaseApp } from '@/lib/firebase';
 
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = async (url: string) => {
+    const auth = getAuth(getFirebaseApp());
+    const user = auth.currentUser;
+    if (!user) {
+        throw new Error('Usuário não autenticado.');
+    }
+    const token = await user.getIdToken();
+    const res = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
+
+    if (!res.ok) {
+        const errorData = await res.json();
+        const error = new Error(errorData.error || 'Ocorreu um erro ao buscar os dados.');
+        throw error;
+    }
+    return res.json();
+};
 
 export default function CustosInfraestruturaPage() {
     const { data: costData, error, isLoading } = useSWR('/api/billing', fetcher, {
