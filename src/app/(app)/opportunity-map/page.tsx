@@ -1,6 +1,8 @@
+
 "use client";
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOpportunityMap, OpportunityMapData } from '@/contexts/OpportunityMapContext';
@@ -68,10 +70,23 @@ function OpportunitySection({ opportunityType, userData }: { opportunityType: Op
 }
 
 export default function OpportunityMapPage() {
-    const { user } = useAuth();
-    const { opportunityData, loading } = useOpportunityMap();
+    const { user, permissions, loading: authLoading } = useAuth();
+    const router = useRouter();
+    const { opportunityData, loading: mapLoading } = useOpportunityMap();
     const { collaborators, loading: collabLoading } = useCollaborators();
     const { opportunityTypes } = useOpportunityTypes();
+
+    const [isAuthorized, setIsAuthorized] = React.useState(false);
+
+    React.useEffect(() => {
+        if (!authLoading) {
+            if (!permissions.canViewOpportunityMap) {
+                router.replace('/dashboard');
+            } else {
+                setIsAuthorized(true);
+            }
+        }
+    }, [authLoading, permissions, router]);
 
     const currentUserData = React.useMemo(() => {
         if (!user || collabLoading || !collaborators.length) return null;
@@ -80,18 +95,10 @@ export default function OpportunityMapPage() {
         return opportunityData.find(d => d.id === currentUserCollab.id);
     }, [opportunityData, user, collaborators, collabLoading]);
 
-    const visibleOpportunities = React.useMemo(() => {
-        if (!user || collabLoading || !currentUserData) return [];
-        const currentUserCollab = collaborators.find(c => c.email === user.email);
-        if (!currentUserCollab) return [];
-        
-        return opportunityTypes.filter(op => {
-            if (op.recipientIds.includes('all')) return true;
-            return op.recipientIds.includes(currentUserCollab.id3a);
-        });
-    }, [opportunityTypes, user, collaborators, collabLoading, currentUserData]);
+    // Now, all opportunity types are potentially visible, as access is controlled by permission.
+    const visibleOpportunities = opportunityTypes;
 
-    if (loading || collabLoading) {
+    if (authLoading || mapLoading || collabLoading || !isAuthorized) {
         return (
              <div className="space-y-6 p-6 md:p-8">
                 <PageHeader title="Mapa de Oportunidades" description="Carregando seus resultados mensais..." />
@@ -107,7 +114,7 @@ export default function OpportunityMapPage() {
          return (
              <div className="space-y-6 p-6 md:p-8 flex flex-col items-center justify-center text-center h-[calc(100vh-var(--header-height))]">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4"/>
-                <PageHeader title="Nenhuma Oportunidade Encontrada" description="Nenhuma oportunidade foi configurada para você no momento. Por favor, entre em contato com seu gestor." />
+                <PageHeader title="Nenhuma Oportunidade Encontrada" description="Nenhuma oportunidade foi configurada no momento. Por favor, entre em contato com seu gestor." />
             </div>
         );
     }
@@ -120,7 +127,7 @@ export default function OpportunityMapPage() {
             />
             
             <Tabs defaultValue={visibleOpportunities[0]?.id} className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                      {visibleOpportunities.map(op => (
                         <TabsTrigger key={op.id} value={op.id}>
                             <Compass className="mr-2 h-4 w-4" />

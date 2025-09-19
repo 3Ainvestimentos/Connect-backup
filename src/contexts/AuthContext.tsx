@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
@@ -43,6 +44,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewRankings: false,
   canViewCRM: false,
   canViewStrategicPanel: false,
+  canViewOpportunityMap: false,
 };
 
 
@@ -94,6 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     canViewRankings: true,
                     canViewCRM: true,
                     canViewStrategicPanel: true,
+                    canViewOpportunityMap: true,
                 };
                 setPermissions(allPermissions);
                 setIsAdmin(true);
