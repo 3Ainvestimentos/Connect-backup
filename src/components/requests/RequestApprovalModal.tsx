@@ -114,12 +114,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return definition.statuses.find(s => s.id === request.status);
   }, [definition, request]);
 
-  const isCurrentStatusFinal = useMemo(() => {
-    if (!currentStatusDefinition) return false;
-    const finalLabels = ['finalizado', 'concluído', 'aprovado', 'reprovado', 'cancelado'];
-    return finalLabels.some(label => currentStatusDefinition.label.toLowerCase().includes(label));
-  }, [currentStatusDefinition]);
-
   const nextStatus = useMemo((): WorkflowStatusDefinition | null => {
     if (!definition || !request) return null;
     const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
@@ -755,22 +749,22 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
-                {canTakeAction && (
+                {canTakeAction && nextStatus && (
                      <Button 
-                        key={nextStatus?.id || 'no-next-status'}
+                        key={nextStatus.id}
                         className="bg-admin-primary hover:bg-admin-primary/90"
-                        onClick={() => nextStatus && handleStatusChange(nextStatus)} 
-                        disabled={isSubmitting || !nextStatus}
+                        onClick={() => handleStatusChange(nextStatus)} 
+                        disabled={isSubmitting}
                     >
-                        {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus?.id) ? (
+                        {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                             <MoveRight className="mr-2 h-4 w-4" />
                         )}
-                        Mover para "{nextStatus?.label || 'Etapa Final'}"
+                        Mover para "{nextStatus.label}"
                     </Button>
                 )}
-                {canTakeAction && currentStatusDefinition?.action && !isCurrentStatusFinal && (
+                {canTakeAction && currentStatusDefinition?.action && (
                     <Button 
                         variant="outline" 
                         size="sm"
