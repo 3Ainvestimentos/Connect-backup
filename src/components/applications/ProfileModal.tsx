@@ -24,16 +24,10 @@ interface ProfileModalProps {
 }
 
 export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
-  const { user } = useAuth();
-  const { collaborators } = useCollaborators();
-
-  const currentUserCollaborator = React.useMemo(() => {
-    if (!user || !collaborators) return null;
-    return collaborators.find(c => c.email === user.email);
-  }, [user, collaborators]);
+  const { user, currentUserCollab } = useAuth(); // Using currentUserCollab from AuthContext now
 
   const handleCopyDiagnostics = () => {
-    if (!user || !currentUserCollaborator) {
+    if (!user || !currentUserCollab) {
       toast({
         title: "Erro",
         description: "Não foi possível coletar os dados de diagnóstico.",
@@ -53,11 +47,10 @@ Nome de Exibição: ${user.displayName}
 
 [+] DADOS DO FIRESTORE (useCollaborators)
 ------------------------------------------
-ID do Documento: ${currentUserCollaborator.id}
-ID 3A: ${currentUserCollaborator.id3a}
-Email no Firestore: ${currentUserCollaborator.email}
-Nome no Firestore: ${currentUserCollaborator.name}
-Permissões: ${JSON.stringify(currentUserCollaborator.permissions, null, 2)}
+ID do Documento: ${currentUserCollab.id}
+ID 3A: ${currentUserCollab.id3a}
+Email no Firestore: ${currentUserCollab.email}
+Permissões: ${JSON.stringify(currentUserCollab.permissions, null, 2)}
 
 --- FIM DOS DADOS ---
     `;
@@ -82,9 +75,9 @@ Permissões: ${JSON.stringify(currentUserCollaborator.permissions, null, 2)}
 
   if (!user) return null;
   
-  const displayName = currentUserCollaborator?.name || user.displayName;
-  const displayEmail = currentUserCollaborator?.email || user.email;
-  const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
+  const displayName = currentUserCollab?.name || user.displayName;
+  const displayEmail = currentUserCollab?.email || user.email;
+  const displayPhotoUrl = currentUserCollab?.photoURL || user.photoURL || undefined;
   const displayAvatarInitial = displayName ? displayName.charAt(0).toUpperCase() : <User size={48} />;
 
   const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => (
@@ -119,27 +112,31 @@ Permissões: ${JSON.stringify(currentUserCollaborator.permissions, null, 2)}
                     <DialogTitle className="font-headline text-xl">Detalhes do Colaborador</DialogTitle>
                 </DialogHeader>
 
-                {currentUserCollaborator ? (
+                {currentUserCollab ? (
                   <div className="space-y-4">
-                      <InfoItem icon={Fingerprint} label="ID 3A RIVA" value={currentUserCollaborator.id3a} />
+                      <InfoItem icon={Fingerprint} label="ID 3A RIVA" value={currentUserCollab.id3a} />
                       <Separator />
-                      <InfoItem icon={Briefcase} label="Cargo" value={currentUserCollaborator.position} />
+                      <InfoItem icon={Briefcase} label="Cargo" value={currentUserCollab.position} />
                       <Separator />
-                      <InfoItem icon={Building} label="Área" value={currentUserCollaborator.area} />
+                      <InfoItem icon={Building} label="Área" value={currentUserCollab.area} />
                       <Separator />
-                      <InfoItem icon={Users} label="Líder" value={currentUserCollaborator.leader} />
+                      <InfoItem icon={Users} label="Líder" value={currentUserCollab.leader} />
                        <Separator />
-                      <InfoItem icon={Pyramid} label="Eixo" value={currentUserCollaborator.axis} />
+                      <InfoItem icon={Pyramid} label="Eixo" value={currentUserCollab.axis} />
                        <Separator />
-                      <InfoItem icon={MapPin} label="Cidade" value={currentUserCollaborator.city} />
+                      <InfoItem icon={MapPin} label="Cidade" value={currentUserCollab.city} />
                   </div>
                 ) : (
                 <div className="py-4 text-center text-muted-foreground">
                     <p>Informações detalhadas do colaborador não encontradas.</p>
                 </div>
                 )}
-                 <DialogFooter className="mt-auto pt-6 !justify-between">
-                    <Button variant="ghost" onClick={handleCopyDiagnostics} className="text-xs text-muted-foreground hover:text-foreground">
+                 <DialogFooter className="mt-auto pt-6 !justify-center">
+                    <Button
+                        variant="ghost"
+                        onClick={handleCopyDiagnostics}
+                        className="text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
+                    >
                         <ClipboardCopy className="mr-2 h-4 w-4" />
                         Copiar Dados de Diagnóstico
                     </Button>
