@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
@@ -8,7 +7,7 @@ import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChange
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
-import { addDocumentToCollection, getDocument, getCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, getCollection, getDocument } from '@/lib/firestore-service';
 import { useSystemSettings } from './SystemSettingsContext';
 
 const scopes = [
@@ -19,6 +18,7 @@ scopes.forEach(scope => googleProvider.addScope(scope));
 
 interface AuthContextType {
   user: User | null;
+  currentUserCollab: Collaborator | null;
   loading: boolean;
   isAdmin: boolean; 
   isSuperAdmin: boolean;
@@ -32,6 +32,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const normalizeEmail = (email: string | null | undefined): string | null => {
     if (!email) return null;
+    // Esta normalização agora é um fallback, a lógica principal usará o UID.
     return email.replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
 }
 
@@ -50,17 +51,39 @@ const defaultPermissions: CollaboratorPermissions = {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [currentUserCollab, setCurrentUserCollab] = useState<Collaborator | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [permissions, setPermissions] = useState<CollaboratorPermissions>(defaultPermissions);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
   const { settings: systemSettings, loading: settingsLoading } = useSystemSettings();
   
   const app = getFirebaseApp(); 
   const auth = getAuth(app);
+
+  const fetchAndSetCollaborator = useCallback(async (firebaseUser: User) => {
+    const collaborators = await getCollection<Collaborator>('collaborators');
+    // Prioritize UID matching, fall back to normalized email
+    let collaborator = collaborators.find(c => c.authUid === firebaseUser.uid);
+    if (!collaborator) {
+      const normalizedEmail = normalizeEmail(firebaseUser.email);
+      collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+    }
+    
+    if (collaborator) {
+        setCurrentUserCollab(collaborator);
+        const userPermissions = { ...defaultPermissions, ...(collaborator.permissions || {}) };
+        setPermissions(userPermissions);
+        setIsAdmin(Object.values(userPermissions).some(p => p === true));
+    } else {
+        setCurrentUserCollab(null);
+        setPermissions(defaultPermissions);
+        setIsAdmin(false);
+    }
+    return collaborator;
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -68,41 +91,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         try {
             const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettings;
-            
             const normalizedEmail = normalizeEmail(firebaseUser.email);
             const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
             
-            // This is a simplified check. A full app would fetch collaborator data here.
-            // For now, we assume if not super admin, they are a normal user.
-            const collaborators = await getCollection<Collaborator>('collaborators');
-            const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+            const collaborator = await fetchAndSetCollaborator(firebaseUser);
 
             const isAllowedDuringMaintenance = collaborator ? allowedUserIds.includes(collaborator.id3a) : false;
 
             if (maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
                 await firebaseSignOut(auth);
                 setUser(null);
+                setCurrentUserCollab(null);
                 toast({ title: "Manutenção", description: maintenanceMessage, duration: 9000 });
             } else if (!collaborator && !isSuper) {
                  await firebaseSignOut(auth);
                  setUser(null);
-                 toast({ title: "Acesso Negado", description: "Seu e-mail não foi encontrado na lista de colaboradores.", variant: 'destructive' });
+                 setCurrentUserCollab(null);
+                 toast({ title: "Acesso Negado", description: "Seu perfil não foi encontrado na base de dados de colaboradores.", variant: 'destructive' });
             } else {
                 setUser(firebaseUser);
                 setIsSuperAdmin(isSuper);
-                const userPermissions = { ...defaultPermissions, ...(collaborator?.permissions || {}) };
-
                 if (isSuper) {
-                    // Super admin gets all permissions
                     const allPermissions = Object.keys(defaultPermissions).reduce((acc, key) => {
                         acc[key as keyof CollaboratorPermissions] = true;
                         return acc;
                     }, {} as CollaboratorPermissions);
                     setPermissions(allPermissions);
                     setIsAdmin(true);
-                } else {
-                    setPermissions(userPermissions);
-                    setIsAdmin(Object.values(userPermissions).some(p => p === true));
                 }
             }
         } catch (e) {
@@ -113,6 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       } else {
         setUser(null);
+        setCurrentUserCollab(null);
         setIsAdmin(false);
         setIsSuperAdmin(false);
         setPermissions(defaultPermissions);
@@ -120,22 +136,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false); 
     });
     return () => unsubscribe();
-  }, [auth, systemSettings]);
+  }, [auth, systemSettings, fetchAndSetCollaborator]);
 
   
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
       const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettings;
-
+      
       const result = await signInWithPopup(auth, googleProvider);
-      const email = result.user.email;
-      const normalizedEmail = normalizeEmail(email);
+      const firebaseUser = result.user;
+      const normalizedEmail = normalizeEmail(firebaseUser.email);
 
       const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
       
       const collaborators = await getCollection<Collaborator>('collaborators');
-      const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+      let collaborator = collaborators.find(c => c.authUid === firebaseUser.uid);
+      if (!collaborator) {
+         collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+         // If found by email but not UID, update the doc with the UID for future logins
+         if (collaborator) {
+            await getDocument('collaborators', collaborator.id); // Re-fetch to ensure it's fresh
+            await updateDoc(doc(getFirestore(app), 'collaborators', collaborator.id), { authUid: firebaseUser.uid });
+         }
+      }
 
       if (maintenanceMode) {
           const isAllowedDuringMaintenance = !!collaborator && (allowedUserIds || []).includes(collaborator.id3a);
@@ -153,15 +177,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setAccessToken(credential.accessToken);
         }
         
-        const userToLog = collaborator || { 
-            id3a: result.user.uid, 
-            name: result.user.displayName || 'Super Admin' 
-        };
-
         await addDocumentToCollection('audit_logs', {
             eventType: 'login',
-            userId: userToLog.id3a,
-            userName: userToLog.name,
+            userId: collaborator?.id3a || firebaseUser.uid,
+            userName: collaborator?.name || firebaseUser.displayName || 'Super Admin',
             timestamp: new Date().toISOString(),
             details: {}
         });
@@ -203,6 +222,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await firebaseSignOut(auth);
       setAccessToken(null);
+      setCurrentUserCollab(null);
       router.push('/login');
     } catch (error) {
       console.error("Error signing out: ", error);
@@ -212,6 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = useMemo(() => ({
       user,
+      currentUserCollab,
       loading: loading || settingsLoading,
       isAdmin,
       isSuperAdmin,
@@ -219,7 +240,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, settingsLoading, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
+  }), [user, currentUserCollab, loading, settingsLoading, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
@@ -27,8 +26,6 @@ function AuditLayoutContent({
     activeTab = "/audit/content-interaction";
   } else if (pathname.includes('/workflow-analytics')) {
     activeTab = "/audit/workflow-analytics";
-  } else if (pathname.includes('/usability')) {
-    activeTab = "/audit/usability";
   }
 
 
@@ -41,11 +38,10 @@ function AuditLayoutContent({
           actions={<DatePickerWithRange date={dateRange} onDateChange={setDateRange} />}
         />
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-1 md:grid-cols-4">
+            <TabsList className="grid w-full grid-cols-1 md:grid-cols-3">
                 <TabsTrigger value="/audit">Logins</TabsTrigger>
                 <TabsTrigger value="/audit/content-interaction">Conteúdos</TabsTrigger>
                 <TabsTrigger value="/audit/workflow-analytics">Workflows</TabsTrigger>
-                <TabsTrigger value="/audit/usability">Usabilidade</TabsTrigger>
             </TabsList>
         </Tabs>
         <div className="pt-4">

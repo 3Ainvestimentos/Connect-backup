@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -10,7 +9,6 @@ import { Separator } from '@/components/ui/separator';
 import MyRequests from '@/components/applications/MyRequests';
 import WorkflowSubmissionModal from '@/components/applications/WorkflowSubmissionModal';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { WorkflowGroupModal } from '@/components/applications/WorkflowGroupModal';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 
@@ -19,18 +17,12 @@ interface GroupedWorkflows {
 }
 
 export default function ApplicationsPage() {
-  const { user } = useAuth();
-  const { collaborators } = useCollaborators();
+  const { currentUserCollab } = useAuth();
   const { workflowDefinitions } = useApplications();
   const { workflowAreas } = useWorkflowAreas();
 
   const [activeWorkflow, setActiveWorkflow] = React.useState<WorkflowDefinition | null>(null);
   const [activeGroup, setActiveGroup] = React.useState<WorkflowDefinition[] | null>(null);
-
-  const currentUserCollab = React.useMemo(() => {
-    if (!user) return null;
-    return collaborators.find(c => c.email === user.email);
-  }, [user, collaborators]);
 
   const groupedWorkflows = React.useMemo(() => {
     if (!currentUserCollab || !workflowAreas.length) return {};
