@@ -194,7 +194,7 @@ export default function GoogleDriveFiles() {
     return (
       <div className="flex items-center text-sm text-muted-foreground flex-wrap">
           {breadcrumbs.map((crumb, index) => (
-              <React.Fragment key={crumb.folder?.id || 'root'}>
+              <React.Fragment key={crumb.folder?.id || `root-${index}`}>
                   <Button 
                       variant="link" 
                       onClick={() => index === 0 ? initializeDriveState() : handleBreadcrumbClick(crumb.folder, index-1)}
