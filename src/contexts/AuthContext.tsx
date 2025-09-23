@@ -72,10 +72,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const normalizedEmail = normalizeEmail(firebaseUser.email);
             const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
             
+            // This is a simplified check. A full app would fetch collaborator data here.
+            // For now, we assume if not super admin, they are a normal user.
             const collaborators = await getCollection<Collaborator>('collaborators');
             const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
 
-            const isAllowedDuringMaintenance = !!collaborator && allowedUserIds.includes(collaborator.id3a);
+            const isAllowedDuringMaintenance = collaborator ? allowedUserIds.includes(collaborator.id3a) : false;
 
             if (maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
                 await firebaseSignOut(auth);
@@ -91,17 +93,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const userPermissions = { ...defaultPermissions, ...(collaborator?.permissions || {}) };
 
                 if (isSuper) {
-                    const allPermissions: CollaboratorPermissions = {
-                        canManageWorkflows: true,
-                        canManageRequests: true,
-                        canManageContent: true,
-                        canViewTasks: true,
-                        canViewBI: true,
-                        canViewRankings: true,
-                        canViewCRM: true,
-                        canViewStrategicPanel: true,
-                        canViewOpportunityMap: true,
-                    };
+                    // Super admin gets all permissions
+                    const allPermissions = Object.keys(defaultPermissions).reduce((acc, key) => {
+                        acc[key as keyof CollaboratorPermissions] = true;
+                        return acc;
+                    }, {} as CollaboratorPermissions);
                     setPermissions(allPermissions);
                     setIsAdmin(true);
                 } else {
