@@ -72,7 +72,7 @@ const ReadStatusDialog = ({ message, recipients, onOpenChange }: { message: Mess
                 </div>
                  <DialogFooter>
                     <Button variant="secondary" onClick={() => onOpenChange(false)}>Fechar</Button>
-                </DialogFooter>
+                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
@@ -171,32 +171,22 @@ export function ManageMessages() {
         setIsFormOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
-        if (!window.confirm("Tem certeza que deseja excluir esta mensagem? Esta ação não pode ser desfeita.")) return;
-
-        const { id: toastId, update } = toast({
-            title: "Diagnóstico de Exclusão",
-            description: "1. Iniciando exclusão...",
-            variant: "default",
-        });
+    const handleDelete = async (messageToDelete: MessageType) => {
+        if (!window.confirm(`Tem certeza que deseja excluir a mensagem "${messageToDelete.title}"? Esta ação não pode ser desfeita.`)) return;
 
         try {
-            update({ description: "2. Acionando a função de exclusão..." });
-            await deleteMessageMutation.mutateAsync(id);
-
-            update({
-                title: "Sucesso!",
-                description: "3. Exclusão concluída. Atualizando a lista.",
+            await deleteMessageMutation.mutateAsync(messageToDelete.id);
+            toast({
+                title: "Exclusão Concluída",
+                description: `A mensagem "${messageToDelete.title}" foi removida com sucesso.`,
+                variant: 'success'
             });
-
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-            update({
+            toast({
                 title: "Falha na Exclusão",
-                description: `3. Erro: ${errorMessage}`,
-                variant: "destructive",
+                description: `Não foi possível remover a mensagem. Causa: ${(error as Error).message}`,
+                variant: "destructive"
             });
-            console.error("Falha detalhada ao excluir:", error);
         }
     };
     
@@ -210,17 +200,17 @@ export function ManageMessages() {
                     ...submissionData,
                 };
                 await updateMessage(updatedMessage);
-                toast({ title: "Mensagem atualizada com sucesso." });
+                toast({ title: "Mensagem atualizada com sucesso.", description: `A mensagem "${data.title}" foi salva.` });
             } else {
                 await addMessage(submissionData);
-                toast({ title: "Mensagem adicionada com sucesso." });
+                toast({ title: "Mensagem criada com sucesso.", description: `A mensagem "${data.title}" foi enviada.` });
             }
             setIsFormOpen(false);
             setEditingMessage(null);
         } catch (error) {
             toast({
-                title: "Erro ao salvar",
-                description: error instanceof Error ? error.message : "Não foi possível enviar a mensagem.",
+                title: "Erro ao salvar mensagem",
+                description: `Falha: ${(error as Error).message}`,
                 variant: "destructive"
             });
         }
@@ -320,7 +310,7 @@ export function ManageMessages() {
                                         <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted">
                                             <Edit className="h-4 w-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="hover:bg-muted" disabled={deleteMessageMutation.isPending && deleteMessageMutation.variables === item.id}>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item)} className="hover:bg-muted" disabled={deleteMessageMutation.isPending && deleteMessageMutation.variables === item.id}>
                                              {deleteMessageMutation.isPending && deleteMessageMutation.variables === item.id ? (
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                             ) : (

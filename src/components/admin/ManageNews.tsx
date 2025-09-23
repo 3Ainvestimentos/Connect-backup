@@ -1,3 +1,4 @@
+
 "use client";
 import React, { useState, useMemo } from 'react';
 import { useNews } from '@/contexts/NewsContext';
@@ -44,7 +45,7 @@ const statusConfig: { [key in NewsStatus]: { label: string, color: string } } = 
 };
 
 export function ManageNews() {
-    const { newsItems, addNewsItem, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType } = useNews();
+    const { newsItems, addNewsItem, updateNewsItem, archiveNewsItem, updateNewsStatus, toggleNewsHighlight, updateHighlightType, deleteNewsItemMutation } = useNews();
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
     const [editingNews, setEditingNews] = useState<NewsItemType | null>(null);
@@ -56,6 +57,10 @@ export function ManageNews() {
           .filter(item => showArchived ? item.status === 'archived' : item.status !== 'archived')
           .sort((a,b) => (a.order || 0) - (b.order || 0));
     }, [newsItems, showArchived]);
+
+    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
+        resolver: zodResolver(newsSchema),
+    });
 
     const handleDialogOpen = (newsItem: NewsItemType | null) => {
         setEditingNews(newsItem);
@@ -89,8 +94,27 @@ export function ManageNews() {
         setIsPreviewOpen(true);
     };
 
-    const handleArchive = async (id: string) => {
-        if (!window.confirm("Tem certeza que deseja arquivar esta notícia?")) return;
+    const handleDelete = async (itemToDelete: NewsItemType) => {
+        if (!window.confirm(`Tem certeza que deseja excluir permanentemente a notícia "${itemToDelete.title}"? Esta ação não pode ser desfeita.`)) return;
+        
+        try {
+            await deleteNewsItemMutation.mutateAsync(itemToDelete.id);
+            toast({
+                title: "Exclusão Concluída",
+                description: `A notícia "${itemToDelete.title}" foi removida com sucesso.`,
+                variant: 'success'
+            });
+        } catch (error) {
+            toast({
+                title: "Falha na Exclusão",
+                description: `Não foi possível remover a notícia. Causa: ${(error as Error).message}`,
+                variant: "destructive"
+            });
+        }
+    };
+
+    const handleArchive = async (id: string, title: string) => {
+        if (!window.confirm(`Tem certeza que deseja arquivar a notícia "${title}"?`)) return;
         try {
           await archiveNewsItem(id);
           toast({ title: "Notícia arquivada com sucesso." });
@@ -109,30 +133,23 @@ export function ManageNews() {
     };
     
     const onSubmit = async (data: NewsFormValues) => {
-        const { id, ...rest } = data;
-        
         try {
             if (editingNews) {
-                 const submissionData = { ...rest, id: editingNews?.id };
-                await updateNewsItem(submissionData);
-                toast({ title: "Notícia atualizada com sucesso." });
+                await updateNewsItem({ ...data, id: editingNews.id });
+                toast({ title: "Notícia atualizada com sucesso.", description: `A notícia "${data.title}" foi salva.` });
             } else {
-                await addNewsItem(rest as any);
-                toast({ title: "Notícia criada com sucesso." });
+                await addNewsItem(data as Omit<NewsItemType, 'id'>);
+                toast({ title: "Notícia criada com sucesso.", description: `A notícia "${data.title}" foi adicionada.` });
             }
             setIsDialogOpen(false);
         } catch (error) {
              toast({
-                title: "Erro ao salvar",
-                description: error instanceof Error ? error.message : "Não foi possível salvar a notícia.",
+                title: "Erro ao salvar notícia",
+                description: `Falha: ${(error as Error).message}`,
                 variant: "destructive"
             });
         }
     };
-    
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsFormValues>({
-        resolver: zodResolver(newsSchema),
-    });
     
     return (
         <>
@@ -244,9 +261,13 @@ export function ManageNews() {
                                             <Button variant="ghost" size="icon" onClick={() => handleDialogOpen(item)} className="hover:bg-muted" title="Editar">
                                                 <Edit className="h-4 w-4" />
                                             </Button>
-                                            {item.status !== 'archived' && (
-                                                <Button variant="ghost" size="icon" onClick={() => handleArchive(item.id)} className="hover:bg-muted" title="Arquivar">
-                                                    <Archive className="h-4 w-4 text-destructive" />
+                                            {item.status !== 'archived' ? (
+                                                <Button variant="ghost" size="icon" onClick={() => handleArchive(item.id, item.title)} className="hover:bg-muted" title="Arquivar">
+                                                    <Archive className="h-4 w-4 text-muted-foreground" />
+                                                </Button>
+                                            ) : (
+                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(item)} className="hover:bg-muted" title="Excluir Permanentemente" disabled={deleteNewsItemMutation.isPending && deleteNewsItemMutation.variables === item.id}>
+                                                    {deleteNewsItemMutation.isPending && deleteNewsItemMutation.variables === item.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
                                                 </Button>
                                             )}
                                         </TableCell>
