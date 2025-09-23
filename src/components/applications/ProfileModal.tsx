@@ -131,13 +131,13 @@ Permissões: ${JSON.stringify(currentUserCollab.permissions, null, 2)}
                     <p>Informações detalhadas do colaborador não encontradas.</p>
                 </div>
                 )}
-                 <DialogFooter className="mt-auto pt-6 !justify-center">
+                 <DialogFooter className="!justify-center mt-auto pt-4 pb-0">
                     <Button
                         variant="ghost"
                         onClick={handleCopyDiagnostics}
-                        className="text-xs text-muted-foreground hover:bg-transparent hover:text-foreground"
+                        className="text-[10px] text-muted-foreground hover:bg-transparent hover:text-foreground"
                     >
-                        <ClipboardCopy className="mr-2 h-4 w-4" />
+                        <ClipboardCopy className="mr-2 h-3 w-3" />
                         Copiar Dados de Diagnóstico
                     </Button>
                 </DialogFooter>
