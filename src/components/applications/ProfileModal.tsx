@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,21 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
     if (!user || !collaborators) return null;
     return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
+
+  useEffect(() => {
+    // Adiciona o log de depuração quando o modal é aberto
+    if (open && user && currentUserCollaborator) {
+      console.log('--- DADOS DE DIAGNÓSTICO DO USUÁRIO ---');
+      console.log('Firebase Auth (useAuth):', {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+      });
+      console.log('Firestore (useCollaborators):', currentUserCollaborator);
+      console.log('--- FIM DOS DADOS ---');
+    }
+  }, [open, user, currentUserCollaborator]);
+
 
   if (!user) return null;
   
