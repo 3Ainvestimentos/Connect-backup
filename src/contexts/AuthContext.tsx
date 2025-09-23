@@ -46,8 +46,6 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewOpportunityMap: false,
 };
 
-const superAdminEmailsHardcoded = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br', 'desenvolvedor@3ariva.com.br'];
-
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -67,18 +65,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       if (firebaseUser) {
         try {
-            const systemConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[], superAdminEmails?: string[] }>('systemSettings', 'config');
+            const systemConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[], superAdminEmails: string[] }>('systemSettings', 'config');
             const maintenanceMode = systemConfig?.maintenanceMode ?? false;
             const maintenanceMessage = systemConfig?.maintenanceMessage ?? 'Manutenção em andamento.';
             const allowedUserIds = systemConfig?.allowedUserIds ?? [];
-            const superAdminEmails = systemConfig?.superAdminEmails || superAdminEmailsHardcoded;
+            const superAdminEmails = systemConfig?.superAdminEmails || [];
 
-            const isSuper = !!firebaseUser.email && superAdminEmails.includes(firebaseUser.email);
-            
             const normalizedEmail = normalizeEmail(firebaseUser.email);
             const collaborators = await getCollection<Collaborator>('collaborators');
             const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
 
+            const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
             const isAllowedDuringMaintenance = !!collaborator && allowedUserIds.includes(collaborator.id3a);
 
             if (maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
@@ -93,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser(firebaseUser);
                 setIsSuperAdmin(isSuper);
                 const userPermissions = { ...defaultPermissions, ...(collaborator?.permissions || {}) };
+
                 if (isSuper) {
                     const allPermissions: CollaboratorPermissions = {
                         canManageWorkflows: true,
@@ -136,18 +134,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const systemConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[], superAdminEmails?: string[] }>('systemSettings', 'config')
         .catch(err => {
           console.warn("Could not fetch system config, assuming maintenance is off.", err);
-          return { maintenanceMode: false, maintenanceMessage: 'Manutenção em andamento.' }; // Fallback
+          return { maintenanceMode: false, maintenanceMessage: 'Manutenção em andamento.' };
         });
 
-      if (systemConfig?.maintenanceMode) {
-          const result = await signInWithPopup(auth, googleProvider);
-          const email = result.user.email;
-          const superAdminEmails = systemConfig?.superAdminEmails || superAdminEmailsHardcoded;
-          const isSuper = !!email && superAdminEmails.includes(email);
-          const collaborators = await getCollection<Collaborator>('collaborators');
-          const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizeEmail(email));
-          const isAllowedDuringMaintenance = !!collaborator && (systemConfig?.allowedUserIds || []).includes(collaborator.id3a);
+      const result = await signInWithPopup(auth, googleProvider);
+      const email = result.user.email;
+      const normalizedEmail = normalizeEmail(email);
 
+      const superAdminEmails = systemConfig?.superAdminEmails || [];
+      const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
+      
+      const collaborators = await getCollection<Collaborator>('collaborators');
+      const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+
+      if (systemConfig?.maintenanceMode) {
+          const isAllowedDuringMaintenance = !!collaborator && (systemConfig?.allowedUserIds || []).includes(collaborator.id3a);
           if (!isSuper && !isAllowedDuringMaintenance) {
               await firebaseSignOut(auth);
               toast({ title: "Manutenção em Andamento", description: systemConfig.maintenanceMessage, duration: 9000 });
@@ -155,23 +156,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               return;
           }
       }
-
-      const result = await signInWithPopup(auth, googleProvider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential?.accessToken) {
-        setAccessToken(credential.accessToken);
-      }
       
-      const email = result.user.email;
-      const normalizedEmail = normalizeEmail(email);
-      
-      const superAdminEmails = systemConfig?.superAdminEmails || superAdminEmailsHardcoded;
-      const isSuperAdminLogin = !!email && superAdminEmails.includes(email);
-      
-      const collaborators = await getCollection<Collaborator>('collaborators');
-      const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
-      
-      if (collaborator || isSuperAdminLogin) {
+      if (collaborator || isSuper) {
+        const credential = GoogleAuthProvider.credentialFromResult(result);
+        if (credential?.accessToken) {
+          setAccessToken(credential.accessToken);
+        }
+        
         const userToLog = collaborator || { 
             id3a: result.user.uid, 
             name: result.user.displayName || 'Super Admin' 
@@ -238,7 +229,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
+  }), [user, loading, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
 
   return (
     <AuthContext.Provider value={value}>
