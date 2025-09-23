@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Separator } from '../ui/separator';
-import { User, Building, Briefcase, Pyramid, MapPin, Users, Fingerprint } from 'lucide-react';
+import { User, Building, Briefcase, Pyramid, MapPin, Users, Fingerprint, ClipboardCopy } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 interface ProfileModalProps {
   open: boolean;
@@ -31,20 +32,53 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
     return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
 
-  useEffect(() => {
-    // Adiciona o log de depuração quando o modal é aberto
-    if (open && user && currentUserCollaborator) {
-      console.log('--- DADOS DE DIAGNÓSTICO DO USUÁRIO ---');
-      console.log('Firebase Auth (useAuth):', {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
+  const handleCopyDiagnostics = () => {
+    if (!user || !currentUserCollaborator) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível coletar os dados de diagnóstico.",
+        variant: "destructive"
       });
-      console.log('Firestore (useCollaborators):', currentUserCollaborator);
-      console.log('--- FIM DOS DADOS ---');
+      return;
     }
-  }, [open, user, currentUserCollaborator]);
 
+    const diagnostics = `
+--- DADOS DE DIAGNÓSTICO DO USUÁRIO ---
+
+[+] DADOS DE AUTENTICAÇÃO (useAuth)
+------------------------------------
+UID: ${user.uid}
+Email: ${user.email}
+Nome de Exibição: ${user.displayName}
+
+[+] DADOS DO FIRESTORE (useCollaborators)
+------------------------------------------
+ID do Documento: ${currentUserCollaborator.id}
+ID 3A: ${currentUserCollaborator.id3a}
+Email no Firestore: ${currentUserCollaborator.email}
+Nome no Firestore: ${currentUserCollaborator.name}
+Permissões: ${JSON.stringify(currentUserCollaborator.permissions, null, 2)}
+
+--- FIM DOS DADOS ---
+    `;
+
+    navigator.clipboard.writeText(diagnostics.trim())
+      .then(() => {
+        toast({
+          title: "Sucesso!",
+          description: "Os dados de diagnóstico foram copiados para a sua área de transferência.",
+          variant: "success",
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy diagnostics: ', err);
+        toast({
+          title: "Erro ao Copiar",
+          description: "Não foi possível copiar os dados. Verifique as permissões do seu navegador.",
+          variant: "destructive"
+        });
+      });
+  };
 
   if (!user) return null;
   
@@ -104,7 +138,11 @@ export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) 
                     <p>Informações detalhadas do colaborador não encontradas.</p>
                 </div>
                 )}
-                 <DialogFooter className="mt-auto pt-6">
+                 <DialogFooter className="mt-auto pt-6 !justify-between">
+                    <Button variant="ghost" onClick={handleCopyDiagnostics} className="text-xs text-muted-foreground hover:text-foreground">
+                        <ClipboardCopy className="mr-2 h-4 w-4" />
+                        Copiar Dados de Diagnóstico
+                    </Button>
                 </DialogFooter>
             </div>
         </div>
