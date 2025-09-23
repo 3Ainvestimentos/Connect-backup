@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
@@ -9,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
 import { addDocumentToCollection, getCollection, getDocument } from '@/lib/firestore-service';
 import { useSystemSettings } from './SystemSettingsContext';
+import { getFirestore, doc, updateDoc } from "firebase/firestore";
 
 const scopes = [
   'https://www.googleapis.com/auth/calendar.readonly',
