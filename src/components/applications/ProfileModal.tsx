@@ -17,6 +17,7 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Separator } from '../ui/separator';
 import { User, Building, Briefcase, Pyramid, MapPin, Users, Fingerprint, ClipboardCopy } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 
 interface ProfileModalProps {
   open: boolean;
@@ -25,6 +26,7 @@ interface ProfileModalProps {
 
 export default function ProfileModal({ open, onOpenChange }: ProfileModalProps) {
   const { user, currentUserCollab } = useAuth(); // Using currentUserCollab from AuthContext now
+  const { settings } = useSystemSettings();
 
   const handleCopyDiagnostics = () => {
     if (!user || !currentUserCollab) {
@@ -51,6 +53,14 @@ ID do Documento: ${currentUserCollab.id}
 ID 3A: ${currentUserCollab.id3a}
 Email no Firestore: ${currentUserCollab.email}
 Permissões: ${JSON.stringify(currentUserCollab.permissions, null, 2)}
+Versão dos Termos Aceita: ${currentUserCollab.acceptedTermsVersion || 'N/A'}
+
+[+] DADOS DE CONFIGURAÇÃO (useSystemSettings)
+---------------------------------------------
+Modo Manutenção: ${settings.maintenanceMode}
+Mensagem de Manutenção: ${settings.maintenanceMessage}
+Versão Atual dos Termos: ${settings.termsVersion}
+URL dos Termos: ${settings.termsUrl}
 
 --- FIM DOS DADOS ---
     `;
