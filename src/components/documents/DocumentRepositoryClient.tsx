@@ -70,7 +70,6 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
   const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms delay
-  const hasLoggedSearch = useRef(false);
 
   const handleDownload = (doc: DocumentType) => {
     const currentUserCollab = collaborators.find(c => c.email === user?.email);
@@ -97,9 +96,9 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
   const filteredAndSortedDocuments = useMemo(() => {
     let items = initialDocuments;
 
-    if (searchTerm) {
+    if (debouncedSearchTerm) {
       items = items.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        item.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
 
@@ -131,13 +130,11 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
       });
     }
     return items;
-  }, [initialDocuments, searchTerm, selectedCategories, selectedTypes, sortKey, sortDirection]);
+  }, [initialDocuments, debouncedSearchTerm, selectedCategories, selectedTypes, sortKey, sortDirection]);
 
   // Effect to log search term
   useEffect(() => {
       const termToLog = debouncedSearchTerm.trim();
-
-      // Only log if term is substantial and hasn't been logged for this specific term value yet
       if (termToLog.length > 2) {
           const currentUserCollab = collaborators.find(c => c.email === user?.email);
           if (!currentUserCollab) return;
@@ -157,7 +154,7 @@ export default function DocumentRepositoryClient({ initialDocuments, categories,
               }
           }).catch(console.error);
       }
-  }, [debouncedSearchTerm, user, collaborators]);
+  }, [debouncedSearchTerm, user, collaborators, filteredAndSortedDocuments.length]);
 
 
   const handleSort = (key: SortKey) => {
