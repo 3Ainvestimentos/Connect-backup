@@ -8,10 +8,7 @@ import { FabMessagesProvider } from '@/contexts/FabMessagesContext';
 import { IdleFabMessagesProvider } from '@/contexts/IdleFabMessagesContext';
 import { LabsProvider } from '@/contexts/LabsContext';
 import { MessagesProvider } from '@/contexts/MessagesContext';
-import { MissionGroupsProvider } from '@/contexts/MissionGroupsContext';
 import { NewsProvider } from '@/contexts/NewsContext';
-import { OpportunityMapProvider } from '@/contexts/OpportunityMapContext';
-import { OpportunityTypesProvider } from '@/contexts/OpportunityMapMissionsContext';
 import { PollsProvider } from '@/contexts/PollsContext';
 import { QuickLinksProvider } from '@/contexts/QuickLinksContext';
 import { RankingsProvider } from '@/contexts/RankingsContext';
@@ -34,13 +31,7 @@ function AppProviders({ children }: { children: React.ReactNode }) {
                                 <RankingsProvider>
                                     <FabMessagesProvider>
                                     <IdleFabMessagesProvider>
-                                      <MissionGroupsProvider>
-                                        <OpportunityTypesProvider>
-                                          <OpportunityMapProvider>
-                                              {children}
-                                          </OpportunityMapProvider>
-                                        </OpportunityTypesProvider>
-                                      </MissionGroupsProvider>
+                                      {children}
                                     </IdleFabMessagesProvider>
                                     </FabMessagesProvider>
                                 </RankingsProvider>

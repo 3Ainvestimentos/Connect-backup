@@ -8,8 +8,7 @@ import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChange
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
-import { useSystemSettings } from './SystemSettingsContext';
-import { addDocumentToCollection, getCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, getDocument, getCollection } from '@/lib/firestore-service';
 
 const scopes = [
   'https://www.googleapis.com/auth/calendar.readonly',
@@ -52,59 +51,68 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
-  const { settings, loading: loadingSettings } = useSystemSettings();
-  
-  const app = getFirebaseApp(); 
-  const auth = getAuth(app);
-  
   const [permissions, setPermissions] = useState<CollaboratorPermissions>(defaultPermissions);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  
+  const app = getFirebaseApp(); 
+  const auth = getAuth(app);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       if (firebaseUser) {
-        const normalizedEmail = normalizeEmail(firebaseUser.email);
-        const collaborators = await getCollection<Collaborator>('collaborators');
-        const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
-        const isSuper = !!firebaseUser.email && settings.superAdminEmails.includes(firebaseUser.email);
-        
-        const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
+        try {
+            const publicConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[] }>('systemSettings', 'public_config');
+            const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config');
+            const superAdminEmails = adminConfig?.superAdminEmails || ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
 
-        if (settings.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
-            await firebaseSignOut(auth);
-            setUser(null);
-        } else if (!collaborator && !isSuper && pathname !== '/login') {
-            await firebaseSignOut(auth);
-            setUser(null);
-        } else {
-            setUser(firebaseUser);
-            setIsSuperAdmin(isSuper);
+            const isSuper = !!firebaseUser.email && superAdminEmails.includes(firebaseUser.email);
             
-            const userPermissions = { ...defaultPermissions, ...(collaborator?.permissions || {}) };
+            const normalizedEmail = normalizeEmail(firebaseUser.email);
+            const collaborators = await getCollection<Collaborator>('collaborators');
+            const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
 
-             if (isSuper) {
-                const allPermissions: CollaboratorPermissions = {
-                    canManageWorkflows: true,
-                    canManageRequests: true,
-                    canManageContent: true,
-                    canViewTasks: true,
-                    canViewBI: true,
-                    canViewRankings: true,
-                    canViewCRM: true,
-                    canViewStrategicPanel: true,
-                    canViewOpportunityMap: true,
-                };
-                setPermissions(allPermissions);
-                setIsAdmin(true);
+            const isAllowedDuringMaintenance = !!collaborator && publicConfig?.allowedUserIds?.includes(collaborator.id3a);
+
+            if (publicConfig?.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
+                await firebaseSignOut(auth);
+                setUser(null);
+                toast({ title: "Manutenção", description: publicConfig.maintenanceMessage, duration: 9000 });
+            } else if (!collaborator && !isSuper) {
+                 await firebaseSignOut(auth);
+                 setUser(null);
+                 toast({ title: "Acesso Negado", description: "Seu e-mail não foi encontrado na lista de colaboradores.", variant: 'destructive' });
             } else {
-                setPermissions(userPermissions);
-                const hasAnyPermission = Object.values(userPermissions).some(p => p === true);
-                setIsAdmin(hasAnyPermission);
+                setUser(firebaseUser);
+                setIsSuperAdmin(isSuper);
+                const userPermissions = { ...defaultPermissions, ...(collaborator?.permissions || {}) };
+                if (isSuper) {
+                    const allPermissions: CollaboratorPermissions = {
+                        canManageWorkflows: true,
+                        canManageRequests: true,
+                        canManageContent: true,
+                        canViewTasks: true,
+                        canViewBI: true,
+                        canViewRankings: true,
+                        canViewCRM: true,
+                        canViewStrategicPanel: true,
+                        canViewOpportunityMap: true,
+                    };
+                    setPermissions(allPermissions);
+                    setIsAdmin(true);
+                } else {
+                    setPermissions(userPermissions);
+                    setIsAdmin(Object.values(userPermissions).some(p => p === true));
+                }
             }
+        } catch (e) {
+             console.error("Error during auth state change verification:", e);
+             await firebaseSignOut(auth);
+             setUser(null);
+             toast({ title: "Erro de Configuração", description: "Não foi possível verificar as configurações do sistema.", variant: 'destructive' });
         }
       } else {
         setUser(null);
@@ -115,13 +123,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false); 
     });
     return () => unsubscribe();
-  }, [auth, settings.maintenanceMode, settings.superAdminEmails, settings.allowedUserIds, pathname, settings]);
+  }, [auth]);
 
   
   const signInWithGoogle = async () => {
     setLoading(true);
-
     try {
+      const publicConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[] }>('systemSettings', 'public_config');
+      if (publicConfig?.maintenanceMode) {
+          const result = await signInWithPopup(auth, googleProvider);
+          const email = result.user.email;
+          const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config');
+          const superAdminEmails = adminConfig?.superAdminEmails || [];
+          const isSuper = !!email && superAdminEmails.includes(email);
+          const collaborators = await getCollection<Collaborator>('collaborators');
+          const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizeEmail(email));
+          const isAllowedDuringMaintenance = !!collaborator && publicConfig?.allowedUserIds?.includes(collaborator.id3a);
+
+          if (!isSuper && !isAllowedDuringMaintenance) {
+              await firebaseSignOut(auth);
+              toast({ title: "Manutenção em Andamento", description: publicConfig.maintenanceMessage, duration: 9000 });
+              setLoading(false);
+              return;
+          }
+          // If allowed, proceed with login flow
+      }
+
       const result = await signInWithPopup(auth, googleProvider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
       if (credential?.accessToken) {
@@ -131,22 +158,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const email = result.user.email;
       const normalizedEmail = normalizeEmail(email);
       
+      const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config');
+      const isSuperAdminLogin = !!email && (adminConfig?.superAdminEmails || []).includes(email);
+      
       const collaborators = await getCollection<Collaborator>('collaborators');
-      const isSuperAdminLogin = !!email && settings.superAdminEmails.includes(email);
       const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
-      const isAllowedDuringMaintenance = !!collaborator && settings.allowedUserIds?.includes(collaborator.id3a);
-
-      if (settings.maintenanceMode && !isSuperAdminLogin && !isAllowedDuringMaintenance) {
-         await firebaseSignOut(auth);
-         toast({
-            title: "Manutenção em Andamento",
-            description: settings.maintenanceMessage,
-            variant: "default",
-            duration: 10000,
-         });
-         setLoading(false);
-         return;
-      }
       
       if (collaborator || isSuperAdminLogin) {
         const userToLog = collaborator || { 
@@ -178,9 +194,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error("Firebase Login Error:", firebaseError);
             toast({
               title: "Erro de Login",
-              description: `Detalhe do erro: ${firebaseError.message}`,
+              description: `Ocorreu um erro durante a autenticação.`,
               variant: "destructive",
-              duration: 10000,
             });
           }
       } else {
@@ -189,7 +204,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 title: "Erro de Login",
                 description: "Ocorreu um problema desconhecido durante o login.",
                 variant: "destructive",
-                duration: 10000,
            });
       }
     } finally {
@@ -210,14 +224,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = useMemo(() => ({
       user,
-      loading: loading || loadingSettings,
+      loading,
       isAdmin,
       isSuperAdmin,
       permissions,
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, loadingSettings, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
+  }), [user, loading, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -69,29 +69,14 @@ const defaultPermissions: CollaboratorPermissions = {
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
-  // We can't use useAuth() here directly due to circular dependency.
-  // Instead, we will rely on the query being enabled/disabled based on a prop or a separate auth check if needed.
-  // For now, let's assume it should fetch when the provider is mounted by an authenticated user.
-  const [isAuthReady, setIsAuthReady] = React.useState(false);
-
-  // This is a workaround to break the circular dependency. 
-  // We manually check auth status instead of using the context.
-  React.useEffect(() => {
-    const { getAuth, onAuthStateChanged } = require('firebase/auth');
-    const { getFirebaseApp } = require('@/lib/firebase');
-    const auth = getAuth(getFirebaseApp());
-    const unsubscribe = onAuthStateChanged(auth, user => {
-        setIsAuthReady(!!user);
-    });
-    return () => unsubscribe();
-  }, []);
+  const { user } = useAuth();
 
 
   const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<Collaborator>(COLLECTION_NAME),
     staleTime: Infinity,
-    enabled: isAuthReady, // Only fetch when auth state is resolved and we have a user
+    enabled: !!user,
     select: (data) => data.map(c => ({
         ...c,
         permissions: { ...defaultPermissions, ...c.permissions }
@@ -99,7 +84,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   });
   
   React.useEffect(() => {
-    if (!isAuthReady) return; 
+    if (!user) return; 
     const unsubscribe = listenToCollection<Collaborator>(
       COLLECTION_NAME,
       (newData) => {
@@ -110,7 +95,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
       }
     );
     return () => unsubscribe();
-  }, [queryClient, isAuthReady]);
+  }, [queryClient, user]);
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
     mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, { ...collaboratorData, createdAt: new Date().toISOString() }),
