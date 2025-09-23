@@ -9,6 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
 import { addDocumentToCollection, getDocument, getCollection } from '@/lib/firestore-service';
+import { useSystemSettings } from './SystemSettingsContext';
 
 const scopes = [
   'https://www.googleapis.com/auth/calendar.readonly',
@@ -56,6 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const { settings: systemSettings, loading: settingsLoading } = useSystemSettings();
   
   const app = getFirebaseApp(); 
   const auth = getAuth(app);
@@ -65,17 +67,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       if (firebaseUser) {
         try {
-            const systemConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[], superAdminEmails: string[] }>('systemSettings', 'config');
-            const maintenanceMode = systemConfig?.maintenanceMode ?? false;
-            const maintenanceMessage = systemConfig?.maintenanceMessage ?? 'Manutenção em andamento.';
-            const allowedUserIds = systemConfig?.allowedUserIds ?? [];
-            const superAdminEmails = systemConfig?.superAdminEmails || [];
-
+            const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettings;
+            
             const normalizedEmail = normalizeEmail(firebaseUser.email);
+            const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
+            
             const collaborators = await getCollection<Collaborator>('collaborators');
             const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
 
-            const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
             const isAllowedDuringMaintenance = !!collaborator && allowedUserIds.includes(collaborator.id3a);
 
             if (maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
@@ -125,33 +124,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false); 
     });
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, systemSettings]);
 
   
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      const systemConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[], superAdminEmails?: string[] }>('systemSettings', 'config')
-        .catch(err => {
-          console.warn("Could not fetch system config, assuming maintenance is off.", err);
-          return { maintenanceMode: false, maintenanceMessage: 'Manutenção em andamento.' };
-        });
+      const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettings;
 
       const result = await signInWithPopup(auth, googleProvider);
       const email = result.user.email;
       const normalizedEmail = normalizeEmail(email);
 
-      const superAdminEmails = systemConfig?.superAdminEmails || [];
       const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
       
       const collaborators = await getCollection<Collaborator>('collaborators');
       const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
 
-      if (systemConfig?.maintenanceMode) {
-          const isAllowedDuringMaintenance = !!collaborator && (systemConfig?.allowedUserIds || []).includes(collaborator.id3a);
+      if (maintenanceMode) {
+          const isAllowedDuringMaintenance = !!collaborator && (allowedUserIds || []).includes(collaborator.id3a);
           if (!isSuper && !isAllowedDuringMaintenance) {
               await firebaseSignOut(auth);
-              toast({ title: "Manutenção em Andamento", description: systemConfig.maintenanceMessage, duration: 9000 });
+              toast({ title: "Manutenção em Andamento", description: maintenanceMessage, duration: 9000 });
               setLoading(false);
               return;
           }
@@ -222,14 +216,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const value = useMemo(() => ({
       user,
-      loading,
+      loading: loading || settingsLoading,
       isAdmin,
       isSuperAdmin,
       permissions,
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, loading, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
+  }), [user, loading, settingsLoading, isAdmin, isSuperAdmin, permissions, accessToken, signOut]);
 
   return (
     <AuthContext.Provider value={value}>

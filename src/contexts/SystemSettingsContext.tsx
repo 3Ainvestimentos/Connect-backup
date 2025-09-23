@@ -37,7 +37,7 @@ const defaultSettings: SystemSettings = {
     termsVersion: 1,
     privacyPolicyUrl: '',
     privacyPolicyVersion: 1,
-    superAdminEmails: ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'],
+    superAdminEmails: ['matheus@3ainvestimentos.com.br'],
 };
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {
@@ -48,8 +48,8 @@ export const SystemSettingsProvider = ({ children }: { children: ReactNode }) =>
     queryKey: [COLLECTION_NAME, DOC_ID],
     queryFn: async () => {
       const doc = await getDocument<SystemSettings>(COLLECTION_NAME, DOC_ID);
-      // Se o documento não existir, ele não será criado aqui para evitar erros de permissão
-      // para usuários não autenticados. A lógica de criação fica para os Super Admins.
+      // If the document exists, merge it with defaults, otherwise use defaults.
+      // This ensures superAdminEmails from Firestore are used if they exist.
       return doc ? { ...defaultSettings, ...doc } : defaultSettings;
     },
     staleTime: 5 * 60 * 1000,
