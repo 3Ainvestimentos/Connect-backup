@@ -1,21 +1,114 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Permite que qualquer um leia as configurações do sistema para verificar o modo de manutenção.
-    // A escrita continua protegida e deve ser feita por um backend seguro (como Cloud Functions) ou
-    // por um painel de admin que valide as permissões de Super Admin.
-    match /systemSettings/config {
-      allow read: if true;
-      allow write: if false; 
+    
+    // Função helper para verificar se o usuário é um Super Admin
+    function isSuperAdmin() {
+      // Um Super Admin pode ler as configurações de admin para verificar a lista completa.
+      return get(/databases/$(database)/documents/systemSettings/admin_config).data.superAdminEmails.hasAny([request.auth.token.email]);
     }
 
-    // REGRA GERAL: Para todos os outros documentos, exige que o usuário esteja autenticado.
-    // Esta regra garante que coleções como 'collaborators', 'newsItems', 'workflows', etc.,
-    // permaneçam protegidas contra acesso anônimo.
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // A coleção 'systemSettings' agora tem regras por documento
+    match /systemSettings/{docId} {
+      // O documento 'public_config' pode ser lido por qualquer pessoa (necessário para a tela de login)
+      match /public_config {
+        allow read: if true;
+        // A escrita ainda é restrita a Super Admins para segurança
+        allow write: if isSuperAdmin();
+      }
+      
+      // O documento 'admin_config' só pode ser acessado por Super Admins
+      match /admin_config {
+        allow read, write: if isSuperAdmin();
+      }
+      
+      // Regra de negação para quaisquer outros documentos nesta coleção
+      allow read, write: if false;
     }
+
+    // A coleção 'collaborators' permite que usuários leiam apenas seus próprios dados.
+    // Super Admins podem ler todos os documentos da coleção.
+    match /collaborators/{userId} {
+      allow read: if request.auth.uid == userId || isSuperAdmin();
+      // Apenas Super Admins podem criar, atualizar ou deletar colaboradores.
+      allow write: if isSuperAdmin();
+    }
+    
+    // Coleções de conteúdo que podem ser lidas por qualquer usuário autenticado,
+    // mas escritas apenas por Super Admins.
+    match /newsItems/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+    match /documents/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+    match /labs/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+    match /messages/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+    match /quickLinks/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+     match /rankings/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+     match /polls/{pollId}/{document=**} {
+      allow read: if request.auth != null;
+      // Permite que qualquer usuário autenticado crie uma resposta.
+      allow create: if request.auth != null;
+      allow update, delete: if isSuperAdmin();
+    }
+    match /idleFabMessages/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+
+    // A coleção de workflows e suas subcoleções têm lógicas mais específicas.
+    // Permitimos que usuários autenticados leiam e criem, mas a atualização
+    // e exclusão são controladas pela lógica da aplicação (gerenciada por Super Admins).
+    match /workflows/{workflowId} {
+      allow read: if request.auth.token.email == resource.data.ownerEmail || request.auth.token.email == resource.data.submittedBy.userEmail || isSuperAdmin();
+      allow create: if request.auth != null;
+      allow update, delete: if isSuperAdmin();
+    }
+    
+    // As definições de workflow (applications) e suas áreas são gerenciadas por Super Admins.
+     match /workflowDefinitions/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+     match /workflowAreas/{document=**} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+
+    // A coleção de contadores é apenas para uso interno via transações.
+    // O acesso direto é negado para segurança.
+    match /counters/{counterId} {
+      allow read, write: if false;
+    }
+    
+     // A coleção de logs de auditoria só pode ser escrita pela aplicação
+    // e lida por Super Admins.
+    match /audit_logs/{logId} {
+      allow create: if request.auth != null;
+      allow read, update, delete: if isSuperAdmin();
+    }
+
+    // Regras para a coleção fabMessages
+    match /fabMessages/{userId} {
+      allow read: if request.auth.uid == userId || isSuperAdmin();
+      allow write: if isSuperAdmin();
+    }
+
   }
 }

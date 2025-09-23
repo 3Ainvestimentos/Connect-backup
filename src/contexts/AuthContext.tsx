@@ -46,6 +46,8 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewOpportunityMap: false,
 };
 
+const superAdminEmailsHardcoded = ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br', 'desenvolvedor@3ariva.com.br'];
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -66,8 +68,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         try {
             const publicConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[] }>('systemSettings', 'public_config');
-            const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config');
-            const superAdminEmails = adminConfig?.superAdminEmails || ['matheus@3ainvestimentos.com.br', 'pedro.rosa@3ainvestimentos.com.br'];
+            
+            const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config').catch(() => null);
+            const superAdminEmails = adminConfig?.superAdminEmails || superAdminEmailsHardcoded;
 
             const isSuper = !!firebaseUser.email && superAdminEmails.includes(firebaseUser.email);
             
@@ -129,12 +132,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      const publicConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[] }>('systemSettings', 'public_config');
+      const publicConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[] }>('systemSettings', 'public_config')
+        .catch(err => {
+          console.warn("Could not fetch public_config, assuming maintenance is off.", err);
+          return { maintenanceMode: false, maintenanceMessage: '' }; // Fallback
+        });
+
       if (publicConfig?.maintenanceMode) {
           const result = await signInWithPopup(auth, googleProvider);
           const email = result.user.email;
-          const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config');
-          const superAdminEmails = adminConfig?.superAdminEmails || [];
+          const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config').catch(() => null);
+          const superAdminEmails = adminConfig?.superAdminEmails || superAdminEmailsHardcoded;
           const isSuper = !!email && superAdminEmails.includes(email);
           const collaborators = await getCollection<Collaborator>('collaborators');
           const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizeEmail(email));
@@ -146,7 +154,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setLoading(false);
               return;
           }
-          // If allowed, proceed with login flow
       }
 
       const result = await signInWithPopup(auth, googleProvider);
@@ -158,8 +165,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const email = result.user.email;
       const normalizedEmail = normalizeEmail(email);
       
-      const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config');
-      const isSuperAdminLogin = !!email && (adminConfig?.superAdminEmails || []).includes(email);
+      const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config').catch(() => null);
+      const superAdminEmails = adminConfig?.superAdminEmails || superAdminEmailsHardcoded;
+      const isSuperAdminLogin = !!email && superAdminEmails.includes(email);
       
       const collaborators = await getCollection<Collaborator>('collaborators');
       const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
