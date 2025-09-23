@@ -135,7 +135,7 @@ Permissões: ${JSON.stringify(currentUserCollab.permissions, null, 2)}
                     <Button
                         variant="ghost"
                         onClick={handleCopyDiagnostics}
-                        className="text-[10px] text-muted-foreground hover:bg-transparent hover:text-foreground"
+                        className="text-[10px] text-muted-foreground hover:bg-transparent hover:text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
                     >
                         <ClipboardCopy className="mr-2 h-3 w-3" />
                         Copiar Dados de Diagnóstico
