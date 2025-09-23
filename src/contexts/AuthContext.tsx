@@ -67,10 +67,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       if (firebaseUser) {
         try {
-            const publicConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[] }>('systemSettings', 'public_config');
-            
-            const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config').catch(() => null);
-            const superAdminEmails = adminConfig?.superAdminEmails || superAdminEmailsHardcoded;
+            const systemConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[], superAdminEmails?: string[] }>('systemSettings', 'config');
+            const maintenanceMode = systemConfig?.maintenanceMode ?? false;
+            const maintenanceMessage = systemConfig?.maintenanceMessage ?? 'Manutenção em andamento.';
+            const allowedUserIds = systemConfig?.allowedUserIds ?? [];
+            const superAdminEmails = systemConfig?.superAdminEmails || superAdminEmailsHardcoded;
 
             const isSuper = !!firebaseUser.email && superAdminEmails.includes(firebaseUser.email);
             
@@ -78,12 +79,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const collaborators = await getCollection<Collaborator>('collaborators');
             const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
 
-            const isAllowedDuringMaintenance = !!collaborator && publicConfig?.allowedUserIds?.includes(collaborator.id3a);
+            const isAllowedDuringMaintenance = !!collaborator && allowedUserIds.includes(collaborator.id3a);
 
-            if (publicConfig?.maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
+            if (maintenanceMode && !isSuper && !isAllowedDuringMaintenance) {
                 await firebaseSignOut(auth);
                 setUser(null);
-                toast({ title: "Manutenção", description: publicConfig.maintenanceMessage, duration: 9000 });
+                toast({ title: "Manutenção", description: maintenanceMessage, duration: 9000 });
             } else if (!collaborator && !isSuper) {
                  await firebaseSignOut(auth);
                  setUser(null);
@@ -132,25 +133,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signInWithGoogle = async () => {
     setLoading(true);
     try {
-      const publicConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[] }>('systemSettings', 'public_config')
+      const systemConfig = await getDocument<{ maintenanceMode: boolean, maintenanceMessage: string, allowedUserIds: string[], superAdminEmails?: string[] }>('systemSettings', 'config')
         .catch(err => {
-          console.warn("Could not fetch public_config, assuming maintenance is off.", err);
-          return { maintenanceMode: false, maintenanceMessage: '' }; // Fallback
+          console.warn("Could not fetch system config, assuming maintenance is off.", err);
+          return { maintenanceMode: false, maintenanceMessage: 'Manutenção em andamento.' }; // Fallback
         });
 
-      if (publicConfig?.maintenanceMode) {
+      if (systemConfig?.maintenanceMode) {
           const result = await signInWithPopup(auth, googleProvider);
           const email = result.user.email;
-          const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config').catch(() => null);
-          const superAdminEmails = adminConfig?.superAdminEmails || superAdminEmailsHardcoded;
+          const superAdminEmails = systemConfig?.superAdminEmails || superAdminEmailsHardcoded;
           const isSuper = !!email && superAdminEmails.includes(email);
           const collaborators = await getCollection<Collaborator>('collaborators');
           const collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizeEmail(email));
-          const isAllowedDuringMaintenance = !!collaborator && publicConfig?.allowedUserIds?.includes(collaborator.id3a);
+          const isAllowedDuringMaintenance = !!collaborator && (systemConfig?.allowedUserIds || []).includes(collaborator.id3a);
 
           if (!isSuper && !isAllowedDuringMaintenance) {
               await firebaseSignOut(auth);
-              toast({ title: "Manutenção em Andamento", description: publicConfig.maintenanceMessage, duration: 9000 });
+              toast({ title: "Manutenção em Andamento", description: systemConfig.maintenanceMessage, duration: 9000 });
               setLoading(false);
               return;
           }
@@ -165,8 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const email = result.user.email;
       const normalizedEmail = normalizeEmail(email);
       
-      const adminConfig = await getDocument<{ superAdminEmails: string[] }>('systemSettings', 'admin_config').catch(() => null);
-      const superAdminEmails = adminConfig?.superAdminEmails || superAdminEmailsHardcoded;
+      const superAdminEmails = systemConfig?.superAdminEmails || superAdminEmailsHardcoded;
       const isSuperAdminLogin = !!email && superAdminEmails.includes(email);
       
       const collaborators = await getCollection<Collaborator>('collaborators');
@@ -202,7 +201,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error("Firebase Login Error:", firebaseError);
             toast({
               title: "Erro de Login",
-              description: `Ocorreu um erro durante a autenticação.`,
+              description: `Ocorreu um problema desconhecido durante o login.`,
               variant: "destructive",
             });
           }

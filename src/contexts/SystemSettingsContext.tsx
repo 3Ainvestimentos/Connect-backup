@@ -47,32 +47,15 @@ export const SystemSettingsProvider = ({ children }: { children: ReactNode }) =>
   const { data: settings = defaultSettings, isFetching } = useQuery<SystemSettings>({
     queryKey: [COLLECTION_NAME, DOC_ID],
     queryFn: async () => {
-      // This query now runs immediately, but its internal logic depends on the auth state.
-      const currentUser = auth.currentUser;
-      
-      // If there's no user (e.g., on the login page), we can't fetch.
-      // Return default settings to avoid permission errors. The query will refetch once auth state changes.
-      if (!currentUser) {
-        return defaultSettings;
-      }
-      
       const doc = await getDocument<SystemSettings>(COLLECTION_NAME, DOC_ID);
-      if (!doc) {
-          try {
-              // Attempt to create the settings doc if it doesn't exist. This might fail if rules are strict.
-              await setDocumentInCollection(COLLECTION_NAME, DOC_ID, defaultSettings);
-              return defaultSettings;
-          } catch(e) {
-              console.warn("Could not create default system settings. This may be due to security rules.");
-              return defaultSettings;
-          }
-      }
-      return { ...defaultSettings, ...doc };
+      // Se o documento não existir, ele não será criado aqui para evitar erros de permissão
+      // para usuários não autenticados. A lógica de criação fica para os Super Admins.
+      return doc ? { ...defaultSettings, ...doc } : defaultSettings;
     },
     staleTime: 5 * 60 * 1000,
   });
-
-  // This effect will re-trigger the query when the user logs in or out.
+  
+  // Re-fetch when auth state changes.
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, DOC_ID] });
