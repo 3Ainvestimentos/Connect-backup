@@ -200,13 +200,12 @@ export function ManageMessages() {
                     ...submissionData,
                 };
                 await updateMessage(updatedMessage);
-                toast({ title: "Mensagem atualizada com sucesso.", description: `A mensagem "${data.title}" foi salva.` });
+                toast({ title: "Mensagem atualizada com sucesso." });
             } else {
                 await addMessage(submissionData);
-                toast({ title: "Mensagem criada com sucesso.", description: `A mensagem "${data.title}" foi enviada.` });
+                toast({ title: "Mensagem criada com sucesso." });
             }
             setIsFormOpen(false);
-            setEditingMessage(null);
         } catch (error) {
             toast({
                 title: "Erro ao salvar mensagem",

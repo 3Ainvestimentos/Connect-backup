@@ -203,7 +203,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error("Firebase Login Error:", firebaseError);
             toast({
               title: "Erro de Login",
-              description: `Ocorreu um problema desconhecido durante o login.`,
+              description: `Ocorreu um problema durante o login. (Código: ${firebaseError.code})`,
               variant: "destructive",
             });
           }

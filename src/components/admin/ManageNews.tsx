@@ -136,10 +136,10 @@ export function ManageNews() {
         try {
             if (editingNews) {
                 await updateNewsItem({ ...data, id: editingNews.id });
-                toast({ title: "Notícia atualizada com sucesso.", description: `A notícia "${data.title}" foi salva.` });
+                toast({ title: "Notícia atualizada com sucesso." });
             } else {
                 await addNewsItem(data as Omit<NewsItemType, 'id'>);
-                toast({ title: "Notícia criada com sucesso.", description: `A notícia "${data.title}" foi adicionada.` });
+                toast({ title: "Notícia criada com sucesso." });
             }
             setIsDialogOpen(false);
         } catch (error) {
