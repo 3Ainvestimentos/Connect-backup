@@ -281,7 +281,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {controllerField.value?.from ? (
                         controllerField.value.to ? (
-                          <>{format(controllerField.value.from, 'LLL dd, y', { locale: ptBR })} - {format(controllerField.value.to, 'LLL dd, y', { locale: ptBR })}</>
+                          <>{format(controllerField.value.from, 'LLL dd, y', { locale: ptBR })} a {format(controllerField.value.to, 'LLL dd, y', { locale: ptBR })}</>
                         ) : (
                           format(controllerField.value.from, 'LLL dd, y', { locale: ptBR })
                         )
