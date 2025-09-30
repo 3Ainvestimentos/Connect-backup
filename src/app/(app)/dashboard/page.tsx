@@ -224,14 +224,14 @@ export default function DashboardV2Page() {
                                 <CardDescription>Acesse sistemas e recursos.</CardDescription>
                             </CardHeader>
                             <CardContent className="flex-grow flex justify-center items-center">
-                                <div className="grid grid-cols-2 gap-4 w-full">
+                                <div className="grid grid-cols-1 gap-4 w-full">
                                 {quickLinks.map(link => (
                                     <a 
                                         href={link.link} 
                                         key={link.id} 
                                         target="_blank" 
                                         rel="noopener noreferrer" 
-                                        className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-video w-full"
+                                        className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-[3/1] w-full"
                                         title={link.name || 'Link Rápido'}
                                     >
                                         <Image
