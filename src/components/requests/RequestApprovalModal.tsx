@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -106,7 +105,12 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a) || null;
   }, [actionRequestsForCurrentStatus, adminUser]);
 
-  const canTakeAction = isOwner || isAssignee;
+  // Refactored `canTakeAction` to be truly unrestricted for owner or assignee.
+  const canTakeAction = useMemo(() => {
+    if (!user || !adminUser) return false;
+    // The user can take action if they are the owner OR if they are assigned.
+    return isOwner || isAssignee;
+  }, [user, adminUser, isOwner, isAssignee]);
 
 
   const currentStatusDefinition = useMemo(() => {
@@ -453,8 +457,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }
 
   const renderFormData = () => {
-    if (!definition || !definition.fields) return <p>Sem definição de formulário encontrada.</p>;
-    if (!request.formData || Object.keys(request.formData).length === 0) return <p>Sem dados de formulário.</p>;
+    if (!definition || !definition.fields) return <p className="text-muted-foreground">Sem definição de formulário encontrada.</p>;
+    if (!request.formData || Object.keys(request.formData).length === 0) return <p className="text-muted-foreground">O solicitante não preencheu dados no formulário.</p>;
     
     const renderedKeys = new Set<string>();
 
@@ -621,7 +625,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
 
-              {isOwner && (
+              {canTakeAction && (
                 <div>
                     <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
                      <div className="flex items-center gap-2">
@@ -749,7 +753,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
-                {canTakeAction && nextStatus && (
+                {canTakeAction && nextStatus && !currentUserActionRequest && (
                      <Button 
                         key={nextStatus.id}
                         className="bg-admin-primary hover:bg-admin-primary/90"
@@ -764,7 +768,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         Mover para "{nextStatus.label}"
                     </Button>
                 )}
-                {canTakeAction && currentStatusDefinition?.action && (
+                {canTakeAction && currentStatusDefinition?.action && !currentUserActionRequest && (
                     <Button 
                         variant="outline" 
                         size="sm"
@@ -805,3 +809,4 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
