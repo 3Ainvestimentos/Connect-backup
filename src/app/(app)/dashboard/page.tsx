@@ -239,7 +239,7 @@ export default function DashboardV2Page() {
                                             alt={link.name || 'Quick Link'}
                                             layout="fill"
                                             objectFit="contain"
-                                            className="p-8"
+                                            className="p-4"
                                         />
                                     </a>
                                 ))}
