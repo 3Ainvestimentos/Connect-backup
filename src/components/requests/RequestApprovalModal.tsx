@@ -105,10 +105,9 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a) || null;
   }, [actionRequestsForCurrentStatus, adminUser]);
 
-  // Refactored `canTakeAction` to be truly unrestricted for owner or assignee.
   const canTakeAction = useMemo(() => {
     if (!user || !adminUser) return false;
-    // The user can take action if they are the owner OR if they are assigned.
+    // User can take action if they are the owner OR if they are assigned.
     return isOwner || isAssignee;
   }, [user, adminUser, isOwner, isAssignee]);
 
@@ -723,7 +722,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {(canTakeAction && !currentUserActionRequest) && (
+              {(canTakeAction) && (
                 <div>
                     <Label htmlFor="comment">Adicionar Comentário</Label>
                     <div className="flex items-center gap-2 mt-1">
@@ -753,7 +752,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
-                {canTakeAction && nextStatus && !currentUserActionRequest && (
+                {canTakeAction && nextStatus && (
                      <Button 
                         key={nextStatus.id}
                         className="bg-admin-primary hover:bg-admin-primary/90"
@@ -768,7 +767,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         Mover para "{nextStatus.label}"
                     </Button>
                 )}
-                {canTakeAction && currentStatusDefinition?.action && !currentUserActionRequest && (
+                {canTakeAction && currentStatusDefinition?.action && (
                     <Button 
                         variant="outline" 
                         size="sm"
@@ -809,4 +808,3 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
-
