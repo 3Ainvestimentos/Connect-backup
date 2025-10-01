@@ -107,7 +107,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const canTakeAction = useMemo(() => {
     if (!user || !adminUser) return false;
-    // User can take action if they are the owner OR if they are assigned.
     return isOwner || isAssignee;
   }, [user, adminUser, isOwner, isAssignee]);
 
@@ -211,7 +210,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (response === 'executed' && actionDef?.type === 'execution') {
         if (actionDef.commentRequired && !comment.trim()) {
             toast({ title: "Erro de Validação", description: "O comentário é obrigatório para esta ação.", variant: "destructive" });
-            setActionResponse(null); // Reset for next attempt
+            setActionResponse(null);
             return;
         }
     }
@@ -283,9 +282,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   const handleStatusChange = async (newStatus: WorkflowStatusDefinition) => {
     setActionType('statusChange');
     setTargetStatus(newStatus);
-
+    
     if (!user || !adminUser) {
       toast({ title: "Erro de Autenticação", description: "Você não está logado ou não foi encontrado na lista de colaboradores.", variant: "destructive" });
+      setIsSubmitting(false);
       return;
     }
 
@@ -563,16 +563,13 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       );
   }
 
-  // Find the user's action response for a specific history log
   const findActionResponseForHistoryLog = (log: WorkflowHistoryLog) => {
-      // Find an action request where the user matches and the timestamp is very close
-      // This is a heuristic, as we don't directly link history logs to action responses
       for (const statusId in request.actionRequests) {
           const actionReqs = request.actionRequests[statusId];
           const matchingAction = actionReqs.find(ar => 
               ar.userId === log.userId && 
               ar.respondedAt && 
-              Math.abs(parseISO(ar.respondedAt).getTime() - parseISO(log.timestamp).getTime()) < 2000 // 2 seconds tolerance
+              Math.abs(parseISO(ar.respondedAt).getTime() - parseISO(log.timestamp).getTime()) < 2000
           );
           if (matchingAction) {
               return matchingAction;
@@ -808,3 +805,5 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
+
+    
