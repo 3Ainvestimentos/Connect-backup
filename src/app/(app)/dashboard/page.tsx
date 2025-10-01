@@ -89,11 +89,7 @@ export default function DashboardV2Page() {
     return `${unreadCount} mensagens não lidas`;
   }, [unreadCount]);
 
-  const activeHighlights = useMemo(() => newsItems.filter(item => item.isHighlight && item.status === 'published'), [newsItems]);
-
-  const largeHighlight = useMemo(() => activeHighlights.find(h => h.highlightType === 'large'), [activeHighlights]);
-  const smallHighlights = useMemo(() => activeHighlights.filter(h => h.highlightType === 'small' || !h.highlightType).slice(0, 2), [activeHighlights]);
-  const hasHighlights = largeHighlight || smallHighlights.length > 0;
+  const activeHighlights = useMemo(() => newsItems.filter(item => item.isHighlight && item.status === 'published').slice(0, 3), [newsItems]);
 
   const handleViewMessage = (messageToView: MessageType) => {
     if (!currentUserCollab) return;
@@ -165,6 +161,50 @@ export default function DashboardV2Page() {
     </div>
   );
 
+  const renderHighlights = () => {
+    const count = activeHighlights.length;
+
+    if (count === 1) {
+        return (
+            <div className="md:col-span-2 md:row-span-2 h-full min-h-[450px]">
+                <HighlightCard item={activeHighlights[0]} className="h-full" />
+            </div>
+        );
+    }
+
+    if (count === 2) {
+        return (
+            <>
+                <div className="md:col-span-1 md:row-span-2 h-full min-h-[250px] md:min-h-0">
+                    <HighlightCard item={activeHighlights[0]} className="h-full" />
+                </div>
+                <div className="md:col-span-1 md:row-span-2 h-full min-h-[250px] md:min-h-0">
+                    <HighlightCard item={activeHighlights[1]} className="h-full" />
+                </div>
+            </>
+        );
+    }
+    
+    if (count === 3) {
+        const largeHighlight = activeHighlights.find(h => h.highlightType === 'large') || activeHighlights[0];
+        const smallHighlights = activeHighlights.filter(h => h.id !== largeHighlight.id).slice(0, 2);
+        return (
+            <>
+                <div className="md:row-span-2 h-full min-h-[250px] md:min-h-0">
+                    <HighlightCard item={largeHighlight} className="h-full" />
+                </div>
+                {smallHighlights.map(item => (
+                    <div key={item.id} className="h-full min-h-[220px] md:min-h-0">
+                        <HighlightCard item={item} className="h-full" />
+                    </div>
+                ))}
+            </>
+        )
+    }
+
+    return null;
+  }
+
   return (
     <>
       <div className="space-y-6 p-6 md:p-8 overflow-x-hidden">
@@ -173,18 +213,9 @@ export default function DashboardV2Page() {
             title={pageTitle}
             description="Veja os últimos anúncios e destaques da empresa."
           />
-          {hasHighlights && (
-             <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3 h-[450px] md:h-[500px]">
-                {largeHighlight && (
-                  <div className="md:row-span-2 h-full min-h-[200px]">
-                    <HighlightCard item={largeHighlight} className="h-full" />
-                  </div>
-                )}
-                {smallHighlights.map(item => (
-                    <div key={item.id} className="h-full min-h-[200px]">
-                        <HighlightCard item={item} className="h-full" />
-                    </div>
-                ))}
+          {activeHighlights.length > 0 && (
+             <div className="grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-3 h-auto md:h-[500px]">
+                {renderHighlights()}
             </div>
           )}
         </section>
