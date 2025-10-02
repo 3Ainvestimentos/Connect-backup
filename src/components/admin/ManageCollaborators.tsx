@@ -193,7 +193,7 @@ export function ManageCollaborators() {
         if (collaborator) {
             reset({
               ...collaborator,
-              googleDriveLinks: collaborator.googleDriveLinks ? collaborator.googleDriveLinks.join('\n') : '',
+              googleDriveLinks: collaborator.googleDriveLinks ? collaborator.googleDriveLinks.join('\\n') : '',
               biLinks: collaborator.biLinks || [],
             });
         } else {
@@ -232,7 +232,7 @@ export function ManageCollaborators() {
         const processedData = {
           ...data,
           googleDriveLinks: typeof data.googleDriveLinks === 'string'
-            ? data.googleDriveLinks.split('\n').map(link => link.trim()).filter(Boolean)
+            ? data.googleDriveLinks.split('\\n').map(link => link.trim()).filter(Boolean)
             : data.googleDriveLinks || []
         };
         
@@ -356,7 +356,6 @@ export function ManageCollaborators() {
             segment: c.segment,
             leader: c.leader,
             city: c.city,
-            googleDriveLinks: c.googleDriveLinks?.join(',') || '',
         }));
 
         const csv = Papa.unparse(dataToExport);
@@ -591,7 +590,7 @@ export function ManageCollaborators() {
                         <Separator/>
                          <div>
                             <Label htmlFor="googleDriveLinks">Links do Google Drive (um por linha)</Label>
-                             <Textarea id="googleDriveLinks" {...register('googleDriveLinks')} placeholder="https://drive.google.com/drive/folders/...\nhttps://drive.google.com/drive/folders/..." disabled={isFormSubmitting} rows={3}/>
+                             <Textarea id="googleDriveLinks" {...register('googleDriveLinks')} placeholder="https://drive.google.com/drive/folders/...\\nhttps://drive.google.com/drive/folders/..." disabled={isFormSubmitting} rows={3}/>
                             <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar a pasta "Meu Drive" padrão.</p>
                             {errors.googleDriveLinks && <p className="text-sm text-destructive mt-1">{errors.googleDriveLinks.message}</p>}
                         </div>
