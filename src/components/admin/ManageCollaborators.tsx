@@ -338,6 +338,36 @@ export function ManageCollaborators() {
             fileInputRef.current.value = '';
         }
     };
+
+    const handleExportCSV = () => {
+        if (filteredAndSortedCollaborators.length === 0) {
+            toast({ title: "Nenhum dado para exportar", variant: 'destructive' });
+            return;
+        }
+
+        const dataToExport = filteredAndSortedCollaborators.map(c => ({
+            id3a: c.id3a,
+            name: c.name,
+            email: c.email,
+            photoURL: c.photoURL || '',
+            axis: c.axis,
+            area: c.area,
+            position: c.position,
+            segment: c.segment,
+            leader: c.leader,
+            city: c.city,
+            googleDriveLinks: c.googleDriveLinks?.join(',') || '',
+        }));
+
+        const csv = Papa.unparse(dataToExport);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', `colaboradores_3A_RIVA_Connect_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
     
     const SortableHeader = ({ tkey, label }: { tkey: SortKey, label: string }) => (
         <TableHead>
@@ -408,6 +438,10 @@ export function ManageCollaborators() {
                             <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
                                 <Upload className="mr-2 h-4 w-4" />
                                 Importar
+                            </Button>
+                            <Button onClick={handleExportCSV} variant="outline" className="flex-grow">
+                                <FileDown className="mr-2 h-4 w-4" />
+                                Exportar
                             </Button>
                             <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90 flex-grow">
                                 <PlusCircle className="mr-2 h-4 w-4" />
