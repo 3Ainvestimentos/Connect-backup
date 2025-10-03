@@ -264,18 +264,21 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
         setActionResponse(null);
     }
   };
+  
+const handleStatusChange = async () => {
+    if (!definition || !request || !adminUser) return;
 
-  const handleStatusChange = async (newStatus: WorkflowStatusDefinition) => {
+    const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
+    if (currentIndex === -1 || currentIndex + 1 >= definition.statuses.length) {
+        toast({ title: "Atenção", description: "Esta já é a última etapa do workflow.", variant: "destructive" });
+        return;
+    }
+    
+    const newStatus = definition.statuses[currentIndex + 1];
     setActionType('statusChange');
     setTargetStatus(newStatus);
-    
-    if (!user || !adminUser) {
-      toast({ title: "Erro de Autenticação", description: "Você não está logado ou não foi encontrado na lista de colaboradores.", variant: "destructive" });
-      setIsSubmitting(false);
-      return;
-    }
-
     setIsSubmitting(true);
+    
     const now = new Date();
     
     const historyEntry: WorkflowHistoryLog = {
@@ -288,7 +291,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     
     const requestUpdate = {
       id: request.id,
-      status: newStatus.id, // THE CRITICAL FIX IS HERE
+      status: newStatus.id,
       lastUpdatedAt: formatISO(now),
       history: [...request.history, historyEntry],
     };
@@ -311,7 +314,8 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
       setActionType(null);
       setTargetStatus(null);
     }
-  };
+};
+
 
   const handleAssigneeChange = async () => {
     setActionType('assign');
@@ -733,10 +737,10 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                      <Button 
                         key={nextStatus.id}
                         className="bg-admin-primary hover:bg-admin-primary/90"
-                        onClick={() => handleStatusChange(nextStatus)} 
+                        onClick={handleStatusChange} 
                         disabled={isSubmitting}
                     >
-                        {(isSubmitting && actionType === 'statusChange' && targetStatus?.id === nextStatus.id) ? (
+                        {(isSubmitting && actionType === 'statusChange') ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                             <MoveRight className="mr-2 h-4 w-4" />
