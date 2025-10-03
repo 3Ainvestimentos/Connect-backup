@@ -103,7 +103,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   }, [definition, request]);
 
   const nextStatus = useMemo((): WorkflowStatusDefinition | null => {
-    if (!definition || !request) return null;
+    if (!definition || !request?.status) return null;
     const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
     if (currentIndex === -1 || currentIndex >= definition.statuses.length - 1) {
       return null;
@@ -125,7 +125,21 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     }
   }, [request, collaborators, isOpen]);
 
-  if (!request) return null;
+  if (!request || !definition) {
+    // This handles the edge case where the definition might not be loaded yet or the request is invalid.
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Carregando...</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center justify-center p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+  }
   
   const handleRequestAction = async (recipientIds: string[]) => {
     setActionType('requestAction');
@@ -266,43 +280,36 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
   };
   
 const handleStatusChange = async () => {
-    if (!definition || !request || !adminUser) return;
+    if (!nextStatus || !adminUser) return;
 
-    const currentIndex = definition.statuses.findIndex(s => s.id === request.status);
-    if (currentIndex === -1 || currentIndex + 1 >= definition.statuses.length) {
-        toast({ title: "Atenção", description: "Esta já é a última etapa do workflow.", variant: "destructive" });
-        return;
-    }
-    
-    const newStatus = definition.statuses[currentIndex + 1];
     setActionType('statusChange');
-    setTargetStatus(newStatus);
+    setTargetStatus(nextStatus);
     setIsSubmitting(true);
     
     const now = new Date();
     
     const historyEntry: WorkflowHistoryLog = {
       timestamp: formatISO(now),
-      status: newStatus.id,
+      status: nextStatus.id,
       userId: adminUser.id3a,
       userName: adminUser.name,
-      notes: comment || `Status alterado para "${newStatus.label}".`,
+      notes: comment || `Status alterado para "${nextStatus.label}".`,
     };
     
     const requestUpdate = {
       id: request.id,
-      status: newStatus.id,
+      status: nextStatus.id,
       lastUpdatedAt: formatISO(now),
       history: [...request.history, historyEntry],
     };
 
-    const notificationMessage = `O status da sua solicitação de '${request.type}' #${request.requestId} foi atualizado para "${newStatus.label}".\nObservações: ${comment || 'Nenhuma.'}`;
+    const notificationMessage = `O status da sua solicitação de '${request.type}' #${request.requestId} foi atualizado para "${nextStatus.label}".\nObservações: ${comment || 'Nenhuma.'}`;
 
     try {
       await updateRequestAndNotify(requestUpdate, notificationMessage);
       toast({
         title: "Sucesso!",
-        description: `A solicitação foi atualizada para "${newStatus.label}". O usuário será notificado.`,
+        description: `A solicitação foi atualizada para "${nextStatus.label}". O usuário será notificado.`,
         variant: 'success'
       });
       setComment('');
@@ -446,7 +453,7 @@ const handleStatusChange = async () => {
   }
 
   const renderFormData = () => {
-    if (!definition || !definition.fields) return <p className="text-muted-foreground">Sem definição de formulário encontrada.</p>;
+    if (!definition?.fields) return <p className="text-muted-foreground">Sem definição de formulário encontrada.</p>;
     if (!request.formData || Object.keys(request.formData).length === 0) return <p className="text-muted-foreground">O solicitante não preencheu dados no formulário.</p>;
     
     const renderedKeys = new Set<string>();
