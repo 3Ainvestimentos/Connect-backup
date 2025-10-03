@@ -5,6 +5,7 @@ import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, addMultipleDocumentsToCollection, listenToCollection, getCollection } from '@/lib/firestore-service';
 import { useAuth } from './AuthContext';
+import { useSystemSettings } from './SystemSettingsContext';
 
 export interface CollaboratorPermissions {
   canManageWorkflows: boolean;
@@ -40,6 +41,7 @@ export interface Collaborator {
   biLinks?: BILink[]; // Link para o painel de BI específico do usuário
   acceptedTermsVersion?: number; // Versão dos termos aceitos pelo usuário
   createdAt?: string; // ISO String for creation timestamp
+  authUid?: string; // Firebase Auth UID
 }
 
 interface CollaboratorsContextType {
@@ -47,13 +49,14 @@ interface CollaboratorsContextType {
   loading: boolean;
   addCollaborator: (collaborator: Omit<Collaborator, 'id'>) => Promise<WithId<Omit<Collaborator, 'id'>>>;
   addMultipleCollaborators: (collaborators: Omit<Collaborator, 'id'>[]) => Promise<void>;
-  updateCollaborator: (collaborator: Collaborator) => Promise<void>;
+  updateCollaborator: (currentData: Collaborator, newData: Omit<Collaborator, 'id'>) => Promise<void>;
   updateCollaboratorPermissions: (id: string, permissions: CollaboratorPermissions) => Promise<void>;
   deleteCollaboratorMutation: UseMutationResult<void, Error, string, unknown>;
 }
 
 const CollaboratorsContext = createContext<CollaboratorsContextType | undefined>(undefined);
 const COLLECTION_NAME = 'collaborators';
+const LOG_COLLECTION_NAME = 'collaborator_logs';
 
 const defaultPermissions: CollaboratorPermissions = {
   canManageWorkflows: false,
@@ -70,7 +73,7 @@ const defaultPermissions: CollaboratorPermissions = {
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-
+  const { settings, updateSystemSettings } = useSystemSettings();
 
   const { data: collaborators = [], isFetching } = useQuery<Collaborator[]>({
     queryKey: [COLLECTION_NAME],
@@ -98,43 +101,96 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
   }, [queryClient, user]);
 
   const addCollaboratorMutation = useMutation<WithId<Omit<Collaborator, 'id'>>, Error, Omit<Collaborator, 'id'>>({
-    mutationFn: (collaboratorData: Omit<Collaborator, 'id'>) => addDocumentToCollection(COLLECTION_NAME, { ...collaboratorData, createdAt: new Date().toISOString() }),
+    mutationFn: async (collaboratorData: Omit<Collaborator, 'id'>) => {
+        const newCollaborator = await addDocumentToCollection(COLLECTION_NAME, { ...collaboratorData, createdAt: new Date().toISOString() });
+        await updateSystemSettings({ collaboratorTableVersion: (settings.collaboratorTableVersion || 1) + 1 });
+        return newCollaborator;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      queryClient.invalidateQueries({ queryKey: ['systemSettings'] });
     },
   });
 
   const addMultipleCollaboratorsMutation = useMutation<void, Error, Omit<Collaborator, 'id'>[]>({
-    mutationFn: (collaboratorsData: Omit<Collaborator, 'id'>[]) => {
+    mutationFn: async (collaboratorsData: Omit<Collaborator, 'id'>[]) => {
         const dataWithTimestamp = collaboratorsData.map(c => ({ ...c, createdAt: new Date().toISOString() }));
-        return addMultipleDocumentsToCollection(COLLECTION_NAME, dataWithTimestamp);
+        await addMultipleDocumentsToCollection(COLLECTION_NAME, dataWithTimestamp);
+        await updateSystemSettings({ collaboratorTableVersion: (settings.collaboratorTableVersion || 1) + 1 });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      queryClient.invalidateQueries({ queryKey: ['systemSettings'] });
     },
   });
 
-  const updateCollaboratorMutation = useMutation<void, Error, Collaborator>({
-    mutationFn: (updatedCollaborator: Collaborator) => {
-        const { id, ...data } = updatedCollaborator;
-        return updateDocumentInCollection(COLLECTION_NAME, id, data);
+  const updateCollaboratorMutation = useMutation<void, Error, { currentData: Collaborator, newData: Omit<Collaborator, 'id'> }>({
+    mutationFn: async ({ currentData, newData }) => {
+        const { id, ...originalData } = currentData;
+        const changes: any[] = [];
+        
+        for (const key in newData) {
+            const typedKey = key as keyof typeof newData;
+            if (JSON.stringify(originalData[typedKey]) !== JSON.stringify(newData[typedKey])) {
+                changes.push({
+                    field: typedKey,
+                    oldValue: originalData[typedKey],
+                    newValue: newData[typedKey]
+                });
+            }
+        }
+        
+        if (changes.length > 0) {
+            const logEntry = {
+                collaboratorId: id,
+                collaboratorName: newData.name,
+                updatedBy: user?.displayName || 'Sistema',
+                updatedAt: new Date().toISOString(),
+                changes: changes
+            };
+            await addDocumentToCollection(LOG_COLLECTION_NAME, logEntry);
+            await updateDocumentInCollection(COLLECTION_NAME, id, newData);
+        }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      queryClient.invalidateQueries({ queryKey: [LOG_COLLECTION_NAME] });
     },
   });
 
   const updateCollaboratorPermissionsMutation = useMutation<void, Error, { id: string; permissions: CollaboratorPermissions }>({
-    mutationFn: ({ id, permissions }) => updateDocumentInCollection(COLLECTION_NAME, id, { permissions }),
+    mutationFn: async ({ id, permissions }) => {
+        const currentCollaborator = collaborators.find(c => c.id === id);
+        if (!currentCollaborator) throw new Error("Colaborador não encontrado");
+        
+        const logEntry = {
+            collaboratorId: id,
+            collaboratorName: currentCollaborator.name,
+            updatedBy: user?.displayName || 'Sistema',
+            updatedAt: new Date().toISOString(),
+            changes: [{
+                field: 'permissions',
+                oldValue: currentCollaborator.permissions,
+                newValue: permissions,
+            }]
+        };
+        await addDocumentToCollection(LOG_COLLECTION_NAME, logEntry);
+        await updateDocumentInCollection(COLLECTION_NAME, id, { permissions });
+    },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+        queryClient.invalidateQueries({ queryKey: [LOG_COLLECTION_NAME] });
     },
   });
 
   const deleteCollaboratorMutation = useMutation<void, Error, string>({
-    mutationFn: (id: string) => deleteDocumentFromCollection(COLLECTION_NAME, id),
+    mutationFn: async (id: string) => {
+        await deleteDocumentFromCollection(COLLECTION_NAME, id);
+        await updateSystemSettings({ collaboratorTableVersion: (settings.collaboratorTableVersion || 1) + 1 });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME] });
+      queryClient.invalidateQueries({ queryKey: ['systemSettings'] });
     },
   });
 
@@ -143,7 +199,7 @@ export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => 
     loading: isFetching,
     addCollaborator: (collaborator) => addCollaboratorMutation.mutateAsync(collaborator),
     addMultipleCollaborators: (collaborators) => addMultipleCollaboratorsMutation.mutateAsync(collaborators),
-    updateCollaborator: (collaborator) => updateCollaboratorMutation.mutateAsync(collaborator),
+    updateCollaborator: (currentData, newData) => updateCollaboratorMutation.mutateAsync({ currentData, newData }),
     updateCollaboratorPermissions: (id, permissions) => updateCollaboratorPermissionsMutation.mutateAsync({ id, permissions }),
     deleteCollaboratorMutation,
   }), [collaborators, isFetching, addCollaboratorMutation, addMultipleCollaboratorsMutation, updateCollaboratorMutation, updateCollaboratorPermissionsMutation, deleteCollaboratorMutation]);

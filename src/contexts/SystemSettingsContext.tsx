@@ -16,6 +16,7 @@ export interface SystemSettings {
   privacyPolicyUrl: string;
   privacyPolicyVersion: number;
   superAdminEmails: string[];
+  collaboratorTableVersion: number;
 }
 
 interface SystemSettingsContextType {
@@ -38,6 +39,7 @@ const defaultSettings: SystemSettings = {
     privacyPolicyUrl: '',
     privacyPolicyVersion: 1,
     superAdminEmails: ['matheus@3ainvestimentos.com.br'],
+    collaboratorTableVersion: 1,
 };
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {
@@ -48,14 +50,11 @@ export const SystemSettingsProvider = ({ children }: { children: ReactNode }) =>
     queryKey: [COLLECTION_NAME, DOC_ID],
     queryFn: async () => {
       const doc = await getDocument<SystemSettings>(COLLECTION_NAME, DOC_ID);
-      // If the document exists, merge it with defaults, otherwise use defaults.
-      // This ensures superAdminEmails from Firestore are used if they exist.
       return doc ? { ...defaultSettings, ...doc } : defaultSettings;
     },
     staleTime: 5 * 60 * 1000,
   });
   
-  // Re-fetch when auth state changes.
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       queryClient.invalidateQueries({ queryKey: [COLLECTION_NAME, DOC_ID] });

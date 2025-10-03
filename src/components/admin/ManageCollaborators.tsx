@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart, GripVertical, Filter } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart, GripVertical, Filter, History } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -22,6 +22,8 @@ import { Badge } from '../ui/badge';
 import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { useSystemSettings } from '@/contexts/SystemSettingsContext';
+import { CollaboratorAuditLogModal } from './CollaboratorAuditLogModal';
 
 const biLinkSchema = z.object({
     name: z.string().min(1, "O nome da aba é obrigatório."),
@@ -81,8 +83,10 @@ type SortDirection = 'asc' | 'desc';
 
 export function ManageCollaborators() {
     const { collaborators, addCollaborator, updateCollaborator, deleteCollaboratorMutation, addMultipleCollaborators } = useCollaborators();
+    const { settings } = useSystemSettings();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isImportOpen, setIsImportOpen] = useState(false);
+    const [isAuditLogOpen, setIsAuditLogOpen] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [editingCollaborator, setEditingCollaborator] = useState<Collaborator | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -238,7 +242,7 @@ export function ManageCollaborators() {
         
         try {
             if (editingCollaborator) {
-                await updateCollaborator({ ...editingCollaborator, ...processedData });
+                await updateCollaborator(editingCollaborator, processedData);
                 toast({ title: "Colaborador atualizado com sucesso." });
             } else {
                 const { id, ...dataWithoutId } = processedData;
@@ -333,7 +337,6 @@ export function ManageCollaborators() {
             }
         });
 
-        // Reset file input
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -414,13 +417,7 @@ export function ManageCollaborators() {
                      <div className="flex-grow">
                         <CardTitle>Gerenciar Colaboradores</CardTitle>
                         <CardDescription>
-                            Exibindo {filteredAndSortedCollaborators.length} de {collaborators.length} colaborador(es).
-                             {lastAddedCollaborator && (
-                                <span className="hidden sm:inline-flex items-center text-xs text-muted-foreground ml-2">
-                                    <Clock className="h-3 w-3 mr-1.5"/>
-                                    Última adição: {lastAddedCollaborator.name} ({formatDistanceToNow(parseISO(lastAddedCollaborator.createdAt!), { addSuffix: true, locale: ptBR })})
-                                </span>
-                             )}
+                            Exibindo {filteredAndSortedCollaborators.length} de {collaborators.length} | Versão da Tabela: <Badge variant="secondary" className="font-mono">{settings.collaboratorTableVersion.toFixed(1)}</Badge>
                         </CardDescription>
                     </div>
                      <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
@@ -434,18 +431,10 @@ export function ManageCollaborators() {
                             />
                         </div>
                         <div className="flex gap-2">
-                            <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Importar
-                            </Button>
-                            <Button onClick={handleExportCSV} variant="outline" className="flex-grow">
-                                <FileDown className="mr-2 h-4 w-4" />
-                                Exportar
-                            </Button>
-                            <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90 flex-grow">
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adicionar
-                            </Button>
+                            <Button onClick={() => setIsAuditLogOpen(true)} variant="outline" className="flex-grow"><History className="mr-2 h-4 w-4" />Histórico</Button>
+                            <Button onClick={() => setIsImportOpen(true)} variant="outline" className="flex-grow"><Upload className="mr-2 h-4 w-4" />Importar</Button>
+                            <Button onClick={handleExportCSV} variant="outline" className="flex-grow"><FileDown className="mr-2 h-4 w-4" />Exportar</Button>
+                            <Button onClick={() => handleFormDialogOpen(null)} className="bg-admin-primary hover:bg-admin-primary/90 flex-grow"><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button>
                         </div>
                     </div>
                 </CardHeader>
@@ -520,6 +509,8 @@ export function ManageCollaborators() {
                     )}
                 </CardContent>
             </Card>
+
+            <CollaboratorAuditLogModal isOpen={isAuditLogOpen} onClose={() => setIsAuditLogOpen(false)} />
 
             <Dialog open={isFormOpen} onOpenChange={(isOpen) => { if (!isOpen) setEditingCollaborator(null); setIsFormOpen(isOpen); }}>
                 <DialogContent className="max-w-2xl">
