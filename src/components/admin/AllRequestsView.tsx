@@ -20,12 +20,14 @@ import { cn } from '@/lib/utils';
 import { RequestApprovalModal } from '../requests/RequestApprovalModal';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { ScrollArea } from '../ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { toast } from '@/hooks/use-toast';
 
 type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | 'isArchived' | '';
 type SortDirection = 'asc' | 'desc';
 
 export function AllRequestsView() {
-    const { requests, loading } = useWorkflows();
+    const { requests, loading, archiveRequestMutation } = useWorkflows();
     const { workflowDefinitions } = useApplications();
     const { collaborators } = useCollaborators();
     const [searchTerm, setSearchTerm] = useState('');
@@ -168,6 +170,15 @@ export function AllRequestsView() {
     const getCollaborator = (userId: string) => {
         return collaborators.find(c => c.id3a === userId);
     }
+
+    const handleArchiveRequest = async (id: string) => {
+        try {
+            await archiveRequestMutation.mutateAsync(id);
+            toast({ title: "Sucesso!", description: "A solicitação foi arquivada." });
+        } catch(error) {
+            toast({ title: "Erro ao Arquivar", description: "Não foi possível arquivar a solicitação.", variant: "destructive" });
+        }
+    };
 
     const handleExportCSV = () => {
         const dataToExport = filteredAndSortedRequests.map(req => {
@@ -376,6 +387,25 @@ export function AllRequestsView() {
                                             </TableCell>
                                             <TableCell>{format(parseISO(req.submittedAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}</TableCell>
                                             <TableCell className="text-right">
+                                                 <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" disabled={req.isArchived} className="hover:bg-muted">
+                                                            <Archive className="h-4 w-4 text-muted-foreground" />
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                        <AlertDialogTitle>Arquivar Solicitação?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Esta ação irá remover a solicitação das caixas de entrada, mas ela continuará existindo no sistema para fins de auditoria. Tem certeza que deseja arquivar a solicitação #{req.requestId}?
+                                                        </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleArchiveRequest(req.id)}>Sim, Arquivar</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                                 <Button variant="ghost" size="icon" onClick={() => setViewingRequest(req)} className="hover:bg-muted">
                                                     <Eye className="h-5 w-5 text-muted-foreground"/>
                                                 </Button>
@@ -405,3 +435,5 @@ export function AllRequestsView() {
         </>
     );
 }
+
+    
