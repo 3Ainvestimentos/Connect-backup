@@ -105,11 +105,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     return actionRequestsForCurrentStatus.find(ar => ar.userId === adminUser.id3a) || null;
   }, [actionRequestsForCurrentStatus, adminUser]);
 
-  const canTakeAction = useMemo(() => {
-    if (!user || !adminUser) return false;
-    return isOwner || isAssignee;
-  }, [user, adminUser, isOwner, isAssignee]);
-
 
   const currentStatusDefinition = useMemo(() => {
     if (!definition || !request) return null;
@@ -621,44 +616,42 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
 
-              {canTakeAction && (
-                <div>
-                    <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
-                     <div className="flex items-center gap-2">
-                        <Button
-                            variant="outline"
-                            className="w-full justify-start text-left font-normal"
-                            onClick={() => setIsAssigneeModalOpen(true)}
-                            disabled={isSubmitting}
-                        >
-                            {assignee ? (
-                                <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6">
-                                        {assignee.photoURL ? <AvatarImage src={assignee.photoURL} alt={assignee.name} /> : null}
-                                        <AvatarFallback className="text-xs">
-                                            {assignee.name.charAt(0)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span>{assignee.name}</span>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Users className="h-4 w-4" />
-                                    <span>Selecionar um responsável...</span>
-                                </div>
-                            )}
-                        </Button>
-                         <Button 
-                            onClick={() => handleAssigneeChange()} 
-                            disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
-                            className="bg-admin-primary hover:bg-admin-primary/90"
-                        >
-                            {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Atribuir
-                        </Button>
-                    </div>
-                </div>
-              )}
+              <div>
+                  <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
+                   <div className="flex items-center gap-2">
+                      <Button
+                          variant="outline"
+                          className="w-full justify-start text-left font-normal"
+                          onClick={() => setIsAssigneeModalOpen(true)}
+                          disabled={isSubmitting}
+                      >
+                          {assignee ? (
+                              <div className="flex items-center gap-2">
+                                  <Avatar className="h-6 w-6">
+                                      {assignee.photoURL ? <AvatarImage src={assignee.photoURL} alt={assignee.name} /> : null}
+                                      <AvatarFallback className="text-xs">
+                                          {assignee.name.charAt(0)}
+                                      </AvatarFallback>
+                                  </Avatar>
+                                  <span>{assignee.name}</span>
+                              </div>
+                          ) : (
+                              <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Users className="h-4 w-4" />
+                                  <span>Selecionar um responsável...</span>
+                              </div>
+                          )}
+                      </Button>
+                       <Button 
+                          onClick={() => handleAssigneeChange()} 
+                          disabled={isSubmitting || !assignee || assignee?.id3a === request.assignee?.id}
+                          className="bg-admin-primary hover:bg-admin-primary/90"
+                      >
+                          {isSubmitting && actionType === 'assign' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Atribuir
+                      </Button>
+                  </div>
+              </div>
               
               {actionRequestsForCurrentStatus.length > 0 && (
                 <div>
@@ -719,37 +712,33 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                   </div>
               </div>
               
-              {(canTakeAction) && (
-                <div>
-                    <Label htmlFor="comment">Adicionar Comentário</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                        <Textarea
-                            id="comment"
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            placeholder="Deixe uma observação para o solicitante e para o histórico..."
-                            disabled={isSubmitting}
-                        />
-                        {(isOwner || isAssignee) && (
-                            <Button 
-                                variant="secondary" 
-                                onClick={handleAddComment}
-                                disabled={isSubmitting || !comment.trim()}
-                                className="h-full"
-                            >
-                                {isSubmitting && actionType === 'comment' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
-                                <span className="sr-only">Salvar comentário</span>
-                            </Button>
-                        )}
-                    </div>
-                </div>
-              )}
+              <div>
+                  <Label htmlFor="comment">Adicionar Comentário</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                      <Textarea
+                          id="comment"
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          placeholder="Deixe uma observação para o solicitante e para o histórico..."
+                          disabled={isSubmitting}
+                      />
+                      <Button 
+                          variant="secondary" 
+                          onClick={handleAddComment}
+                          disabled={isSubmitting || !comment.trim()}
+                          className="h-full"
+                      >
+                          {isSubmitting && actionType === 'comment' ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="h-4 w-4"/>}
+                          <span className="sr-only">Salvar comentário</span>
+                      </Button>
+                  </div>
+              </div>
           </div>
           </ScrollArea>
 
           <DialogFooter className="pt-4 flex flex-col sm:flex-row sm:justify-between gap-2">
             <div className="flex-grow flex items-center gap-2">
-                {canTakeAction && nextStatus && (
+                {nextStatus && (
                      <Button 
                         key={nextStatus.id}
                         className="bg-admin-primary hover:bg-admin-primary/90"
@@ -764,7 +753,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
                         Mover para "{nextStatus.label}"
                     </Button>
                 )}
-                {canTakeAction && currentStatusDefinition?.action && (
+                {currentStatusDefinition?.action && (
                     <Button 
                         variant="outline" 
                         size="sm"
@@ -805,5 +794,3 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     </>
   );
 }
-
-    
