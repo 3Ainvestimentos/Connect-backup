@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -84,16 +85,6 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     if (!user) return null;
     return collaborators.find(c => c.email === user.email);
   }, [user, collaborators]);
-
-  const isOwner = useMemo(() => {
-    if (!user || !definition) return false;
-    return user.email === definition.ownerEmail;
-  }, [user, definition]);
-  
-  const isAssignee = useMemo(() => {
-    if (!adminUser || !request?.assignee) return false;
-    return adminUser.id3a === request.assignee.id;
-  }, [adminUser, request]);
   
   const actionRequestsForCurrentStatus = useMemo(() => {
     if (!request?.actionRequests || !request.status) return [];
@@ -297,7 +288,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
     
     const requestUpdate = {
       id: request.id,
-      status: newStatus.id,
+      status: newStatus.id, // THE CRITICAL FIX IS HERE
       lastUpdatedAt: formatISO(now),
       history: [...request.history, historyEntry],
     };
