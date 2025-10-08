@@ -6,7 +6,7 @@ export default function ChatbotPage() {
         src="https://studio--datavisor-44i5m.us-central1.hosted.app/chat"
         className="w-full h-full border-none"
         title="Assistente Bob 1.0"
-        allow="microphone"
+        allow="clipboard-write; clipboard-read; microphone"
       ></iframe>
     </div>
   );
