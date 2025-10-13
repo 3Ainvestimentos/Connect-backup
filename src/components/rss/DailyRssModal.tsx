@@ -100,11 +100,13 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
   const renderSkeleton = () => (
     <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex items-start space-x-4">
-                <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-4/5" />
-                    <Skeleton className="h-4 w-3/5" />
-                    <Skeleton className="h-3 w-1/4" />
+            <div key={i} className="p-6">
+                <div className="flex items-start space-x-4">
+                    <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-4/5" />
+                        <Skeleton className="h-4 w-3/5" />
+                        <Skeleton className="h-3 w-1/4" />
+                    </div>
                 </div>
             </div>
         ))}
@@ -154,7 +156,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             )}
           </ScrollArea>
         </div>
-        <DialogFooter className="flex-col sm:flex-row sm:justify-between items-center pt-4 border-t">
+        <DialogFooter className="flex-col sm:flex-row sm:justify-end items-center pt-4 border-t">
           {!forceOpen && (
              <div className="flex items-center space-x-2">
                <Checkbox id="dont-show-again" checked={dontShowAgain} onCheckedChange={(checked) => setDontShowAgain(!!checked)} />
