@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -163,6 +163,9 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
                </Label>
              </div>
           )}
+          <DialogClose asChild>
+            <Button variant="outline" className="hover:bg-muted">Fechar</Button>
+          </DialogClose>
         </DialogFooter>
       </DialogContent>
     </Dialog>
