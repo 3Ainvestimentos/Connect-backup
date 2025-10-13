@@ -129,7 +129,8 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             {!isLoading && !isError && (
               <div className="space-y-0 divide-y">
                 {items?.map((item, index) => (
-                  <div key={index} className="p-6">
+                  <article key={index}>
+                    <div className="p-6">
                       <p className="text-sm text-muted-foreground mb-2">
                           {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
                       </p>
@@ -148,7 +149,8 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
                           Ver matéria original <ExternalLink className="ml-2 h-4 w-4" />
                         </a>
                       </Button>
-                  </div>
+                    </div>
+                  </article>
                 ))}
               </div>
             )}
