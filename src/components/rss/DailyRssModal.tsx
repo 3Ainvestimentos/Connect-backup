@@ -127,13 +127,14 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             {isLoading && renderSkeleton()}
             {isError && <p className="text-destructive text-center">Não foi possível carregar as notícias.</p>}
             {!isLoading && !isError && (
-              <div className="space-y-8 divide-y">
+              <div className="space-y-0 divide-y">
                 {items?.map((item, index) => (
-                  <article key={index} className="p-6">
-                     <p className="text-sm text-muted-foreground mb-2">
+                  <article key={index}>
+                    <div className="p-6">
+                      <p className="text-sm text-muted-foreground mb-2">
                           {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
-                     </p>
-                     <h3 className="text-2xl font-bold font-headline mb-4">{item.title}</h3>
+                      </p>
+                      <h3 className="text-2xl font-bold font-headline mb-4">{item.title}</h3>
 
                       {item.enclosure?.url && (
                         <div className="relative w-full aspect-video mb-4">
@@ -148,6 +149,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
                           Ver matéria original <ExternalLink className="ml-2 h-4 w-4" />
                         </a>
                       </Button>
+                    </div>
                   </article>
                 ))}
               </div>
