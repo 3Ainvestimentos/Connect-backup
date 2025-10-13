@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -115,10 +114,13 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-3xl flex flex-col h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
+          <div className="flex justify-center">
+            <Image src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2FDailyFin.png?alt=media&token=8679a528-2696-4a1d-a2f1-61b897973d8d" alt="DailyFin Logo" width={200} height={50} />
+          </div>
+          <DialogTitle className="flex items-center gap-2 text-2xl font-headline justify-center">
             {feedData?.title || 'Sua Newsletter Diária'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-center">
             As principais notícias do mercado para começar o seu dia bem informado.
           </DialogDescription>
         </DialogHeader>
@@ -129,8 +131,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             {!isLoading && !isError && (
               <div className="space-y-0 divide-y">
                 {items?.map((item, index) => (
-                  <article key={index}>
-                    <div className="p-6">
+                  <div key={index} className="p-6">
                       <p className="text-sm text-muted-foreground mb-2">
                           {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
                       </p>
@@ -149,8 +150,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
                           Ver matéria original <ExternalLink className="ml-2 h-4 w-4" />
                         </a>
                       </Button>
-                    </div>
-                  </article>
+                  </div>
                 ))}
               </div>
             )}
@@ -165,7 +165,6 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
                </Label>
              </div>
           )}
-          <Button onClick={handleClose}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
