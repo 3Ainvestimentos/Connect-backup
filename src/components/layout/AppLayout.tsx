@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
@@ -215,7 +214,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
   
-  const isFullscreenPage = ['/chatbot', '/admin/crm', '/admin/strategic-panel'].includes(pathname);
+  const isFullscreenPage = ['/chatbot', '/admin/crm', '/admin/strategic-panel', '/dra/pagamentos'].includes(pathname);
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -451,7 +450,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <PollTrigger />
-      <DailyRssModal />
+      <DailyRssModal forceOpen={false} />
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
       <TermsOfUseModal

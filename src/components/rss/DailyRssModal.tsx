@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -26,6 +25,12 @@ interface FeedItem {
   };
 }
 
+interface DailyRssModalProps {
+  forceOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+
 const fetchFeed = async (url: string): Promise<FeedItem[]> => {
     if (!url) return [];
     const response = await fetch(`/api/rss?urls=${encodeURIComponent(url)}`);
@@ -35,7 +40,7 @@ const fetchFeed = async (url: string): Promise<FeedItem[]> => {
     return response.json();
 };
 
-export function DailyRssModal() {
+export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModalProps) {
   const { settings, loading: settingsLoading } = useSystemSettings();
   const [lastSeen, setLastSeen] = useLocalStorage<string>('dailyRssLastSeen', '');
   const [hidePermanently, setHidePermanently] = useLocalStorage<boolean>('hideDailyRss', false);
@@ -45,11 +50,15 @@ export function DailyRssModal() {
   const { data: items, isLoading, isError } = useQuery<FeedItem[], Error>({
     queryKey: ['dailyRssFeed', settings.rssNewsletterUrl],
     queryFn: () => fetchFeed(settings.rssNewsletterUrl!),
-    enabled: settings.isRssNewsletterActive && !!settings.rssNewsletterUrl,
+    enabled: (forceOpen || settings.isRssNewsletterActive) && !!settings.rssNewsletterUrl,
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
 
   useEffect(() => {
+    if (forceOpen) {
+      setIsOpen(true);
+      return;
+    }
     if (settingsLoading || !settings.isRssNewsletterActive || hidePermanently) {
       return;
     }
@@ -62,13 +71,17 @@ export function DailyRssModal() {
 
       return () => clearTimeout(timer);
     }
-  }, [settingsLoading, settings.isRssNewsletterActive, lastSeen, hidePermanently]);
+  }, [settingsLoading, settings.isRssNewsletterActive, lastSeen, hidePermanently, forceOpen]);
 
   const handleClose = () => {
-    const today = new Date().toISOString().split('T')[0];
-    setLastSeen(today);
-    if (dontShowAgain) {
-      setHidePermanently(true);
+    if (onOpenChange) {
+      onOpenChange(false);
+    } else {
+        const today = new Date().toISOString().split('T')[0];
+        setLastSeen(today);
+        if (dontShowAgain) {
+          setHidePermanently(true);
+        }
     }
     setIsOpen(false);
   };
@@ -130,12 +143,14 @@ export function DailyRssModal() {
           </ScrollArea>
         </div>
         <DialogFooter className="flex-col sm:flex-row sm:justify-between items-center pt-4 border-t">
-           <div className="flex items-center space-x-2">
-             <Checkbox id="dont-show-again" checked={dontShowAgain} onCheckedChange={(checked) => setDontShowAgain(!!checked)} />
-             <Label htmlFor="dont-show-again" className="text-xs text-muted-foreground">
-               Não mostrar novamente
-             </Label>
-           </div>
+          {!forceOpen && (
+             <div className="flex items-center space-x-2">
+               <Checkbox id="dont-show-again" checked={dontShowAgain} onCheckedChange={(checked) => setDontShowAgain(!!checked)} />
+               <Label htmlFor="dont-show-again" className="text-xs text-muted-foreground">
+                 Não mostrar novamente
+               </Label>
+             </div>
+          )}
           <Button onClick={handleClose}>Fechar</Button>
         </DialogFooter>
       </DialogContent>
