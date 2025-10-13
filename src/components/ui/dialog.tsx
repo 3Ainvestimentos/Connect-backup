@@ -47,7 +47,7 @@ const DialogContent = React.forwardRef<
     >
       {children}
       <DialogPrimitive.Close asChild>
-        <Button variant="ghost" className="absolute right-4 top-4 h-auto px-2 py-1 text-sm text-muted-foreground hover:bg-muted">
+        <Button variant="ghost" className="absolute right-4 top-4 h-auto px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground">
           Fechar
         </Button>
       </DialogPrimitive.Close>

@@ -129,27 +129,25 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             {!isLoading && !isError && (
               <div className="space-y-0 divide-y">
                 {items?.map((item, index) => (
-                  <article key={index}>
-                    <div className="p-6">
-                      <p className="text-sm text-muted-foreground mb-2">
-                          {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
-                      </p>
-                      <h3 className="text-2xl font-bold font-headline mb-4">{item.title}</h3>
+                  <article key={index} className="p-6">
+                    <p className="text-sm text-muted-foreground mb-2">
+                        {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
+                    </p>
+                    <h3 className="text-2xl font-bold font-headline mb-4">{item.title}</h3>
 
-                      {item.enclosure?.url && (
-                        <div className="relative w-full aspect-video mb-4">
-                            <Image src={item.enclosure.url} alt={item.title} layout="fill" objectFit="cover" className="rounded-md" />
-                        </div>
-                      )}
-                      
-                      <div className="prose prose-sm lg:prose-base dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: item.content || item.contentSnippet || '' }} />
-                      
-                      <Button asChild variant="outline" size="sm" className="mt-4">
-                        <a href={item.link} target="_blank" rel="noopener noreferrer">
-                          Ver matéria original <ExternalLink className="ml-2 h-4 w-4" />
-                        </a>
-                      </Button>
-                    </div>
+                    {item.enclosure?.url && (
+                      <div className="relative w-full aspect-video mb-4">
+                          <Image src={item.enclosure.url} alt={item.title} layout="fill" objectFit="cover" className="rounded-md" />
+                      </div>
+                    )}
+                    
+                    <div className="prose prose-sm lg:prose-base dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: item.content || item.contentSnippet || '' }} />
+                    
+                    <Button asChild variant="outline" size="sm" className="mt-4">
+                      <a href={item.link} target="_blank" rel="noopener noreferrer">
+                        Ver matéria original <ExternalLink className="ml-2 h-4 w-4" />
+                      </a>
+                    </Button>
                   </article>
                 ))}
               </div>
