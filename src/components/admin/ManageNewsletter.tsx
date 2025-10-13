@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,9 +34,11 @@ export function ManageNewsletter() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<NewsletterFormValues>({
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<NewsletterFormValues>({
     resolver: zodResolver(newsletterSchema),
   });
+
+  const rssUrlValue = watch("rssNewsletterUrl");
 
   useEffect(() => {
     if (!loading && settings) {
@@ -75,7 +77,17 @@ export function ManageNewsletter() {
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="flex items-center space-x-2 rounded-lg border p-4">
-              <Switch id="isRssNewsletterActive" {...register('isRssNewsletterActive')} />
+              <Controller
+                name="isRssNewsletterActive"
+                control={form.control}
+                render={({ field }) => (
+                  <Switch
+                    id="isRssNewsletterActive"
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                )}
+              />
               <Label htmlFor="isRssNewsletterActive" className="text-base font-medium">
                 Ativar Newsletter Diária
               </Label>
@@ -94,7 +106,7 @@ export function ManageNewsletter() {
             </div>
             
             <div className="flex justify-between items-center">
-               <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(true)} disabled={!settings.isRssNewsletterActive || !settings.rssNewsletterUrl}>
+               <Button type="button" variant="outline" onClick={() => setIsPreviewOpen(true)} disabled={!rssUrlValue}>
                 <Eye className="mr-2 h-4 w-4" />
                 Testar Modal
               </Button>
