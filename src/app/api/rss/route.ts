@@ -1,12 +1,10 @@
-
 // src/app/api/rss/route.ts
 import { NextResponse } from 'next/server';
 import Parser from 'rss-parser';
 
-const parser = new Parser();
-
 interface CustomFeedItem extends Parser.Item {
   sourceCategory?: string;
+  'content:encoded'?: string;
 }
 
 const getCategoryFromUrl = (url: string): string => {
@@ -26,23 +24,33 @@ export async function GET(request: Request) {
   }
 
   const feedUrls = feedUrlsParam.split(',');
-  const firstUrl = feedUrls[0]; // Assuming one URL for now, or using the first as primary
+  const firstUrl = feedUrls[0]; 
 
   try {
+    const parser = new Parser({
+        customFields: {
+            item: ['content:encoded', 'enclosure']
+        }
+    });
+
     const feed = await parser.parseURL(firstUrl);
     const category = getCategoryFromUrl(firstUrl);
     
     let combinedItems: CustomFeedItem[] = [];
     if (feed.items) {
         combinedItems = feed.items.map(item => ({
-        ...item,
-        sourceCategory: category,
-      }));
+          ...item,
+          // Garante que o conteúdo completo esteja disponível no campo 'content'
+          content: item.content || item['content:encoded'],
+          sourceCategory: category,
+        }));
     }
 
     combinedItems.sort((a, b) => new Date(b.isoDate!).getTime() - new Date(a.isoDate!).getTime());
     
-    const finalItems = combinedItems.slice(0, 20);
+    // Agora não estamos mais limitando a 20, ou podemos limitar a um número menor se for o caso.
+    // Vamos manter um limite razoável.
+    const finalItems = combinedItems.slice(0, 10);
 
     return NextResponse.json({
         title: feed.title,

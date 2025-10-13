@@ -15,11 +15,14 @@ import { format, isToday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Rss, ExternalLink } from 'lucide-react';
 import Image from 'next/image';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface FeedItem {
   title: string;
   link: string;
   contentSnippet?: string;
+  content?: string; // HTML content
   isoDate?: string;
   enclosure?: {
     url: string;
@@ -111,7 +114,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-2xl flex flex-col h-[90vh]">
+      <DialogContent className="sm:max-w-3xl flex flex-col h-[90vh]">
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Image
@@ -135,27 +138,30 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             {isLoading && renderSkeleton()}
             {isError && <p className="text-destructive text-center">Não foi possível carregar as notícias.</p>}
             {!isLoading && !isError && (
-              <ul className="space-y-4">
+              <div className="space-y-8">
                 {items?.map((item, index) => (
-                  <li key={index} className="p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="flex items-start gap-4 group">
+                  <article key={index} className="p-3">
+                     <p className="text-sm text-muted-foreground mb-2">
+                          {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
+                     </p>
+                     <h3 className="text-2xl font-bold font-headline mb-4">{item.title}</h3>
+
                       {item.enclosure?.url && (
-                        <div className="relative w-24 h-24 flex-shrink-0">
+                        <div className="relative w-full aspect-video mb-4">
                             <Image src={item.enclosure.url} alt={item.title} layout="fill" objectFit="cover" className="rounded-md" />
                         </div>
                       )}
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">
-                          {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
-                        </p>
-                        <h3 className="font-semibold text-foreground group-hover:underline">{item.title}</h3>
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">{item.contentSnippet}</p>
-                      </div>
-                       <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0 group-hover:text-primary transition-colors" />
-                    </a>
-                  </li>
+                      
+                      <div className="prose prose-sm lg:prose-base dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: item.content || item.contentSnippet || '' }} />
+                      
+                      <Button asChild variant="outline" size="sm" className="mt-4">
+                        <a href={item.link} target="_blank" rel="noopener noreferrer">
+                          Ver matéria original <ExternalLink className="ml-2 h-4 w-4" />
+                        </a>
+                      </Button>
+                  </article>
                 ))}
-              </ul>
+              </div>
             )}
           </ScrollArea>
         </div>
