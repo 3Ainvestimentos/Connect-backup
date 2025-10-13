@@ -105,6 +105,7 @@ import {
   Wind,
   Wrench,
   Zap,
+  NotebookPen,
 } from 'lucide-react';
 
 // This file should remain a server-side utility to avoid circular dependencies.
@@ -216,6 +217,7 @@ export const iconMap: Record<string, LucideIcon> = {
   Wind,
   Wrench,
   Zap,
+  NotebookPen,
 };
 
 export const getIcon = (name: string): LucideIcon => {
