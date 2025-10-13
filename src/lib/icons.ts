@@ -1,3 +1,4 @@
+
 import {
   LucideIcon,
   UserCircle,
@@ -106,6 +107,7 @@ import {
   Wrench,
   Zap,
   NotebookPen,
+  Rss,
 } from 'lucide-react';
 
 // This file should remain a server-side utility to avoid circular dependencies.
@@ -218,6 +220,7 @@ export const iconMap: Record<string, LucideIcon> = {
   Wrench,
   Zap,
   NotebookPen,
+  Rss,
 };
 
 export const getIcon = (name: string): LucideIcon => {

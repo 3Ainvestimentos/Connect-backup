@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, Banknote, ListChecks, Award, MessageSquarePlus, Compass, NotebookPen } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, Banknote, ListChecks, Award, MessageSquarePlus, Compass, NotebookPen, Rss } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -50,6 +50,7 @@ import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { TermsOfUseModal } from '../auth/TermsOfUseModal';
 import NotificationFAB from '../fab/NotificationFAB';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
+import { DailyRssModal } from '../rss/DailyRssModal';
 
 
 export const navItems = [
@@ -214,7 +215,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
   
-  const isFullscreenPage = ['/chatbot', '/admin/strategic-panel'].includes(pathname);
+  const isFullscreenPage = ['/chatbot', '/admin/crm', '/admin/strategic-panel'].includes(pathname);
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -450,6 +451,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
       <PollTrigger />
+      <DailyRssModal />
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
       <TermsOfUseModal

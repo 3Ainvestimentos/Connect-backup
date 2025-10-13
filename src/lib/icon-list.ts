@@ -1,3 +1,4 @@
+
 "use client";
 
 // This file is explicitly for client-side components that need the list of icon names.
@@ -11,5 +12,5 @@ export const iconList = [
   'Phone', 'Plane', 'Play', 'Plus', 'Printer', 'Save', 'Search', 'Send', 'Server', 'Settings', 'Share', 'Shield', 
   'ShoppingBag', 'ShoppingCart', 'Smile', 'Star', 'Sun', 'Tag', 'Target', 'Terminal', 'ThumbsDown', 'ThumbsUp', 
   'ToggleLeft', 'ToggleRight', 'Trash', 'TrendingUp', 'Truck', 'Upload', 'User', 'UserCheck', 'UserCircle', 
-  'UserPlus', 'Users', 'Video', 'Volume2', 'Watch', 'Wifi', 'Wind', 'Wrench', 'Zap'
+  'UserPlus', 'Users', 'Video', 'Volume2', 'Watch', 'Wifi', 'Wind', 'Wrench', 'Zap', 'Rss'
 ].sort();

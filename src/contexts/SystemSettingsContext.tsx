@@ -17,6 +17,8 @@ export interface SystemSettings {
   privacyPolicyVersion: number;
   superAdminEmails: string[];
   collaboratorTableVersion: number;
+  isRssNewsletterActive?: boolean;
+  rssNewsletterUrl?: string;
 }
 
 interface SystemSettingsContextType {
@@ -40,6 +42,8 @@ const defaultSettings: SystemSettings = {
     privacyPolicyVersion: 1,
     superAdminEmails: ['matheus@3ainvestimentos.com.br'],
     collaboratorTableVersion: 1,
+    isRssNewsletterActive: false,
+    rssNewsletterUrl: '',
 };
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {
