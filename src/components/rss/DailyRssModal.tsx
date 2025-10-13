@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -25,14 +26,19 @@ interface FeedItem {
   };
 }
 
+interface FeedResponse {
+    title?: string;
+    items: FeedItem[];
+}
+
 interface DailyRssModalProps {
   forceOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
 
-const fetchFeed = async (url: string): Promise<FeedItem[]> => {
-    if (!url) return [];
+const fetchFeed = async (url: string): Promise<FeedResponse> => {
+    if (!url) return { items: [] };
     const response = await fetch(`/api/rss?urls=${encodeURIComponent(url)}`);
     if (!response.ok) {
         throw new Error('Não foi possível carregar o feed de notícias.');
@@ -47,12 +53,14 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: items, isLoading, isError } = useQuery<FeedItem[], Error>({
+  const { data: feedData, isLoading, isError } = useQuery<FeedResponse, Error>({
     queryKey: ['dailyRssFeed', settings.rssNewsletterUrl],
     queryFn: () => fetchFeed(settings.rssNewsletterUrl!),
     enabled: (forceOpen || settings.isRssNewsletterActive) && !!settings.rssNewsletterUrl,
     staleTime: 1000 * 60 * 30, // 30 minutes
   });
+
+  const items = feedData?.items || [];
 
   useEffect(() => {
     if (forceOpen) {
@@ -107,7 +115,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
             <Rss />
-            Sua Newsletter Diária
+            {feedData?.title || 'Sua Newsletter Diária'}
           </DialogTitle>
           <DialogDescription>
             As principais notícias do mercado para começar o seu dia bem informado.

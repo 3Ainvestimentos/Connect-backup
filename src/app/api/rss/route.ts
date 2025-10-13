@@ -26,31 +26,28 @@ export async function GET(request: Request) {
   }
 
   const feedUrls = feedUrlsParam.split(',');
+  const firstUrl = feedUrls[0]; // Assuming one URL for now, or using the first as primary
 
   try {
-    const fetchPromises = feedUrls.map(async (url) => {
-      const feed = await parser.parseURL(url);
-      const category = getCategoryFromUrl(url);
-      return { feed, category };
-    });
+    const feed = await parser.parseURL(firstUrl);
+    const category = getCategoryFromUrl(firstUrl);
     
-    const results = await Promise.allSettled(fetchPromises);
-
     let combinedItems: CustomFeedItem[] = [];
-    results.forEach((result) => {
-      if (result.status === 'fulfilled' && result.value.feed.items) {
-        const itemsWithSource = result.value.feed.items.map(item => ({
-          ...item,
-          sourceCategory: result.value.category,
-        }));
-        combinedItems = combinedItems.concat(itemsWithSource);
-      }
-    });
+    if (feed.items) {
+        combinedItems = feed.items.map(item => ({
+        ...item,
+        sourceCategory: category,
+      }));
+    }
 
     combinedItems.sort((a, b) => new Date(b.isoDate!).getTime() - new Date(a.isoDate!).getTime());
+    
     const finalItems = combinedItems.slice(0, 20);
 
-    return NextResponse.json(finalItems);
+    return NextResponse.json({
+        title: feed.title,
+        items: finalItems,
+    });
   } catch (error) {
     console.error("Error in /api/rss:", error);
     return NextResponse.json({ error: 'Não foi possível carregar os feeds.' }, { status: 500 });
