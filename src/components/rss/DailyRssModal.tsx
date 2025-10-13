@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -114,9 +115,6 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-3xl flex flex-col h-[90vh]">
         <DialogHeader>
-          <div className="flex justify-center">
-            <Image src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2FDailyFin.png?alt=media&token=8679a528-2696-4a1d-a2f1-61b897973d8d" alt="DailyFin Logo" width={200} height={50} />
-          </div>
           <DialogTitle className="flex items-center gap-2 text-2xl font-headline justify-center">
             {feedData?.title || 'Sua Newsletter Diária'}
           </DialogTitle>
