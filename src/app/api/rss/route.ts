@@ -41,7 +41,7 @@ export async function GET(request: Request) {
         combinedItems = feed.items.map(item => ({
           ...item,
           // Garante que o conteúdo completo esteja disponível no campo 'content'
-          content: item.content || item['content:encoded'],
+          content: item['content:encoded'] || item.content,
           sourceCategory: category,
         }));
     }

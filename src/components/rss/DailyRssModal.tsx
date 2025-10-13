@@ -170,7 +170,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
              <div className="flex items-center space-x-2">
                <Checkbox id="dont-show-again" checked={dontShowAgain} onCheckedChange={(checked) => setDontShowAgain(!!checked)} />
                <Label htmlFor="dont-show-again" className="text-xs text-muted-foreground">
-                 Não mostrar novamente
+                 Não mostrar novamente hoje
                </Label>
              </div>
           )}
