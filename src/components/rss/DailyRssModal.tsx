@@ -127,9 +127,9 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             {isLoading && renderSkeleton()}
             {isError && <p className="text-destructive text-center">Não foi possível carregar as notícias.</p>}
             {!isLoading && !isError && (
-              <div className="space-y-8">
+              <div className="space-y-8 divide-y">
                 {items?.map((item, index) => (
-                  <article key={index} className="p-3">
+                  <article key={index} className="p-6">
                      <p className="text-sm text-muted-foreground mb-2">
                           {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
                      </p>
