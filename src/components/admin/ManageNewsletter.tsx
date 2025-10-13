@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -34,7 +35,7 @@ export function ManageNewsletter() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<NewsletterFormValues>({
+  const { register, handleSubmit, reset, watch, control, formState: { errors, isSubmitting } } = useForm<NewsletterFormValues>({
     resolver: zodResolver(newsletterSchema),
   });
 
@@ -79,7 +80,7 @@ export function ManageNewsletter() {
             <div className="flex items-center space-x-2 rounded-lg border p-4">
               <Controller
                 name="isRssNewsletterActive"
-                control={form.control}
+                control={control}
                 render={({ field }) => (
                   <Switch
                     id="isRssNewsletterActive"
