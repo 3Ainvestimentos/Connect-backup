@@ -101,7 +101,6 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
     <div className="space-y-4">
         {[...Array(5)].map((_, i) => (
             <div key={i} className="flex items-start space-x-4">
-                <Skeleton className="h-16 w-16 rounded-lg" />
                 <div className="space-y-2 flex-1">
                     <Skeleton className="h-4 w-4/5" />
                     <Skeleton className="h-4 w-3/5" />
@@ -116,22 +115,12 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-3xl flex flex-col h-[90vh]">
         <DialogHeader>
-          <div className="flex items-center gap-4">
-            <Image
-                src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2FDaily_Fin_Logo.png?alt=media&token=a8385207-272e-4b82-9653-b3c9fc1e2311"
-                alt="Daily Fin Logo"
-                width={50}
-                height={50}
-            />
-            <div>
-                <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
-                    {feedData?.title || 'Sua Newsletter Diária'}
-                </DialogTitle>
-                <DialogDescription>
-                    As principais notícias do mercado para começar o seu dia bem informado.
-                </DialogDescription>
-            </div>
-          </div>
+          <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
+            {feedData?.title || 'Sua Newsletter Diária'}
+          </DialogTitle>
+          <DialogDescription>
+            As principais notícias do mercado para começar o seu dia bem informado.
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-grow min-h-0">
           <ScrollArea className="h-full pr-4 -mr-4">
