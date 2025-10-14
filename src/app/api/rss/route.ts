@@ -44,6 +44,12 @@ export async function GET(request: Request) {
           content: item['content:encoded'] || item.content,
           sourceCategory: category,
         }));
+    } else {
+        // Retorna um objeto com uma array vazia se não houver itens
+        return NextResponse.json({
+            title: feed.title || 'Feed de Notícias',
+            items: []
+        });
     }
 
     combinedItems.sort((a, b) => new Date(b.isoDate!).getTime() - new Date(a.isoDate!).getTime());

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -20,6 +19,12 @@ interface FeedItem {
   sourceCategory?: string;
 }
 
+interface FeedResponse {
+  title?: string;
+  items: FeedItem[];
+}
+
+
 const feedUrls = [
   'https://www.infomoney.com.br/mercados/rss',
   'https://www.infomoney.com.br/economia/rss',
@@ -27,7 +32,7 @@ const feedUrls = [
   'https://www.infomoney.com.br/mundo/rss',
 ];
 
-const fetchFeeds = async (urls: string[]): Promise<FeedItem[]> => {
+const fetchFeeds = async (urls: string[]): Promise<FeedResponse> => {
   const response = await fetch(`/api/rss?urls=${encodeURIComponent(urls.join(','))}`);
   if (!response.ok) {
     throw new Error('Não foi possível carregar os feeds de notícias.');
@@ -58,7 +63,7 @@ export default function RssFeed() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  const { data: items, isLoading, isError, dataUpdatedAt } = useQuery<FeedItem[], Error>({
+  const { data: feedData, isLoading, isError, dataUpdatedAt } = useQuery<FeedResponse, Error>({
     queryKey: ['rssFeeds', feedUrls],
     queryFn: () => fetchFeeds(feedUrls),
     staleTime: 1000 * 60 * 10, // 10 minutes
@@ -66,6 +71,7 @@ export default function RssFeed() {
     refetchOnWindowFocus: false,
   });
 
+  const items = feedData?.items || [];
   const lastUpdatedTime = dataUpdatedAt ? format(new Date(dataUpdatedAt), 'HH:mm') : null;
 
   const logoUrl = theme === 'dark'
