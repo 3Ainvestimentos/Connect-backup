@@ -1,3 +1,4 @@
+
 // src/app/api/rss/route.ts
 import { NextResponse } from 'next/server';
 import Parser from 'rss-parser';
@@ -52,10 +53,7 @@ export async function GET(request: Request) {
     // Vamos manter um limite razoável.
     const finalItems = combinedItems.slice(0, 10);
 
-    return NextResponse.json({
-        title: feed.title,
-        items: finalItems,
-    });
+    return NextResponse.json(finalItems);
   } catch (error) {
     console.error("Error in /api/rss:", error);
     return NextResponse.json({ error: 'Não foi possível carregar os feeds.' }, { status: 500 });
