@@ -1,13 +1,10 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-import { AuthProvider } from '@/contexts/AuthContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import ReactQueryProvider from '@/components/providers/ReactQueryProvider';
-import { SystemSettingsProvider } from '@/contexts/SystemSettingsContext';
 import { Roboto, Archivo } from 'next/font/google';
+import AppProviders from '@/components/providers/AppProviders';
 
 
 const fontRoboto = Roboto({
@@ -41,16 +38,10 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className={cn("font-sans antialiased", fontRoboto.variable, fontArchivo.variable)}>
-        <ThemeProvider>
-          <ReactQueryProvider>
-            <SystemSettingsProvider>
-                <AuthProvider>
-                    {children}
-                    <Toaster />
-                </AuthProvider>
-            </SystemSettingsProvider>
-          </ReactQueryProvider>
-        </ThemeProvider>
+        <AppProviders>
+            {children}
+            <Toaster />
+        </AppProviders>
       </body>
     </html>
   );
