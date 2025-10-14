@@ -41,7 +41,6 @@ export async function GET(request: Request) {
     if (feed.items) {
         combinedItems = feed.items.map(item => ({
           ...item,
-          // Garante que o conteúdo completo esteja disponível no campo 'content'
           content: item['content:encoded'] || item.content,
           sourceCategory: category,
         }));
@@ -49,11 +48,13 @@ export async function GET(request: Request) {
 
     combinedItems.sort((a, b) => new Date(b.isoDate!).getTime() - new Date(a.isoDate!).getTime());
     
-    // Agora não estamos mais limitando a 20, ou podemos limitar a um número menor se for o caso.
-    // Vamos manter um limite razoável.
     const finalItems = combinedItems.slice(0, 10);
 
-    return NextResponse.json(finalItems);
+    // Retorna o objeto completo, incluindo o título do feed e os itens
+    return NextResponse.json({
+        title: feed.title,
+        items: finalItems
+    });
   } catch (error) {
     console.error("Error in /api/rss:", error);
     return NextResponse.json({ error: 'Não foi possível carregar os feeds.' }, { status: 500 });
