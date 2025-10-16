@@ -117,10 +117,10 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-3xl flex flex-col h-[90vh]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-2xl font-headline justify-center">
+          <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
             {feedData?.title || 'Sua Newsletter Diária'}
           </DialogTitle>
-          <DialogDescription className="text-center">
+          <DialogDescription>
             As principais notícias do mercado para começar o seu dia bem informado.
           </DialogDescription>
         </DialogHeader>
@@ -131,7 +131,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
             {!isLoading && !isError && (
               <div className="space-y-0 divide-y">
                 {items?.map((item, index) => (
-                  <article key={index} className="p-6">
+                  <article className="p-6" key={index}>
                     <p className="text-sm text-muted-foreground mb-2">
                         {item.isoDate ? format(new Date(item.isoDate), "dd MMM, HH:mm", { locale: ptBR }) : ''}
                     </p>
@@ -165,8 +165,8 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
                </Label>
              </div>
           )}
-          <DialogClose asChild>
-            <Button variant="outline" className="hover:bg-muted">Fechar</Button>
+           <DialogClose asChild>
+              <Button type="button" variant="outline" className="hover:bg-muted">Fechar</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
