@@ -560,27 +560,31 @@ const handleStatusChange = async () => {
       );
   }
 
-  const findActionResponseForHistoryLog = (log: WorkflowHistoryLog) => {
-      for (const statusId in request.actionRequests) {
-          const actionReqs = request.actionRequests[statusId];
-          const matchingAction = actionReqs.find(ar => 
-              ar.userId === log.userId && 
-              ar.respondedAt && 
-              Math.abs(parseISO(ar.respondedAt).getTime() - parseISO(log.timestamp).getTime()) < 2000
-          );
-          if (matchingAction) {
-              return matchingAction;
-          }
-      }
-      return null;
-  };
+    const findActionResponseForHistoryLog = (log: WorkflowHistoryLog) => {
+        if (!request.actionRequests) return null;
+        for (const statusId in request.actionRequests) {
+            const actionReqs = request.actionRequests[statusId];
+            const matchingAction = actionReqs.find(ar => 
+                ar.userId === log.userId && 
+                ar.respondedAt && 
+                Math.abs(parseISO(ar.respondedAt).getTime() - parseISO(log.timestamp).getTime()) < 2000
+            );
+            if (matchingAction) {
+                return matchingAction;
+            }
+        }
+        return null;
+    };
 
-  const getStatusIndex = (statusId: string) => definition.statuses.findIndex(s => s.id === statusId);
-  const isFinalStatus = (statusId: string) => {
-    const finalLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
-    const statusDef = definition.statuses.find(s => s.id === statusId);
-    return !!statusDef && finalLabels.some(label => statusDef.label.toLowerCase().includes(label));
-  }
+    const getStatusIndex = (statusId: string) => definition.statuses.findIndex(s => s.id === statusId);
+
+    const isFinalStatus = (statusId: string) => {
+        const finalLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+        const statusDef = definition.statuses.find(s => s.id === statusId);
+        // Check both ID and Label for robustness
+        return !!statusDef && (finalLabels.includes(statusDef.id.toLowerCase()) || finalLabels.some(label => statusDef.label.toLowerCase().includes(label)));
+    }
+
 
   return (
     <>
@@ -627,45 +631,54 @@ const handleStatusChange = async () => {
               
               <Separator />
 
-              <div>
-                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><History className="h-5 w-5"/>Linha do Tempo e Histórico</h3>
-                <div className="space-y-4">
-                    {definition.statuses.map((status, index) => {
-                        const currentStatusIndex = getStatusIndex(request.status);
-                        const isFinal = isFinalStatus(status.id);
-                        
-                        let state: 'completed' | 'current' | 'pending' = 'pending';
-                        if (index < currentStatusIndex || (isFinal && index === currentStatusIndex) ) {
-                            state = 'completed';
-                        } else if (index === currentStatusIndex && !isFinal) {
-                            state = 'current';
-                        }
+                <div>
+                    <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><History className="h-5 w-5"/>Linha do Tempo e Histórico</h3>
+                    <div className="space-y-4">
+                        {definition.statuses.map((status, index) => {
+                            const currentStatusIndex = getStatusIndex(request.status);
+                            const isFinal = isFinalStatus(status.id);
+                            
+                            let state: 'completed' | 'current' | 'pending' = 'pending';
+                            if (index < currentStatusIndex || (isFinal && index === currentStatusIndex)) {
+                                state = 'completed';
+                            } else if (index === currentStatusIndex && !isFinal) {
+                                state = 'current';
+                            }
 
-                        const statusTransitionLog = request.history.find(log => getStatusIndex(log.status) === index);
-                        
-                        return (
-                            <div key={`${status.id}-${index}`} className="flex items-start gap-3">
-                                <div className="flex flex-col items-center">
-                                    {state === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                                    {state === 'current' && <Hourglass className="h-5 w-5 text-yellow-500 animate-spin" />}
-                                    {state === 'pending' && <Circle className="h-5 w-5 text-muted-foreground/30" />}
-                                    {index < definition.statuses.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
+                             const relevantLogs = request.history.filter(log => getStatusIndex(log.status) === index);
+
+                            return (
+                                <div key={`${status.id}-${index}`} className="flex items-start gap-3">
+                                    <div className="flex flex-col items-center">
+                                        {state === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                                        {state === 'current' && <Hourglass className="h-5 w-5 text-yellow-500 animate-pulse" />}
+                                        {state === 'pending' && <Circle className="h-5 w-5 text-muted-foreground/30" />}
+                                        {index < definition.statuses.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
+                                    </div>
+                                    <div className={cn("pt-0 flex-grow", state === 'pending' && 'text-muted-foreground')}>
+                                        <p className="font-semibold text-sm">{status.label}</p>
+                                         {relevantLogs.length > 0 && (state === 'completed' || state === 'current') && (
+                                            <div className="text-xs text-muted-foreground mt-1 space-y-1">
+                                                {relevantLogs.map((log, logIndex) => {
+                                                    const actionResponse = findActionResponseForHistoryLog(log);
+                                                    return (
+                                                        <div key={logIndex} className="italic">
+                                                            <p>
+                                                                &#8226; {log.userName} em {format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')}
+                                                                {actionResponse && <span className="font-bold"> ({getTranslatedStatus(actionResponse.status)})</span>}
+                                                            </p>
+                                                            {log.notes && <blockquote className="border-l-2 pl-2 ml-2 text-foreground/80">"{log.notes}"</blockquote>}
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className={cn("pt-0 flex-grow", state === 'pending' && 'text-muted-foreground')}>
-                                    <p className="font-semibold text-sm">{status.label}</p>
-                                    {statusTransitionLog && (state === 'completed' || (state === 'current' && isFinal)) && (
-                                        <div className="text-xs text-muted-foreground mt-1">
-                                            <p>Concluído por {statusTransitionLog.userName}</p>
-                                            <p>{format(parseISO(statusTransitionLog.timestamp), 'dd/MM/yy HH:mm')}</p>
-                                            <p className="mt-1 italic">"{statusTransitionLog.notes}"</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
-              </div>
               
               <Separator />
 
