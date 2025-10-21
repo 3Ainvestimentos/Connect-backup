@@ -635,7 +635,7 @@ const handleStatusChange = async () => {
                             }
 
                             return (
-                                <div key={status.id} className="flex items-start gap-3">
+                                <div key={`${status.id}-${index}`} className="flex items-start gap-3">
                                     <div className="flex flex-col items-center">
                                         {state === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
                                         {state === 'current' && <Hourglass className="h-5 w-5 text-yellow-500 animate-spin" />}
