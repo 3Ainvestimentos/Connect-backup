@@ -576,6 +576,11 @@ const handleStatusChange = async () => {
   };
 
   const getStatusIndex = (statusId: string) => definition.statuses.findIndex(s => s.id === statusId);
+  const isFinalStatus = (statusId: string) => {
+    const finalLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
+    const statusDef = definition.statuses.find(s => s.id === statusId);
+    return !!statusDef && finalLabels.some(label => statusDef.label.toLowerCase().includes(label));
+  }
 
   return (
     <>
@@ -627,13 +632,17 @@ const handleStatusChange = async () => {
                 <div className="space-y-4">
                     {definition.statuses.map((status, index) => {
                         const currentStatusIndex = getStatusIndex(request.status);
+                        const isFinal = isFinalStatus(status.id);
+                        
                         let state: 'completed' | 'current' | 'pending' = 'pending';
-                        if (index < currentStatusIndex) state = 'completed';
-                        else if (index === currentStatusIndex) state = 'current';
+                        if (index < currentStatusIndex || (isFinal && index === currentStatusIndex) ) {
+                            state = 'completed';
+                        } else if (index === currentStatusIndex && !isFinal) {
+                            state = 'current';
+                        }
 
-                        const historyForThisStatus = request.history.filter(log => getStatusIndex(log.status) === index);
-                        const statusTransitionLog = request.history.find(log => getStatusIndex(log.status) === index + 1);
-
+                        const statusTransitionLog = request.history.find(log => getStatusIndex(log.status) === index);
+                        
                         return (
                             <div key={`${status.id}-${index}`} className="flex items-start gap-3">
                                 <div className="flex flex-col items-center">
@@ -644,7 +653,7 @@ const handleStatusChange = async () => {
                                 </div>
                                 <div className={cn("pt-0 flex-grow", state === 'pending' && 'text-muted-foreground')}>
                                     <p className="font-semibold text-sm">{status.label}</p>
-                                    {state === 'completed' && statusTransitionLog && (
+                                    {statusTransitionLog && (state === 'completed' || (state === 'current' && isFinal)) && (
                                         <div className="text-xs text-muted-foreground mt-1">
                                             <p>Concluído por {statusTransitionLog.userName}</p>
                                             <p>{format(parseISO(statusTransitionLog.timestamp), 'dd/MM/yy HH:mm')}</p>
