@@ -35,7 +35,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Papa from 'papaparse';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Avatar, AvatarFallback } from '../ui/avatar';
@@ -273,89 +272,83 @@ export function ManageRequests() {
 
     return (
         <>
-            <Tabs defaultValue="active">
-                <div className="flex justify-between items-center mb-4">
-                    <TabsList>
-                        <TabsTrigger value="active">Caixa de Entrada</TabsTrigger>
-                        <TabsTrigger value="archived">Arquivadas</TabsTrigger>
-                    </TabsList>
-                     <div className="flex gap-2">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    <Users className="mr-2 h-4 w-4" />
-                                    Responsável: {getAssigneeFilterLabel()}
+            <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                             <div>
+                                <CardTitle>Caixa de Entrada</CardTitle>
+                                <CardDescription>
+                                    {filteredActiveRequests.length} solicitação(ões) aguardando sua gestão. Apenas workflows de sua propriedade são exibidos aqui.
+                                </CardDescription>
+                            </div>
+                             <div className="flex flex-wrap gap-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">
+                                            <Users className="mr-2 h-4 w-4" />
+                                            Responsável: {getAssigneeFilterLabel()}
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Filtrar por Responsável</DropdownMenuLabel>
+                                        <DropdownMenuRadioGroup value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                                            <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
+                                            <DropdownMenuRadioItem value="unassigned">Não Atribuídos</DropdownMenuRadioItem>
+                                            {availableAssignees.length > 0 && <DropdownMenuSeparator />}
+                                            {availableAssignees.map(c => (
+                                                <DropdownMenuRadioItem key={c.id} value={c.id3a}>
+                                                    {c.name}
+                                                </DropdownMenuRadioItem>
+                                            ))}
+                                        </DropdownMenuRadioGroup>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline">
+                                            <Filter className="mr-2 h-4 w-4" />
+                                            Filtrar por Status
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Status</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {availableStatuses.map(status => (
+                                            <DropdownMenuCheckboxItem
+                                                key={status.id}
+                                                checked={statusFilter.includes(status.id)}
+                                                onCheckedChange={() => handleStatusFilterChange(status.id)}
+                                            >
+                                                {status.label}
+                                            </DropdownMenuCheckboxItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <Button onClick={() => handleExportCSV(filteredActiveRequests)} disabled={filteredActiveRequests.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
+                                    <FileDown className="mr-2 h-4 w-4" />
+                                    Exportar CSV
                                 </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Filtrar por Responsável</DropdownMenuLabel>
-                                <DropdownMenuRadioGroup value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <DropdownMenuRadioItem value="all">Todos</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="unassigned">Não Atribuídos</DropdownMenuRadioItem>
-                                    {availableAssignees.length > 0 && <DropdownMenuSeparator />}
-                                    {availableAssignees.map(c => (
-                                        <DropdownMenuRadioItem key={c.id} value={c.id3a}>
-                                            {c.name}
-                                        </DropdownMenuRadioItem>
-                                    ))}
-                                </DropdownMenuRadioGroup>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline">
-                                    <Filter className="mr-2 h-4 w-4" />
-                                    Filtrar por Status
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Status</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                {availableStatuses.map(status => (
-                                    <DropdownMenuCheckboxItem
-                                        key={status.id}
-                                        checked={statusFilter.includes(status.id)}
-                                        onCheckedChange={() => handleStatusFilterChange(status.id)}
-                                    >
-                                        {status.label}
-                                    </DropdownMenuCheckboxItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                         <Button onClick={() => handleExportCSV(filteredActiveRequests)} disabled={filteredActiveRequests.length === 0} className="bg-admin-primary hover:bg-admin-primary/90">
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Exportar CSV
-                        </Button>
-                    </div>
-                </div>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                         <RequestTable tableRequests={filteredActiveRequests} />
+                    </CardContent>
+                </Card>
 
-                <TabsContent value="active">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Caixa de Entrada</CardTitle>
-                            <CardDescription>
-                                {filteredActiveRequests.length} solicitação(ões) encontrada(s). Apenas workflows de sua propriedade são exibidos.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <RequestTable tableRequests={filteredActiveRequests} />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                 <TabsContent value="archived">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Solicitações Arquivadas</CardTitle>
-                            <CardDescription>
-                                {archivedRequests.length} solicitação(ões) arquivada(s).
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <RequestTable tableRequests={archivedRequests} isArchived={true} />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Solicitações Arquivadas</CardTitle>
+                        <CardDescription>
+                            {archivedRequests.length} solicitação(ões) arquivada(s).
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <RequestTable tableRequests={archivedRequests} isArchived={true} />
+                    </CardContent>
+                </Card>
+            </div>
             
             <RequestApprovalModal
                 request={selectedRequest}
