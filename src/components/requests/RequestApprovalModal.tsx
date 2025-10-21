@@ -622,37 +622,44 @@ const handleStatusChange = async () => {
               
               <Separator />
 
-                <div>
-                    <h3 className="font-semibold text-lg mb-4">Linha do Tempo do Processo</h3>
-                    <div className="space-y-4">
-                        {definition.statuses.map((status, index) => {
-                            const currentStatusIndex = getStatusIndex(request.status);
-                            let state: 'completed' | 'current' | 'pending' = 'pending';
-                            if (index < currentStatusIndex) {
-                                state = 'completed';
-                            } else if (index === currentStatusIndex) {
-                                state = 'current';
-                            }
+              <div>
+                <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><History className="h-5 w-5"/>Linha do Tempo e Histórico</h3>
+                <div className="space-y-4">
+                    {definition.statuses.map((status, index) => {
+                        const currentStatusIndex = getStatusIndex(request.status);
+                        let state: 'completed' | 'current' | 'pending' = 'pending';
+                        if (index < currentStatusIndex) state = 'completed';
+                        else if (index === currentStatusIndex) state = 'current';
 
-                            return (
-                                <div key={`${status.id}-${index}`} className="flex items-start gap-3">
-                                    <div className="flex flex-col items-center">
-                                        {state === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
-                                        {state === 'current' && <Hourglass className="h-5 w-5 text-yellow-500 animate-spin" />}
-                                        {state === 'pending' && <Circle className="h-5 w-5 text-muted-foreground/30" />}
-                                        {index < definition.statuses.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
-                                    </div>
-                                    <div className={cn("pt-0", state === 'pending' && 'text-muted-foreground')}>
-                                        <p className="font-semibold text-sm">{status.label}</p>
-                                    </div>
+                        const historyForThisStatus = request.history.filter(log => getStatusIndex(log.status) === index);
+                        const statusTransitionLog = request.history.find(log => getStatusIndex(log.status) === index + 1);
+
+                        return (
+                            <div key={`${status.id}-${index}`} className="flex items-start gap-3">
+                                <div className="flex flex-col items-center">
+                                    {state === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                                    {state === 'current' && <Hourglass className="h-5 w-5 text-yellow-500 animate-spin" />}
+                                    {state === 'pending' && <Circle className="h-5 w-5 text-muted-foreground/30" />}
+                                    {index < definition.statuses.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <div className={cn("pt-0 flex-grow", state === 'pending' && 'text-muted-foreground')}>
+                                    <p className="font-semibold text-sm">{status.label}</p>
+                                    {state === 'completed' && statusTransitionLog && (
+                                        <div className="text-xs text-muted-foreground mt-1">
+                                            <p>Concluído por {statusTransitionLog.userName}</p>
+                                            <p>{format(parseISO(statusTransitionLog.timestamp), 'dd/MM/yy HH:mm')}</p>
+                                            <p className="mt-1 italic">"{statusTransitionLog.notes}"</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
-
-                <Separator />
+              </div>
               
+              <Separator />
+
               <div>
                   <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
                    <div className="flex items-center gap-2">
@@ -714,41 +721,6 @@ const handleStatusChange = async () => {
                 </div>
               )}
 
-
-               <div>
-                  <h3 className="font-semibold text-lg mb-2 flex items-center gap-2">
-                      <History className="h-5 w-5"/>
-                      Histórico de Auditoria
-                  </h3>
-                  <div className="space-y-3">
-                      {request.history.slice().reverse().map((log, index) => {
-                          const actionResponse = findActionResponseForHistoryLog(log);
-                          const attachmentUrl = actionResponse?.attachmentUrl;
-                          const fileName = attachmentUrl ? decodeURIComponent(attachmentUrl.split('%2F').pop()?.split('?')[0] || 'Anexo') : null;
-
-                          return (
-                              <div key={index} className="flex items-start gap-3 text-xs">
-                                  <div className="flex flex-col items-center">
-                                      <Badge variant="secondary" className="font-semibold">{definition?.statuses.find(s => s.id === log.status)?.label || log.status}</Badge>
-                                      {index !== request.history.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
-                                  </div>
-                                  <div className="pt-0.5 flex-grow prose prose-sm dark:prose-invert max-w-none break-words whitespace-pre-wrap">
-                                      <p className="font-semibold">{log.userName} <span className="text-muted-foreground font-normal">({format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')})</span></p>
-                                      <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-muted-foreground">{log.notes}</ReactMarkdown>
-                                      {attachmentUrl && fileName && (
-                                          <Button variant="outline" size="sm" asChild className="mt-1 h-auto px-2 py-1 text-xs">
-                                              <a href={attachmentUrl} target="_blank" rel="noopener noreferrer">
-                                                  <Paperclip className="mr-1.5 h-3 w-3" /> {fileName}
-                                              </a>
-                                          </Button>
-                                      )}
-                                  </div>
-                              </div>
-                          );
-                      })}
-                  </div>
-              </div>
-              
               <div>
                   <Label htmlFor="comment">Adicionar Comentário</Label>
                   <div className="flex items-center gap-2 mt-1">
