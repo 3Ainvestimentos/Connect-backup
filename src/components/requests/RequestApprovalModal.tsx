@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink, ShieldQuestion, CheckCircle, Hourglass, XCircle, ThumbsUp, ThumbsDown, Paperclip, UploadCloud } from 'lucide-react';
+import { Loader2, User, Calendar, Type, Clock, FileText, Check, X, History, MoveRight, Users, MessageSquare, Send, ExternalLink, ShieldQuestion, CheckCircle, Hourglass, XCircle, ThumbsUp, ThumbsDown, Paperclip, UploadCloud, Circle } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 import { ScrollArea } from '../ui/scroll-area';
@@ -575,6 +575,8 @@ const handleStatusChange = async () => {
       return null;
   };
 
+  const getStatusIndex = (statusId: string) => definition.statuses.findIndex(s => s.id === statusId);
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -617,7 +619,40 @@ const handleStatusChange = async () => {
                       {renderFormData()}
                   </div>
               </div>
+              
+              <Separator />
 
+                <div>
+                    <h3 className="font-semibold text-lg mb-4">Linha do Tempo do Processo</h3>
+                    <div className="space-y-4">
+                        {definition.statuses.map((status, index) => {
+                            const currentStatusIndex = getStatusIndex(request.status);
+                            let state: 'completed' | 'current' | 'pending' = 'pending';
+                            if (index < currentStatusIndex) {
+                                state = 'completed';
+                            } else if (index === currentStatusIndex) {
+                                state = 'current';
+                            }
+
+                            return (
+                                <div key={status.id} className="flex items-start gap-3">
+                                    <div className="flex flex-col items-center">
+                                        {state === 'completed' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                                        {state === 'current' && <Hourglass className="h-5 w-5 text-yellow-500 animate-spin" />}
+                                        {state === 'pending' && <Circle className="h-5 w-5 text-muted-foreground/30" />}
+                                        {index < definition.statuses.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
+                                    </div>
+                                    <div className={cn("pt-0", state === 'pending' && 'text-muted-foreground')}>
+                                        <p className="font-semibold text-sm">{status.label}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <Separator />
+              
               <div>
                   <h3 className="font-semibold text-lg mb-2">Atribuir Responsável</h3>
                    <div className="flex items-center gap-2">
@@ -695,7 +730,7 @@ const handleStatusChange = async () => {
                               <div key={index} className="flex items-start gap-3 text-xs">
                                   <div className="flex flex-col items-center">
                                       <Badge variant="secondary" className="font-semibold">{definition?.statuses.find(s => s.id === log.status)?.label || log.status}</Badge>
-                                      {index !== request.history.length - 1 && <div className="w-px h-6 bg-border" />}
+                                      {index !== request.history.length - 1 && <div className="w-px h-6 bg-border mt-1" />}
                                   </div>
                                   <div className="pt-0.5 flex-grow prose prose-sm dark:prose-invert max-w-none break-words whitespace-pre-wrap">
                                       <p className="font-semibold">{log.userName} <span className="text-muted-foreground font-normal">({format(parseISO(log.timestamp), 'dd/MM/yy HH:mm')})</span></p>
