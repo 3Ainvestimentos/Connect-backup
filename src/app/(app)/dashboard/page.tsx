@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  MessageSquare, Link as LinkIcon, Trash2, Cpu, User, Mail
+  MessageSquare, Link as LinkIcon, Trash2, User
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -26,6 +26,7 @@ import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
 import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
 import RssFeed from '@/components/dashboard-v2/RssFeed';
 import TradingViewWidget from '@/components/dashboard-v2/TradingViewWidget';
+import { useContacts } from '@/contexts/ContactsContext';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -38,6 +39,7 @@ export default function DashboardV2Page() {
   const { messages, markMessageAsRead, getMessageRecipients, markMessageAsDeleted } = useMessages();
   const { newsItems } = useNews();
   const { getVisibleLinksForUser } = useQuickLinks();
+  const { contacts } = useContacts();
   
   const currentUserCollab = useMemo(() => {
       if (!user || !collaborators) return null;
@@ -255,20 +257,15 @@ export default function DashboardV2Page() {
                         </CardHeader>
                         <CardContent className="flex-grow">
                             <div className="space-y-4">
-                                <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                    <div className="truncate">
-                                        <p className="font-semibold truncate">Jurídico</p>
-                                        <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
-                                    </div>
-                                </a>
-                                <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
-                                    <Mail className="h-4 w-4 text-muted-foreground" />
-                                    <div className="truncate">
-                                        <p className="font-semibold truncate">Tecnologia</p>
-                                        <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
-                                    </div>
-                                </a>
+                                {contacts.map(contact => (
+                                     <a href={contact.slackUrl} key={contact.id} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
+                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        <div className="truncate">
+                                            <p className="font-semibold truncate">{contact.area}</p>
+                                            <p className="text-xs text-muted-foreground truncate">{contact.manager}</p>
+                                        </div>
+                                    </a>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>

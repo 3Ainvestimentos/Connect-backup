@@ -19,6 +19,7 @@ import { PollsProvider } from '@/contexts/PollsContext';
 import { RankingsProvider } from '@/contexts/RankingsContext';
 import { FabMessagesProvider } from '@/contexts/FabMessagesContext';
 import { IdleFabMessagesProvider } from '@/contexts/IdleFabMessagesContext';
+import { ContactsProvider } from '@/contexts/ContactsContext';
 
 export default function AppProviders({ children }: { children: React.ReactNode }) {
   return (
@@ -39,7 +40,9 @@ export default function AppProviders({ children }: { children: React.ReactNode }
                                         <RankingsProvider>
                                             <FabMessagesProvider>
                                             <IdleFabMessagesProvider>
-                                                {children}
+                                                <ContactsProvider>
+                                                  {children}
+                                                </ContactsProvider>
                                             </IdleFabMessagesProvider>
                                             </FabMessagesProvider>
                                         </RankingsProvider>

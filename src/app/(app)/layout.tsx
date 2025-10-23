@@ -15,6 +15,7 @@ import { RankingsProvider } from '@/contexts/RankingsContext';
 import { RequestsProvider } from '@/contexts/RequestsContext';
 import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
 import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
+import { ContactsProvider } from '@/contexts/ContactsContext';
 
 function AppProviders({ children }: { children: React.ReactNode }) {
     return (
@@ -31,7 +32,9 @@ function AppProviders({ children }: { children: React.ReactNode }) {
                                 <RankingsProvider>
                                     <FabMessagesProvider>
                                     <IdleFabMessagesProvider>
-                                      {children}
+                                      <ContactsProvider>
+                                        {children}
+                                      </ContactsProvider>
                                     </IdleFabMessagesProvider>
                                     </FabMessagesProvider>
                                 </RankingsProvider>

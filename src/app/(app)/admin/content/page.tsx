@@ -13,6 +13,7 @@ import { ManageQuickLinks } from '@/components/admin/ManageQuickLinks';
 import { ManagePolls } from '@/components/admin/ManagePolls';
 import { ManageRankings } from '@/components/admin/ManageRankings';
 import { ManageNewsletter } from '@/components/admin/ManageNewsletter';
+import { ManageContacts } from '@/components/admin/ManageContacts';
 
 export default function AdminContentPage() {
     const [activeTab, setActiveTab] = useState("news");
@@ -25,7 +26,7 @@ export default function AdminContentPage() {
                     description="Gerencie as informações dinâmicas da intranet."
                 />
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-8">
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-9">
                         <TabsTrigger value="news">Notícias</TabsTrigger>
                         <TabsTrigger value="documents">Documentos</TabsTrigger>
                         <TabsTrigger value="labs">Labs</TabsTrigger>
@@ -34,6 +35,7 @@ export default function AdminContentPage() {
                         <TabsTrigger value="polls">Pesquisas</TabsTrigger>
                         <TabsTrigger value="rankings">Rankings</TabsTrigger>
                         <TabsTrigger value="newsletter">Newsletter</TabsTrigger>
+                        <TabsTrigger value="contacts">Contatos</TabsTrigger>
                     </TabsList>
                     <TabsContent value="news">
                         <ManageNews />
@@ -58,6 +60,9 @@ export default function AdminContentPage() {
                     </TabsContent>
                     <TabsContent value="newsletter">
                         <ManageNewsletter />
+                    </TabsContent>
+                     <TabsContent value="contacts">
+                        <ManageContacts />
                     </TabsContent>
                 </Tabs>
             </div>
