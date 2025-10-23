@@ -60,7 +60,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
             <Rss />
-            Newsletter Diária
+            DailyFin
           </DialogTitle>
           <DialogDescription>
             As principais notícias do mercado para começar o seu dia bem informado.
