@@ -259,7 +259,7 @@ export default function DashboardV2Page() {
                             <div className="space-y-4">
                                 {contacts.map(contact => (
                                      <a href={contact.slackUrl} key={contact.id} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
-                                        <User className="h-4 w-4 text-muted-foreground" />
+                                        <Image src="https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Imagens%20institucionais%20(logos%20e%20etc)%2Ficons8-slack-new-48.png?alt=media&token=7a2d489c-3501-4b01-a206-32673c8a8a99" alt="Slack icon" width={16} height={16} />
                                         <div className="truncate">
                                             <p className="font-semibold truncate">{contact.area}</p>
                                             <p className="text-xs text-muted-foreground truncate">{contact.manager}</p>
