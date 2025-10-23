@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { 
-  MessageSquare, Link as LinkIcon, Trash2, Cpu
+  MessageSquare, Link as LinkIcon, Trash2, Cpu, User, Mail
 } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -240,12 +240,38 @@ export default function DashboardV2Page() {
         </section>
         
         <section className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                  <div className="lg:col-span-2">
                     <GoogleCalendar />
                  </div>
                  <div className="lg:col-span-2">
                     <GoogleDriveFiles />
+                 </div>
+                 <div className="lg:col-span-1">
+                    <Card className="shadow-sm w-full h-full flex flex-col">
+                        <CardHeader>
+                            <CardTitle className="font-headline text-foreground text-xl">Contatos</CardTitle>
+                            <CardDescription>Principais contatos.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                            <div className="space-y-4">
+                                <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
+                                    <User className="h-4 w-4 text-muted-foreground" />
+                                    <div className="truncate">
+                                        <p className="font-semibold truncate">Jurídico</p>
+                                        <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
+                                    </div>
+                                </a>
+                                <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
+                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                    <div className="truncate">
+                                        <p className="font-semibold truncate">Tecnologia</p>
+                                        <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
+                                    </div>
+                                </a>
+                            </div>
+                        </CardContent>
+                    </Card>
                  </div>
                 <div className="lg:col-span-1">
                     {quickLinks.length > 0 && (
