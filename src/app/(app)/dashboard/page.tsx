@@ -1,4 +1,3 @@
-
 "use client"; 
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -240,71 +239,69 @@ export default function DashboardV2Page() {
         </section>
         
         <section className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                 <div className="lg:col-span-2">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 <div className="lg:col-span-1">
                     <GoogleCalendar />
                  </div>
-                 <div className="lg:col-span-2">
+                 <div className="lg:col-span-1">
                     <GoogleDriveFiles />
                  </div>
-                 <div className="lg:col-span-1">
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="shadow-sm w-full h-full flex flex-col">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-foreground text-xl">Contatos</CardTitle>
+                        <CardDescription>Principais contatos.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <div className="space-y-4">
+                            <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <div className="truncate">
+                                    <p className="font-semibold truncate">Jurídico</p>
+                                    <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
+                                </div>
+                            </a>
+                            <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
+                                <Mail className="h-4 w-4 text-muted-foreground" />
+                                <div className="truncate">
+                                    <p className="font-semibold truncate">Tecnologia</p>
+                                    <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
+                                </div>
+                            </a>
+                        </div>
+                    </CardContent>
+                </Card>
+                {quickLinks.length > 0 && (
                     <Card className="shadow-sm w-full h-full flex flex-col">
                         <CardHeader>
-                            <CardTitle className="font-headline text-foreground text-xl">Contatos</CardTitle>
-                            <CardDescription>Principais contatos.</CardDescription>
+                            <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                            <CardDescription>Acesse sistemas e recursos.</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-grow">
-                            <div className="space-y-4">
-                                <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
-                                    <User className="h-4 w-4 text-muted-foreground" />
-                                    <div className="truncate">
-                                        <p className="font-semibold truncate">Jurídico</p>
-                                        <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
-                                    </div>
+                        <CardContent className="flex-grow flex justify-center items-center">
+                            <div className="grid grid-cols-1 gap-4 w-full">
+                            {quickLinks.map(link => (
+                                <a 
+                                    href={link.link} 
+                                    key={link.id} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-[3/1] w-full"
+                                    title={link.name || 'Link Rápido'}
+                                >
+                                    <Image
+                                        src={link.imageUrl}
+                                        alt={link.name || 'Quick Link'}
+                                        layout="fill"
+                                        objectFit="contain"
+                                        className="p-6"
+                                    />
                                 </a>
-                                <a href="#" className="flex items-center gap-3 text-sm p-2 rounded-md hover:bg-muted">
-                                    <Mail className="h-4 w-4 text-muted-foreground" />
-                                    <div className="truncate">
-                                        <p className="font-semibold truncate">Tecnologia</p>
-                                        <p className="text-xs text-muted-foreground truncate">Responsável Exemplo</p>
-                                    </div>
-                                </a>
+                            ))}
                             </div>
                         </CardContent>
                     </Card>
-                 </div>
-                <div className="lg:col-span-1">
-                    {quickLinks.length > 0 && (
-                        <Card className="shadow-sm w-full h-full flex flex-col">
-                            <CardHeader>
-                                <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
-                                <CardDescription>Acesse sistemas e recursos.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow flex justify-center items-center">
-                                <div className="grid grid-cols-1 gap-4 w-full">
-                                {quickLinks.map(link => (
-                                    <a 
-                                        href={link.link} 
-                                        key={link.id} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-[3/1] w-full"
-                                        title={link.name || 'Link Rápido'}
-                                    >
-                                        <Image
-                                            src={link.imageUrl}
-                                            alt={link.name || 'Quick Link'}
-                                            layout="fill"
-                                            objectFit="contain"
-                                            className="p-6"
-                                        />
-                                    </a>
-                                ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-                </div>
+                )}
             </div>
              <Card id="messages-card" className="shadow-sm flex flex-col w-full">
                 <CardHeader>
