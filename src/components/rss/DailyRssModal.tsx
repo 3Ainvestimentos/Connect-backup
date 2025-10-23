@@ -59,7 +59,6 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
       <DialogContent className="sm:max-w-4xl flex flex-col h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-2xl font-headline">
-            <Rss />
             DailyFin
           </DialogTitle>
           <DialogDescription>
