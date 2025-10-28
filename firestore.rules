@@ -1,114 +1,114 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Função helper para verificar se o usuário é um Super Admin
-    function isSuperAdmin() {
-      // Um Super Admin pode ler as configurações de admin para verificar a lista completa.
-      return get(/databases/$(database)/documents/systemSettings/admin_config).data.superAdminEmails.hasAny([request.auth.token.email]);
-    }
-
-    // A coleção 'systemSettings' agora tem regras por documento
-    match /systemSettings/{docId} {
-      // O documento 'public_config' pode ser lido por qualquer pessoa (necessário para a tela de login)
-      match /public_config {
-        allow read: if true;
-        // A escrita ainda é restrita a Super Admins para segurança
-        allow write: if isSuperAdmin();
-      }
-      
-      // O documento 'admin_config' só pode ser acessado por Super Admins
-      match /admin_config {
-        allow read, write: if isSuperAdmin();
-      }
-      
-      // Regra de negação para quaisquer outros documentos nesta coleção
+    // Default deny all
+    match /{document=**} {
       allow read, write: if false;
     }
-
-    // A coleção 'collaborators' permite que usuários leiam apenas seus próprios dados.
-    // Super Admins podem ler todos os documentos da coleção.
+    
+    // Auth-related collections
     match /collaborators/{userId} {
-      allow read: if request.auth.uid == userId || isSuperAdmin();
-      // Apenas Super Admins podem criar, atualizar ou deletar colaboradores.
-      allow write: if isSuperAdmin();
-    }
-    
-    // Coleções de conteúdo que podem ser lidas por qualquer usuário autenticado,
-    // mas escritas apenas por Super Admins.
-    match /newsItems/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
-    }
-    match /documents/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
-    }
-    match /labs/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
-    }
-    match /messages/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
-    }
-    match /quickLinks/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
-    }
-     match /rankings/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
-    }
-     match /polls/{pollId}/{document=**} {
-      allow read: if request.auth != null;
-      // Permite que qualquer usuário autenticado crie uma resposta.
-      allow create: if request.auth != null;
-      allow update, delete: if isSuperAdmin();
-    }
-    match /idleFabMessages/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
+      allow read: if request.auth != null; // Allow any authenticated user to read collaborator profiles
+      allow write: if request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails; // Only super admins can write
     }
 
-    // A coleção de workflows e suas subcoleções têm lógicas mais específicas.
-    // Permitimos que usuários autenticados leiam e criem, mas a atualização
-    // e exclusão são controladas pela lógica da aplicação (gerenciada por Super Admins).
-    match /workflows/{workflowId} {
-      allow read: if request.auth.token.email == resource.data.ownerEmail || request.auth.token.email == resource.data.submittedBy.userEmail || isSuperAdmin();
-      allow create: if request.auth != null;
-      allow update, delete: if isSuperAdmin();
+    match /collaborator_logs/{logId} {
+      allow read: if request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+      allow write: if request.auth != null; // Log entries are created by server-side logic or trusted clients
     }
     
-    // As definições de workflow (applications) e suas áreas são gerenciadas por Super Admins.
-     match /workflowDefinitions/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
+    // System-wide settings and counters
+    match /systemSettings/config {
+        allow read: if request.auth != null; // All authenticated users can read settings
+        allow write: if request.auth.token.email in resource.data.superAdminEmails; // Only super admins can change settings
     }
-     match /workflowAreas/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if isSuperAdmin();
+     match /counters/{counterId} {
+        allow read, write: if request.auth != null; // Allow any authenticated user to interact with counters (for transactions)
     }
 
-    // A coleção de contadores é apenas para uso interno via transações.
-    // O acesso direto é negado para segurança.
-    match /counters/{counterId} {
-      allow read, write: if false;
+    // Content collections (generally public read for authenticated users)
+    match /newsItems/{newsId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+    match /documents/{docId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+     match /labs/{labId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+    match /messages/{messageId} {
+        allow read: if request.auth != null; // Further checks can be done client-side or with more complex rules
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+    match /quickLinks/{linkId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+     match /rankings/{rankingId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+    match /contacts/{contactId} {
+      allow read: if request.auth != null;
+      allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
     }
     
-     // A coleção de logs de auditoria só pode ser escrita pela aplicação
-    // e lida por Super Admins.
-    match /audit_logs/{logId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if isSuperAdmin();
+    // Polls and responses
+    match /polls/{pollId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+    match /polls/{pollId}/responses/{responseId} {
+        allow read: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageContent == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+        allow create: if request.auth != null && request.resource.data.userId == get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.id3a;
+    }
+    
+    // Workflow related collections
+    match /workflowDefinitions/{defId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageWorkflows == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+     match /workflowAreas/{areaId} {
+        allow read: if request.auth != null;
+        allow write: if get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageWorkflows == true || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
+     match /workflows/{workflowId} {
+        // Read: If user submitted it OR is the assignee OR is the owner OR has management permission
+        allow read: if request.auth != null && 
+                    (resource.data.submittedBy.userId == get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.id3a || 
+                     resource.data.assignee.id == get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.id3a ||
+                     resource.data.ownerEmail == request.auth.token.email ||
+                     get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageRequests == true ||
+                     request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails);
+
+        // Create: Any authenticated user can create a request.
+        allow create: if request.auth != null;
+
+        // Update: More complex logic, often handled by who can read + specific field validation
+        allow update: if request.auth != null &&
+                      (get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageRequests == true ||
+                       request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails);
     }
 
-    // Regras para a coleção fabMessages
+    // Floating Action Button messages
     match /fabMessages/{userId} {
-      allow read: if request.auth.uid == userId || isSuperAdmin();
-      allow write: if isSuperAdmin();
+        // Only the user themselves or a super admin can read/write their messages
+        allow read, write: if request.auth != null && (request.auth.uid == resource.data.userId || request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails);
+    }
+     match /idleFabMessages/{messageId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
     }
 
+    // Audit logs are write-only for authenticated users
+    match /audit_logs/{logId} {
+        allow create: if request.auth != null;
+        allow read, update, delete: if request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails;
+    }
   }
 }
