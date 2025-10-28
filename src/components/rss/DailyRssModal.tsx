@@ -22,12 +22,14 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
   const [dontShowAgain, setDontShowAgain] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
+  const newsletterUrl = settings.rssNewsletterUrl;
+
   useEffect(() => {
     if (forceOpen) {
       setIsOpen(true);
       return;
     }
-    if (settingsLoading || !settings.isRssNewsletterActive || hidePermanently) {
+    if (settingsLoading || !settings.isRssNewsletterActive || hidePermanently || !newsletterUrl) {
       return;
     }
 
@@ -39,10 +41,10 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
 
       return () => clearTimeout(timer);
     }
-  }, [settingsLoading, settings.isRssNewsletterActive, lastSeen, hidePermanently, forceOpen]);
+  }, [settingsLoading, settings.isRssNewsletterActive, lastSeen, hidePermanently, forceOpen, newsletterUrl]);
 
   const handleClose = () => {
-    if (onOpenChange) {
+    if (forceOpen && onOpenChange) {
       onOpenChange(false);
     } else {
         const today = new Date().toISOString().split('T')[0];
@@ -53,6 +55,8 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
     }
     setIsOpen(false);
   };
+
+  if (!newsletterUrl) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -67,7 +71,7 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
         </DialogHeader>
         <div className="flex-grow min-h-0 border rounded-md overflow-hidden">
           <iframe
-            src="https://newsletter.radarfin.com.br/p/609"
+            src={newsletterUrl}
             className="w-full h-full border-0"
             title="Newsletter"
           />

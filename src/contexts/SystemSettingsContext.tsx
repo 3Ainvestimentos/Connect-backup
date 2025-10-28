@@ -40,7 +40,7 @@ const defaultSettings: SystemSettings = {
     termsVersion: 1,
     privacyPolicyUrl: '',
     privacyPolicyVersion: 1,
-    superAdminEmails: ['matheus@3ainvestimentos.com.br'],
+    superAdminEmails: ['matheus@3ainvestimentos.com.br', 'henrique.peixoto@3ainvestimentos.com.br'],
     collaboratorTableVersion: 1,
     isRssNewsletterActive: false,
     rssNewsletterUrl: '',
