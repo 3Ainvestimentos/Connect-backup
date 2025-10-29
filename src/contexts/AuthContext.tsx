@@ -8,7 +8,7 @@ import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChange
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
-import { addDocumentToCollection, getCollection, getDocument } from '@/lib/firestore-service';
+import { addDocumentToCollection, getCollection, getDocument, updateDocumentInCollection as updateFirestoreDoc } from '@/lib/firestore-service';
 import { useSystemSettings } from './SystemSettingsContext';
 import { getFirestore, doc, updateDoc } from "firebase/firestore";
 
@@ -34,7 +34,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const normalizeEmail = (email: string | null | undefined): string | null => {
     if (!email) return null;
-    // Esta normalização agora é um fallback, a lógica principal usará o UID.
     return email.replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
 }
 
@@ -65,13 +64,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const app = getFirebaseApp(); 
   const auth = getAuth(app);
 
-  const fetchAndSetCollaborator = useCallback(async (firebaseUser: User) => {
+  const fetchAndSetCollaborator = useCallback(async (firebaseUser: User): Promise<Collaborator | null> => {
     const collaborators = await getCollection<Collaborator>('collaborators');
-    // Prioritize UID matching, fall back to normalized email
     let collaborator = collaborators.find(c => c.authUid === firebaseUser.uid);
+
     if (!collaborator) {
       const normalizedEmail = normalizeEmail(firebaseUser.email);
-      collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+      const collaboratorByEmail = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+
+      if (collaboratorByEmail) {
+        console.log(`Associating authUid for ${normalizedEmail}...`);
+        await updateFirestoreDoc('collaborators', collaboratorByEmail.id, { authUid: firebaseUser.uid });
+        collaborator = { ...collaboratorByEmail, authUid: firebaseUser.uid };
+      }
     }
     
     if (collaborator) {
@@ -148,20 +153,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
-      const normalizedEmail = normalizeEmail(firebaseUser.email);
-
-      const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
       
-      const collaborators = await getCollection<Collaborator>('collaborators');
-      let collaborator = collaborators.find(c => c.authUid === firebaseUser.uid);
-      if (!collaborator) {
-         collaborator = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
-         // If found by email but not UID, update the doc with the UID for future logins
-         if (collaborator) {
-            await getDocument('collaborators', collaborator.id); // Re-fetch to ensure it's fresh
-            await updateDoc(doc(getFirestore(app), 'collaborators', collaborator.id), { authUid: firebaseUser.uid });
-         }
-      }
+      const collaborator = await fetchAndSetCollaborator(firebaseUser);
+      const isSuper = !!firebaseUser.email && superAdminEmails.includes(normalizeEmail(firebaseUser.email)!);
 
       if (maintenanceMode) {
           const isAllowedDuringMaintenance = !!collaborator && (allowedUserIds || []).includes(collaborator.id3a);
