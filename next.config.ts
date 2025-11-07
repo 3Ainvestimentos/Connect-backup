@@ -1,15 +1,93 @@
 
 import type {NextConfig} from 'next';
+import { withSentryConfig } from '@sentry/nextjs';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Habilitado temporariamente apenas para Preview de produção a fim de depurar SyntaxError
+  productionBrowserSourceMaps: true,
+  // Removido ignoreBuildErrors e ignoreDuringBuilds para garantir qualidade do código
   typescript: {
-    ignoreBuildErrors: true,
+    // Agora o build falhará se houver erros de TypeScript
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    // Agora o build falhará se houver erros de ESLint
+    ignoreDuringBuilds: false,
   },
+  // Fixar raiz de tracing/monorepo para evitar seleção incorreta de workspace fora do projeto
+  outputFileTracingRoot: path.join(__dirname),
+  
+  // Headers de segurança
+  async headers() {
+    const isProd = process.env.NODE_ENV === 'production';
+    return [
+      {
+        // Aplicar headers de segurança em todas as rotas
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: (() => {
+              const directives = [
+                "default-src 'self'",
+                // Dev precisa de 'unsafe-eval' para HMR
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com https://www.google.com https://www.recaptcha.net https://cdn.jsdelivr.net https://s.tradingview.com https://s3.tradingview.com http://localhost:3000 http://127.0.0.1:3000",
+                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://s.tradingview.com",
+                "img-src 'self' data: https: blob:",
+                "font-src 'self' data: https://fonts.gstatic.com",
+                "media-src 'self' https://firebasestorage.googleapis.com blob:",
+                // Permissivo em dev para evitar timeouts/HMR; mais restrito em prod
+                isProd
+                  ? "connect-src 'self' https://apis.google.com https://accounts.google.com https://*.googleapis.com https://content-firebaseappcheck.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com wss://*.firebaseio.com https://*.ingest.sentry.io https://*.sentry.io"
+                  : "connect-src 'self' http://localhost:3000 ws://localhost:3000 http://127.0.0.1:3000 ws://127.0.0.1:3000 https://apis.google.com https://accounts.google.com https://*.googleapis.com https://content-firebaseappcheck.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com wss://*.firebaseio.com https://*.ingest.sentry.io https://*.sentry.io",
+                "frame-src 'self' https://www.youtube.com https://s.tradingview.com https://tradingview-widget.com https://*.tradingview-widget.com https://www.google.com https://*.google.com https://*.googleapis.com https://*.firebaseapp.com https://*.web.app https://www.recaptcha.net https://firebasestorage.googleapis.com https://calendar.google.com https://drive.google.com https://docs.google.com https://content.googleapis.com https://studio--datavisor-44i5m.us-central1.hosted.app https://bob-1-0-backup.vercel.app",
+                "worker-src 'self' blob:",
+                "object-src 'none'",
+                "base-uri 'self'",
+                "form-action 'self'",
+                "frame-ancestors 'none'",
+              ];
+              if (isProd) directives.push('upgrade-insecure-requests');
+              return directives.join('; ');
+            })(),
+          },
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(self), geolocation=(), interest-cohort=()',
+          },
+        ],
+      },
+    ];
+  },
+  
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -34,15 +112,26 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
         port: '',
         pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'media.beehiiv.com',
-        port: '',
-        pathname: '/**',
       }
     ],
   },
 };
 
-export default nextConfig;
+// Configuração do Sentry
+const sentryWebpackPluginOptions = {
+  // Apenas fazer upload de source maps se habilitado
+  silent: true,
+  org: process.env.SENTRY_ORG || '3a-riva-investimentos',
+  project: process.env.SENTRY_PROJECT || 'javascript-nextjs',
+  
+  // Auth token para upload de source maps
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  
+  // Não fazer upload em desenvolvimento
+  dryRun: process.env.NODE_ENV !== 'production',
+};
+
+// Exportar config com Sentry (apenas se DSN configurado)
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
+  : nextConfig;
