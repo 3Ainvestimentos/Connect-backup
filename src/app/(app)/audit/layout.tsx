@@ -1,9 +1,9 @@
 "use client";
 
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
-import { PageHeader } from '@/components/layout/PageHeader';
-import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/shared/components/layout/PageHeader';
+import { DatePickerWithRange } from '@/shared/components/ui/date-picker-with-range';
+import { Tabs, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { AuditProvider, useAudit } from '@/contexts/AuditContext';
 import { usePathname, useRouter } from 'next/navigation';
 
