@@ -40,9 +40,9 @@ const nextConfig: NextConfig = {
                 "media-src 'self' https://firebasestorage.googleapis.com blob:",
                 // Permissivo em dev para evitar timeouts/HMR; mais restrito em prod
                 isProd
-                  ? "connect-src 'self' https://apis.google.com https://accounts.google.com https://*.googleapis.com https://content-firebaseappcheck.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com wss://*.firebaseio.com https://*.ingest.sentry.io https://*.sentry.io"
-                  : "connect-src 'self' http://localhost:3000 ws://localhost:3000 http://127.0.0.1:3000 ws://127.0.0.1:3000 https://apis.google.com https://accounts.google.com https://*.googleapis.com https://content-firebaseappcheck.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com wss://*.firebaseio.com https://*.ingest.sentry.io https://*.sentry.io",
-                "frame-src 'self' https://www.youtube.com https://s.tradingview.com https://tradingview-widget.com https://*.tradingview-widget.com https://www.google.com https://*.google.com https://*.googleapis.com https://*.firebaseapp.com https://*.web.app https://www.recaptcha.net https://firebasestorage.googleapis.com https://calendar.google.com https://drive.google.com https://docs.google.com https://content.googleapis.com https://studio--datavisor-44i5m.us-central1.hosted.app https://bob-1-0-backup.vercel.app",
+                  ? "connect-src 'self' https://www.google.com https://apis.google.com https://accounts.google.com https://*.googleapis.com https://content-firebaseappcheck.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com wss://*.firebaseio.com https://*.ingest.sentry.io https://*.sentry.io"
+                  : "connect-src 'self' http://localhost:3000 ws://localhost:3000 http://127.0.0.1:3000 ws://127.0.0.1:3000 https://www.google.com https://apis.google.com https://accounts.google.com https://*.googleapis.com https://content-firebaseappcheck.googleapis.com https://*.firebaseio.com https://*.cloudfunctions.net https://firebasestorage.googleapis.com wss://*.firebaseio.com https://*.ingest.sentry.io https://*.sentry.io",
+                "frame-src 'self' https://www.youtube.com https://s.tradingview.com https://tradingview-widget.com https://*.tradingview-widget.com https://www.google.com https://*.google.com https://*.googleapis.com https://*.firebaseapp.com https://*.web.app https://www.recaptcha.net https://firebasestorage.googleapis.com https://calendar.google.com https://drive.google.com https://docs.google.com https://content.googleapis.com https://studio--datavisor-44i5m.us-central1.hosted.app https://studio--studio-9152494730-25d31.us-central1.hosted.app https://bob-1-0-backup.vercel.app",
                 "worker-src 'self' blob:",
                 "object-src 'none'",
                 "base-uri 'self'",
@@ -79,7 +79,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(self), geolocation=(), interest-cohort=()',
+            value: 'camera=(), microphone=(self "https://studio--studio-9152494730-25d31.us-central1.hosted.app"), geolocation=(), interest-cohort=()',
           },
         ],
       },
