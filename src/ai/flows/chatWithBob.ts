@@ -76,8 +76,8 @@ const chatWithBobFlow = ai.defineFlow(
     // Let's map 'assistant' to 'model' for the LLM if that's what Genkit's Gemini plugin expects.
     // However, standard OpenAI/Gemini APIs often accept 'assistant'. Assuming 'assistant' is fine.
     
+    // @ts-expect-error: Tipagem do Genkit ainda não expõe o helper model() nesta versão.
     const llmResponse = await ai.model('googleai/gemini-2.0-flash').generate({
-      // @ts-ignore // Genkit might have a more specific type, but this structure is common
       messages: messagesForLLM.map(m => ({...m, role: m.role === 'assistant' ? 'model' : m.role})), // Map assistant to model if required
     });
 

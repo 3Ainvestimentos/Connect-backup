@@ -1,0 +1,4 @@
+# Ignorar componentes compartilhados legados (duplicados de src/components).
+# A rota atual não consome este diretório; revisar antes de reativar.
+src/shared/
+

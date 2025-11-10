@@ -223,6 +223,8 @@ export const iconMap: Record<string, LucideIcon> = {
   Rss,
 };
 
+export const iconList = Object.keys(iconMap) as Array<keyof typeof iconMap>;
+
 export const getIcon = (name: string): LucideIcon => {
     return iconMap[name] || HelpCircle; // Return HelpCircle as a fallback
 };
