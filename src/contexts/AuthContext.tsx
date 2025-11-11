@@ -11,6 +11,7 @@ import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
 import { addDocumentToCollection, getCollection, getDocument, updateDocumentInCollection as updateFirestoreDoc } from '@/lib/firestore-service';
 import { useSystemSettings } from './SystemSettingsContext';
 import { getFirestore, doc, updateDoc } from "firebase/firestore";
+import type { FirebaseError } from 'firebase/app';
 
 const scopes = [
   'https://www.googleapis.com/auth/calendar.readonly',
@@ -63,6 +64,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const app = getFirebaseApp(); 
   const auth = getAuth(app);
+
+  const logAuthDebug = useCallback((label: string, extra?: Record<string, unknown>) => {
+    if (typeof window === 'undefined') return;
+    const context = {
+      origin: window.location.origin,
+      referrer: document.referrer,
+      authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      pathname: window.location.pathname,
+    };
+    // eslint-disable-next-line no-console
+    console.info(`[AuthDebug] ${label}`, { ...context, ...extra });
+  }, []);
 
   const fetchAndSetCollaborator = useCallback(async (firebaseUser: User): Promise<Collaborator | null> => {
     const collaborators = await getCollection<Collaborator>('collaborators');
@@ -151,6 +164,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettings;
       
+      logAuthDebug('signInWithGoogle:start');
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseUser = result.user;
       
@@ -191,23 +205,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     } catch (error: unknown) {
-      if (error instanceof Error && 'code' in error) {
-          const firebaseError = error as { code: string; message: string };
-          if (firebaseError.code !== 'auth/popup-closed-by-user' && firebaseError.code !== 'auth/cancelled-popup-request') {
-            console.error("Firebase Login Error:", firebaseError);
-            toast({
-              title: "Erro de Login",
-              description: `Ocorreu um problema durante o login. (Código: ${firebaseError.code})`,
-              variant: "destructive",
-            });
-          }
+      const firebaseError = error as FirebaseError | undefined;
+      if (firebaseError?.code) {
+        if (firebaseError.code !== 'auth/popup-closed-by-user' && firebaseError.code !== 'auth/cancelled-popup-request') {
+          logAuthDebug('signInWithGoogle:error', {
+            code: firebaseError.code,
+            message: firebaseError.message,
+            customData: firebaseError.customData,
+          });
+          // eslint-disable-next-line no-console
+          console.error("Firebase Login Error:", firebaseError);
+          toast({
+            title: "Erro de Login",
+            description: `Código: ${firebaseError.code}. Mensagem: ${firebaseError.message}`,
+            variant: "destructive",
+          });
+        }
       } else {
-           console.error("Error signing in with Google: ", error);
-           toast({
-                title: "Erro de Login",
-                description: "Ocorreu um problema desconhecido durante o login.",
-                variant: "destructive",
-           });
+        logAuthDebug('signInWithGoogle:unknown-error', { error });
+        // eslint-disable-next-line no-console
+        console.error("Error signing in with Google: ", error);
+        toast({
+          title: "Erro de Login",
+          description: "Ocorreu um problema desconhecido durante o login.",
+          variant: "destructive",
+        });
       }
     } finally {
         setLoading(false);
