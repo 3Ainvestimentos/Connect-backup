@@ -72,6 +72,7 @@ export default function BIPage() {
                         src={link.url}
                         frameBorder="0"
                         allowFullScreen={true}
+                        allow="fullscreen; clipboard-read; clipboard-write; autoplay"
                         className="border-0 rounded-none w-full h-full"
                     ></iframe>
                 </TabsContent>
