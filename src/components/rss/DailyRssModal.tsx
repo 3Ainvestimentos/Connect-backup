@@ -47,11 +47,10 @@ export function DailyRssModal({ forceOpen = false, onOpenChange }: DailyRssModal
     if (forceOpen && onOpenChange) {
       onOpenChange(false);
     } else {
-        const today = new Date().toISOString().split('T')[0];
-        setLastSeen(today);
-        if (dontShowAgain) {
-          setHidePermanently(true);
-        }
+      const today = new Date().toISOString().split('T')[0];
+      // Atualiza lastSeen para hoje, impedindo que apareça novamente hoje
+      // Se o checkbox estiver marcado, apenas garante que não apareça hoje
+      setLastSeen(today);
     }
     setIsOpen(false);
   };
