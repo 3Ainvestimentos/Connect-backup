@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { format, formatISO } from 'date-fns';
+import { format, formatISO, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Loader2, Paperclip, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -91,8 +91,13 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
     setIsSubmitting(true);
 
     try {
+        // Validação defensiva: garante que há pelo menos um status
+        if (!workflowDefinition.statuses || workflowDefinition.statuses.length === 0) {
+            throw new Error(`O workflow "${workflowDefinition.name}" não possui status configurados. Entre em contato com o administrador.`);
+        }
+        
         const now = new Date();
-        const initialStatus = workflowDefinition.statuses?.[0]?.id || 'pending';
+        const initialStatus = workflowDefinition.statuses[0].id;
         
         const initialRequestPayload = {
             type: workflowDefinition.name,
@@ -142,22 +147,52 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                 const uniqueId = getUniqueFieldId(index);
                 const file = fileFields[uniqueId];
                 if (file) {
-                    const url = await uploadFile(file, storagePath, newRequest.id);
-                    formDataForFirestore[field.id] = url;
+                    try {
+                        const url = await uploadFile(file, storagePath, newRequest.id);
+                        formDataForFirestore[field.id] = url;
+                    } catch (error) {
+                        console.error(`Erro ao fazer upload do arquivo para o campo ${field.label}:`, error);
+                        throw new Error(`Falha ao fazer upload do arquivo "${file.name}" no campo "${field.label}". Tente novamente.`);
+                    }
                 }
             });
         
-        await Promise.all(fileUploadPromises);
+        try {
+            await Promise.all(fileUploadPromises);
+        } catch (error) {
+            // Re-throw para ser capturado no catch principal do onSubmit
+            throw error;
+        }
 
-        // Processa campos de data
+        // Processa campos de data com validação
         workflowDefinition.fields.forEach(field => {
             if (field.type === 'date-range' && formDataForFirestore[field.id]) {
-                formDataForFirestore[field.id] = {
-                    from: formDataForFirestore[field.id].from ? formatISO(formDataForFirestore[field.id].from, { representation: 'date' }) : null,
-                    to: formDataForFirestore[field.id].to ? formatISO(formDataForFirestore[field.id].to, { representation: 'date' }) : null,
-                };
+                const dateRange = formDataForFirestore[field.id];
+                try {
+                    const fromDate = dateRange.from ? new Date(dateRange.from) : null;
+                    const toDate = dateRange.to ? new Date(dateRange.to) : null;
+                    
+                    formDataForFirestore[field.id] = {
+                        from: (fromDate && isValid(fromDate)) ? formatISO(fromDate, { representation: 'date' }) : null,
+                        to: (toDate && isValid(toDate)) ? formatISO(toDate, { representation: 'date' }) : null,
+                    };
+                } catch (error) {
+                    console.warn(`Erro ao processar período de datas no campo ${field.id}:`, error);
+                    // Mantém o valor original se houver erro na conversão
+                }
             } else if (field.type === 'date' && formDataForFirestore[field.id]) {
-                formDataForFirestore[field.id] = formatISO(formDataForFirestore[field.id], { representation: 'date' });
+                try {
+                    const dateValue = new Date(formDataForFirestore[field.id]);
+                    if (isValid(dateValue)) {
+                        formDataForFirestore[field.id] = formatISO(dateValue, { representation: 'date' });
+                    } else {
+                        console.warn(`Data inválida no campo ${field.id}:`, formDataForFirestore[field.id]);
+                        delete formDataForFirestore[field.id]; // Remove campo inválido
+                    }
+                } catch (error) {
+                    console.warn(`Erro ao processar data no campo ${field.id}:`, error);
+                    delete formDataForFirestore[field.id]; // Remove campo inválido em caso de erro
+                }
             }
         });
 

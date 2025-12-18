@@ -164,41 +164,42 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       const newDoc = await addDocumentToCollection(COLLECTION_NAME, requestWithDefaults);
 
       // --- NOTIFICATION LOGIC ---
-      if (Object.keys(requestData.formData).length === 0) { 
-            await addMessage({
-                title: `Solicitação Recebida: ${requestData.type} #${requestWithDefaults.requestId}`,
-                content: `Sua solicitação '${requestData.type}' foi aberta com sucesso e está pendente de análise.`,
-                sender: 'Sistema de Workflows',
-                recipientIds: [requestData.submittedBy.userId],
-            });
+      // Sempre envia notificação para o solicitante quando uma nova solicitação é criada
+      await addMessage({
+          title: `Solicitação Recebida: ${requestData.type} #${requestWithDefaults.requestId}`,
+          content: `Sua solicitação '${requestData.type}' foi aberta com sucesso e está pendente de análise.`,
+          sender: 'Sistema de Workflows',
+          recipientIds: [requestData.submittedBy.userId],
+      });
 
-            const owner = collaborators.find(c => c.email === definition.ownerEmail);
-            if (owner && owner.id3a !== requestData.submittedBy.userId) {
-                await addMessage({
-                    title: `Nova Solicitação: ${requestData.type} #${requestWithDefaults.requestId}`,
-                    content: `Uma nova solicitação de '${requestData.type}' foi enviada por ${requestData.submittedBy.userName} e aguarda sua revisão.`,
-                    sender: 'Sistema de Workflows',
-                    recipientIds: [owner.id3a],
-                });
-            }
+      // Notifica o owner da solicitação (se diferente do solicitante)
+      const owner = collaborators.find(c => c.email === definition.ownerEmail);
+      if (owner && owner.id3a !== requestData.submittedBy.userId) {
+          await addMessage({
+              title: `Nova Solicitação: ${requestData.type} #${requestWithDefaults.requestId}`,
+              content: `Uma nova solicitação de '${requestData.type}' foi enviada por ${requestData.submittedBy.userName} e aguarda sua revisão.`,
+              sender: 'Sistema de Workflows',
+              recipientIds: [owner.id3a],
+          });
+      }
 
-            if (definition && definition.routingRules && requestData.formData) {
-                for (const rule of definition.routingRules) {
-                const formValue = requestData.formData[rule.field];
-                if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
-                    const recipientUsers = collaborators.filter(c => rule.notify.includes(c.email));
-                    const recipientIds = recipientUsers.map(u => u.id3a);
-                    if (recipientIds.length > 0) {
-                    await addMessage({
-                        title: `Nova Solicitação para Análise: ${requestData.type}`,
-                        content: `Uma nova solicitação de '${requestData.type}' foi aberta por ${requestData.submittedBy.userName} e requer sua atenção devido à regra do campo '${rule.field}' = '${rule.value}'.`,
-                        sender: 'Sistema de Workflows',
-                        recipientIds: recipientIds,
-                    });
-                    }
-                }
-                }
-            }
+      // Verifica routing rules apenas se houver formData
+      if (definition && definition.routingRules && requestData.formData && Object.keys(requestData.formData).length > 0) {
+          for (const rule of definition.routingRules) {
+              const formValue = requestData.formData[rule.field];
+              if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
+                  const recipientUsers = collaborators.filter(c => rule.notify.includes(c.email));
+                  const recipientIds = recipientUsers.map(u => u.id3a);
+                  if (recipientIds.length > 0) {
+                      await addMessage({
+                          title: `Nova Solicitação para Análise: ${requestData.type}`,
+                          content: `Uma nova solicitação de '${requestData.type}' foi aberta por ${requestData.submittedBy.userName} e requer sua atenção devido à regra do campo '${rule.field}' = '${rule.value}'.`,
+                          sender: 'Sistema de Workflows',
+                          recipientIds: recipientIds,
+                      });
+                  }
+              }
+          }
       }
 
       return { ...newDoc, requestId };

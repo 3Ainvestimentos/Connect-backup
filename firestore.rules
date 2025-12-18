@@ -81,7 +81,7 @@ service cloud.firestore {
         // Read: If user submitted it OR is the assignee OR is the owner OR has management permission
         allow read: if request.auth != null && 
                     (resource.data.submittedBy.userId == get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.id3a || 
-                     resource.data.assignee.id == get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.id3a ||
+                     (resource.data.assignee != null && resource.data.assignee.id == get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.id3a) ||
                      resource.data.ownerEmail == request.auth.token.email ||
                      get(/databases/$(database)/documents/collaborators/$(request.auth.uid)).data.permissions.canManageRequests == true ||
                      request.auth.token.email in get(/databases/$(database)/documents/systemSettings/config).data.superAdminEmails);

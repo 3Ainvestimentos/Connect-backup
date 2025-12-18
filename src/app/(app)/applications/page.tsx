@@ -17,7 +17,7 @@ interface GroupedWorkflows {
 }
 
 export default function ApplicationsPage() {
-  const { currentUserCollab } = useAuth();
+  const { currentUserCollab, permissions, isSuperAdmin } = useAuth();
   const { workflowDefinitions } = useApplications();
   const { workflowAreas } = useWorkflowAreas();
 
@@ -27,7 +27,16 @@ export default function ApplicationsPage() {
   const groupedWorkflows = React.useMemo(() => {
     if (!currentUserCollab || !workflowAreas.length) return {};
 
+    // Verifica se o usuário é admin de workflows ou super admin
+    const isAdmin = permissions.canManageWorkflows || isSuperAdmin;
+
     const accessibleWorkflows = workflowDefinitions.filter(def => {
+      // Admins têm acesso a todos os workflows automaticamente
+      if (isAdmin) {
+        return true;
+      }
+      
+      // Para não-admins, verifica allowedUserIds
       if (!def.allowedUserIds || def.allowedUserIds.includes('all')) {
         return true;
       }
@@ -55,7 +64,7 @@ export default function ApplicationsPage() {
     });
 
     return groups;
-  }, [workflowDefinitions, currentUserCollab, workflowAreas]);
+  }, [workflowDefinitions, currentUserCollab, workflowAreas, permissions.canManageWorkflows, isSuperAdmin]);
 
   const sortedGroupKeys = React.useMemo(() => {
     // The keys should already be in a reasonable order if they come from the sorted workflowAreas
