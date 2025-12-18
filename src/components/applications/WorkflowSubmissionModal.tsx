@@ -51,16 +51,21 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
     return workflowAreas.find(area => area.id === workflowDefinition.areaId);
   }, [workflowDefinition, workflowAreas]);
 
+  // Função para obter um ID único para cada campo (usando índice)
+  // Isso garante que cada campo seja independente, mesmo que tenham o mesmo field.id
+  const getUniqueFieldId = (index: number) => `__field_${index}`;
+
   useEffect(() => {
     if (open) {
       const defaultValues: DynamicFormData = {};
-      workflowDefinition.fields.forEach(field => {
+      workflowDefinition.fields.forEach((field, index) => {
+        const uniqueId = getUniqueFieldId(index);
         if (field.type === 'date-range') {
-          defaultValues[field.id] = { from: undefined, to: undefined };
+          defaultValues[uniqueId] = { from: undefined, to: undefined };
         } else if (field.type === 'date') {
-          defaultValues[field.id] = undefined;
+          defaultValues[uniqueId] = undefined;
         } else {
-          defaultValues[field.id] = '';
+          defaultValues[uniqueId] = '';
         }
       });
       reset(defaultValues);
@@ -106,11 +111,36 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           throw new Error(`A área de workflow para "${workflowDefinition.name}" não tem uma pasta de armazenamento configurada.`);
         }
 
-        const formDataForFirestore = { ...data };
+        // Mapeia os dados do formulário de volta para usar os IDs originais dos campos
+        const formDataForFirestore: DynamicFormData = {};
+        const fieldIdUsage = new Map<string, number>(); // Rastreia quantas vezes cada field.id é usado
+        
+        workflowDefinition.fields.forEach((field, index) => {
+          const uniqueId = getUniqueFieldId(index);
+          const value = data[uniqueId];
+          
+          // Mapeia o valor único de volta para o ID original do campo
+          if (value !== undefined && value !== null && value !== '') {
+            // Detecta IDs duplicados
+            const usageCount = fieldIdUsage.get(field.id) || 0;
+            fieldIdUsage.set(field.id, usageCount + 1);
+            
+            if (usageCount > 0) {
+              console.warn(`Aviso: O campo "${field.label}" (índice ${index}) tem o mesmo ID que outro campo ("${field.id}"). Apenas o último valor será salvo. Considere corrigir a definição do workflow para usar IDs únicos.`);
+            }
+            
+            formDataForFirestore[field.id] = value;
+          }
+        });
+
         const fileUploadPromises = workflowDefinition.fields
-            .filter(field => field.type === 'file' && fileFields[field.id])
-            .map(async (field) => {
-                const file = fileFields[field.id];
+            .filter((field, index) => {
+              const uniqueId = getUniqueFieldId(index);
+              return field.type === 'file' && fileFields[uniqueId];
+            })
+            .map(async (field, index) => {
+                const uniqueId = getUniqueFieldId(index);
+                const file = fileFields[uniqueId];
                 if (file) {
                     const url = await uploadFile(file, storagePath, newRequest.id);
                     formDataForFirestore[field.id] = url;
@@ -119,7 +149,8 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         
         await Promise.all(fileUploadPromises);
 
-         workflowDefinition.fields.forEach(field => {
+        // Processa campos de data
+        workflowDefinition.fields.forEach(field => {
             if (field.type === 'date-range' && formDataForFirestore[field.id]) {
                 formDataForFirestore[field.id] = {
                     from: formDataForFirestore[field.id].from ? formatISO(formDataForFirestore[field.id].from, { representation: 'date' }) : null,
@@ -152,24 +183,26 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
   };
 
   const renderField = (field: FormFieldDefinition, index: number) => {
-    const error = errors[field.id];
+    const uniqueFieldId = getUniqueFieldId(index);
+    const error = errors[uniqueFieldId];
+    const htmlId = `${field.id}_${index}`; // ID único para o elemento HTML
     
     switch (field.type) {
       case 'file':
         return (
           <div key={`${field.id}-${index}`} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Label htmlFor={htmlId}>{field.label}{field.required && ' *'}</Label>
             <div className="relative">
                 <Controller
-                  name={field.id}
+                  name={uniqueFieldId}
                   control={control}
-                  rules={{ required: field.required && !fileFields[field.id] ? 'Este anexo é obrigatório.' : false }}
-                  render={({ field: { onChange, value, ...rest } }) => ( // Destructure value out
+                  rules={{ required: field.required && !fileFields[uniqueFieldId] ? 'Este anexo é obrigatório.' : false }}
+                  render={({ field: { onChange, value, ...rest } }) => (
                      <Input 
-                      id={field.id} 
+                      id={htmlId} 
                       type="file" 
                       onChange={(e) => {
-                        handleFileChange(field.id, e);
+                        handleFileChange(uniqueFieldId, e);
                         onChange(e.target.files?.[0]);
                       }} 
                       className="pl-10" 
@@ -180,19 +213,19 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                 />
                 <Paperclip className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             </div>
-            {fileFields[field.id] && <p className="text-xs text-muted-foreground">Arquivo selecionado: {fileFields[field.id]?.name}</p>}
+            {fileFields[uniqueFieldId] && <p className="text-xs text-muted-foreground">Arquivo selecionado: {fileFields[uniqueFieldId]?.name}</p>}
             {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
         );
       case 'text':
         return (
           <div key={`${field.id}-${index}`} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Label htmlFor={htmlId}>{field.label}{field.required && ' *'}</Label>
             <Controller 
-              name={field.id} 
+              name={uniqueFieldId} 
               control={control} 
               rules={{ required: field.required ? "Este campo é obrigatório" : false }} 
-              render={({ field: controllerField }) => <Input id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} 
+              render={({ field: controllerField }) => <Input id={htmlId} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} 
             />
             {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
@@ -200,12 +233,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       case 'textarea':
         return (
           <div key={`${field.id}-${index}`} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Label htmlFor={htmlId}>{field.label}{field.required && ' *'}</Label>
             <Controller 
-              name={field.id} 
+              name={uniqueFieldId} 
               control={control} 
               rules={{ required: field.required ? "Este campo é obrigatório" : false }} 
-              render={({ field: controllerField }) => <Textarea id={field.id} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} 
+              render={({ field: controllerField }) => <Textarea id={htmlId} {...controllerField} placeholder={field.placeholder} disabled={isSubmitting} />} 
             />
             {error && <p className="text-sm text-destructive">{error.message?.toString()}</p>}
           </div>
@@ -213,14 +246,14 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       case 'select':
         return (
           <div key={`${field.id}-${index}`} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Label htmlFor={htmlId}>{field.label}{field.required && ' *'}</Label>
             <Controller
-              name={field.id}
+              name={uniqueFieldId}
               control={control}
               rules={{ required: field.required ? "Este campo é obrigatório" : false }}
               render={({ field: controllerField }) => (
                 <Select onValueChange={controllerField.onChange} defaultValue={controllerField.value} disabled={isSubmitting}>
-                  <SelectTrigger id={field.id}><SelectValue placeholder={field.placeholder || 'Selecione...'} /></SelectTrigger>
+                  <SelectTrigger id={htmlId}><SelectValue placeholder={field.placeholder || 'Selecione...'} /></SelectTrigger>
                   <SelectContent>
                     {field.options?.map(option => <SelectItem key={option} value={option}>{option}</SelectItem>)}
                   </SelectContent>
@@ -233,9 +266,9 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       case 'date':
         return (
           <div key={`${field.id}-${index}`} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Label htmlFor={htmlId}>{field.label}{field.required && ' *'}</Label>
             <Controller
-              name={field.id}
+              name={uniqueFieldId}
               control={control}
               rules={{ required: field.required ? "Selecione uma data." : false }}
               render={({ field: { onChange, value } }) => (
@@ -261,9 +294,9 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
       case 'date-range':
         return (
            <div key={`${field.id}-${index}`} className="space-y-2">
-            <Label htmlFor={field.id}>{field.label}{field.required && ' *'}</Label>
+            <Label htmlFor={htmlId}>{field.label}{field.required && ' *'}</Label>
             <Controller
-              name={field.id}
+              name={uniqueFieldId}
               control={control}
               rules={{ 
                 required: field.required ? "Este campo é obrigatório" : false,
@@ -273,7 +306,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
-                      id={field.id}
+                      id={htmlId}
                       variant={'outline'}
                       className={cn('w-full justify-start text-left font-normal', !controllerField.value?.from && 'text-muted-foreground')}
                       disabled={isSubmitting}
