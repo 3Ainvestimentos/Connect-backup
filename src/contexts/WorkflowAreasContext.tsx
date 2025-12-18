@@ -6,11 +6,31 @@ import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanst
 import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, listenToCollection, getCollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { useAuth } from './AuthContext';
+import { isValidStorageFolderPath } from '@/lib/path-sanitizer';
 
 export const workflowAreaSchema = z.object({
     name: z.string().min(1, "O nome da área é obrigatório."),
     icon: z.string().min(1, "O ícone é obrigatório."),
-    storageFolderPath: z.string().min(1, "O caminho da pasta no Storage é obrigatório."),
+    storageFolderPath: z.string()
+        .min(1, "O caminho da pasta no Storage é obrigatório.")
+        .refine(
+            (path) => {
+                // Validação conservadora: apenas verifica path traversal e valores vazios
+                // Não rejeita caminhos existentes que podem ter formatos válidos mas incomuns
+                const trimmed = path.trim();
+                if (!trimmed || trimmed === '' || trimmed === '.' || trimmed === '..') {
+                    return false;
+                }
+                // Apenas bloqueia path traversal explícito
+                if (trimmed.includes('..')) {
+                    return false;
+                }
+                return true;
+            },
+            {
+                message: "Caminho inválido. Não pode estar vazio, conter '..' (path traversal), ou ser apenas '.' ou '..'."
+            }
+        ),
     workflowOrder: z.array(z.string()).optional(),
 });
 

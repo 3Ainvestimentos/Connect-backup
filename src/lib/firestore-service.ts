@@ -5,6 +5,7 @@ import { getFirestore, writeBatch, onSnapshot } from "firebase/firestore";
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction, query, where, Query } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { cleanDataForFirestore } from './data-sanitizer';
+import { buildStorageFilePath, sanitizeStoragePath } from './path-sanitizer';
 
 // This must be imported here to use the type.
 import type { UploadTaskSnapshot } from "firebase/storage";
@@ -34,13 +35,48 @@ export const uploadFile = (
 ): Promise<string> => {
   return new Promise((resolve, reject) => {
     try {
+      // Valida e sanitiza os caminhos para prevenir path traversal e outros problemas
+      // Usa try-catch defensivo: se sanitização falhar, tenta usar o caminho original com validação mínima
+      let sanitizedStoragePath: string;
+      let sanitizedRequestId: string;
+      
+      try {
+        sanitizedStoragePath = sanitizeStoragePath(storagePath);
+        sanitizedRequestId = sanitizeStoragePath(requestId);
+      } catch (error) {
+        // Defensivo: se sanitização falhar (ex: caminho existente com formato incomum),
+        // faz validação mínima apenas para prevenir path traversal
+        console.warn("Aviso: Caminho não passou na sanitização completa, aplicando validação mínima:", error);
+        
+        // Validação mínima: apenas prevenir path traversal
+        if (storagePath.includes('..') || requestId.includes('..')) {
+          reject(new Error("Caminho inválido: não é permitido usar '..' (path traversal)."));
+          return;
+        }
+        
+        // Remove apenas barras no início/fim e normaliza separadores (mais conservador)
+        sanitizedStoragePath = storagePath.trim().replace(/^\/+|\/+$/g, '').replace(/\\/g, '/').replace(/\/+/g, '/');
+        sanitizedRequestId = requestId.trim().replace(/^\/+|\/+$/g, '').replace(/\\/g, '/').replace(/\/+/g, '/');
+        
+        if (!sanitizedStoragePath || !sanitizedRequestId) {
+          reject(new Error("Caminho inválido detectado. Entre em contato com o administrador."));
+          return;
+        }
+      }
+
       const currentApp = getFirebaseApp();
       const storage = getStorage(currentApp);
 
-      const finalFileName = `${Date.now()}-${encodeURIComponent((fileName || file.name).replace(/\s+/g, '_'))}`;
+      // Nome do arquivo: timestamp + nome original (sanitização mínima)
+      const originalFileName = fileName || file.name;
+      const timestamp = Date.now();
+      // Apenas remove barras do nome (crítico), mas mantém outros caracteres para compatibilidade
+      // O encodeURIComponent já faz a codificação necessária para URLs
+      const safeFileName = originalFileName.replace(/[/\\]/g, '_');
+      const finalFileName = `${timestamp}-${encodeURIComponent(safeFileName)}`;
       
-      // Use a consistent folder structure: {base_path}/{request_id}/{file_name}
-      const filePath = `${storagePath}/${requestId}/${finalFileName}`;
+      // Constrói o caminho de forma segura usando a função utilitária
+      const filePath = buildStorageFilePath(sanitizedStoragePath, sanitizedRequestId, finalFileName);
       
       const storageRef = ref(storage, filePath);
       
