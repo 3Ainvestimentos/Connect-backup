@@ -353,7 +353,7 @@ export function AllRequestsView() {
                                                     <Avatar className="h-6 w-6">
                                                         {requester?.photoURL && <AvatarImage src={requester.photoURL} alt={requester.name} />}
                                                         <AvatarFallback className="text-xs">
-                                                            {requester?.name.charAt(0) || '?'}
+                                                            {requester?.name?.charAt(0) || '?'}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <span className="text-sm">{req.submittedBy.userName}</span>
@@ -365,7 +365,7 @@ export function AllRequestsView() {
                                                         <Avatar className="h-6 w-6">
                                                             {assigneeCollab?.photoURL && <AvatarImage src={assigneeCollab.photoURL} alt={req.assignee.name} />}
                                                             <AvatarFallback className="text-xs">
-                                                                {req.assignee.name.charAt(0)}
+                                                                {req.assignee.name?.charAt(0) || '?'}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         <span className="text-sm">{req.assignee.name}</span>
@@ -379,7 +379,7 @@ export function AllRequestsView() {
                                                     <Avatar className="h-6 w-6">
                                                         {owner?.photoURL && <AvatarImage src={owner.photoURL} alt={owner.name}/>}
                                                         <AvatarFallback className="text-xs">
-                                                            {owner?.name.charAt(0) || '?'}
+                                                            {owner?.name?.charAt(0) || '?'}
                                                         </AvatarFallback>
                                                     </Avatar>
                                                     <span className="text-sm">{getOwnerName(req.ownerEmail)}</span>
