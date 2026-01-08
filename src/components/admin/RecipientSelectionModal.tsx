@@ -50,21 +50,34 @@ export function RecipientSelectionModal({
     
 
     const filteredAndSortedCollaborators = useMemo(() => {
-        let items = [...allCollaborators];
+        // Validar se allCollaborators existe e é um array
+        if (!allCollaborators || !Array.isArray(allCollaborators)) {
+            return [];
+        }
+
+        let items = allCollaborators.filter(c => {
+            // Garantir que o colaborador existe e tem propriedades necessárias
+            return c && typeof c === 'object' && c.id3a;
+        });
         
         if (viewFilter === 'selected') {
-            items = items.filter(c => localSelectedIds.has(c.id3a));
+            items = items.filter(c => c.id3a && localSelectedIds.has(c.id3a));
         } else if (viewFilter === 'unselected') {
-            items = items.filter(c => !localSelectedIds.has(c.id3a));
+            items = items.filter(c => c.id3a && !localSelectedIds.has(c.id3a));
         }
 
         if (searchTerm) {
-            items = items.filter(c =>
-                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.area.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.position.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            items = items.filter(c => {
+                const name = (c.name && typeof c.name === 'string') ? c.name.toLowerCase() : '';
+                const email = (c.email && typeof c.email === 'string') ? c.email.toLowerCase() : '';
+                const area = (c.area && typeof c.area === 'string') ? c.area.toLowerCase() : '';
+                const position = (c.position && typeof c.position === 'string') ? c.position.toLowerCase() : '';
+                return name.includes(lowerSearchTerm) || 
+                       email.includes(lowerSearchTerm) || 
+                       area.includes(lowerSearchTerm) || 
+                       position.includes(lowerSearchTerm);
+            });
         }
 
         if (sortKey) {
@@ -74,6 +87,10 @@ export function RecipientSelectionModal({
                 let comparison = 0;
                 if (valA && valB) {
                     comparison = String(valA).localeCompare(String(valB));
+                } else if (valA && !valB) {
+                    comparison = 1;
+                } else if (!valA && valB) {
+                    comparison = -1;
                 }
                 return sortDirection === 'asc' ? comparison : -comparison;
             });

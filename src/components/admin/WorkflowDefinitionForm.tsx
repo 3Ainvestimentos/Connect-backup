@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Trash2, GripVertical, Loader2, Route, ListTodo, Timer, User, ShieldCheck, Users, FolderOpen } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { useApplications, WorkflowDefinition, workflowDefinitionSchema } from '@/contexts/ApplicationsContext';
+import { useApplications, WorkflowDefinition, workflowDefinitionSchema, formFieldSchema, routingRuleSchema } from '@/contexts/ApplicationsContext';
 import { getIcon } from '@/lib/icons';
 import { iconList } from '@/lib/icon-list';
 import { Switch } from '../ui/switch';
@@ -24,7 +24,11 @@ import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { RecipientSelectionModal } from './RecipientSelectionModal';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 
-type FormValues = z.infer<typeof workflowDefinitionSchema>;
+// Tipo para valores do formulário (permite strings onde o schema espera arrays)
+type FormValues = Omit<z.infer<typeof workflowDefinitionSchema>, 'fields' | 'routingRules'> & {
+    fields: Array<Omit<z.infer<typeof formFieldSchema>, 'options'> & { options: string | string[] }>;
+    routingRules: Array<Omit<z.infer<typeof routingRuleSchema>, 'notify'> & { notify: string | string[] }>;
+};
 
 interface WorkflowDefinitionFormProps {
     isOpen: boolean;
@@ -40,30 +44,100 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
     const [isApproverSelectionModalOpen, setIsApproverSelectionModalOpen] = useState(false);
     const [activeStatusIndex, setActiveStatusIndex] = useState<number | null>(null);
 
-    const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue } = useForm<FormValues>({
+    // Função helper para normalizar dados do definition antes de usar no form
+    const normalizeDefinition = useCallback((def: WorkflowDefinition | null) => {
+        if (!def) {
+            return {
+                name: '',
+                subtitle: '',
+                description: '',
+                icon: 'FileText',
+                areaId: '',
+                ownerEmail: '',
+                defaultSlaDays: undefined,
+                slaRules: [],
+                fields: [],
+                routingRules: [],
+                statuses: [{ id: 'pending', label: 'Pendente', action: undefined }],
+                allowedUserIds: ['all'],
+            };
+        }
+
+        try {
+            return {
+                ...def,
+                fields: (Array.isArray(def.fields) ? def.fields : []).map(f => ({ 
+                    ...f, 
+                    options: Array.isArray(f.options) && f.options.length > 0 
+                        ? f.options.join(',') 
+                        : (typeof f.options === 'string' ? f.options : '') 
+                })),
+                routingRules: (Array.isArray(def.routingRules) ? def.routingRules : []).map(r => ({ 
+                    ...r, 
+                    notify: Array.isArray(r.notify) && r.notify.length > 0
+                        ? r.notify.join(', ')
+                        : (typeof r.notify === 'string' ? r.notify : '')
+                })),
+                statuses: (Array.isArray(def.statuses) && def.statuses.length > 0)
+                    ? def.statuses.map(s => ({
+                        ...s, 
+                        action: s.action && typeof s.action === 'object' && !Array.isArray(s.action) && s.action !== null
+                            ? s.action 
+                            : undefined 
+                    })) 
+                    : [{ id: 'pending', label: 'Pendente', action: undefined }],
+                slaRules: Array.isArray(def.slaRules) ? def.slaRules : [],
+                allowedUserIds: Array.isArray(def.allowedUserIds) && def.allowedUserIds.length > 0 
+                    ? def.allowedUserIds 
+                    : ['all'],
+            };
+        } catch (error) {
+            console.error('Erro ao normalizar definição de workflow:', error);
+            // Retorna valores padrão em caso de erro, mantendo campos básicos se disponíveis
+            return {
+                name: def.name || '',
+                subtitle: def.subtitle || '',
+                description: def.description || '',
+                icon: def.icon || 'FileText',
+                areaId: def.areaId || '',
+                ownerEmail: def.ownerEmail || '',
+                defaultSlaDays: def.defaultSlaDays,
+                slaRules: [],
+                fields: [],
+                routingRules: [],
+                statuses: [{ id: 'pending', label: 'Pendente', action: undefined }],
+                allowedUserIds: ['all'],
+            };
+        }
+    }, []);
+
+    const { control, register, handleSubmit, formState: { errors, isSubmitting }, watch, setValue, reset } = useForm<FormValues>({
         resolver: zodResolver(workflowDefinitionSchema),
-        defaultValues: definition ? {
-            ...definition,
-            fields: definition.fields.map(f => ({ ...f, options: Array.isArray(f.options) ? f.options.join(',') : f.options as any })),
-            routingRules: definition.routingRules ? definition.routingRules.map(r => ({ ...r, notify: Array.isArray(r.notify) ? r.notify.join(', ') : r.notify })) : [],
-            statuses: definition.statuses?.length ? definition.statuses.map(s => ({...s, action: s.action || undefined })) : [{ id: 'pending', label: 'Pendente', action: undefined }],
-            slaRules: definition.slaRules || [],
-            allowedUserIds: definition.allowedUserIds || ['all'],
-        } : {
-            name: '',
-            subtitle: '',
-            description: '',
-            icon: 'FileText',
-            areaId: '',
-            ownerEmail: '',
-            defaultSlaDays: undefined,
-            slaRules: [],
-            fields: [],
-            routingRules: [],
-            statuses: [{ id: 'pending', label: 'Pendente', action: undefined }],
-            allowedUserIds: ['all'],
-        },
+        defaultValues: normalizeDefinition(definition),
+        mode: 'onChange', // Validação apenas quando o usuário interage
+        reValidateMode: 'onChange',
+        shouldUnregister: false,
+        shouldFocusError: true,
     });
+
+    // Resetar formulário quando definition ou isOpen mudarem
+    useEffect(() => {
+        if (isOpen) {
+            try {
+                const normalized = normalizeDefinition(definition);
+                reset(normalized, { keepErrors: false });
+            } catch (error) {
+                console.error('Erro ao resetar formulário:', error);
+                // Em caso de erro, fecha o modal e mostra toast
+                onClose();
+                toast({
+                    title: "Erro ao abrir formulário",
+                    description: "Não foi possível carregar os dados do workflow. Tente novamente ou entre em contato com o suporte.",
+                    variant: "destructive"
+                });
+            }
+        }
+    }, [definition, isOpen, reset, normalizeDefinition, onClose]);
 
     const { fields, append, remove } = useFieldArray({ control, name: "fields" });
     const { fields: rules, append: appendRule, remove: removeRule } = useFieldArray({ control, name: "routingRules" });
@@ -76,26 +150,56 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
     const watchedStatuses = watch('statuses');
 
     const uniqueCollaborators = React.useMemo(() => {
-        const seen = new Set();
+        // Validar se collaborators existe e é um array
+        if (!collaborators || !Array.isArray(collaborators) || collaborators.length === 0) {
+            return [];
+        }
+
+        const seen = new Set<string>();
         return collaborators
             .filter(el => {
+                // Garantir que o colaborador existe e tem email e name válidos
+                if (!el || typeof el !== 'object') {
+                    return false;
+                }
+                if (!el.email || typeof el.email !== 'string' || el.email.trim() === '') {
+                    return false;
+                }
+                if (!el.name || typeof el.name !== 'string' || el.name.trim() === '') {
+                    return false;
+                }
                 const duplicate = seen.has(el.email);
                 seen.add(el.email);
                 return !duplicate;
             })
-            .sort((a, b) => a.name.localeCompare(b.name));
+            .sort((a, b) => {
+                // Garantir que ambos os nomes existam e sejam strings antes de comparar
+                const nameA = (a?.name && typeof a.name === 'string') ? a.name : '';
+                const nameB = (b?.name && typeof b.name === 'string') ? b.name : '';
+                return nameA.localeCompare(nameB);
+            });
     }, [collaborators]);
 
     const onSubmit = async (data: FormValues) => {
         const payload = {
             ...data,
-            fields: data.fields.map(f => ({
+            fields: (data.fields || []).map(f => ({
                 ...f,
-                options: f.type === 'select' ? (f.options as unknown as string)?.split(',').map(opt => opt.trim()).filter(Boolean) : [],
+                options: f.type === 'select' && f.options 
+                    ? (typeof f.options === 'string' 
+                        ? f.options.split(',').map(opt => opt.trim()).filter(Boolean)
+                        : Array.isArray(f.options) 
+                            ? f.options 
+                            : [])
+                    : [],
             })),
-             routingRules: data.routingRules?.map(r => ({
+             routingRules: (data.routingRules || []).map(r => ({
                 ...r,
-                notify: Array.isArray(r.notify) ? r.notify : (r.notify as string).split(',').map(s => s.trim()).filter(Boolean),
+                notify: Array.isArray(r.notify) 
+                    ? r.notify 
+                    : (typeof r.notify === 'string' && r.notify.trim() 
+                        ? r.notify.split(',').map(s => s.trim()).filter(Boolean)
+                        : []),
             }))
         };
 
@@ -126,12 +230,18 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
     };
 
 
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl flex flex-col h-[90vh]">
-                <DialogHeader>
-                    <DialogTitle>{definition ? 'Editar Definição de Workflow' : 'Nova Definição de Workflow'}</DialogTitle>
-                </DialogHeader>
+    // Garantir que o formulário só seja renderizado quando estiver pronto
+    if (!isOpen) {
+        return null;
+    }
+
+    try {
+        return (
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="max-w-3xl flex flex-col h-[90vh]">
+                    <DialogHeader>
+                        <DialogTitle>{definition ? 'Editar Definição de Workflow' : 'Nova Definição de Workflow'}</DialogTitle>
+                    </DialogHeader>
                 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex-grow flex flex-col min-h-0">
                     <ScrollArea className="flex-grow pr-6 -mr-6">
@@ -491,7 +601,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                 <RecipientSelectionModal
                     isOpen={isSelectionModalOpen}
                     onClose={() => setIsSelectionModalOpen(false)}
-                    allCollaborators={collaborators}
+                    allCollaborators={Array.isArray(collaborators) ? collaborators : []}
                     selectedIds={watchAllowedUserIds || []}
                     onConfirm={(newIds) => {
                         setValue('allowedUserIds', newIds, { shouldValidate: true });
@@ -502,7 +612,7 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
                 <RecipientSelectionModal
                     isOpen={isApproverSelectionModalOpen}
                     onClose={() => setIsApproverSelectionModalOpen(false)}
-                    allCollaborators={collaborators}
+                    allCollaborators={Array.isArray(collaborators) ? collaborators : []}
                     selectedIds={activeStatusIndex !== null ? watchedStatuses[activeStatusIndex]?.action?.approverIds || [] : []}
                     onConfirm={(newIds) => {
                         if (activeStatusIndex !== null) {
@@ -516,5 +626,29 @@ export function WorkflowDefinitionForm({ isOpen, onClose, definition }: Workflow
 
             </DialogContent>
         </Dialog>
-    );
+        );
+    } catch (error) {
+        console.error('Erro ao renderizar formulário de workflow:', error);
+        // Retorna um Dialog de erro em caso de falha na renderização
+        return (
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Erro ao carregar formulário</DialogTitle>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <p className="text-sm text-destructive mb-4">
+                            Ocorreu um erro ao carregar o formulário de workflow. Os dados podem estar corrompidos ou em um formato incompatível.
+                        </p>
+                        <p className="text-xs text-muted-foreground mb-4">
+                            Detalhes do erro: {error instanceof Error ? error.message : 'Erro desconhecido'}
+                        </p>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={onClose} variant="destructive">Fechar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        );
+    }
 }

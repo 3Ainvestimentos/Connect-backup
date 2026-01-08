@@ -42,9 +42,10 @@ export default function FabMessagesAdminPage() {
             'desenvolvedor@3ariva.com.br',
             'matheus@3ainvestimentos.com.br'
         ];
+        if (!collaborators || !Array.isArray(collaborators)) return [];
         return collaborators
-          .filter(c => c.axis === 'Comercial' || testUsers.includes(c.email))
-          .sort((a,b) => a.name.localeCompare(b.name));
+          .filter(c => c && c.name && (c.axis === 'Comercial' || testUsers.includes(c.email)))
+          .sort((a,b) => (a?.name || '').localeCompare(b?.name || ''));
     }, [collaborators]);
     
     const { uniqueAreas, uniquePositions, uniqueSegments, uniqueLeaders, uniqueCities } = useMemo(() => {

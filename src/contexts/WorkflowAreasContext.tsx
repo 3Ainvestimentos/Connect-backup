@@ -56,7 +56,7 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
         queryFn: () => getCollection<WorkflowArea>(COLLECTION_NAME),
         staleTime: Infinity,
         enabled: !!user,
-        select: (data) => data.sort((a, b) => a.name.localeCompare(b.name)),
+        select: (data) => (data || []).sort((a, b) => (a?.name || '').localeCompare(b?.name || '')),
     });
 
     React.useEffect(() => {
@@ -64,7 +64,7 @@ export const WorkflowAreasProvider = ({ children }: { children: ReactNode }) => 
         const unsubscribe = listenToCollection<WorkflowArea>(
             COLLECTION_NAME,
             (newData) => {
-                const sortedData = newData.sort((a, b) => a.name.localeCompare(b.name));
+                const sortedData = (newData || []).sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
                 queryClient.setQueryData([COLLECTION_NAME], sortedData);
             },
             (error) => {

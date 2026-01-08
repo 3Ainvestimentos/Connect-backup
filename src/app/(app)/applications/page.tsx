@@ -57,7 +57,7 @@ export default function ApplicationsPage() {
           if (orderA !== -1 && orderB !== -1) return orderA - orderB;
           if (orderA !== -1) return -1;
           if (orderB !== -1) return 1;
-          return a.name.localeCompare(b.name); // Fallback sort
+          return (a?.name || '').localeCompare(b?.name || ''); // Fallback sort
         });
         groups[area.name] = workflowsForArea;
       }

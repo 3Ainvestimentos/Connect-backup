@@ -37,13 +37,16 @@ function PermissionsTable() {
     const uniquePositions = useMemo(() => [...new Set(collaborators.map(c => c.position))].sort(), [collaborators]);
 
     const filteredCollaborators = useMemo(() => {
-        let items = [...collaborators].sort((a, b) => a.name.localeCompare(b.name));
+        if (!collaborators || !Array.isArray(collaborators)) return [];
+        let items = [...collaborators]
+            .filter(c => c && c.name && c.email)
+            .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''));
         
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
             items = items.filter(c => 
-                c.name.toLowerCase().includes(lowercasedTerm) ||
-                c.email.toLowerCase().includes(lowercasedTerm)
+                (c.name || '').toLowerCase().includes(lowercasedTerm) ||
+                (c.email || '').toLowerCase().includes(lowercasedTerm)
             );
         }
 
