@@ -121,6 +121,12 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         const fieldIdUsage = new Map<string, number>(); // Rastreia quantas vezes cada field.id é usado
         
         workflowDefinition.fields.forEach((field, index) => {
+          // CORREÇÃO: Pular campos do tipo 'file' no mapeamento inicial
+          // Eles serão processados separadamente no bloco de upload (linhas 141-158)
+          if (field.type === 'file') {
+            return; // Sai da iteração atual e vai para o próximo campo
+          }
+          
           const uniqueId = getUniqueFieldId(index);
           const value = data[uniqueId];
           
@@ -139,23 +145,33 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         });
 
         const fileUploadPromises = workflowDefinition.fields
-            .filter((field, index) => {
-              const uniqueId = getUniqueFieldId(index);
-              return field.type === 'file' && fileFields[uniqueId];
-            })
-            .map(async (field, index) => {
-                const uniqueId = getUniqueFieldId(index);
-                const file = fileFields[uniqueId];
-                if (file) {
-                    try {
-                        const url = await uploadFile(file, storagePath, newRequest.id);
-                        formDataForFirestore[field.id] = url;
-                    } catch (error) {
-                        console.error(`Erro ao fazer upload do arquivo para o campo ${field.label}:`, error);
-                        throw new Error(`Falha ao fazer upload do arquivo "${file.name}" no campo "${field.label}". Tente novamente.`);
-                    }
+            .map(async (field, originalIndex) => {
+              const uniqueId = getUniqueFieldId(originalIndex);
+              
+              // Verifica se é campo de arquivo E se há arquivo selecionado
+              if (field.type !== 'file' || !fileFields[uniqueId]) {
+                return; // Pula campos que não são arquivo ou não têm arquivo selecionado
+              }
+              
+              const file = fileFields[uniqueId];
+              if (file) {
+                try {
+                  const url = await uploadFile(file, storagePath, newRequest.id);
+                  
+                  // CORREÇÃO: Validar que a URL é uma string válida antes de salvar
+                  if (url && typeof url === 'string' && url.trim() !== '') {
+                    formDataForFirestore[field.id] = url;
+                  } else {
+                    // Se a URL for inválida, lança um erro claro
+                    throw new Error(`Upload concluído mas URL inválida para o campo "${field.label}"`);
+                  }
+                } catch (error) {
+                  console.error(`Erro ao fazer upload do arquivo para o campo ${field.label}:`, error);
+                  throw new Error(`Falha ao fazer upload do arquivo "${file.name}" no campo "${field.label}". Tente novamente.`);
                 }
-            });
+              }
+            })
+            .filter(promise => promise !== undefined); // Remove promises undefined
         
         try {
             await Promise.all(fileUploadPromises);

@@ -462,8 +462,11 @@ const handleStatusChange = async () => {
         <div className="space-y-2">
             {definition.fields.map(field => {
                 const value = request.formData[field.id];
-                if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
-                    return null;
+                // CORREÇÃO: Detectar objetos vazios que podem ter sido salvos incorretamente
+                if (value === undefined || value === null || 
+                    (typeof value === 'string' && value.trim() === '') ||
+                    (typeof value === 'object' && Object.keys(value).length === 0)) {
+                    return null; // Não exibe campos vazios ou inválidos
                 }
                 renderedKeys.add(field.id);
                 return (

@@ -82,27 +82,38 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
 
     return (
         <div className="space-y-2">
-            {definition.fields.map(field => {
+            {definition.fields.map((field, index) => {
                 const value = request.formData[field.id];
-                if (value === undefined || value === null || (typeof value === 'string' && value.trim() === '')) {
-                    return null;
+                // CORREÇÃO: Detectar objetos vazios e valores inválidos
+                if (value === undefined || value === null || 
+                    (typeof value === 'string' && value.trim() === '') ||
+                    (typeof value === 'object' && Object.keys(value).length === 0)) {
+                    return null; // Não exibe campos vazios ou inválidos
                 }
                 renderedKeys.add(field.id);
                 return (
-                    <div key={field.id}>
+                    <div key={`def-${field.id}-${index}`}>
                         {renderFieldValue(field.id, value)}
                     </div>
                 );
             })}
-            {Object.entries(request.formData).map(([key, value]) => {
-              if (!renderedKeys.has(key)) {
-                return (
-                  <div key={key}>
+            {Object.entries(request.formData).map(([key, value], index) => {
+              // CORREÇÃO: Verificar se já foi renderizado E filtrar objetos vazios
+              if (renderedKeys.has(key)) {
+                return null; // Já foi renderizado no loop anterior
+              }
+              // CORREÇÃO: Filtrar valores inválidos e objetos vazios
+              if (value === undefined || value === null || 
+                  (typeof value === 'string' && value.trim() === '') ||
+                  (typeof value === 'object' && Object.keys(value).length === 0)) {
+                return null;
+              }
+              // CORREÇÃO: Usar chave única combinando key e index para evitar duplicatas
+              return (
+                  <div key={`extra-${key}-${index}`}>
                     {renderFieldValue(key, value)}
                   </div>
-                )
-              }
-              return null;
+              )
             })}
         </div>
     );
