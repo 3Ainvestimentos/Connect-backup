@@ -42,11 +42,15 @@ export function AssigneeSelectionModal({
     const filteredAndSortedCollaborators = useMemo(() => {
         let items = [...allCollaborators];
         if (searchTerm) {
-            items = items.filter(c =>
-                c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                c.area.toLowerCase().includes(searchTerm.toLowerCase())
-            );
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            items = items.filter(c => {
+                const name = (c.name && typeof c.name === 'string') ? c.name.toLowerCase() : '';
+                const email = (c.email && typeof c.email === 'string') ? c.email.toLowerCase() : '';
+                const area = (c.area && typeof c.area === 'string') ? c.area.toLowerCase() : '';
+                return name.includes(lowerSearchTerm) || 
+                       email.includes(lowerSearchTerm) || 
+                       area.includes(lowerSearchTerm);
+            });
         }
         if (sortKey) {
             items.sort((a, b) => {
