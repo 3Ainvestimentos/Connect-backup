@@ -4,6 +4,12 @@ import { getAuth } from 'firebase-admin/auth';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 
+// Função para normalizar emails (mesma lógica do AuthContext)
+const normalizeEmail = (email: string | null | undefined): string | null => {
+    if (!email) return null;
+    return email.replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
+};
+
 // Exemplo de dados de faturamento. Em um cenário real, estes dados viriam
 // de uma consulta ao BigQuery onde os dados de faturamento do Google Cloud são exportados.
 const mockBillingData = {
@@ -45,8 +51,12 @@ export async function GET(request: Request) {
     const settingsData = settingsDoc.data();
     const superAdminEmails = settingsData?.superAdminEmails || [];
 
-    // Verifica se o email do usuário autenticado está na lista de Super Admins
-    if (!decodedToken.email || !superAdminEmails.includes(decodedToken.email)) {
+    // Normaliza o email do usuário e também os emails da lista para comparar corretamente
+    const normalizedUserEmail = normalizeEmail(decodedToken.email);
+    const normalizedAdminEmails = superAdminEmails.map(email => normalizeEmail(email)).filter((email): email is string => email !== null);
+    
+    // Verifica se o email do usuário autenticado está na lista de Super Admins (considerando ambos os formatos)
+    if (!normalizedUserEmail || (!normalizedAdminEmails.includes(normalizedUserEmail) && !superAdminEmails.includes(normalizedUserEmail))) {
         return NextResponse.json({ error: 'Acesso negado: Requer permissão de Super Administrador.' }, { status: 403 });
     }
 

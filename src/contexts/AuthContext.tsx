@@ -112,7 +112,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
             const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettings;
             const normalizedEmail = normalizeEmail(firebaseUser.email);
-            const isSuper = !!normalizedEmail && superAdminEmails.includes(normalizedEmail);
+            // Normaliza também os emails da lista para comparar corretamente
+            const normalizedAdminEmails = superAdminEmails.map(email => normalizeEmail(email)).filter((email): email is string => email !== null);
+            const isSuper = !!normalizedEmail && (normalizedAdminEmails.includes(normalizedEmail) || superAdminEmails.includes(normalizedEmail));
             
             const collaborator = await fetchAndSetCollaborator(firebaseUser);
 
@@ -169,7 +171,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const firebaseUser = result.user;
       
       const collaborator = await fetchAndSetCollaborator(firebaseUser);
-      const isSuper = !!firebaseUser.email && superAdminEmails.includes(normalizeEmail(firebaseUser.email)!);
+      const normalizedEmail = normalizeEmail(firebaseUser.email);
+      // Normaliza também os emails da lista para comparar corretamente
+      const normalizedAdminEmails = superAdminEmails.map(email => normalizeEmail(email)).filter((email): email is string => email !== null);
+      const isSuper = !!normalizedEmail && (normalizedAdminEmails.includes(normalizedEmail) || superAdminEmails.includes(normalizedEmail));
 
       if (maintenanceMode) {
           const isAllowedDuringMaintenance = !!collaborator && (allowedUserIds || []).includes(collaborator.id3a);

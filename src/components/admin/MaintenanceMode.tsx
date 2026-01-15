@@ -47,6 +47,12 @@ const privacySchema = z.object({
 type PrivacyFormValues = z.infer<typeof privacySchema>;
 
 
+// Função para normalizar emails (mesma lógica do AuthContext)
+const normalizeEmail = (email: string | null | undefined): string | null => {
+    if (!email) return null;
+    return email.replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
+};
+
 function SuperAdminsCard() {
   const { settings, loading, updateSystemSettings } = useSystemSettings();
   const [newAdminEmail, setNewAdminEmail] = useState('');
@@ -59,15 +65,19 @@ function SuperAdminsCard() {
       toast({ title: 'E-mail inválido', variant: 'destructive' });
       return;
     }
-    if (settings.superAdminEmails.includes(emailToAdd)) {
+    // Normaliza o email antes de verificar e adicionar
+    const normalizedEmailToAdd = normalizeEmail(emailToAdd) || emailToAdd;
+    const normalizedExistingEmails = settings.superAdminEmails.map(email => normalizeEmail(email)).filter((email): email is string => email !== null);
+    if (normalizedExistingEmails.includes(normalizedEmailToAdd) || settings.superAdminEmails.includes(emailToAdd)) {
       toast({ title: 'Administrador já existe', variant: 'destructive' });
       return;
     }
     
     setIsSubmitting(true);
     try {
-      await updateSystemSettings({ superAdminEmails: [...settings.superAdminEmails, emailToAdd] });
-      toast({ title: 'Sucesso', description: `${emailToAdd} foi adicionado como Super Admin.` });
+      // Salva o email normalizado para manter consistência
+      await updateSystemSettings({ superAdminEmails: [...settings.superAdminEmails, normalizedEmailToAdd] });
+      toast({ title: 'Sucesso', description: `${normalizedEmailToAdd} foi adicionado como Super Admin.` });
       setNewAdminEmail('');
     } catch (error) {
       toast({ title: 'Erro', description: 'Não foi possível adicionar o Super Admin.', variant: 'destructive' });
