@@ -81,6 +81,9 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
   };
 
   const onSubmit = async (data: DynamicFormData) => {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:83',message:'onSubmit entry - form data received',data:{formDataKeys:Object.keys(data),formDataValues:Object.fromEntries(Object.entries(data).slice(0,5)),workflowName:workflowDefinition.name,fieldsCount:workflowDefinition.fields.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     const currentUserCollab = collaborators.find(c => c.email === user?.email);
 
     if (!user || !currentUserCollab) {
@@ -120,6 +123,10 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         const formDataForFirestore: DynamicFormData = {};
         const fieldIdUsage = new Map<string, number>(); // Rastreia quantas vezes cada field.id é usado
         
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:119',message:'Before mapping fields - starting formDataForFirestore',data:{fieldsCount:workflowDefinition.fields.length,fileFieldsCount:Object.keys(fileFields).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        
         workflowDefinition.fields.forEach((field, index) => {
           // CORREÇÃO: Pular campos do tipo 'file' no mapeamento inicial
           // Eles serão processados separadamente no bloco de upload (linhas 141-158)
@@ -129,6 +136,10 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           
           const uniqueId = getUniqueFieldId(index);
           const value = data[uniqueId];
+          
+          // #region agent log
+          fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:134',message:'Field mapping iteration',data:{fieldId:field.id,fieldType:field.type,uniqueId,hasValue:value!==undefined&&value!==null&&value!=='',valueType:typeof value,valuePreview:typeof value==='string'?value.substring(0,50):String(value).substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
           
           // Mapeia o valor único de volta para o ID original do campo
           if (value !== undefined && value !== null && value !== '') {
@@ -143,6 +154,10 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             formDataForFirestore[field.id] = value;
           }
         });
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:145',message:'After mapping fields - formDataForFirestore state',data:{formDataKeys:Object.keys(formDataForFirestore),formDataSize:Object.keys(formDataForFirestore).length,formDataPreview:Object.fromEntries(Object.entries(formDataForFirestore).slice(0,5))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
 
         const fileUploadPromises = workflowDefinition.fields
             .map(async (field, originalIndex) => {
@@ -179,6 +194,10 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             // Re-throw para ser capturado no catch principal do onSubmit
             throw error;
         }
+        
+        // #region agent log
+        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:181',message:'After file uploads - formDataForFirestore state',data:{formDataKeys:Object.keys(formDataForFirestore),formDataSize:Object.keys(formDataForFirestore).length,formDataPreview:Object.fromEntries(Object.entries(formDataForFirestore).slice(0,5))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
 
         // Processa campos de data com validação
         workflowDefinition.fields.forEach(field => {
@@ -211,11 +230,37 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                 }
             }
         });
-
-        await updateRequestAndNotify({
-            id: newRequest.id,
-            formData: formDataForFirestore
+        
+        // #region agent log
+        console.log('[DEBUG] Before updateRequestAndNotify - final formDataForFirestore:', {
+          requestId: newRequest.id,
+          formDataKeys: Object.keys(formDataForFirestore),
+          formDataSize: Object.keys(formDataForFirestore).length,
+          formDataFull: formDataForFirestore
         });
+        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:213',message:'Before updateRequestAndNotify - final formDataForFirestore',data:{requestId:newRequest.id,formDataKeys:Object.keys(formDataForFirestore),formDataSize:Object.keys(formDataForFirestore).length,formDataFull:formDataForFirestore},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
+
+        // CORREÇÃO: Verificar se formDataForFirestore está vazio antes de salvar
+        if (Object.keys(formDataForFirestore).length === 0) {
+          console.error('[DEBUG] formDataForFirestore está vazio! Campos do workflow:', workflowDefinition.fields.map(f => ({ id: f.id, type: f.type, label: f.label })));
+          throw new Error('Nenhum dado foi preenchido no formulário. Por favor, verifique os campos e tente novamente.');
+        }
+
+        try {
+          await updateRequestAndNotify({
+              id: newRequest.id,
+              formData: formDataForFirestore
+          });
+          // #region agent log
+          console.log('[DEBUG] updateRequestAndNotify completed successfully');
+          // #endregion
+        } catch (updateError) {
+          // #region agent log
+          console.error('[DEBUG] updateRequestAndNotify failed:', updateError);
+          // #endregion
+          throw updateError; // Re-throw para ser capturado pelo catch principal
+        }
 
         toast({ title: "Solicitação Enviada!", description: `Seu pedido de '${workflowDefinition.name}' foi enviado para aprovação.` });
         onOpenChange(false);

@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getNextSequentialId, listenToCollection, getCollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getNextSequentialId, listenToCollection, getCollection, getDocument } from '@/lib/firestore-service';
 import { useMessages } from './MessagesContext';
 import { useApplications } from './ApplicationsContext';
 import { getFirestore, writeBatch, doc } from 'firebase/firestore';
@@ -211,8 +211,25 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   
   const updateRequestMutation = useMutation<void, Error, Partial<WorkflowRequest> & { id: string }>({
     mutationFn: async (updatedRequest) => {
+        // #region agent log
+        console.log('[DEBUG] updateRequestMutation - received updatedRequest:', {
+          id: updatedRequest.id,
+          hasFormData: 'formData' in updatedRequest,
+          formDataKeys: updatedRequest.formData ? Object.keys(updatedRequest.formData) : [],
+          formDataSize: updatedRequest.formData ? Object.keys(updatedRequest.formData).length : 0,
+          formDataFull: updatedRequest.formData
+        });
+        // #endregion
         const { id, ...data } = updatedRequest;
         let payload = { ...data };
+        // #region agent log
+        console.log('[DEBUG] updateRequestMutation - payload after destructuring:', {
+          hasFormData: 'formData' in payload,
+          formDataKeys: payload.formData ? Object.keys(payload.formData) : [],
+          formDataSize: payload.formData ? Object.keys(payload.formData).length : 0,
+          payloadKeys: Object.keys(payload)
+        });
+        // #endregion
         if (payload.status && payload.status !== 'pending') {
             payload = { ...payload, viewedBy: [] };
         }
@@ -252,6 +269,17 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         }
+        
+        // #region agent log
+        console.log('[DEBUG] updateRequestMutation - final payload before Firestore update:', {
+          id,
+          hasFormData: 'formData' in payload,
+          formDataKeys: payload.formData ? Object.keys(payload.formData) : [],
+          formDataSize: payload.formData ? Object.keys(payload.formData).length : 0,
+          formDataFull: payload.formData,
+          payloadKeys: Object.keys(payload)
+        });
+        // #endregion
         
         return updateDocumentInCollection(COLLECTION_NAME, id, payload);
     },
@@ -294,7 +322,72 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
 
   const updateRequestAndNotify = async (requestUpdate: Partial<WorkflowRequest> & { id: string }, notificationMessage?: string, notifyAssigneeMessage: string | null = null) => {
-    await updateRequestMutation.mutateAsync(requestUpdate);
+    // #region agent log
+    console.log('[DEBUG] updateRequestAndNotify entry - requestUpdate received:', {
+      id: requestUpdate.id,
+      hasFormData: 'formData' in requestUpdate,
+      formDataKeys: requestUpdate.formData ? Object.keys(requestUpdate.formData) : [],
+      formDataSize: requestUpdate.formData ? Object.keys(requestUpdate.formData).length : 0,
+      formDataFull: requestUpdate.formData
+    });
+    fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowsContext.tsx:296',message:'updateRequestAndNotify entry - requestUpdate received',data:{requestId:requestUpdate.id,hasFormData:'formData' in requestUpdate,formDataKeys:requestUpdate.formData?Object.keys(requestUpdate.formData):[],formDataSize:requestUpdate.formData?Object.keys(requestUpdate.formData).length:0,formDataPreview:requestUpdate.formData?Object.fromEntries(Object.entries(requestUpdate.formData).slice(0,5)):{}},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    
+    try {
+      await updateRequestMutation.mutateAsync(requestUpdate);
+      // #region agent log
+      console.log('[DEBUG] updateRequestMutation.mutateAsync completed successfully');
+      // #endregion
+    } catch (error) {
+      // #region agent log
+      console.error('[DEBUG] updateRequestMutation.mutateAsync failed:', error);
+      // #endregion
+      throw error; // Re-throw para que o erro seja propagado
+    }
+    
+    // CORREÇÃO: Se formData foi passado, verificar se foi realmente salvo (especialmente importante em produção)
+    // Isso previne problemas de timing/race condition que podem ocorrer em produção
+    if (requestUpdate.formData && Object.keys(requestUpdate.formData).length > 0) {
+      // Aguardar um pouco para o Firestore processar a atualização (especialmente importante em produção com latência)
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Buscar diretamente do Firestore para verificar se foi salvo
+      // Usar Promise.race com timeout para evitar travar indefinidamente
+      try {
+        const verificationPromise = getDocument<WorkflowRequest>(COLLECTION_NAME, requestUpdate.id);
+        const timeoutPromise = new Promise<null>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout ao verificar formData')), 3000)
+        );
+        
+        const fetchedRequest = await Promise.race([verificationPromise, timeoutPromise]) as WorkflowRequest | null;
+        
+        if (fetchedRequest) {
+          const savedFormDataKeys = fetchedRequest.formData ? Object.keys(fetchedRequest.formData) : [];
+          const expectedKeys = Object.keys(requestUpdate.formData);
+          // #region agent log
+          console.log('[DEBUG] Verificação de formData salvo:', {
+            expectedKeys,
+            savedKeys: savedFormDataKeys,
+            match: savedFormDataKeys.length === expectedKeys.length
+          });
+          // #endregion
+          
+          if (savedFormDataKeys.length === 0) {
+            // #region agent log
+            console.error('[DEBUG] FormData não foi salvo! Tentando novamente...');
+            // #endregion
+            // Tentar salvar novamente se não foi salvo (pode ter havido problema de timing)
+            await updateDocumentInCollection(COLLECTION_NAME, requestUpdate.id, { formData: requestUpdate.formData });
+          }
+        }
+      } catch (verifyError) {
+        // #region agent log
+        console.error('[DEBUG] Erro ao verificar formData salvo:', verifyError);
+        // #endregion
+        // Não lançar erro aqui para não bloquear o fluxo, mas logar o problema
+        // Em produção, se houver timeout ou erro, o formData já deveria ter sido salvo na primeira tentativa
+      }
+    }
     
     const originalRequest = requests.find(r => r.id === requestUpdate.id);
     if (!originalRequest) return;
@@ -327,7 +420,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
     requests,
     loading: isFetching,
     hasNewAssignedTasks,
-    addRequest: (request) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'actionRequests'>>>,
+    addRequest: (request: Omit<WorkflowRequest, 'id' | 'requestId' | 'viewedBy' | 'assignee' | 'isArchived' | 'actionRequests'>) => addRequestMutation.mutateAsync(request) as Promise<WithId<Omit<WorkflowRequest, 'id' | 'viewedBy' | 'assignee' | 'isArchived' | 'actionRequests'>>>,
     updateRequestAndNotify,
     archiveRequestMutation,
     markRequestsAsViewedBy

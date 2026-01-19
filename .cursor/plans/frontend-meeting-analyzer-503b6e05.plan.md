@@ -1,4 +1,45 @@
-<!-- 503b6e05-dcf3-4a9b-84c1-9e7e9876c8ae e0bc9d6e-5966-4fef-9a79-e7437053c657 -->
+---
+name: Planejamento - Frontend Meeting Analyzer
+overview: ""
+todos:
+  - id: f5b405a9-c968-439d-a27a-de402fd02fae
+    content: Criar tipos TypeScript para MeetingAnalysis, Opportunity e OAuthStatus baseados na documentação da API
+    status: pending
+  - id: 82c22e47-69c9-4bd4-8ee9-03d515eeb058
+    content: Criar cliente API (meeting-analyzer-api.ts) com funções para OAuth e histórico de análises
+    status: pending
+  - id: 52f0201a-93ec-43b4-b35d-0dec28323be4
+    content: Criar MeetingAnalyzerContext seguindo padrão dos outros contextos, usando React Query
+    status: pending
+  - id: d35a487e-621a-454a-95b1-b25b93933ea1
+    content: Adicionar item na sidebar (AppLayout.tsx) com ícone Video/Mic e rota /meeting-analyzer
+    status: pending
+  - id: 27c4c680-7516-486a-bbb5-5ba6a356ca52
+    content: Criar página principal (meeting-analyzer/page.tsx) com estrutura básica e PageHeader
+    status: pending
+  - id: d6b8849e-1f1b-44c6-a445-6b658ea20d0b
+    content: Criar componente OAuthStatusCard para exibir e gerenciar status de autenticação OAuth
+    status: pending
+  - id: 7b8915bc-4c61-4b8b-baf0-04116de1f6fe
+    content: Criar componente MeetingAnalysisList com tabela, filtros, busca e paginação
+    status: pending
+  - id: e659398d-6203-4ebd-afaf-0013986d2715
+    content: Criar componente AnalysisDetailModal para exibir detalhes completos de uma análise
+    status: pending
+  - id: fa47ba43-0ea1-4cac-afe9-26bd9124a72a
+    content: Criar componentes auxiliares (MeetingAnalysisCard, OpportunityCard) para visualização
+    status: pending
+  - id: c5e80535-42e0-414e-800f-d81463161135
+    content: Integrar MeetingAnalyzerProvider no layout principal e adicionar variável de ambiente
+    status: pending
+  - id: 27a8ee4e-774c-409f-94eb-ca249eaa8f55
+    content: Implementar tratamento de erros, loading states e mensagens de feedback
+    status: pending
+  - id: 2ee4e474-13b8-42d4-8b87-cec8b2b992b8
+    content: Testar responsividade, acessibilidade e fluxo completo de OAuth
+    status: pending
+---
+
 # Planejamento - Frontend Meeting Analyzer
 
 ## Objetivo
@@ -250,18 +291,3 @@ Adicionar `MeetingAnalyzerProvider` em [src/app/(app)/layout.tsx](src/app/\\\(ap
 8. Implementar OAuth status card
 9. Adicionar filtros e busca
 10. Testes e ajustes finais
-
-### To-dos
-
-- [ ] Criar tipos TypeScript para MeetingAnalysis, Opportunity e OAuthStatus baseados na documentação da API
-- [ ] Criar cliente API (meeting-analyzer-api.ts) com funções para OAuth e histórico de análises
-- [ ] Criar MeetingAnalyzerContext seguindo padrão dos outros contextos, usando React Query
-- [ ] Adicionar item na sidebar (AppLayout.tsx) com ícone Video/Mic e rota /meeting-analyzer
-- [ ] Criar página principal (meeting-analyzer/page.tsx) com estrutura básica e PageHeader
-- [ ] Criar componente OAuthStatusCard para exibir e gerenciar status de autenticação OAuth
-- [ ] Criar componente MeetingAnalysisList com tabela, filtros, busca e paginação
-- [ ] Criar componente AnalysisDetailModal para exibir detalhes completos de uma análise
-- [ ] Criar componentes auxiliares (MeetingAnalysisCard, OpportunityCard) para visualização
-- [ ] Integrar MeetingAnalyzerProvider no layout principal e adicionar variável de ambiente
-- [ ] Implementar tratamento de erros, loading states e mensagens de feedback
-- [ ] Testar responsividade, acessibilidade e fluxo completo de OAuth

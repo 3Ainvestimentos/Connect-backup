@@ -282,10 +282,34 @@ export const setDocumentInCollection = async <T extends object>(collectionName: 
  */
 export const updateDocumentInCollection = async <T extends object>(collectionName: string, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
     try {
+        // #region agent log
+        console.log('[DEBUG] updateDocumentInCollection - before cleaning:', {
+          collectionName,
+          id,
+          dataKeys: Object.keys(data),
+          hasFormData: 'formData' in data,
+          formDataKeys: (data as any).formData ? Object.keys((data as any).formData) : [],
+          formDataSize: (data as any).formData ? Object.keys((data as any).formData).length : 0
+        });
+        // #endregion
         const cleanedData = cleanDataForFirestore(data);
+        // #region agent log
+        console.log('[DEBUG] updateDocumentInCollection - after cleaning:', {
+          cleanedDataKeys: Object.keys(cleanedData),
+          hasFormData: 'formData' in cleanedData,
+          formDataKeys: (cleanedData as any).formData ? Object.keys((cleanedData as any).formData) : [],
+          formDataSize: (cleanedData as any).formData ? Object.keys((cleanedData as any).formData).length : 0
+        });
+        // #endregion
         const docRef = doc(db, collectionName, id);
         await updateDoc(docRef, cleanedData);
+        // #region agent log
+        console.log('[DEBUG] updateDocumentInCollection - Firestore update completed successfully');
+        // #endregion
     } catch (error) {
+        // #region agent log
+        console.error('[DEBUG] updateDocumentInCollection - Firestore update failed:', error);
+        // #endregion
         console.error(`Error updating document ${id} in ${collectionName}:`, error);
          if (error instanceof Error) {
             console.error('Data that caused the error:', data);

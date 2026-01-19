@@ -75,6 +75,9 @@ export function RequestDetailsModal({ isOpen, onClose, request }: RequestDetails
   }
 
   const renderFormData = () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'RequestDetailsModal.tsx:77',message:'renderFormData entry - reading formData',data:{requestId:request.requestId,hasFormData:!!request.formData,formDataKeys:request.formData?Object.keys(request.formData):[],formDataSize:request.formData?Object.keys(request.formData).length:0,formDataFull:request.formData},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     if (!definition || !definition.fields) return <p>Sem definição de formulário encontrada.</p>;
     if (!request.formData || Object.keys(request.formData).length === 0) return <p>Sem dados de formulário.</p>;
     
