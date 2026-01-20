@@ -1,8 +1,27 @@
 [
   {
-    "origin": ["http://localhost:3000", "https://connect.3ariva.com.br", "https://a-riva-hub.web.app", "https://a-riva-hub.firebaseapp.com"],
-    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "origin": [
+      "http://localhost:3000",
+      "https://connect.3ariva.com.br",
+      "https://www.3arivaconnect.com.br",
+      "https://3arivaconnect.com.br",
+      "https://a-riva-hub.web.app",
+      "https://a-riva-hub.firebaseapp.com"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-resumable"]
+    "responseHeader": [
+      "Content-Type",
+      "Authorization",
+      "Content-Length",
+      "User-Agent",
+      "x-goog-resumable",
+      "x-goog-meta-firebaseStorageDownloadTokens",
+      "x-firebase-storage-version",
+      "x-goog-content-length-range",
+      "Access-Control-Allow-Origin",
+      "Access-Control-Allow-Methods",
+      "Access-Control-Allow-Headers"
+    ]
   }
 ]
