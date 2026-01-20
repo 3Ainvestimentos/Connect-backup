@@ -2,7 +2,7 @@
 
 ## Core Features:
 
-- Painel Inicial: Painel inicial com um carrossel de notícias e anúncios em destaque.
+- Painel Inicial:a Painel inicial com um carrossel de notícias e anúncios em destaque.
 - Feed de Notícias: Página de feed de notícias com filtragem e pesquisa.
 - Repositório de Documentos: Repositório de documentos com pesquisa e categorização.
 - Integração do Chatbot AI: Integração do chatbot 'Bob' com interface de chat, histórico e recursos de organização. O LLM pode usar a tool para pesquisar na base de conhecimento
