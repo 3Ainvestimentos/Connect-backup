@@ -11,6 +11,7 @@ import { getFirebaseApp } from '@/lib/firebase';
 import { useCollaborators } from './CollaboratorsContext';
 import { useAuth } from './AuthContext';
 import { formatISO } from 'date-fns';
+import { findCollaboratorByEmail, filterCollaboratorsByEmails } from '@/lib/email-utils';
 
 // Define os possíveis status de um workflow
 export type WorkflowStatus = string; // Now a generic string, e.g., 'pending_approval', 'in_progress'
@@ -115,7 +116,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
   const hasNewAssignedTasks = useMemo(() => {
     if (!user) return false;
-    const currentUserCollab = collaborators.find(c => c.email === user.email);
+    const currentUserCollab = findCollaboratorByEmail(collaborators, user.email);
     if (!currentUserCollab) return false;
 
     return requests.some(req => {
@@ -173,7 +174,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       });
 
       // Notifica o owner da solicitação (se diferente do solicitante)
-      const owner = collaborators.find(c => c.email === definition.ownerEmail);
+      const owner = findCollaboratorByEmail(collaborators, definition.ownerEmail);
       if (owner && owner.id3a !== requestData.submittedBy.userId) {
           await addMessage({
               title: `Nova Solicitação: ${requestData.type} #${requestWithDefaults.requestId}`,
@@ -188,7 +189,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
           for (const rule of definition.routingRules) {
               const formValue = requestData.formData[rule.field];
               if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
-                  const recipientUsers = collaborators.filter(c => rule.notify.includes(c.email));
+                  const recipientUsers = filterCollaboratorsByEmails(collaborators, rule.notify);
                   const recipientIds = recipientUsers.map(u => u.id3a);
                   if (recipientIds.length > 0) {
                       await addMessage({
@@ -241,7 +242,7 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
 
         if (newStatusDef?.action?.approverIds && newStatusDef.action.approverIds.length > 0) {
             const now = new Date();
-            const adminUser = collaborators.find(c => c.email === user?.email);
+            const adminUser = findCollaboratorByEmail(collaborators, user?.email);
             
             // Validate approverIds before creating action requests
             const validApprovers = newStatusDef.action.approverIds.map(approverId => 

@@ -30,6 +30,7 @@ import { toZonedTime } from 'date-fns-tz';
 import { toast } from '@/hooks/use-toast';
 import { addDocumentToCollection } from '@/lib/firestore-service';
 import { ptBR } from 'date-fns/locale';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 
 export default function DashboardPage() {
@@ -49,7 +50,7 @@ export default function DashboardPage() {
   
   const currentUserCollab = useMemo(() => {
       if (!user || !collaborators) return null;
-      return collaborators.find(c => c.email === user.email);
+      return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
 
   useEffect(() => {

@@ -27,6 +27,7 @@ import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
 import RssFeed from '@/components/dashboard-v2/RssFeed';
 import TradingViewWidget from '@/components/dashboard-v2/TradingViewWidget';
 import { useContacts } from '@/contexts/ContactsContext';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 export default function DashboardV2Page() {
   const [selectedMessage, setSelectedMessage] = useState<MessageType | null>(null);
@@ -43,7 +44,7 @@ export default function DashboardV2Page() {
   
   const currentUserCollab = useMemo(() => {
       if (!user || !collaborators) return null;
-      return collaborators.find(c => c.email === user.email);
+      return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
 
   useEffect(() => {

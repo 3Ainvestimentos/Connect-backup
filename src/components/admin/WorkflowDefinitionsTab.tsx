@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import ManageWorkflowAreas from '@/components/admin/ManageWorkflowAreas';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 import { Input } from '../ui/input';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -43,7 +44,7 @@ export function WorkflowDefinitionsTab() {
     };
 
     const getOwnerName = (email: string) => {
-        return collaborators.find(c => c.email === email)?.name || email;
+        return findCollaboratorByEmail(collaborators, email)?.name || email;
     };
 
     const uniqueAreas = useMemo(() => {

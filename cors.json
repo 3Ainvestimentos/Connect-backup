@@ -1,9 +1,8 @@
-
 [
   {
-    "origin": ["*"],
-    "method": ["GET", "PUT", "POST", "DELETE"],
-    "responseHeader": ["Content-Type", "access-control-allow-origin"],
-    "maxAgeSeconds": 3600
+    "origin": ["http://localhost:3000", "https://connect.3ariva.com.br", "https://a-riva-hub.web.app", "https://a-riva-hub.firebaseapp.com"],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization", "Content-Length", "User-Agent", "x-goog-resumable"]
   }
 ]

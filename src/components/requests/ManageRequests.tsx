@@ -39,6 +39,7 @@ import Papa from 'papaparse';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 import { toast } from '@/hooks/use-toast';
 
 
@@ -53,7 +54,7 @@ export function ManageRequests() {
     const [statusFilter, setStatusFilter] = useState<string[]>([]);
     
     useEffect(() => {
-        const currentUserCollab = collaborators.find(c => c.email === user?.email);
+        const currentUserCollab = findCollaboratorByEmail(collaborators, user?.email);
         if (permissions.canManageRequests && currentUserCollab?.id3a) {
             const ownedRequestIds = requests
                 .filter(req => req.ownerEmail === user?.email)

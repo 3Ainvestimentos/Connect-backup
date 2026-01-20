@@ -16,6 +16,7 @@ import { ptBR } from 'date-fns/locale';
 import { Eye, ListTodo, Inbox, ShieldCheck, UserCheck } from 'lucide-react';
 import { RequestApprovalModal } from '@/components/requests/RequestApprovalModal';
 import { useApplications } from '@/contexts/ApplicationsContext';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 export default function MyTasksPage() {
     const { user, loading: userLoading } = useAuth();
@@ -29,7 +30,7 @@ export default function MyTasksPage() {
     const { assignedTasks, actionTasks } = useMemo(() => {
         if (loading || !user) return { assignedTasks: [], actionTasks: [] };
         
-        const currentUserCollab = collaborators.find(c => c.email === user.email);
+        const currentUserCollab = findCollaboratorByEmail(collaborators, user.email);
         if (!currentUserCollab) return { assignedTasks: [], actionTasks: [] };
 
         const myAssignedTasks: WorkflowRequest[] = [];

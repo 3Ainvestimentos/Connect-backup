@@ -5,6 +5,7 @@ import React, { useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { AlertCircle } from 'lucide-react';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function BIPage() {
@@ -13,7 +14,7 @@ export default function BIPage() {
 
   const biLinks = useMemo(() => {
     if (userLoading || collabLoading || !user) return [];
-    const currentUser = collaborators.find(c => c.email === user.email);
+    const currentUser = findCollaboratorByEmail(collaborators, user.email);
     return currentUser?.biLinks || [];
   }, [user, collaborators, userLoading, collabLoading]);
 

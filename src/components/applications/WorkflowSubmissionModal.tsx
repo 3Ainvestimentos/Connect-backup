@@ -24,6 +24,7 @@ import { FormFieldDefinition, WorkflowDefinition } from '@/contexts/Applications
 import { uploadFile } from '@/lib/firestore-service';
 import { ScrollArea } from '../ui/scroll-area';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useRouter } from 'next/navigation';
@@ -81,10 +82,7 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
   };
 
   const onSubmit = async (data: DynamicFormData) => {
-    // #region agent log
-    fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:83',message:'onSubmit entry - form data received',data:{formDataKeys:Object.keys(data),formDataValues:Object.fromEntries(Object.entries(data).slice(0,5)),workflowName:workflowDefinition.name,fieldsCount:workflowDefinition.fields.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-    const currentUserCollab = collaborators.find(c => c.email === user?.email);
+    const currentUserCollab = findCollaboratorByEmail(collaborators, user?.email);
 
     if (!user || !currentUserCollab) {
       toast({ title: "Erro de Autenticação", description: "Não foi possível identificar o colaborador.", variant: "destructive" });
@@ -159,40 +157,69 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:145',message:'After mapping fields - formDataForFirestore state',data:{formDataKeys:Object.keys(formDataForFirestore),formDataSize:Object.keys(formDataForFirestore).length,formDataPreview:Object.fromEntries(Object.entries(formDataForFirestore).slice(0,5))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
         // #endregion
 
+        // CORREÇÃO: Processa uploads com timeout e tratamento de erro que não perde dados
         const fileUploadPromises = workflowDefinition.fields
             .map(async (field, originalIndex) => {
               const uniqueId = getUniqueFieldId(originalIndex);
               
               // Verifica se é campo de arquivo E se há arquivo selecionado
               if (field.type !== 'file' || !fileFields[uniqueId]) {
-                return; // Pula campos que não são arquivo ou não têm arquivo selecionado
+                return null; // Pula campos que não são arquivo ou não têm arquivo selecionado
               }
               
               const file = fileFields[uniqueId];
               if (file) {
                 try {
-                  const url = await uploadFile(file, storagePath, newRequest.id);
+                  // Adiciona timeout de 30 segundos para evitar travamento infinito
+                  const uploadPromise = uploadFile(file, storagePath, newRequest.id);
+                  const timeoutPromise = new Promise<string>((_, reject) => {
+                    setTimeout(() => reject(new Error('TIMEOUT')), 30000);
+                  });
+                  
+                  const url = await Promise.race([uploadPromise, timeoutPromise]);
                   
                   // CORREÇÃO: Validar que a URL é uma string válida antes de salvar
                   if (url && typeof url === 'string' && url.trim() !== '') {
                     formDataForFirestore[field.id] = url;
+                    return { fieldId: field.id, success: true };
                   } else {
-                    // Se a URL for inválida, lança um erro claro
-                    throw new Error(`Upload concluído mas URL inválida para o campo "${field.label}"`);
+                    // Se a URL for inválida, marca como erro mas não bloqueia
+                    console.warn(`Upload concluído mas URL inválida para o campo "${field.label}"`);
+                    formDataForFirestore[field.id] = `ERRO_UPLOAD: URL inválida para ${file.name}`;
+                    return { fieldId: field.id, success: false, error: 'URL inválida' };
                   }
                 } catch (error) {
                   console.error(`Erro ao fazer upload do arquivo para o campo ${field.label}:`, error);
-                  throw new Error(`Falha ao fazer upload do arquivo "${file.name}" no campo "${field.label}". Tente novamente.`);
+                  // CORREÇÃO: Não bloqueia o salvamento - marca o campo como erro mas salva os outros dados
+                  const errorMessage = error instanceof Error && error.message === 'TIMEOUT' 
+                    ? `TIMEOUT: Upload do arquivo "${file.name}" excedeu 30 segundos`
+                    : `ERRO: Falha ao fazer upload do arquivo "${file.name}"`;
+                  
+                  formDataForFirestore[field.id] = `ERRO_UPLOAD: ${errorMessage}`;
+                  return { fieldId: field.id, success: false, error: errorMessage };
                 }
               }
+              return null;
             })
-            .filter(promise => promise !== undefined); // Remove promises undefined
+            .filter(promise => promise !== null); // Remove nulls
         
-        try {
-            await Promise.all(fileUploadPromises);
-        } catch (error) {
-            // Re-throw para ser capturado no catch principal do onSubmit
-            throw error;
+        // Aguarda todos os uploads (sucesso ou erro) sem bloquear
+        const uploadResults = await Promise.allSettled(fileUploadPromises);
+        
+        // Verifica se algum upload falhou para adicionar nota no histórico
+        const failedUploads: Array<{ fieldId: string; success: boolean; error?: string }> = [];
+        uploadResults.forEach((result) => {
+          if (result.status === 'fulfilled' && result.value !== null && !result.value.success) {
+            failedUploads.push(result.value);
+          }
+        });
+        
+        if (failedUploads.length > 0) {
+          const failedFields = failedUploads.map(f => f.fieldId).join(', ');
+          console.warn(`Alguns uploads falharam: ${failedFields}`);
+          // Adiciona nota no histórico sobre uploads falhados
+          const uploadErrorNote = `Atenção: ${failedUploads.length} arquivo(s) não puderam ser enviados devido a erro de conexão. Os dados do formulário foram salvos.`;
+          // Esta nota será adicionada após salvar o formData
         }
         
         // #region agent log
@@ -230,39 +257,32 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
                 }
             }
         });
-        
-        // #region agent log
-        console.log('[DEBUG] Before updateRequestAndNotify - final formDataForFirestore:', {
-          requestId: newRequest.id,
-          formDataKeys: Object.keys(formDataForFirestore),
-          formDataSize: Object.keys(formDataForFirestore).length,
-          formDataFull: formDataForFirestore
-        });
-        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:213',message:'Before updateRequestAndNotify - final formDataForFirestore',data:{requestId:newRequest.id,formDataKeys:Object.keys(formDataForFirestore),formDataSize:Object.keys(formDataForFirestore).length,formDataFull:formDataForFirestore},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-        // #endregion
 
-        // CORREÇÃO: Verificar se formDataForFirestore está vazio antes de salvar
+        // Adiciona nota no histórico se houver uploads falhados
+        if (failedUploads.length > 0) {
+          formDataForFirestore._uploadErrors = failedUploads.map(f => f.error).join('; ');
+        }
+
+        // Verificar se formDataForFirestore está vazio antes de salvar
         if (Object.keys(formDataForFirestore).length === 0) {
-          console.error('[DEBUG] formDataForFirestore está vazio! Campos do workflow:', workflowDefinition.fields.map(f => ({ id: f.id, type: f.type, label: f.label })));
           throw new Error('Nenhum dado foi preenchido no formulário. Por favor, verifique os campos e tente novamente.');
         }
 
-        try {
-          await updateRequestAndNotify({
-              id: newRequest.id,
-              formData: formDataForFirestore
-          });
-          // #region agent log
-          console.log('[DEBUG] updateRequestAndNotify completed successfully');
-          // #endregion
-        } catch (updateError) {
-          // #region agent log
-          console.error('[DEBUG] updateRequestAndNotify failed:', updateError);
-          // #endregion
-          throw updateError; // Re-throw para ser capturado pelo catch principal
-        }
+        await updateRequestAndNotify({
+            id: newRequest.id,
+            formData: formDataForFirestore
+        });
 
-        toast({ title: "Solicitação Enviada!", description: `Seu pedido de '${workflowDefinition.name}' foi enviado para aprovação.` });
+        // Mensagem diferente se houver uploads falhados
+        if (failedUploads.length > 0) {
+          toast({ 
+            title: "Solicitação Enviada com Avisos", 
+            description: `Seu pedido foi enviado, mas ${failedUploads.length} arquivo(s) não puderam ser enviados. Os dados do formulário foram salvos. Você pode tentar anexar os arquivos novamente editando a solicitação.`,
+            variant: "default"
+          });
+        } else {
+          toast({ title: "Solicitação Enviada!", description: `Seu pedido de '${workflowDefinition.name}' foi enviado para aprovação.` });
+        }
         onOpenChange(false);
 
     } catch (error) {

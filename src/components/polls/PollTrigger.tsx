@@ -7,6 +7,7 @@ import { usePolls, PollType } from '@/contexts/PollsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import PollModal from './PollModal';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 export default function PollTrigger() {
   const pathname = usePathname();
@@ -18,7 +19,7 @@ export default function PollTrigger() {
   useEffect(() => {
     if (loadingPolls || loadingResponses || !user) return;
 
-    const currentUser = collaborators.find(c => c.email === user.email);
+    const currentUser = findCollaboratorByEmail(collaborators, user.email);
     if (!currentUser) return;
 
     const potentialPolls = polls.filter(p => {

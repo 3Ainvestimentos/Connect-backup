@@ -10,6 +10,7 @@ import { PollType, usePolls } from '@/contexts/PollsContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { toast } from '@/hooks/use-toast';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 import { Loader2 } from 'lucide-react';
 import { Textarea } from '../ui/textarea';
 
@@ -42,7 +43,7 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
       return;
     }
 
-    const currentUser = collaborators.find(c => c.email === user?.email);
+    const currentUser = findCollaboratorByEmail(collaborators, user?.email);
     if (!currentUser) {
       toast({ title: 'Erro de autenticação', variant: 'destructive' });
       return;

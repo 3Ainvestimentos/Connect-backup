@@ -22,6 +22,7 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { ScrollArea } from '../ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | 'isArchived' | '';
 type SortDirection = 'asc' | 'desc';
@@ -162,7 +163,7 @@ export function AllRequestsView() {
     };
     
     const getOwner = (email: string) => {
-        return collaborators.find(c => c.email === email);
+        return findCollaboratorByEmail(collaborators, email);
     }
     const getOwnerName = (email: string) => {
         return getOwner(email)?.name || email;

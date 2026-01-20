@@ -11,6 +11,7 @@ import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 declare global {
     interface Window {
@@ -51,7 +52,7 @@ export default function GoogleDriveFiles() {
   
   const currentUserCollab = useMemo(() => {
     if (!user) return null;
-    return collaborators.find(c => c.email === user.email);
+    return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
 
   const listFiles = useCallback(async (folderId: string) => {

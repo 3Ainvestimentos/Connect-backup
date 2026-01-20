@@ -13,6 +13,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { addDocumentToCollection } from '@/lib/firestore-service';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 interface NewsFeedClientProps {
   initialNewsItems: NewsItemType[];
@@ -32,7 +33,7 @@ export default function NewsFeedClient({ initialNewsItems }: NewsFeedClientProps
   const { collaborators } = useCollaborators();
 
   const logContentView = (item: NewsItemType) => {
-    const currentUserCollab = collaborators.find(c => c.email === user?.email);
+    const currentUserCollab = findCollaboratorByEmail(collaborators, user?.email);
     if (!currentUserCollab) return;
 
     addDocumentToCollection('audit_logs', {

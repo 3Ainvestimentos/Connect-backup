@@ -15,6 +15,7 @@ import { ptBR } from 'date-fns/locale';
 import { FileClock, Inbox, Eye, Timer } from 'lucide-react';
 import { Button } from '../ui/button';
 import { RequestDetailsModal } from './RequestDetailsModal';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 export default function MyRequests() {
     const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function MyRequests() {
 
     const myRequests = React.useMemo(() => {
         if (!user || !collaborators.length) return [];
-        const currentUserCollab = collaborators.find(c => c.email === user.email);
+        const currentUserCollab = findCollaboratorByEmail(collaborators, user.email);
         if (!currentUserCollab) return [];
         return requests.filter(req => req.submittedBy.userId === currentUserCollab.id3a);
     }, [requests, user, collaborators]);

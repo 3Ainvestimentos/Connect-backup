@@ -28,6 +28,7 @@ import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { RecipientSelectionModal } from '../admin/RecipientSelectionModal';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 interface RequestApprovalModalProps {
   isOpen: boolean;
@@ -83,7 +84,7 @@ export function RequestApprovalModal({ isOpen, onClose, request }: RequestApprov
 
   const adminUser = useMemo(() => {
     if (!user) return null;
-    return collaborators.find(c => c.email === user.email);
+    return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
   
   const actionRequestsForCurrentStatus = useMemo(() => {

@@ -27,6 +27,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { CampaignLogModal } from './CampaignLogModal';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { formatISO } from 'date-fns';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 
 const formSchema = z.object({
@@ -333,7 +334,7 @@ export function ManageFabMessages() {
                 const userCampaigns: { [userId: string]: { userName: string, campaigns: CampaignType[] } } = {};
 
                 for (const row of results.data) {
-                    const user = collaborators.find(c => c.email === row.userEmail?.trim());
+                    const user = findCollaboratorByEmail(collaborators, row.userEmail?.trim());
                     if (!user) {
                         console.warn(`Usuário não encontrado para o email: ${row.userEmail}`);
                         continue;

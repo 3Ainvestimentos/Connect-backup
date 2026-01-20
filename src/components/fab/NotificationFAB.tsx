@@ -14,6 +14,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
 import { parseISO, isAfter } from 'date-fns';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 
 // --- Ícone do Bob ---
@@ -125,7 +126,7 @@ export default function NotificationFAB({ hasPendingRequests, hasPendingTasks }:
 
   const currentUser = useMemo(() => {
     if (!user) return null;
-    return collaborators.find(c => c.email === user.email);
+    return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
 
   const activeMessage = useMemo(() => {

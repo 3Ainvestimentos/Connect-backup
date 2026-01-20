@@ -50,6 +50,7 @@ import { TermsOfUseModal } from '../auth/TermsOfUseModal';
 import NotificationFAB from '../fab/NotificationFAB';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
 import { DailyRssModal } from '../rss/DailyRssModal';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 
 export const navItems = [
@@ -71,7 +72,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
 
   const currentUserCollaborator = useMemo(() => {
     if (!user) return null;
-    return collaborators.find(c => c.email === user.email);
+    return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
 
   if (loading) return <div className="w-10 h-10 bg-muted rounded-full animate-pulse" />;
@@ -222,7 +223,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const currentUserCollab = useMemo(() => {
     if (!user) return null;
-    return collaborators.find(c => c.email === user.email);
+    return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
 
   const hasActiveCampaign = useMemo(() => {
@@ -265,7 +266,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasPendingRequests = useMemo(() => {
     if (!user || workflowsLoading || !requests.length || !permissions.canManageRequests) return false;
     
-    const currentUserCollab = collaborators.find(c => c.email === user?.email);
+    const currentUserCollab = findCollaboratorByEmail(collaborators, user?.email);
     if (!currentUserCollab) return false;
 
     return requests.some(req => {
@@ -279,7 +280,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   
   const hasPendingTasks = useMemo(() => {
     if (!user || workflowsLoading || !requests.length) return false;
-    const currentUserCollab = collaborators.find(c => c.email === user.email);
+    const currentUserCollab = findCollaboratorByEmail(collaborators, user.email);
     if (!currentUserCollab) return false;
     
     const hasNewTask = requests.some(req => {
@@ -311,7 +312,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // Page view logging
   useEffect(() => {
     if (user && pathname) {
-        const currentUserCollab = collaborators.find(c => c.email === user.email);
+        const currentUserCollab = findCollaboratorByEmail(collaborators, user.email);
         if (currentUserCollab) {
             addDocumentToCollection('audit_logs', {
                 eventType: 'page_view',

@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 import { CalendarDays, Clock, MapPin } from 'lucide-react';
 import { getIcon } from '@/lib/icons';
 import type { LucideIcon } from 'lucide-react';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 export default function InternalCalendar() {
   const [displayedMonth, setDisplayedMonth] = useState<Date>(new Date());
@@ -24,7 +25,7 @@ export default function InternalCalendar() {
 
   const currentUserCollab = useMemo(() => {
     if (!user || !collaborators) return null;
-    return collaborators.find(c => c.email === user.email);
+    return findCollaboratorByEmail(collaborators, user.email) || null;
   }, [user, collaborators]);
 
   const userEvents = useMemo(() => {

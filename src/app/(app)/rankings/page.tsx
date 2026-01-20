@@ -10,6 +10,7 @@ import { Award } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
+import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 function RankingsPageContent() {
     const { rankings, loading } = useRankings();
@@ -18,7 +19,7 @@ function RankingsPageContent() {
 
     const visibleRankings = useMemo(() => {
         if (!user || loading) return [];
-        const currentUser = collaborators.find(c => c.email === user.email);
+        const currentUser = findCollaboratorByEmail(collaborators, user.email);
         if (!currentUser) return [];
 
         return rankings.filter(ranking => {
