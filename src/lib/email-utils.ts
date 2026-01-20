@@ -12,7 +12,7 @@
  */
 export const normalizeEmail = (email: string | null | undefined): string | null => {
     if (!email) return null;
-    return email.replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
+    return email.toLowerCase().replace(/@3ariva\.com\.br$/, '@3ainvestimentos.com.br');
 };
 
 /**

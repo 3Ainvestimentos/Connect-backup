@@ -212,25 +212,8 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
   
   const updateRequestMutation = useMutation<void, Error, Partial<WorkflowRequest> & { id: string }>({
     mutationFn: async (updatedRequest) => {
-        // #region agent log
-        console.log('[DEBUG] updateRequestMutation - received updatedRequest:', {
-          id: updatedRequest.id,
-          hasFormData: 'formData' in updatedRequest,
-          formDataKeys: updatedRequest.formData ? Object.keys(updatedRequest.formData) : [],
-          formDataSize: updatedRequest.formData ? Object.keys(updatedRequest.formData).length : 0,
-          formDataFull: updatedRequest.formData
-        });
-        // #endregion
         const { id, ...data } = updatedRequest;
         let payload = { ...data };
-        // #region agent log
-        console.log('[DEBUG] updateRequestMutation - payload after destructuring:', {
-          hasFormData: 'formData' in payload,
-          formDataKeys: payload.formData ? Object.keys(payload.formData) : [],
-          formDataSize: payload.formData ? Object.keys(payload.formData).length : 0,
-          payloadKeys: Object.keys(payload)
-        });
-        // #endregion
         if (payload.status && payload.status !== 'pending') {
             payload = { ...payload, viewedBy: [] };
         }
@@ -270,17 +253,6 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         }
-        
-        // #region agent log
-        console.log('[DEBUG] updateRequestMutation - final payload before Firestore update:', {
-          id,
-          hasFormData: 'formData' in payload,
-          formDataKeys: payload.formData ? Object.keys(payload.formData) : [],
-          formDataSize: payload.formData ? Object.keys(payload.formData).length : 0,
-          formDataFull: payload.formData,
-          payloadKeys: Object.keys(payload)
-        });
-        // #endregion
         
         return updateDocumentInCollection(COLLECTION_NAME, id, payload);
     },

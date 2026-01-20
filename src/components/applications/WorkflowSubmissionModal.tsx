@@ -121,10 +121,6 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
         const formDataForFirestore: DynamicFormData = {};
         const fieldIdUsage = new Map<string, number>(); // Rastreia quantas vezes cada field.id é usado
         
-        // #region agent log
-        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:119',message:'Before mapping fields - starting formDataForFirestore',data:{fieldsCount:workflowDefinition.fields.length,fileFieldsCount:Object.keys(fileFields).length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
-        
         workflowDefinition.fields.forEach((field, index) => {
           // CORREÇÃO: Pular campos do tipo 'file' no mapeamento inicial
           // Eles serão processados separadamente no bloco de upload (linhas 141-158)
@@ -134,10 +130,6 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           
           const uniqueId = getUniqueFieldId(index);
           const value = data[uniqueId];
-          
-          // #region agent log
-          fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:134',message:'Field mapping iteration',data:{fieldId:field.id,fieldType:field.type,uniqueId,hasValue:value!==undefined&&value!==null&&value!=='',valueType:typeof value,valuePreview:typeof value==='string'?value.substring(0,50):String(value).substring(0,50)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-          // #endregion
           
           // Mapeia o valor único de volta para o ID original do campo
           if (value !== undefined && value !== null && value !== '') {
@@ -152,12 +144,8 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
             formDataForFirestore[field.id] = value;
           }
         });
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:145',message:'After mapping fields - formDataForFirestore state',data:{formDataKeys:Object.keys(formDataForFirestore),formDataSize:Object.keys(formDataForFirestore).length,formDataPreview:Object.fromEntries(Object.entries(formDataForFirestore).slice(0,5))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-        // #endregion
 
-        // CORREÇÃO: Processa uploads com timeout e tratamento de erro que não perde dados
+        // Processa uploads com timeout e tratamento de erro que não perde dados
         const fileUploadPromises = workflowDefinition.fields
             .map(async (field, originalIndex) => {
               const uniqueId = getUniqueFieldId(originalIndex);
@@ -221,10 +209,6 @@ export default function WorkflowSubmissionModal({ open, onOpenChange, workflowDe
           const uploadErrorNote = `Atenção: ${failedUploads.length} arquivo(s) não puderam ser enviados devido a erro de conexão. Os dados do formulário foram salvos.`;
           // Esta nota será adicionada após salvar o formData
         }
-        
-        // #region agent log
-        fetch('http://127.0.0.1:7245/ingest/d51075b1-a735-41d8-b8b9-216099fda8f7',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WorkflowSubmissionModal.tsx:181',message:'After file uploads - formDataForFirestore state',data:{formDataKeys:Object.keys(formDataForFirestore),formDataSize:Object.keys(formDataForFirestore).length,formDataPreview:Object.fromEntries(Object.entries(formDataForFirestore).slice(0,5))},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-        // #endregion
 
         // Processa campos de data com validação
         workflowDefinition.fields.forEach(field => {
