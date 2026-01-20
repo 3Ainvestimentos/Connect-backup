@@ -464,7 +464,7 @@ const handleStatusChange = async () => {
 
     return (
         <div className="space-y-2">
-            {definition.fields.map(field => {
+            {definition.fields.map((field, index) => {
                 const value = request.formData[field.id];
                 // CORREÇÃO: Detectar objetos vazios que podem ter sido salvos incorretamente
                 if (value === undefined || value === null || 
@@ -474,7 +474,7 @@ const handleStatusChange = async () => {
                 }
                 renderedKeys.add(field.id);
                 return (
-                    <div key={field.id}>
+                    <div key={`${field.id}-${index}`}>
                         {renderFieldValue(field.id, value)}
                     </div>
                 );
