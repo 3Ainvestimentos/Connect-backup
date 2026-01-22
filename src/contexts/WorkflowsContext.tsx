@@ -188,7 +188,8 @@ export const WorkflowsProvider = ({ children }: { children: ReactNode }) => {
       if (definition && definition.routingRules && requestData.formData && Object.keys(requestData.formData).length > 0) {
           for (const rule of definition.routingRules) {
               const formValue = requestData.formData[rule.field];
-              if (formValue && formValue.toString().toLowerCase() === rule.value.toLowerCase()) {
+              const ruleValue = (rule.value && typeof rule.value === 'string') ? rule.value.toLowerCase() : '';
+              if (formValue && ruleValue && formValue.toString().toLowerCase() === ruleValue) {
                   const recipientUsers = filterCollaboratorsByEmails(collaborators, rule.notify);
                   const recipientIds = recipientUsers.map(u => u.id3a);
                   if (recipientIds.length > 0) {

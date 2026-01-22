@@ -39,7 +39,7 @@ import Papa from 'papaparse';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { findCollaboratorByEmail } from '@/lib/email-utils';
+import { findCollaboratorByEmail, emailsMatch } from '@/lib/email-utils';
 import { toast } from '@/hooks/use-toast';
 
 
@@ -57,7 +57,7 @@ export function ManageRequests() {
         const currentUserCollab = findCollaboratorByEmail(collaborators, user?.email);
         if (permissions.canManageRequests && currentUserCollab?.id3a) {
             const ownedRequestIds = requests
-                .filter(req => req.ownerEmail === user?.email)
+                .filter(req => emailsMatch(req.ownerEmail, user?.email))
                 .map(req => req.id);
             markRequestsAsViewedBy(currentUserCollab.id3a, ownedRequestIds);
         }
@@ -65,7 +65,7 @@ export function ManageRequests() {
 
     const { activeRequests, archivedRequests } = useMemo(() => {
       if (!user) return { activeRequests: [], archivedRequests: [] };
-      const owned = requests.filter(req => req.ownerEmail === user.email);
+      const owned = requests.filter(req => emailsMatch(req.ownerEmail, user.email));
       return {
           activeRequests: owned.filter(req => !req.isArchived),
           archivedRequests: owned.filter(req => req.isArchived)
@@ -216,7 +216,7 @@ export function ManageRequests() {
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-6 w-6">
                                                 <AvatarFallback className="text-xs">
-                                                    {req.assignee.name.charAt(0)}
+                                                    {(req.assignee.name && typeof req.assignee.name === 'string' && req.assignee.name.length > 0) ? req.assignee.name.charAt(0) : '?'}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <span className="text-sm">{req.assignee.name}</span>

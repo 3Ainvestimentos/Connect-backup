@@ -119,7 +119,11 @@ export function ManageMessages() {
         }
 
         if (searchTerm) {
-            items = items.filter(msg => msg.title.toLowerCase().includes(searchTerm.toLowerCase()));
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            items = items.filter(msg => {
+                const title = (msg.title && typeof msg.title === 'string') ? msg.title.toLowerCase() : '';
+                return title.includes(lowerSearchTerm);
+            });
         }
 
         items.sort((a, b) => {

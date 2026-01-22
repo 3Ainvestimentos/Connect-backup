@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import ManageWorkflowAreas from '@/components/admin/ManageWorkflowAreas';
 import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 import { Input } from '../ui/input';
-import { findCollaboratorByEmail } from '@/lib/email-utils';
+import { findCollaboratorByEmail, normalizeEmail } from '@/lib/email-utils';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { ScrollArea } from '../ui/scroll-area';
 
@@ -53,21 +53,32 @@ export function WorkflowDefinitionsTab() {
     }, [workflowDefinitions, workflowAreas]);
 
     const uniqueOwners = useMemo(() => {
-        const ownerEmails = new Set(workflowDefinitions.map(def => def.ownerEmail));
-        return collaborators.filter(c => ownerEmails.has(c.email));
+        const ownerEmails = new Set(workflowDefinitions.map(def => normalizeEmail(def.ownerEmail)).filter(Boolean));
+        return collaborators.filter(c => {
+            const normalized = normalizeEmail(c.email);
+            return normalized && ownerEmails.has(normalized);
+        });
     }, [workflowDefinitions, collaborators]);
 
     const filteredAndSortedDefinitions = useMemo(() => {
         let items = [...workflowDefinitions];
 
         if (searchTerm) {
-            items = items.filter(def => def.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            items = items.filter(def => {
+                const name = (def.name && typeof def.name === 'string') ? def.name.toLowerCase() : '';
+                return name.includes(lowerSearchTerm);
+            });
         }
         if (areaFilter.length > 0) {
             items = items.filter(def => areaFilter.includes(def.areaId));
         }
         if (ownerFilter.length > 0) {
-            items = items.filter(def => ownerFilter.includes(def.ownerEmail));
+            const normalizedOwnerFilter = new Set(ownerFilter.map(email => normalizeEmail(email)).filter(Boolean));
+            items = items.filter(def => {
+                const normalizedOwnerEmail = normalizeEmail(def.ownerEmail);
+                return normalizedOwnerEmail && normalizedOwnerFilter.has(normalizedOwnerEmail);
+            });
         }
         
         if (sortKey) {

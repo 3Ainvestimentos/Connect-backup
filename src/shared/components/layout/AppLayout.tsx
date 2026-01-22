@@ -51,7 +51,7 @@ import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { TermsOfUseModal } from '@/features/auth/components/TermsOfUseModal';
 import NotificationFAB from '@/components/fab/NotificationFAB';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
-import { findCollaboratorByEmail } from '@/lib/email-utils';
+import { findCollaboratorByEmail, emailsMatch } from '@/lib/email-utils';
 
 
 export const navItems = [
@@ -273,7 +273,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return requests.some(req => {
         if (req.isArchived) return false;
         
-        const isOwnerWithUnassignedTask = (req.ownerEmail === user.email) && !req.assignee;
+        const isOwnerWithUnassignedTask = emailsMatch(req.ownerEmail, user.email) && !req.assignee;
         
         return isOwnerWithUnassignedTask;
     });

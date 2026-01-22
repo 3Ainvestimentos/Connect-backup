@@ -54,7 +54,7 @@ export default function WorkflowAnalyticsPage() {
         
         if (req.status === initialStatusId && req.history.length <= 1) {
             statusCounts['Em aberto']++;
-        } else if (currentStatusDef && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
+        } else if (currentStatusDef && currentStatusDef.label && typeof currentStatusDef.label === 'string' && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
             statusCounts['Finalizado']++;
         } else {
             statusCounts['Em processamento']++;
@@ -86,7 +86,7 @@ export default function WorkflowAnalyticsPage() {
       const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
       const currentStatusDef = definition.statuses.find(s => s.id === req.status);
       
-      if (currentStatusDef && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
+      if (currentStatusDef && currentStatusDef.label && typeof currentStatusDef.label === 'string' && finalStatusLabels.some(label => currentStatusDef.label.toLowerCase().includes(label))) {
           const submissionDate = parseISO(req.submittedAt);
           const completionDate = parseISO(req.lastUpdatedAt);
           const businessDays = differenceInBusinessDays(completionDate, submissionDate);
@@ -147,7 +147,7 @@ export default function WorkflowAnalyticsPage() {
         if (!statusDef) continue;
         
         const finalStatusLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
-        if (finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
+        if (statusDef.label && typeof statusDef.label === 'string' && finalStatusLabels.some(label => statusDef.label.toLowerCase().includes(label))) {
            break;
         }
 

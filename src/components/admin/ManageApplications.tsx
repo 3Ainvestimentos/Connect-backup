@@ -120,7 +120,10 @@ export function ManageApplications() {
         }
     };
 
-    const filteredApplications = applications.filter(app => app.name.toLowerCase() !== 'meu perfil');
+    const filteredApplications = applications.filter(app => {
+        const name = (app.name && typeof app.name === 'string') ? app.name.toLowerCase() : '';
+        return name !== 'meu perfil';
+    });
     
     return (
         <Card>

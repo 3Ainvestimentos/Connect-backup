@@ -22,7 +22,7 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { ScrollArea } from '../ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
-import { findCollaboratorByEmail } from '@/lib/email-utils';
+import { findCollaboratorByEmail, normalizeEmail } from '@/lib/email-utils';
 
 type SortKey = 'requestId' | 'type' | 'status' | 'submittedBy' | 'assignee' | 'ownerEmail' | 'submittedAt' | 'isArchived' | '';
 type SortDirection = 'asc' | 'desc';
@@ -41,8 +41,11 @@ export function AllRequestsView() {
 
 
     const uniqueOwners = useMemo(() => {
-        const ownerEmails = new Set(requests.map(req => req.ownerEmail));
-        return collaborators.filter(c => ownerEmails.has(c.email));
+        const ownerEmails = new Set(requests.map(req => normalizeEmail(req.ownerEmail)).filter(Boolean));
+        return collaborators.filter(c => {
+            const normalized = normalizeEmail(c.email);
+            return normalized && ownerEmails.has(normalized);
+        });
     }, [requests, collaborators]);
 
     const filteredAndSortedRequests = useMemo(() => {
@@ -65,17 +68,27 @@ export function AllRequestsView() {
 
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
-            items = items.filter(req =>
-                req.requestId.includes(lowercasedTerm) ||
-                req.type.toLowerCase().includes(lowercasedTerm) ||
-                req.submittedBy.userName.toLowerCase().includes(lowercasedTerm) ||
-                (req.assignee && req.assignee.name.toLowerCase().includes(lowercasedTerm)) ||
-                (req.ownerEmail && req.ownerEmail.toLowerCase().includes(lowercasedTerm))
-            );
+            items = items.filter(req => {
+                const requestId = req.requestId || '';
+                const type = (req.type && typeof req.type === 'string') ? req.type.toLowerCase() : '';
+                const userName = (req.submittedBy?.userName && typeof req.submittedBy.userName === 'string') ? req.submittedBy.userName.toLowerCase() : '';
+                const assigneeName = (req.assignee?.name && typeof req.assignee.name === 'string') ? req.assignee.name.toLowerCase() : '';
+                const ownerEmail = (req.ownerEmail && typeof req.ownerEmail === 'string') ? req.ownerEmail.toLowerCase() : '';
+                
+                return requestId.includes(lowercasedTerm) ||
+                       type.includes(lowercasedTerm) ||
+                       userName.includes(lowercasedTerm) ||
+                       assigneeName.includes(lowercasedTerm) ||
+                       ownerEmail.includes(lowercasedTerm);
+            });
         }
         
         if (ownerFilter.length > 0) {
-            items = items.filter(req => ownerFilter.includes(req.ownerEmail));
+            const normalizedOwnerFilter = new Set(ownerFilter.map(email => normalizeEmail(email)).filter(Boolean));
+            items = items.filter(req => {
+                const normalizedOwnerEmail = normalizeEmail(req.ownerEmail);
+                return normalizedOwnerEmail && normalizedOwnerFilter.has(normalizedOwnerEmail);
+            });
         }
 
         if (sortKey) {
@@ -155,7 +168,7 @@ export function AllRequestsView() {
 
         if (request.status === initialStatusId && request.history.length <= 1) {
             return { label, color: 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-200 dark:border-red-800' }; // Aberto - Vermelho
-        } else if (status && finalStatusLabels.some(l => status.label.toLowerCase().includes(l))) {
+        } else if (status && status.label && typeof status.label === 'string' && finalStatusLabels.some(l => status.label.toLowerCase().includes(l))) {
             return { label, color: 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-200 dark:border-green-800' }; // Finalizado - Verde
         } else {
             return { label, color: 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/50 dark:text-orange-200 dark:border-orange-800' }; // Intermediário - Laranja

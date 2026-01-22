@@ -585,8 +585,13 @@ const handleStatusChange = async () => {
     const isFinalStatus = (statusId: string) => {
         const finalLabels = ['aprovado', 'reprovado', 'concluído', 'finalizado', 'cancelado'];
         const statusDef = definition.statuses.find(s => s.id === statusId);
-        // Check both ID and Label for robustness
-        return !!statusDef && (finalLabels.includes(statusDef.id.toLowerCase()) || finalLabels.some(label => statusDef.label.toLowerCase().includes(label)));
+        if (!statusDef) return false;
+        
+        const statusIdLower = (statusDef.id && typeof statusDef.id === 'string') ? statusDef.id.toLowerCase() : '';
+        const statusLabel = (statusDef.label && typeof statusDef.label === 'string') ? statusDef.label.toLowerCase() : '';
+        
+        return finalLabels.includes(statusIdLower) || 
+               finalLabels.some(label => statusLabel.includes(label));
     }
 
 
@@ -700,7 +705,7 @@ const handleStatusChange = async () => {
                                   <Avatar className="h-6 w-6">
                                       {assignee.photoURL ? <AvatarImage src={assignee.photoURL} alt={assignee.name} /> : null}
                                       <AvatarFallback className="text-xs">
-                                          {assignee.name.charAt(0)}
+                                          {(assignee.name && typeof assignee.name === 'string' && assignee.name.length > 0) ? assignee.name.charAt(0) : '?'}
                                       </AvatarFallback>
                                   </Avatar>
                                   <span>{assignee.name}</span>

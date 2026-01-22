@@ -128,10 +128,12 @@ export function ManageFabMessages() {
 
         if (searchTerm) {
             const lowercasedTerm = searchTerm.toLowerCase();
-            items = items.filter(user => 
-                user.name.toLowerCase().includes(lowercasedTerm) ||
-                user.email.toLowerCase().includes(lowercasedTerm)
-            );
+            items = items.filter(user => {
+                const name = (user.name && typeof user.name === 'string') ? user.name.toLowerCase() : '';
+                const email = (user.email && typeof user.email === 'string') ? user.email.toLowerCase() : '';
+                return name.includes(lowercasedTerm) || 
+                       email.includes(lowercasedTerm);
+            });
         }
         
         Object.entries(filters).forEach(([key, values]) => {
@@ -249,10 +251,12 @@ export function ManageFabMessages() {
         const lowercasedTerm = pipelineSearchTerm.toLowerCase();
         return fields
             .map((field, index) => ({ ...field, originalIndex: index }))
-            .filter(field => 
-                field.ctaMessage.toLowerCase().includes(lowercasedTerm) || 
-                field.followUpMessage.toLowerCase().includes(lowercasedTerm)
-            );
+            .filter(field => {
+                const ctaMessage = (field.ctaMessage && typeof field.ctaMessage === 'string') ? field.ctaMessage.toLowerCase() : '';
+                const followUpMessage = (field.followUpMessage && typeof field.followUpMessage === 'string') ? field.followUpMessage.toLowerCase() : '';
+                return ctaMessage.includes(lowercasedTerm) || 
+                       followUpMessage.includes(lowercasedTerm);
+            });
     }, [fields, pipelineSearchTerm]);
 
     const handleArchiveCampaignClick = async () => {
