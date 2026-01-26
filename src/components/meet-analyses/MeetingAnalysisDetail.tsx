@@ -98,6 +98,14 @@ interface OpportunityAccordionItemProps {
 function OpportunityAccordionItem({ opportunity, index }: OpportunityAccordionItemProps) {
   const titleId = `opportunity-title-${index}`;
 
+  // Função helper para obter as menções (compatível com pré e pós-migração)
+  const getMentions = (): string[] => {
+    // Prioriza clientMentions (novo), mas usa mentions (antigo) como fallback
+    return opportunity.clientMentions || opportunity.mentions || [];
+  };
+
+  const mentions = getMentions();
+
   return (
     <AccordionItem value={titleId} className="border-b">
       {/* Nível 1: Title - ao expandir mostra descrição diretamente */}
@@ -120,17 +128,17 @@ function OpportunityAccordionItem({ opportunity, index }: OpportunityAccordionIt
             {opportunity.description}
           </p>
           
-          {/* Nível 2: Mentions (sanfona para menções) */}
-          {opportunity.mentions && opportunity.mentions.length > 0 && (
+          {/* Nível 2: Mentions (sanfona para menções) - compatível com mentions e clientMentions */}
+          {mentions.length > 0 && (
             <div className="mt-4">
               <Accordion type="single" collapsible>
                 <AccordionItem value={`mentions-${index}`} className="border-0">
                   <AccordionTrigger className="py-2 text-xs font-medium">
-                    Menções ({opportunity.mentions.length})
+                    Menções ({mentions.length})
                   </AccordionTrigger>
                   <AccordionContent>
                     <ul className="list-disc list-inside space-y-2 text-xs text-muted-foreground ml-2">
-                      {opportunity.mentions.map((mention, mentionIndex) => (
+                      {mentions.map((mention, mentionIndex) => (
                         <li key={mentionIndex} className="leading-relaxed">
                           "{mention}"
                         </li>

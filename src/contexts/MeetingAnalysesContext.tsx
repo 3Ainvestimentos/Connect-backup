@@ -17,7 +17,8 @@ export interface Participant {
 export interface Opportunity {
   category: string;
   description: string;
-  mentions: string[];
+  mentions?: string[]; // Campo antigo (pré-migração)
+  clientMentions?: string[]; // Campo novo (pós-migração)
   priority: 'high' | 'medium' | 'low';
   title: string;
 }
