@@ -15,6 +15,12 @@ import { DateRange } from 'react-day-picker';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { MeetingAnalysis } from '@/contexts/MeetingAnalysesContext';
 
+// Função helper para obter a data mais apropriada para exibição
+// Prioriza: assessment_completed_at > created_at > updated_at
+const getDisplayDate = (analysis: MeetingAnalysis): string | any => {
+  return analysis.assessment_completed_at || analysis.created_at || analysis.updated_at;
+};
+
 export default function MeetingAnalysesList() {
   const { meetingAnalyses, loading } = useMeetingAnalyses();
   const router = useRouter();
@@ -34,29 +40,32 @@ export default function MeetingAnalysesList() {
       });
     }
 
-    // Filtro por data
+    // Filtro por data (usa a data de exibição)
     if (dateRange?.from && dateRange?.to) {
       const from = startOfDay(dateRange.from);
       const to = endOfDay(dateRange.to);
       
       filtered = filtered.filter(analysis => {
-        const updatedAt = typeof analysis.updated_at === 'string' 
-          ? parseISO(analysis.updated_at) 
-          : analysis.updated_at?.toDate();
+        const displayDate = getDisplayDate(analysis);
+        const date = typeof displayDate === 'string' 
+          ? parseISO(displayDate) 
+          : displayDate?.toDate();
         
-        if (!updatedAt || !isValid(updatedAt)) return false;
-        return isWithinInterval(updatedAt, { start: from, end: to });
+        if (!date || !isValid(date)) return false;
+        return isWithinInterval(date, { start: from, end: to });
       });
     }
 
-    // Ordenar por data mais recente primeiro
+    // Ordenar por data mais recente primeiro (usa a data de exibição)
     filtered.sort((a, b) => {
-      const dateA = typeof a.updated_at === 'string' 
-        ? parseISO(a.updated_at) 
-        : a.updated_at?.toDate();
-      const dateB = typeof b.updated_at === 'string' 
-        ? parseISO(b.updated_at) 
-        : b.updated_at?.toDate();
+      const displayDateA = getDisplayDate(a);
+      const displayDateB = getDisplayDate(b);
+      const dateA = typeof displayDateA === 'string' 
+        ? parseISO(displayDateA) 
+        : displayDateA?.toDate();
+      const dateB = typeof displayDateB === 'string' 
+        ? parseISO(displayDateB) 
+        : displayDateB?.toDate();
       
       if (!dateA || !isValid(dateA)) return 1;
       if (!dateB || !isValid(dateB)) return -1;
@@ -155,7 +164,7 @@ export default function MeetingAnalysesList() {
                     <div className="flex-1">
                       <h3 className="font-semibold text-base mb-1">{analysis.file_name}</h3>
                       <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span>{formatDate(analysis.updated_at)}</span>
+                        <span>{formatDate(getDisplayDate(analysis))}</span>
                         <span>{formatParticipants(analysis.participants)}</span>
                       </div>
                     </div>

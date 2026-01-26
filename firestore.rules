@@ -5,14 +5,15 @@ service cloud.firestore {
     // ---- Helper: Super Admin ----
     function isSuperAdmin() {
       return request.auth != null &&
-             request.auth.token.email in [
-               'henrique.peixoto@3ainvestimentos.com.br',
-               'matheus@3ainvestimentos.com.br',
-               'desenvolvedor@3ariva.com.br' ,
-              'dalcion.franco@3ainvestimentos.com.br',
-								'ti@3ariva.com.br'
-             ];
-    }
+         request.auth.token.email in [
+           'henrique.peixoto@3ainvestimentos.com.br',
+           'matheus@3ainvestimentos.com.br',
+           'desenvolvedor@3ariva.com.br',
+           'dalcion.franco@3ainvestimentos.com.br',
+           'ti@3ariva.com.br',
+           'lucas.nogueira@3ainvestimentos.com.br'  // Adicionar aqui
+         ];
+}
     
     // ---- Helper: Normalizar Email (NOVO E NECESSÁRIO) ----
     // Replica a lógica do seu frontend para normalizar e-mails

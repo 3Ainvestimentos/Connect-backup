@@ -13,6 +13,12 @@ interface MeetingAnalysisDetailProps {
   analysis: MeetingAnalysis;
 }
 
+// Função helper para obter a data mais apropriada para exibição
+// Prioriza: assessment_completed_at > created_at > updated_at
+const getDisplayDate = (analysis: MeetingAnalysis): string | any => {
+  return analysis.assessment_completed_at || analysis.created_at || analysis.updated_at;
+};
+
 const priorityColors = {
   high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
   medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
@@ -48,7 +54,7 @@ export default function MeetingAnalysisDetail({ analysis }: MeetingAnalysisDetai
           <CardTitle className="text-2xl">{analysis.file_name}</CardTitle>
           <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
             <div>
-              <span className="font-medium text-foreground">Data:</span> {formatDate(analysis.updated_at)}
+              <span className="font-medium text-foreground">Data:</span> {formatDate(getDisplayDate(analysis))}
             </div>
             <div>
               <span className="font-medium text-foreground">Participantes:</span> {formatParticipants(analysis.participants)}
