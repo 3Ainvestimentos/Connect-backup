@@ -1,0 +1,155 @@
+
+"use client";
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
+import { format, parseISO, isValid } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import type { MeetingAnalysis, Opportunity } from '@/contexts/MeetingAnalysesContext';
+
+interface MeetingAnalysisDetailProps {
+  analysis: MeetingAnalysis;
+}
+
+const priorityColors = {
+  high: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+  medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+  low: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+};
+
+const priorityLabels = {
+  high: 'Alta',
+  medium: 'Média',
+  low: 'Baixa',
+};
+
+export default function MeetingAnalysisDetail({ analysis }: MeetingAnalysisDetailProps) {
+  const formatDate = (date: string | any): string => {
+    try {
+      const parsedDate = typeof date === 'string' ? parseISO(date) : date?.toDate();
+      if (!parsedDate || !isValid(parsedDate)) return 'Data inválida';
+      return format(parsedDate, "dd 'de' MMMM 'de' yyyy 'às' HH:mm", { locale: ptBR });
+    } catch {
+      return 'Data inválida';
+    }
+  };
+
+  const formatParticipants = (participants: MeetingAnalysis['participants']): string => {
+    return participants.map(p => p.name).join(', ');
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header com informações primárias */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">{analysis.file_name}</CardTitle>
+          <div className="flex flex-wrap gap-4 mt-4 text-sm text-muted-foreground">
+            <div>
+              <span className="font-medium text-foreground">Data:</span> {formatDate(analysis.updated_at)}
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Participantes:</span> {formatParticipants(analysis.participants)}
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Resumo da Reunião</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap">{analysis.summary}</p>
+        </CardContent>
+      </Card>
+
+      {/* Opportunities em sanfona hierárquica */}
+      {analysis.opportunities && analysis.opportunities.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Oportunidades Identificadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="multiple" className="w-full">
+              {analysis.opportunities.map((opportunity, index) => (
+                <OpportunityAccordionItem
+                  key={index}
+                  opportunity={opportunity}
+                  index={index}
+                />
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+interface OpportunityAccordionItemProps {
+  opportunity: Opportunity;
+  index: number;
+}
+
+function OpportunityAccordionItem({ opportunity, index }: OpportunityAccordionItemProps) {
+  const titleId = `opportunity-title-${index}`;
+  const descriptionId = `opportunity-description-${index}`;
+
+  return (
+    <AccordionItem value={titleId} className="border-b">
+      {/* Nível 1: Title */}
+      <AccordionTrigger className="py-4">
+        <div className="flex items-center justify-between w-full pr-4">
+          <span className="font-semibold text-left">{opportunity.title}</span>
+          <Badge
+            variant="outline"
+            className={priorityColors[opportunity.priority]}
+          >
+            {priorityLabels[opportunity.priority]}
+          </Badge>
+        </div>
+      </AccordionTrigger>
+      <AccordionContent>
+        {/* Nível 2: Description (sanfona aninhada) */}
+        <Accordion type="single" collapsible className="ml-4">
+          <AccordionItem value={descriptionId} className="border-0">
+            <AccordionTrigger className="py-2 text-sm font-medium">
+              Descrição
+            </AccordionTrigger>
+            <AccordionContent>
+              <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">
+                {opportunity.description}
+              </p>
+              
+              {/* Nível 3: Mentions (lista) */}
+              {opportunity.mentions && opportunity.mentions.length > 0 && (
+                <div className="mt-4">
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value={`mentions-${index}`} className="border-0">
+                      <AccordionTrigger className="py-2 text-xs font-medium">
+                        Menções ({opportunity.mentions.length})
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <ul className="list-disc list-inside space-y-2 text-xs text-muted-foreground ml-2">
+                          {opportunity.mentions.map((mention, mentionIndex) => (
+                            <li key={mentionIndex} className="leading-relaxed">
+                              "{mention}"
+                            </li>
+                          ))}
+                        </ul>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              )}
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </AccordionContent>
+    </AccordionItem>
+  );
+}
