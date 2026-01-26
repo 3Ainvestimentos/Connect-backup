@@ -48,6 +48,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewCRM: false,
   canViewStrategicPanel: false,
   canViewOpportunityMap: false,
+  canViewMeetAnalyses: false,
 };
 
 

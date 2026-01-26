@@ -16,6 +16,7 @@ import { RequestsProvider } from '@/contexts/RequestsContext';
 import { WorkflowAreasProvider } from '@/contexts/WorkflowAreasContext';
 import { WorkflowsProvider } from '@/contexts/WorkflowsContext';
 import { ContactsProvider } from '@/contexts/ContactsContext';
+import { MeetingAnalysesProvider } from '@/contexts/MeetingAnalysesContext';
 
 function AppProviders({ children }: { children: React.ReactNode }) {
     return (
@@ -33,7 +34,9 @@ function AppProviders({ children }: { children: React.ReactNode }) {
                                     <FabMessagesProvider>
                                     <IdleFabMessagesProvider>
                                       <ContactsProvider>
-                                        {children}
+                                        <MeetingAnalysesProvider>
+                                          {children}
+                                        </MeetingAnalysesProvider>
                                       </ContactsProvider>
                                     </IdleFabMessagesProvider>
                                     </FabMessagesProvider>
