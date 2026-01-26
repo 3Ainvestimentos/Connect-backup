@@ -150,10 +150,7 @@ export default function MeetingAnalysesList() {
           {filteredAnalyses.map((analysis) => (
             <Card key={analysis.id} className="overflow-hidden">
               <AccordionItem value={analysis.id} className="border-0">
-                <AccordionTrigger
-                  className="px-6 py-4 hover:no-underline"
-                  onClick={() => handleAnalysisClick(analysis.id)}
-                >
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 flex-1 text-left">
                     <div className="flex-1">
                       <h3 className="font-semibold text-base mb-1">{analysis.file_name}</h3>

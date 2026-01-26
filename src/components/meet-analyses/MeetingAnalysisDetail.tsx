@@ -97,11 +97,10 @@ interface OpportunityAccordionItemProps {
 
 function OpportunityAccordionItem({ opportunity, index }: OpportunityAccordionItemProps) {
   const titleId = `opportunity-title-${index}`;
-  const descriptionId = `opportunity-description-${index}`;
 
   return (
     <AccordionItem value={titleId} className="border-b">
-      {/* Nível 1: Title */}
+      {/* Nível 1: Title - ao expandir mostra descrição diretamente */}
       <AccordionTrigger className="py-4">
         <div className="flex items-center justify-between w-full pr-4">
           <span className="font-semibold text-left">{opportunity.title}</span>
@@ -114,41 +113,35 @@ function OpportunityAccordionItem({ opportunity, index }: OpportunityAccordionIt
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        {/* Nível 2: Description (sanfona aninhada) */}
-        <Accordion type="single" collapsible className="ml-4">
-          <AccordionItem value={descriptionId} className="border-0">
-            <AccordionTrigger className="py-2 text-sm font-medium">
-              Descrição
-            </AccordionTrigger>
-            <AccordionContent>
-              <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">
-                {opportunity.description}
-              </p>
-              
-              {/* Nível 3: Mentions (lista) */}
-              {opportunity.mentions && opportunity.mentions.length > 0 && (
-                <div className="mt-4">
-                  <Accordion type="single" collapsible>
-                    <AccordionItem value={`mentions-${index}`} className="border-0">
-                      <AccordionTrigger className="py-2 text-xs font-medium">
-                        Menções ({opportunity.mentions.length})
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <ul className="list-disc list-inside space-y-2 text-xs text-muted-foreground ml-2">
-                          {opportunity.mentions.map((mention, mentionIndex) => (
-                            <li key={mentionIndex} className="leading-relaxed">
-                              "{mention}"
-                            </li>
-                          ))}
-                        </ul>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </div>
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        {/* Descrição mostrada diretamente na primeira expansão */}
+        <div className="ml-4">
+          <p className="text-sm font-medium mb-2 text-foreground">Descrição:</p>
+          <p className="text-sm text-muted-foreground mb-4 whitespace-pre-wrap">
+            {opportunity.description}
+          </p>
+          
+          {/* Nível 2: Mentions (sanfona para menções) */}
+          {opportunity.mentions && opportunity.mentions.length > 0 && (
+            <div className="mt-4">
+              <Accordion type="single" collapsible>
+                <AccordionItem value={`mentions-${index}`} className="border-0">
+                  <AccordionTrigger className="py-2 text-xs font-medium">
+                    Menções ({opportunity.mentions.length})
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <ul className="list-disc list-inside space-y-2 text-xs text-muted-foreground ml-2">
+                      {opportunity.mentions.map((mention, mentionIndex) => (
+                        <li key={mentionIndex} className="leading-relaxed">
+                          "{mention}"
+                        </li>
+                      ))}
+                    </ul>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          )}
+        </div>
       </AccordionContent>
     </AccordionItem>
   );
