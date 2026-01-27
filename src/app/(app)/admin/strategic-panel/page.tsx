@@ -4,7 +4,7 @@ export default function StrategicPanelPage() {
   return (
     <div className="h-full w-full">
       <iframe
-        src="https://ted-cyan.vercel.app/"
+        src="https://ted-plan.vercel.app/"
         className="w-full h-full border-none"
         title="Painel Estratégico"
         allow="microphone"
