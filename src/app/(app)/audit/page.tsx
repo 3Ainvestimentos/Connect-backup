@@ -1,15 +1,15 @@
 
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState } from 'react';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCollection, WithId, listenToCollection } from '@/lib/firestore-service';
+import { useQuery } from '@tanstack/react-query';
+import { getCollection, WithId } from '@/lib/firestore-service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Skeleton } from '@/shared/components/ui/skeleton';
 import { LineChart as LineChartIcon, LogIn, BarChart as BarChartIcon, Users as UsersIcon, FileDown, ThumbsUp, ThumbsDown, Trophy, Filter } from 'lucide-react';
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, BarChart, ResponsiveContainer } from 'recharts';
-import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, parseISO, startOfDay, eachDayOfInterval, compareAsc, endOfDay, isWithinInterval, startOfMonth, endOfMonth, subMonths, getDay, getHours } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { Progress } from '@/shared/components/ui/progress';
@@ -18,6 +18,7 @@ import Papa from 'papaparse';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { useAudit } from '@/contexts/AuditContext';
+import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { ScrollArea } from '@/shared/components/ui/scroll-area';
@@ -33,45 +34,54 @@ type AuditLogEvent = WithId<{
 
 
 export default function AuditPage() {
-    const queryClient = useQueryClient();
     const { dateRange } = useAudit();
+    const { settings, loading: loadingSettings } = useSystemSettings();
     const [loginView, setLoginView] = useState<'total' | 'unique'>('total');
     const [axisFilter, setAxisFilter] = useState<string[]>([]);
     
-    React.useEffect(() => {
-        const unsubscribe = listenToCollection<AuditLogEvent>(
-            'audit_logs',
-            (newData) => {
-                queryClient.setQueryData(['audit_logs'], newData);
-            },
-            (error) => {
-                console.error("Failed to listen to audit logs:", error);
-            }
-        );
-        return () => unsubscribe();
-    }, [queryClient]);
-    
-    const { data: allEvents = [], isLoading: isLoadingEvents } = useQuery<AuditLogEvent[]>({
-        queryKey: ['audit_logs'],
-        queryFn: () => getCollection<AuditLogEvent>('audit_logs'),
+    // Busca todos os eventos de login (filtra no cliente para evitar necessidade de índice)
+    const { data: allLoginEvents = [], isLoading: isLoadingAllEvents } = useQuery<AuditLogEvent[]>({
+        queryKey: ['audit_logs', 'login', 'all'],
+        queryFn: async () => {
+            const allEvents = await getCollection<AuditLogEvent>('audit_logs');
+            return allEvents
+                .filter(e => e.eventType === 'login')
+                .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutos
     });
 
-    const { collaborators, loading: loadingCollaborators } = useCollaborators();
-
-    const isLoading = isLoadingEvents || loadingCollaborators;
-
-    const events = useMemo(() => {
+    // Filtra eventos do período selecionado no cliente
+    const periodEvents = useMemo(() => {
         if (!dateRange?.from || !dateRange?.to) return [];
         
         const from = startOfDay(dateRange.from);
         const to = endOfDay(dateRange.to);
-
-        return allEvents.filter(e => {
-             const isLoginEvent = e.eventType === 'login';
-             const eventDate = parseISO(e.timestamp);
-             return isLoginEvent && isWithinInterval(eventDate, { start: from, end: to });
+        
+        return allLoginEvents.filter(e => {
+            const eventDate = parseISO(e.timestamp);
+            return isWithinInterval(eventDate, { start: from, end: to });
         });
-    }, [allEvents, dateRange]);
+    }, [allLoginEvents, dateRange]);
+
+    // Filtra eventos dos últimos 6 meses no cliente
+    const historicalEvents = useMemo(() => {
+        const sixMonthsAgo = startOfDay(subMonths(new Date(), 6));
+        const today = endOfDay(new Date());
+        
+        return allLoginEvents.filter(e => {
+            const eventDate = parseISO(e.timestamp);
+            return isWithinInterval(eventDate, { start: sixMonthsAgo, end: today });
+        });
+    }, [allLoginEvents]);
+
+    const isLoadingPeriodEvents = isLoadingAllEvents;
+    const isLoadingHistorical = isLoadingAllEvents;
+
+    const { collaborators, loading: loadingCollaborators } = useCollaborators();
+
+    const isLoading = isLoadingPeriodEvents || loadingCollaborators || loadingSettings;
+    const events = periodEvents; // Já filtrado pela query
     
     const uniqueAxes = useMemo(() => {
         return [...new Set(collaborators.map(c => c.axis))].sort();
@@ -178,6 +188,106 @@ export default function AuditPage() {
             percentage: collaborators.length > 0 ? (uniqueUserIds.size / collaborators.length) * 100 : 0,
         };
     }, [events, collaborators, isLoading]);
+
+    // Métricas de frequência
+    const frequencyStats = useMemo(() => {
+        const goal = settings?.loginFrequencyGoal || 12;
+        
+        if (isLoading || events.length === 0) {
+            return { 
+                averageLoginsPerUser: 0, 
+                goal,
+                percentage: 0,
+            };
+        }
+        
+        const uniqueUserIds = new Set(events.map(event => event.userId));
+        const totalLogins = events.length;
+        const averageLoginsPerUser = uniqueUserIds.size > 0 ? totalLogins / uniqueUserIds.size : 0;
+        
+        return {
+            averageLoginsPerUser,
+            goal,
+            percentage: goal > 0 ? Math.min((averageLoginsPerUser / goal) * 100, 100) : 0,
+        };
+    }, [events, isLoading, settings?.loginFrequencyGoal]);
+
+    // Métricas de horário (00h-23h)
+    const loginsByHour = useMemo(() => {
+        if (isLoading || events.length === 0) return [];
+        
+        const hourCounts: { [key: number]: number } = {};
+        for (let i = 0; i < 24; i++) {
+            hourCounts[i] = 0;
+        }
+        
+        events.forEach(event => {
+            const eventDate = parseISO(event.timestamp);
+            const hour = getHours(eventDate);
+            hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+        });
+        
+        return Array.from({ length: 24 }, (_, i) => ({
+            hour: `${i.toString().padStart(2, '0')}h`,
+            logins: hourCounts[i] || 0,
+        }));
+    }, [events, isLoading]);
+
+    // Métricas de dia da semana
+    const loginsByDayOfWeek = useMemo(() => {
+        if (isLoading || events.length === 0) return [];
+        
+        const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+        const dayCounts: { [key: number]: number } = {};
+        for (let i = 0; i < 7; i++) {
+            dayCounts[i] = 0;
+        }
+        
+        events.forEach(event => {
+            const eventDate = parseISO(event.timestamp);
+            const dayOfWeek = getDay(eventDate);
+            dayCounts[dayOfWeek] = (dayCounts[dayOfWeek] || 0) + 1;
+        });
+        
+        return dayNames.map((name, index) => ({
+            day: name,
+            logins: dayCounts[index] || 0,
+        }));
+    }, [events, isLoading]);
+
+    // Histórico de 6 meses
+    const monthlyHistory = useMemo(() => {
+        if (isLoadingHistorical || historicalEvents.length === 0) return [];
+        
+        const monthData: { [key: string]: { uniqueUsers: Set<string>, totalLogins: number } } = {};
+        
+        historicalEvents.forEach(event => {
+            const eventDate = parseISO(event.timestamp);
+            const monthKey = format(eventDate, 'yyyy-MM');
+            
+            if (!monthData[monthKey]) {
+                monthData[monthKey] = { uniqueUsers: new Set(), totalLogins: 0 };
+            }
+            
+            monthData[monthKey].uniqueUsers.add(event.userId);
+            monthData[monthKey].totalLogins += 1;
+        });
+        
+        // Pegar últimos 6 meses
+        const months: string[] = [];
+        for (let i = 5; i >= 0; i--) {
+            months.push(format(subMonths(new Date(), i), 'yyyy-MM'));
+        }
+        
+        return months.map(monthKey => {
+            const monthName = format(parseISO(`${monthKey}-01`), 'MMM', { locale: ptBR });
+            return {
+                month: monthName.charAt(0).toUpperCase() + monthName.slice(1),
+                'Logins Únicos': monthData[monthKey]?.uniqueUsers.size || 0,
+                'Logins Totais': monthData[monthKey]?.totalLogins || 0,
+            };
+        });
+    }, [historicalEvents, isLoadingHistorical]);
 
 
     const handleExport = () => {
@@ -347,23 +457,114 @@ export default function AuditPage() {
                     </Card>
                 </div>
 
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <Trophy className="h-5 w-5" />
+                                Frequência Média de Logins
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                <p className="text-2xl font-bold">
+                                    {(frequencyStats?.averageLoginsPerUser ?? 0).toFixed(1)} logins/usuário
+                                </p>
+                                <Progress value={frequencyStats?.percentage ?? 0} className="h-3 [&>div]:bg-[hsl(var(--admin-primary))]"/>
+                                <p className="text-sm text-muted-foreground">
+                                    Meta: {frequencyStats?.goal ?? 12} logins/mês por usuário ({(frequencyStats?.percentage ?? 0).toFixed(1)}% da meta)
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <UsersIcon className="h-5 w-5" />
+                                Logins Únicos (no Período)
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2">
+                                 <p className="text-2xl font-bold">
+                                    {uniqueLoginsThisMonth.uniqueCount} de {uniqueLoginsThisMonth.totalCount} colaboradores
+                                </p>
+                                <Progress value={uniqueLoginsThisMonth.percentage} className="h-3 [&>div]:bg-[hsl(var(--admin-primary))]"/>
+                                <p className="text-sm text-muted-foreground">
+                                    {uniqueLoginsThisMonth.percentage.toFixed(1)}% dos colaboradores fizeram login pelo menos uma vez no período selecionado.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <BarChartIcon className="h-5 w-5" />
+                                Logins por Hora do Dia
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={loginsByHour}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                    <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "var(--radius)" }} cursor={{fill: 'hsl(var(--muted))'}} />
+                                    <Bar dataKey="logins" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <BarChartIcon className="h-5 w-5" />
+                                Logins por Dia da Semana
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <BarChart data={loginsByDayOfWeek}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                    <XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))", borderRadius: "var(--radius)" }} cursor={{fill: 'hsl(var(--muted))'}} />
+                                    <Bar dataKey="logins" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg">
-                            <UsersIcon className="h-5 w-5" />
-                            Logins Únicos (no Período)
+                            <LineChartIcon className="h-5 w-5" />
+                            Histórico de Aderência (Últimos 6 Meses)
                         </CardTitle>
+                        <CardDescription>
+                            Evolução mensal de logins únicos e totais para acompanhar a aderência da plataforma.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-2">
-                             <p className="text-2xl font-bold">
-                                {uniqueLoginsThisMonth.uniqueCount} de {uniqueLoginsThisMonth.totalCount} colaboradores
-                            </p>
-                            <Progress value={uniqueLoginsThisMonth.percentage} className="h-3 [&>div]:bg-[hsl(var(--admin-primary))]"/>
-                            <p className="text-sm text-muted-foreground">
-                                {uniqueLoginsThisMonth.percentage.toFixed(1)}% dos colaboradores fizeram login pelo menos uma vez no período selecionado.
-                            </p>
-                        </div>
+                        {isLoadingHistorical ? (
+                            <Skeleton className="h-64 w-full" />
+                        ) : (
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={monthlyHistory}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))"/>
+                                    <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12}/>
+                                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false}/>
+                                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", borderColor: "hsl(var(--border))" }}/>
+                                    <Legend />
+                                    <Line type="monotone" dataKey="Logins Únicos" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }}/>
+                                    <Line type="monotone" dataKey="Logins Totais" stroke="hsl(var(--chart-1))" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 8 }}/>
+                                </LineChart>
+                            </ResponsiveContainer>
+                        )}
                     </CardContent>
                 </Card>
             </div>
