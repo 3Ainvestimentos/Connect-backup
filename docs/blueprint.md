@@ -13,5 +13,5 @@
 - Tons predominantemente brancos e cinzas, com cores de destaque como #DFB87F, #A37549, #2B2A27 para elementos específicos.
 - Fonte do título: 'Roboto Bold' (sans-serif) para títulos.
 - Fonte do corpo do texto: 'Archivo Light' (sans-serif) para o texto.
-- Use ícones claros e minimalistas para navegação e ações.
+- Use ícones claros e minimalistas para navegação e ações..
 - Layout responsivo adaptado para desktops, tablets e dispositivos móveis.
