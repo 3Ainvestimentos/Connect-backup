@@ -185,7 +185,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>
-                     <DropdownMenuItem asChild><Link href="/dra/pagamentos" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Banknote className="mr-2 h-4 w-4" /><span>Custos/Infraestrutura</span></Link></DropdownMenuItem>
+                     <DropdownMenuItem asChild><Link href="/personal-panel" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Banknote className="mr-2 h-4 w-4" /><span>Painel Pessoal</span></Link></DropdownMenuItem>
                      <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>
                      <DropdownMenuItem asChild><Link href="/admin" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Shield className="mr-2 h-4 w-4" /><span>Sistema</span></Link></DropdownMenuItem>
                   </>
@@ -217,7 +217,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
   
-  const isFullscreenPage: string[] = [];
+  const isFullscreenPage = ['/chatbot', '/admin/crm', '/admin/strategic-panel', '/personal-panel'].includes(pathname);
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);

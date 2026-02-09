@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function CustosInfraestruturaLayout({
+export default function PersonalPanelLayout({
   children,
 }: {
   children: React.ReactNode;
