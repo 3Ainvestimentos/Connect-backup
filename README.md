@@ -103,7 +103,7 @@ Esta é uma visão estruturada das páginas e funcionalidades disponíveis.
     ├── /store (Loja 3A RIVA - Embed)
     ├── /chatbot (Assistente Bob 1.0)
     ├── /bi (Business Intelligence - Acesso Restrito)
-    ├── /dra/pagamentos (DRA e Pagamentos - Acesso Restrito)
+    ├── /personal-panel (Painel Pessoal - Acesso Restrito)
     │
     ├── /me/tasks (Minhas Tarefas - Caixa de Entrada Unificada)
     │   ├── Tarefas Atribuídas
