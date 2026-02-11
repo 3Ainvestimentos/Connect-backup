@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, Banknote, ListChecks, Award, MessageSquarePlus, Compass, NotebookPen, Rss, Video } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, PanelsTopLeft, ListChecks, Award, MessageSquarePlus, Compass, NotebookPen, Rss, Video } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -184,7 +184,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>
-                     <DropdownMenuItem asChild><Link href="/personal-panel" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Banknote className="mr-2 h-4 w-4" /><span>Painel Pessoal</span></Link></DropdownMenuItem>
+                     <DropdownMenuItem asChild><Link href="/personal-panel" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><PanelsTopLeft className="mr-2 h-4 w-4" /><span>Painel Pessoal</span></Link></DropdownMenuItem>
                      <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>
                      <DropdownMenuItem asChild><Link href="/admin" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Shield className="mr-2 h-4 w-4" /><span>Sistema</span></Link></DropdownMenuItem>
                   </>
