@@ -18,11 +18,7 @@ export interface CollaboratorPermissions {
   canViewStrategicPanel: boolean;
   canViewOpportunityMap: boolean;
   canViewMeetAnalyses: boolean;
-}
-
-export interface BILink {
-  name: string;
-  url: string;
+  canViewDirectoria: boolean;
 }
 
 export interface Collaborator {
@@ -38,8 +34,7 @@ export interface Collaborator {
   leader: string;    // Líder
   city: string;      // Cidade
   permissions: CollaboratorPermissions;
-  googleDriveLinks?: string[]; // Array de links para pastas do Google Drive
-  biLinks?: BILink[]; // Link para o painel de BI específico do usuário
+  googleDriveLinks?: string[];
   acceptedTermsVersion?: number; // Versão dos termos aceitos pelo usuário
   createdAt?: string; // ISO String for creation timestamp
   authUid?: string; // Firebase Auth UID
@@ -70,6 +65,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewStrategicPanel: false,
   canViewOpportunityMap: false,
   canViewMeetAnalyses: false,
+  canViewDirectoria: false,
 };
 
 export const CollaboratorsProvider = ({ children }: { children: ReactNode }) => {

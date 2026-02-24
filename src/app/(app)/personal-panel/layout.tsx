@@ -10,7 +10,7 @@ export default function PersonalPanelLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, isSuperAdmin } = useAuth();
+  const { user, loading, permissions } = useAuth();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
@@ -18,13 +18,13 @@ export default function PersonalPanelLayout({
     if (!loading) {
       if (!user) {
         router.replace('/login');
-      } else if (!isSuperAdmin) {
+      } else if (!permissions.canViewDirectoria) {
         router.replace('/dashboard');
       } else {
         setIsAuthorized(true);
       }
     }
-  }, [user, loading, isSuperAdmin, router]);
+  }, [user, loading, permissions.canViewDirectoria, router]);
 
   if (loading || !isAuthorized) {
     return (

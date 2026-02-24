@@ -25,6 +25,7 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canViewOpportunityMap', label: 'Mapa de Oportunidades' },
     { key: 'canViewCRM', label: 'CRM Interno' },
     { key: 'canViewStrategicPanel', label: 'Painel Estratégico' },
+    { key: 'canViewDirectoria', label: 'Diretoria' },
     { key: 'canViewMeetAnalyses', label: 'Bob Meet Análises' },
 ];
 
