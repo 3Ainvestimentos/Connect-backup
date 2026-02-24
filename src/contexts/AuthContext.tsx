@@ -50,6 +50,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canViewOpportunityMap: false,
   canViewMeetAnalyses: false,
   canViewDirectoria: false,
+  canViewBILeaders: false,
 };
 
 

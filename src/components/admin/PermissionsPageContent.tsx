@@ -27,6 +27,7 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canViewStrategicPanel', label: 'Painel Estratégico' },
     { key: 'canViewDirectoria', label: 'Diretoria' },
     { key: 'canViewMeetAnalyses', label: 'Bob Meet Análises' },
+    { key: 'canViewBILeaders', label: 'BI Líderes' },
 ];
 
 function PermissionsTable() {

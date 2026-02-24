@@ -2,16 +2,16 @@
 "use client";
 import React, { useState, useRef, useMemo } from 'react';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
-import type { Collaborator } from '@/contexts/CollaboratorsContext';
+import type { Collaborator, BILink } from '@/contexts/CollaboratorsContext';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, GripVertical, Filter, History } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Loader2, Upload, FileDown, AlertTriangle, Search, ChevronUp, ChevronDown, Clock, Link as LinkIcon, Folder, BarChart, GripVertical, Filter, History } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from '../ui/scroll-area';
@@ -24,6 +24,39 @@ import { Separator } from '../ui/separator';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useSystemSettings } from '@/contexts/SystemSettingsContext';
 import { CollaboratorAuditLogModal } from './CollaboratorAuditLogModal';
+
+const biLinkSchema = z.object({
+    name: z.string().min(1, "O nome da aba é obrigatório."),
+    url: z.string().transform((value, ctx) => {
+        if (!value) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A URL ou o código de incorporação do iframe é obrigatório.",
+            });
+            return z.NEVER;
+        };
+
+        if (z.string().url().safeParse(value).success) {
+            return value;
+        }
+
+        if (value.trim().startsWith('<iframe')) {
+            const srcMatch = value.match(/src="([^"]+)"/);
+            if (srcMatch && srcMatch[1]) {
+                const url = srcMatch[1];
+                if (z.string().url().safeParse(url).success) {
+                    return url;
+                }
+            }
+        }
+
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "URL inválida. Cole a URL completa ou o código de incorporação do iframe.",
+        });
+        return z.NEVER;
+    })
+});
 
 const collaboratorSchema = z.object({
     id: z.string().optional(),
@@ -38,6 +71,7 @@ const collaboratorSchema = z.object({
     leader: z.string().min(1, "Líder é obrigatório"),
     city: z.string().min(1, "Cidade é obrigatória"),
     googleDriveLinks: z.union([z.string(), z.array(z.string().url("URL inválida."))]).optional(),
+    biLinks: z.array(biLinkSchema).optional(),
 });
 
 type CollaboratorFormValues = z.infer<typeof collaboratorSchema>;
@@ -64,6 +98,11 @@ export function ManageCollaborators() {
 
     const { control, register, handleSubmit, reset, formState: { errors, isSubmitting: isFormSubmitting } } = useForm<CollaboratorFormValues>({
         resolver: zodResolver(collaboratorSchema),
+    });
+
+    const { fields: biLinksFields, append, remove } = useFieldArray({
+        control,
+        name: "biLinks",
     });
 
     const lastAddedCollaborator = useMemo(() => {
@@ -159,6 +198,7 @@ export function ManageCollaborators() {
             reset({
               ...collaborator,
               googleDriveLinks: collaborator.googleDriveLinks ? collaborator.googleDriveLinks.join('\\n') : '',
+              biLinks: collaborator.biLinks || [],
             });
         } else {
             reset({
@@ -174,6 +214,7 @@ export function ManageCollaborators() {
                 leader: '',
                 city: '',
                 googleDriveLinks: [],
+                biLinks: [],
             });
         }
         setIsFormOpen(true);
@@ -255,6 +296,7 @@ export function ManageCollaborators() {
                         leader: row.leader?.trim(),
                         city: row.city?.trim(),
                         googleDriveLinks: row.googleDriveLinks?.split(',').map(l => l.trim()).filter(Boolean) || [],
+                        biLinks: [],
                     }))
                     .filter(c => c.id3a && c.name && c.email); // Basic validation
 
@@ -409,6 +451,7 @@ export function ManageCollaborators() {
                                     <FilterableHeader fkey="leader" label="Líder" uniqueValues={uniqueLeaders} />
                                     <FilterableHeader fkey="city" label="Cidade" uniqueValues={uniqueCities} />
                                     <TableHead>Google Drive</TableHead>
+                                    <TableHead>Links de BI</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -430,6 +473,16 @@ export function ManageCollaborators() {
                                                 </Badge>
                                             ) : (
                                                 <Badge variant="outline">Padrão</Badge>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {item.biLinks && item.biLinks.length > 0 ? (
+                                                <Badge variant="secondary" className="flex items-center w-fit gap-1.5">
+                                                    <BarChart className="h-3 w-3" />
+                                                    {item.biLinks.length} link(s)
+                                                </Badge>
+                                            ) : (
+                                                 <Badge variant="outline">Nenhum</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right">
@@ -531,6 +584,33 @@ export function ManageCollaborators() {
                              <Textarea id="googleDriveLinks" {...register('googleDriveLinks')} placeholder="https://drive.google.com/drive/folders/...\\nhttps://drive.google.com/drive/folders/..." disabled={isFormSubmitting} rows={3}/>
                             <p className="text-xs text-muted-foreground mt-1">Deixe em branco para usar a pasta "Meu Drive" padrão.</p>
                             {errors.googleDriveLinks && <p className="text-sm text-destructive mt-1">{errors.googleDriveLinks.message}</p>}
+                        </div>
+                        <Separator/>
+                        <div>
+                            <Label>Links do Power BI (opcional)</Label>
+                            <div className="space-y-3 mt-2">
+                                {biLinksFields.map((field, index) => (
+                                    <div key={field.id} className="p-3 border rounded-lg space-y-2 relative bg-background">
+                                         <div className="flex items-end gap-2">
+                                            <div className="flex-grow space-y-1.5">
+                                                <Label htmlFor={`biLinks.${index}.name`}>Nome da Aba</Label>
+                                                <Input id={`biLinks.${index}.name`} {...register(`biLinks.${index}.name`)} placeholder="Ex: Painel de Vendas" />
+                                                {errors.biLinks?.[index]?.name && <p className="text-xs text-destructive mt-1">{errors.biLinks[index]?.name?.message}</p>}
+                                            </div>
+                                             <div className="flex-grow space-y-1.5">
+                                                <Label htmlFor={`biLinks.${index}.url`}>URL ou Iframe do Painel</Label>
+                                                <Input id={`biLinks.${index}.url`} {...register(`biLinks.${index}.url`)} placeholder="Cole a URL ou o código de incorporação" />
+                                                {errors.biLinks?.[index]?.url && <p className="text-xs text-destructive mt-1">{errors.biLinks[index]?.url?.message}</p>}
+                                            </div>
+                                            <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)} className="shrink-0"><Trash2 className="h-4 w-4"/></Button>
+                                         </div>
+                                    </div>
+                                ))}
+                            </div>
+                             <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', url: '' })} className="mt-2">
+                                <PlusCircle className="mr-2 h-4 w-4"/>
+                                Adicionar Link de BI
+                            </Button>
                         </div>
                         <DialogFooter className="mt-6">
                             <DialogClose asChild><Button type="button" variant="outline" disabled={isFormSubmitting}>Cancelar</Button></DialogClose>

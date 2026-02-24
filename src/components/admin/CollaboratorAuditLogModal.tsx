@@ -51,6 +51,7 @@ const fieldLabels: { [key: string]: string } = {
     city: 'Cidade',
     permissions: 'Permissões',
     googleDriveLinks: 'Links do Drive',
+    biLinks: 'Links de BI',
 };
 
 function ChangeDetail({ change }: { change: ChangeLog }) {
