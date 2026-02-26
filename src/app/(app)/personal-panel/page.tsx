@@ -5,7 +5,7 @@ export default function PersonalPanelPage() {
       <iframe
         src="https://ted-cyan.vercel.app/"
         className="w-full h-full border-none"
-        title="Painel Pessoal"
+        title="Diretoria"
         allow="microphone"
       ></iframe>
     </div>

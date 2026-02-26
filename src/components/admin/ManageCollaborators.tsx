@@ -104,7 +104,7 @@ export function ManageCollaborators() {
         control,
         name: "biLinks",
     });
-    
+
     const lastAddedCollaborator = useMemo(() => {
         if (collaborators.length === 0) return null;
         
@@ -296,7 +296,7 @@ export function ManageCollaborators() {
                         leader: row.leader?.trim(),
                         city: row.city?.trim(),
                         googleDriveLinks: row.googleDriveLinks?.split(',').map(l => l.trim()).filter(Boolean) || [],
-                        biLinks: [], // biLinks are not imported via CSV for simplicity
+                        biLinks: [],
                     }))
                     .filter(c => c.id3a && c.name && c.email); // Basic validation
 
