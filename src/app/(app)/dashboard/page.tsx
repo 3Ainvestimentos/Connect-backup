@@ -26,6 +26,7 @@ import GoogleCalendar from '@/components/dashboard-v2/GoogleCalendar';
 import GoogleDriveFiles from '@/components/dashboard-v2/GoogleDriveFiles';
 import RssFeed from '@/components/dashboard-v2/RssFeed';
 import TradingViewWidget from '@/components/dashboard-v2/TradingViewWidget';
+import BirthdaysTripsCard from '@/components/dashboard-v2/BirthdaysTripsCard';
 import { useContacts } from '@/contexts/ContactsContext';
 import { findCollaboratorByEmail } from '@/lib/email-utils';
 
@@ -304,6 +305,7 @@ export default function DashboardV2Page() {
                     </Card>
                 </div>
             </div>
+            <BirthdaysTripsCard />
              <Card id="messages-card" className="shadow-sm flex flex-col w-full">
                 <CardHeader>
                 <div className="flex justify-between items-start">

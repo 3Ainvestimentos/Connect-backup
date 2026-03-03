@@ -5,12 +5,12 @@ import React, { createContext, useContext, useEffect, useState, ReactNode, useMe
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase';
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { Collaborator, CollaboratorPermissions } from './CollaboratorsContext';
-import { addDocumentToCollection, getCollection, getDocument, updateDocumentInCollection as updateFirestoreDoc } from '@/lib/firestore-service';
+import { addDocumentToCollection, getCollection, updateDocumentInCollection as updateFirestoreDoc } from '@/lib/firestore-service';
 import { useSystemSettings } from './SystemSettingsContext';
-import { getFirestore, doc, updateDoc } from "firebase/firestore";
+import { getFirestore, collection, onSnapshot, query, where } from "firebase/firestore";
 import type { FirebaseError } from 'firebase/app';
 
 const scopes = [
@@ -42,6 +42,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageWorkflows: false,
   canManageRequests: false,
   canManageContent: false,
+  canManageTripsBirthdays: false,
   canViewTasks: false,
   canViewBI: false,
   canViewRankings: false,
@@ -80,13 +81,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.info(`[AuthDebug] ${label}`, { ...context, ...extra });
   }, []);
 
+  const applyCollaboratorState = useCallback((collaborator: Collaborator | null) => {
+    if (collaborator) {
+      setCurrentUserCollab(collaborator);
+      const userPermissions = { ...defaultPermissions, ...(collaborator.permissions || {}) };
+      setPermissions(userPermissions);
+      setIsAdmin(Object.values(userPermissions).some(p => p === true));
+    } else {
+      setCurrentUserCollab(null);
+      setPermissions(defaultPermissions);
+      setIsAdmin(false);
+    }
+  }, []);
+
   const fetchAndSetCollaborator = useCallback(async (firebaseUser: User): Promise<Collaborator | null> => {
     const collaborators = await getCollection<Collaborator>('collaborators');
-    let collaborator = collaborators.find(c => c.authUid === firebaseUser.uid);
+    let collaborator: Collaborator | null = collaborators.find(c => c.authUid === firebaseUser.uid) ?? null;
 
     if (!collaborator) {
       const normalizedEmail = normalizeEmail(firebaseUser.email);
-      const collaboratorByEmail = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail);
+      const collaboratorByEmail = collaborators.find(c => normalizeEmail(c.email) === normalizedEmail) ?? null;
 
       if (collaboratorByEmail) {
         console.log(`Associating authUid for ${normalizedEmail}...`);
@@ -95,18 +109,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
     
-    if (collaborator) {
-        setCurrentUserCollab(collaborator);
-        const userPermissions = { ...defaultPermissions, ...(collaborator.permissions || {}) };
-        setPermissions(userPermissions);
-        setIsAdmin(Object.values(userPermissions).some(p => p === true));
-    } else {
-        setCurrentUserCollab(null);
-        setPermissions(defaultPermissions);
-        setIsAdmin(false);
-    }
+    applyCollaboratorState(collaborator || null);
     return collaborator;
-  }, []);
+  }, [applyCollaboratorState]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -162,6 +167,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     return () => unsubscribe();
   }, [auth, systemSettings, fetchAndSetCollaborator]);
+
+  useEffect(() => {
+    if (!user || isSuperAdmin) return;
+
+    const db = getFirestore(getFirebaseApp());
+    const collaboratorsRef = collection(db, 'collaborators');
+    const emailCandidates = Array.from(
+      new Set([user.email, normalizeEmail(user.email)].filter((email): email is string => !!email))
+    );
+
+    let collaboratorFromUid: Collaborator | null = null;
+
+    const unsubByUid = onSnapshot(
+      query(collaboratorsRef, where('authUid', '==', user.uid)),
+      (snapshot) => {
+        const docSnap = snapshot.docs[0];
+        collaboratorFromUid = docSnap ? ({ id: docSnap.id, ...docSnap.data() } as Collaborator) : null;
+        if (collaboratorFromUid) {
+          applyCollaboratorState(collaboratorFromUid);
+        }
+      },
+      (error) => {
+        console.error('Auth realtime sync by authUid failed:', error);
+      }
+    );
+
+    let unsubByEmail = () => {};
+    if (emailCandidates.length > 0) {
+      unsubByEmail = onSnapshot(
+        query(collaboratorsRef, where('email', 'in', emailCandidates)),
+        (snapshot) => {
+          if (collaboratorFromUid) return;
+          const docSnap = snapshot.docs[0];
+          if (docSnap) {
+            applyCollaboratorState({ id: docSnap.id, ...docSnap.data() } as Collaborator);
+          }
+        },
+        (error) => {
+          console.error('Auth realtime sync by email failed:', error);
+        }
+      );
+    }
+
+    return () => {
+      unsubByUid();
+      unsubByEmail();
+    };
+  }, [user, isSuperAdmin, applyCollaboratorState]);
 
   
   const signInWithGoogle = async () => {

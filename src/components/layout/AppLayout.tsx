@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, BarChart2, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, PanelsTopLeft, ListChecks, Award, MessageSquarePlus, NotebookPen, Rss, Video } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, BarChart2, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, PanelsTopLeft, ListChecks, Award, MessageSquarePlus, NotebookPen, Rss, Video, Plane } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -85,7 +85,11 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
 
   const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
-  const hasAdminPanels = permissions.canManageContent || permissions.canManageWorkflows || isSuperAdmin;
+  const hasAdminPanels =
+    permissions.canManageContent ||
+    permissions.canManageWorkflows ||
+    permissions.canManageTripsBirthdays ||
+    isSuperAdmin;
 
   return (
     <DropdownMenu>
@@ -186,6 +190,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/admin/fab-messages" className="cursor-pointer font-body"><MessageSquarePlus className="mr-2 h-4 w-4" /><span>Mensagens FAB</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
+                {permissions.canManageTripsBirthdays && <DropdownMenuItem asChild><Link href="/admin/travel-birthdays" className="cursor-pointer font-body"><Plane className="mr-2 h-4 w-4" /><span>Viagens</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>
                      <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>
