@@ -99,7 +99,7 @@ export default function RankingsPage() {
     if (loading || !isAuthorized) {
         return (
             <div className="flex h-[calc(100vh-var(--header-height))] w-full items-center justify-center bg-background">
-                <LoadingSpinner />
+                <LoadingSpinner message="Carregando Rankings e Campanhas" />
             </div>
         );
     }

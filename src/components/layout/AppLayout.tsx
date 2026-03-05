@@ -379,7 +379,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (loading || !user) {
      return (
         <div className="flex h-screen w-screen items-center justify-center">
-          <LoadingSpinner />
+          <LoadingSpinner message="Carregando 3A RIVA Connect" />
         </div>
      );
   }

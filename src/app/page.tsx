@@ -15,7 +15,7 @@ export default function HomePage() {
 
   return (
     <div className="flex h-screen w-screen items-center justify-center bg-background">
-       <LoadingSpinner />
+       <LoadingSpinner message="Redirecionando para o login" />
     </div>
   );
 }
