@@ -2,9 +2,10 @@
 
 import React, { useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plane, ArrowRight, Gift, UserCircle } from "lucide-react";
+import { Plane, Gift } from "lucide-react";
 import { useTripsBirthdays } from "@/contexts/TripsBirthdaysContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useCollaborators } from "@/contexts/CollaboratorsContext";
 
 const ENABLE_BIRTHDAYS_UI = false;
 
@@ -30,9 +31,22 @@ function normalizeCity(city: string): string {
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+function normalizeName(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
 export default function BirthdaysTripsCard() {
   const { birthdays, trips } = useTripsBirthdays();
   const { isAdmin, isSuperAdmin, currentUserCollab } = useAuth();
+  const { collaborators } = useCollaborators();
+
+  const leaderAreaMap = useMemo(() => {
+    const map = new Map<string, string>();
+    collaborators.forEach((c) => {
+      map.set(normalizeName(c.name).toLowerCase(), c.area ?? "");
+    });
+    return map;
+  }, [collaborators]);
 
   const currentMonthBirthdays = useMemo(() => {
     if (!ENABLE_BIRTHDAYS_UI) return [];
@@ -85,92 +99,63 @@ export default function BirthdaysTripsCard() {
     <Card className="shadow-sm w-full">
       <CardHeader>
         <CardTitle className="font-headline text-foreground text-xl">
-          {ENABLE_BIRTHDAYS_UI ? "Aniversários & Viagens" : "Viagens dos Líderes"}
+          {ENABLE_BIRTHDAYS_UI ? "Aniversários & Viagens" : "Agenda de Viagens"}
         </CardTitle>
-        <CardDescription>
-          {ENABLE_BIRTHDAYS_UI
-            ? "Acompanhe aniversariantes do mês e viagens dos líderes."
-            : isAdmin || isSuperAdmin
-              ? "Acompanhe as viagens programadas dos líderes."
-              : "Acompanhe as viagens programadas dos líderes para sua cidade."}
-        </CardDescription>
+        <CardDescription>Acompanhe as viagens programadas das áreas na sua filial.</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div
-          className={
-            ENABLE_BIRTHDAYS_UI
-              ? "grid grid-cols-1 md:grid-cols-2 md:gap-0 rounded-lg border divide-y md:divide-y-0 md:divide-x"
-              : "grid grid-cols-1 rounded-lg border"
-          }
-        >
-          {ENABLE_BIRTHDAYS_UI && (
-            <div className="p-4 md:p-5 bg-muted/20">
-              <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-                <Gift className="h-4 w-4 text-amber-500" />
-                Aniversariantes do Mês
-              </h4>
-              <div className="space-y-2">
-                {currentMonthBirthdays.length > 0 ? (
-                  currentMonthBirthdays.map((item) => (
-                    <div key={item.id} className="rounded-md border p-2 text-sm flex items-center justify-between">
-                      <span className="truncate pr-3">{getShortName(item.fullName)}</span>
-                      <span className="text-muted-foreground tabular-nums">{item.dayMonth}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-muted-foreground">Nenhum aniversariante neste mês.</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="p-4 md:p-5">
+      <CardContent className="p-0">
+        {ENABLE_BIRTHDAYS_UI && (
+          <div className="p-4 md:p-5 bg-muted/20 border-b">
             <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
-              <Plane className="h-4 w-4 text-sky-600" />
-              Viagens dos Líderes
+              <Gift className="h-4 w-4 text-amber-500" />
+              Aniversariantes do Mês
             </h4>
-            <div className="space-y-4">
+            <div className="space-y-2">
+              {currentMonthBirthdays.length > 0 ? (
+                currentMonthBirthdays.map((item) => (
+                  <div key={item.id} className="rounded-md border p-2 text-sm flex items-center justify-between">
+                    <span className="truncate pr-3">{getShortName(item.fullName)}</span>
+                    <span className="text-muted-foreground tabular-nums">{item.dayMonth}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Nenhum aniversariante neste mês.</p>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="p-3">
+            <div className="space-y-2">
               {groupedTripsByDestination.length > 0 ? (
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
-                  {groupedTripsByDestination.map(([destination, destinationTrips]) => (
-                    <div key={destination} className="rounded-md border p-3 bg-card">
-                      <div className="inline-flex min-w-[140px] justify-center rounded-md border px-3 py-1 text-sm font-semibold">
-                        {destination}
-                      </div>
-                      <div className="mt-3 space-y-2">
-                        {destinationTrips.map((trip) => (
-                          <div key={trip.id} className="text-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <Plane className="h-3.5 w-3.5 shrink-0" />
-                              <div className="relative flex-1 h-px border-t border-dashed border-muted-foreground/50">
-                                <ArrowRight className="h-3.5 w-3.5 absolute -right-1 -top-[7px]" />
-                              </div>
-                            </div>
-                            <div className="mt-1.5 flex items-center justify-between gap-3">
-                              <div className="truncate">
-                                <span className="text-orange-500 mr-1.5">•</span>
-                                {trip.leaderName}
-                                <span className="flex items-center gap-1 text-[11px] text-muted-foreground mt-0.5">
-                                  <UserCircle className="h-3 w-3 shrink-0" />
-                                  {trip.responsavelNome || "Sem responsável"}
-                                </span>
-                              </div>
-                              <span className="text-muted-foreground tabular-nums text-xs whitespace-nowrap">
+                groupedTripsByDestination.map(([destination, destinationTrips]) => (
+                  <div key={destination} className="rounded-md border p-2 bg-card">
+                    <p className="text-xs font-semibold text-foreground truncate mb-2">{destination}</p>
+                    <div className="space-y-2">
+                      {destinationTrips.map((trip) => {
+                        const area = leaderAreaMap.get(normalizeName(trip.leaderName).toLowerCase()) ?? "";
+                        return (
+                          <div key={trip.id} className="flex items-start gap-1.5">
+                            <Plane className="h-3 w-3 mt-0.5 shrink-0 text-muted-foreground" />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium truncate">{trip.leaderName}</p>
+                              {area && (
+                                <p className="text-[10px] text-muted-foreground truncate">{area}</p>
+                              )}
+                              <p className="text-[11px] text-muted-foreground">
                                 {formatDateDDMM(trip.startDate)} - {formatDateDDMM(trip.endDate)}
-                              </span>
+                              </p>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))
               ) : (
                 <p className="text-sm text-muted-foreground">Nenhuma viagem ativa no momento.</p>
               )}
             </div>
           </div>
-        </div>
       </CardContent>
     </Card>
   );

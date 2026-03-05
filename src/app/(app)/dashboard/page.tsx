@@ -252,36 +252,7 @@ export default function DashboardV2Page() {
                     <GoogleDriveFiles />
                  </div>
                 <div className="lg:col-span-2">
-                    {quickLinks.length > 0 && (
-                        <Card className="shadow-sm w-full h-full flex flex-col">
-                            <CardHeader>
-                                <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
-                                <CardDescription>Acesse sistemas e recursos.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow flex justify-center items-center">
-                                <div className="grid grid-cols-1 gap-4 w-full">
-                                {quickLinks.map(link => (
-                                    <a 
-                                        href={link.link} 
-                                        key={link.id} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-[3/1] w-full"
-                                        title={link.name || 'Link Rápido'}
-                                    >
-                                        <Image
-                                            src={link.imageUrl}
-                                            alt={link.name || 'Quick Link'}
-                                            layout="fill"
-                                            objectFit="contain"
-                                            className="p-6"
-                                        />
-                                    </a>
-                                ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                    <BirthdaysTripsCard />
                 </div>
                 <div className="lg:col-span-2">
                     <Card className="shadow-sm w-full h-full flex flex-col">
@@ -305,7 +276,36 @@ export default function DashboardV2Page() {
                     </Card>
                 </div>
             </div>
-            <BirthdaysTripsCard />
+            {quickLinks.length > 0 && (
+                <Card className="shadow-sm w-full">
+                    <CardHeader>
+                        <CardTitle className="font-headline text-foreground text-xl">Links Rápidos</CardTitle>
+                        <CardDescription>Acesse sistemas e recursos.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 w-full">
+                            {quickLinks.map(link => (
+                                <a
+                                    href={link.link}
+                                    key={link.id}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-[3/1] w-full"
+                                    title={link.name || 'Link Rápido'}
+                                >
+                                    <Image
+                                        src={link.imageUrl}
+                                        alt={link.name || 'Quick Link'}
+                                        layout="fill"
+                                        objectFit="contain"
+                                        className="p-6"
+                                    />
+                                </a>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
              <Card id="messages-card" className="shadow-sm flex flex-col w-full">
                 <CardHeader>
                 <div className="flex justify-between items-start">

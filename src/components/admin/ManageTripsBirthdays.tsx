@@ -114,6 +114,7 @@ export default function ManageTripsBirthdays() {
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [isImporting, setIsImporting] = useState(false);
   const [tripStatusFilter, setTripStatusFilter] = useState<"all" | "active" | "ended">("all");
+  const [tripSort, setTripSort] = useState<"date" | "name">("date");
 
   const {
     register,
@@ -140,6 +141,14 @@ export default function ManageTripsBirthdays() {
     return uniqueLeaders.filter((name) => name.toLowerCase().includes(search));
   }, [leaderSearch, uniqueLeaders]);
 
+  const leaderAreaMap = useMemo(() => {
+    const map = new Map<string, string>();
+    collaborators.forEach((c) => {
+      map.set(normalizeName(c.name).toLowerCase(), c.area ?? "");
+    });
+    return map;
+  }, [collaborators]);
+
   const displayedTrips = useMemo(() => {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -147,7 +156,8 @@ export default function ManageTripsBirthdays() {
     const withStatus = trips.map((trip) => {
       const [y, m, d] = trip.endDate.split("-").map(Number);
       const end = new Date(y, m - 1, d);
-      return { ...trip, isActive: end >= now };
+      const area = leaderAreaMap.get(normalizeName(trip.leaderName).toLowerCase()) ?? "";
+      return { ...trip, isActive: end >= now, area };
     });
 
     const filtered =
@@ -158,11 +168,12 @@ export default function ManageTripsBirthdays() {
           : withStatus.filter((t) => !t.isActive);
 
     return filtered.sort((a, b) => {
+      if (tripSort === "name") return a.leaderName.localeCompare(b.leaderName, "pt-BR");
       if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
       if (a.isActive) return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
       return new Date(b.endDate).getTime() - new Date(a.endDate).getTime();
     });
-  }, [trips, tripStatusFilter]);
+  }, [trips, tripStatusFilter, tripSort, leaderAreaMap]);
 
   const displayedBirthdays = useMemo(() => {
     const base = [...birthdays].sort((a, b) => a.dayMonth.localeCompare(b.dayMonth, "pt-BR"));
@@ -510,18 +521,32 @@ export default function ManageTripsBirthdays() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="trip-status-filter">Status:</Label>
-            <Select value={tripStatusFilter} onValueChange={(v) => setTripStatusFilter(v as "all" | "active" | "ended")}>
-              <SelectTrigger id="trip-status-filter" className="w-[170px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="active">Previstas</SelectItem>
-                <SelectItem value="ended">Executadas</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="trip-status-filter">Status:</Label>
+              <Select value={tripStatusFilter} onValueChange={(v) => setTripStatusFilter(v as "all" | "active" | "ended")}>
+                <SelectTrigger id="trip-status-filter" className="w-[170px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="active">Previstas</SelectItem>
+                  <SelectItem value="ended">Executadas</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="trip-sort">Ordenar por:</Label>
+              <Select value={tripSort} onValueChange={(v) => setTripSort(v as "date" | "name")}>
+                <SelectTrigger id="trip-sort" className="w-[170px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date">Data</SelectItem>
+                  <SelectItem value="name">Nome (A–Z)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="border rounded-md">
@@ -529,6 +554,7 @@ export default function ManageTripsBirthdays() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Líder</TableHead>
+                  <TableHead>Área</TableHead>
                   <TableHead>Destino</TableHead>
                   <TableHead>Período</TableHead>
                   <TableHead>Responsável</TableHead>
@@ -545,6 +571,7 @@ export default function ManageTripsBirthdays() {
                   return (
                     <TableRow key={trip.id} className={!trip.isActive ? "opacity-60" : undefined}>
                       <TableCell>{trip.leaderName}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{trip.area || "—"}</TableCell>
                       <TableCell>{trip.destinationBranch}</TableCell>
                       <TableCell>
                         {formatDDMM(trip.startDate)} - {formatDDMM(trip.endDate)}
@@ -589,7 +616,7 @@ export default function ManageTripsBirthdays() {
                 })}
                 {displayedTrips.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center text-muted-foreground">
                       Nenhuma viagem encontrada para o filtro selecionado.
                     </TableCell>
                   </TableRow>
