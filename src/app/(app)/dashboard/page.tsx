@@ -258,7 +258,7 @@ export default function DashboardV2Page() {
                     <Card className="shadow-sm w-full h-full flex flex-col">
                         <CardHeader>
                             <CardTitle className="font-headline text-foreground text-xl">Contatos</CardTitle>
-                            <CardDescription>Principais contatos.</CardDescription>
+                            <CardDescription>Canal Slack dos responsáveis pelas áreas da empresa.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow">
                             <div className="space-y-2">
@@ -283,23 +283,25 @@ export default function DashboardV2Page() {
                         <CardDescription>Acesse sistemas e recursos.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 w-full">
+                        <div className="flex flex-wrap justify-center gap-4">
                             {quickLinks.map(link => (
                                 <a
                                     href={link.link}
                                     key={link.id}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="block relative overflow-hidden rounded-lg transition-opacity hover:opacity-80 bg-card dark:bg-white aspect-[3/1] w-full"
+                                    className="flex items-center p-2 rounded-md hover:bg-muted transition-colors shrink-0"
                                     title={link.name || 'Link Rápido'}
                                 >
-                                    <Image
-                                        src={link.imageUrl}
-                                        alt={link.name || 'Quick Link'}
-                                        layout="fill"
-                                        objectFit="contain"
-                                        className="p-6"
-                                    />
+                                    <span className="shrink-0 w-32 h-12 flex items-center justify-center bg-card dark:bg-white rounded overflow-hidden">
+                                        <Image
+                                            src={link.imageUrl}
+                                            alt={link.name || 'Quick Link'}
+                                            width={112}
+                                            height={40}
+                                            className="object-contain p-1"
+                                        />
+                                    </span>
                                 </a>
                             ))}
                         </div>

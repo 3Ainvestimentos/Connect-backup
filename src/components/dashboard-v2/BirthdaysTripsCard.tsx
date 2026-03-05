@@ -96,14 +96,14 @@ export default function BirthdaysTripsCard() {
   }, [activeTrips]);
 
   return (
-    <Card className="shadow-sm w-full">
+    <Card className="shadow-sm w-full h-full flex flex-col">
       <CardHeader>
         <CardTitle className="font-headline text-foreground text-xl">
           {ENABLE_BIRTHDAYS_UI ? "Aniversários & Viagens" : "Agenda de Viagens"}
         </CardTitle>
         <CardDescription>Acompanhe as viagens programadas das áreas na sua filial.</CardDescription>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1 flex flex-col justify-center">
         {ENABLE_BIRTHDAYS_UI && (
           <div className="p-4 md:p-5 bg-muted/20 border-b">
             <h4 className="font-semibold text-sm mb-3 flex items-center gap-2">
@@ -124,7 +124,7 @@ export default function BirthdaysTripsCard() {
             </div>
           </div>
         )}
-        <div className="p-3">
+        <div className="p-3 flex-1">
             <div className="space-y-2">
               {groupedTripsByDestination.length > 0 ? (
                 groupedTripsByDestination.map(([destination, destinationTrips]) => (
