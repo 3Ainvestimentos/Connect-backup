@@ -17,7 +17,7 @@ function getShortName(fullName: string) {
 function formatDateDDMM(isoDate: string) {
   const date = new Date(isoDate);
   if (Number.isNaN(date.getTime())) return "--/--";
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 }
 
 function extractCity(destinationBranch: string): string {
@@ -53,8 +53,8 @@ export default function BirthdaysTripsCard() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const active = trips.filter((trip) => {
-      const end = new Date(trip.endDate);
-      end.setHours(0, 0, 0, 0);
+      const [y, m, d] = trip.endDate.split("-").map(Number);
+      const end = new Date(y, m - 1, d);
       return end >= now;
     });
 

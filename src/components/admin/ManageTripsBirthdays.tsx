@@ -97,7 +97,7 @@ function toDayMonth(isoDate: string) {
 }
 
 function formatDDMM(isoDate: string) {
-  return new Date(isoDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return new Date(isoDate).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 }
 
 export default function ManageTripsBirthdays() {
@@ -145,8 +145,8 @@ export default function ManageTripsBirthdays() {
     now.setHours(0, 0, 0, 0);
 
     const withStatus = trips.map((trip) => {
-      const end = new Date(trip.endDate);
-      end.setHours(0, 0, 0, 0);
+      const [y, m, d] = trip.endDate.split("-").map(Number);
+      const end = new Date(y, m - 1, d);
       return { ...trip, isActive: end >= now };
     });
 
