@@ -14,7 +14,7 @@ import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Edit, Loader2, PlusCircle, Trash2, Upload, Gift, Plane } from "lucide-react";
+import { Edit, Loader2, PlusCircle, Trash2, Upload, Gift, Plane, ChevronUp, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import * as XLSX from "xlsx";
@@ -113,8 +113,9 @@ export default function ManageTripsBirthdays() {
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [isImporting, setIsImporting] = useState(false);
-  const [tripStatusFilter, setTripStatusFilter] = useState<"all" | "active" | "ended">("all");
-  const [tripSort, setTripSort] = useState<"date" | "name">("date");
+  type TripSortKey = "leaderName" | "area" | "destinationBranch" | "startDate" | "responsavelNome" | "status";
+  const [sortKey, setSortKey] = useState<TripSortKey>("startDate");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const {
     register,
@@ -160,20 +161,26 @@ export default function ManageTripsBirthdays() {
       return { ...trip, isActive: end >= now, area };
     });
 
-    const filtered =
-      tripStatusFilter === "all"
-        ? withStatus
-        : tripStatusFilter === "active"
-          ? withStatus.filter((t) => t.isActive)
-          : withStatus.filter((t) => !t.isActive);
-
-    return filtered.sort((a, b) => {
-      if (tripSort === "name") return a.leaderName.localeCompare(b.leaderName, "pt-BR");
-      if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
-      if (a.isActive) return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-      return new Date(b.endDate).getTime() - new Date(a.endDate).getTime();
+    return [...withStatus].sort((a, b) => {
+      let comparison = 0;
+      if (sortKey === "leaderName") {
+        comparison = a.leaderName.localeCompare(b.leaderName, "pt-BR");
+      } else if (sortKey === "area") {
+        comparison = (a.area || "").localeCompare(b.area || "", "pt-BR");
+      } else if (sortKey === "destinationBranch") {
+        comparison = a.destinationBranch.localeCompare(b.destinationBranch, "pt-BR");
+      } else if (sortKey === "startDate") {
+        comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      } else if (sortKey === "responsavelNome") {
+        const nameA = a.responsavelNome || "Sem responsável";
+        const nameB = b.responsavelNome || "Sem responsável";
+        comparison = nameA.localeCompare(nameB, "pt-BR");
+      } else if (sortKey === "status") {
+        comparison = (a.isActive === b.isActive) ? 0 : a.isActive ? 1 : -1;
+      }
+      return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [trips, tripStatusFilter, tripSort, leaderAreaMap]);
+  }, [trips, sortKey, sortDirection, leaderAreaMap]);
 
   const displayedBirthdays = useMemo(() => {
     const base = [...birthdays].sort((a, b) => a.dayMonth.localeCompare(b.dayMonth, "pt-BR"));
@@ -184,6 +191,24 @@ export default function ManageTripsBirthdays() {
       return m === month;
     });
   }, [birthdays, selectedMonth]);
+
+  const handleSort = (key: TripSortKey) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortableHeader = ({ tkey, label }: { tkey: TripSortKey; label: string }) => (
+    <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
+      <div className="flex items-center gap-1">
+        {label}
+        {sortKey === tkey && (sortDirection === "asc" ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+      </div>
+    </TableHead>
+  );
 
   const handleTripDialogOpen = (trip: LeaderTripType | null) => {
     setEditingTrip(trip);
@@ -521,44 +546,16 @@ export default function ManageTripsBirthdays() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="trip-status-filter">Status:</Label>
-              <Select value={tripStatusFilter} onValueChange={(v) => setTripStatusFilter(v as "all" | "active" | "ended")}>
-                <SelectTrigger id="trip-status-filter" className="w-[170px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="active">Previstas</SelectItem>
-                  <SelectItem value="ended">Executadas</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="trip-sort">Ordenar por:</Label>
-              <Select value={tripSort} onValueChange={(v) => setTripSort(v as "date" | "name")}>
-                <SelectTrigger id="trip-sort" className="w-[170px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="date">Data</SelectItem>
-                  <SelectItem value="name">Nome (A–Z)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
           <div className="border rounded-md">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Líder</TableHead>
-                  <TableHead>Área</TableHead>
-                  <TableHead>Destino</TableHead>
-                  <TableHead>Período</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead>Status</TableHead>
+                  <SortableHeader tkey="leaderName" label="Líder" />
+                  <SortableHeader tkey="area" label="Área" />
+                  <SortableHeader tkey="destinationBranch" label="Destino" />
+                  <SortableHeader tkey="startDate" label="Período" />
+                  <SortableHeader tkey="responsavelNome" label="Responsável" />
+                  <SortableHeader tkey="status" label="Status" />
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -617,7 +614,7 @@ export default function ManageTripsBirthdays() {
                 {displayedTrips.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} className="text-center text-muted-foreground">
-                      Nenhuma viagem encontrada para o filtro selecionado.
+                      Nenhuma viagem cadastrada.
                     </TableCell>
                   </TableRow>
                 )}
