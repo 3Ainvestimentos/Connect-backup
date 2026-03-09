@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   SidebarProvider,
   Sidebar,
@@ -14,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, BarChart2, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, PanelsTopLeft, ListChecks, Award, MessageSquarePlus, NotebookPen, Rss, Video } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, BarChart2, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, PanelsTopLeft, ListChecks, Award, MessageSquarePlus, NotebookPen, Rss, Video, Plane } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -85,7 +86,11 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
 
   const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
-  const hasAdminPanels = permissions.canManageContent || permissions.canManageWorkflows || isSuperAdmin;
+  const hasAdminPanels =
+    permissions.canManageContent ||
+    permissions.canManageWorkflows ||
+    permissions.canManageTripsBirthdays ||
+    isSuperAdmin;
 
   return (
     <DropdownMenu>
@@ -186,6 +191,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/admin/fab-messages" className="cursor-pointer font-body"><MessageSquarePlus className="mr-2 h-4 w-4" /><span>Mensagens FAB</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
+                {permissions.canManageTripsBirthdays && <DropdownMenuItem asChild><Link href="/admin/travel-birthdays" className="cursor-pointer font-body"><Plane className="mr-2 h-4 w-4" /><span>Viagens</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>
                      <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>
@@ -219,7 +225,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
   
-  const isFullscreenPage = ['/chatbot', '/admin/crm', '/admin/strategic-panel', '/personal-panel'].includes(pathname);
+  const isFullscreenPage = false;
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -345,7 +351,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
       if (typeof window === 'undefined') return;
 
-      const INACTIVITY_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
+      const INACTIVITY_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours — must remain >= 12h per session policy
       let inactivityTimer: NodeJS.Timeout;
 
       const resetTimer = () => {
@@ -373,10 +379,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (loading || !user) {
      return (
         <div className="flex h-screen w-screen items-center justify-center">
-          <svg className="animate-spin h-10 w-10 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+          <LoadingSpinner message="Carregando 3A RIVA Connect" />
         </div>
      );
   }
