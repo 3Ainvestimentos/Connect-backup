@@ -2,7 +2,7 @@
 
 import { getFirebaseApp } from './firebase'; // Import the initialized app function
 import { getFirestore, writeBatch, onSnapshot } from "firebase/firestore";
-import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction, query, where, Query } from 'firebase/firestore';
+import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc, setDoc, runTransaction, query, where, Query, orderBy as firestoreOrderBy } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL, uploadBytesResumable } from "firebase/storage";
 import { cleanDataForFirestore } from './data-sanitizer';
 import { buildStorageFilePath, sanitizeStoragePath } from './path-sanitizer';
@@ -158,6 +158,48 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
     } catch (error) {
         console.error(`Error fetching collection ${collectionName}:`, error);
         throw new Error(`Não foi possível carregar a coleção de ${collectionName}.`);
+    }
+};
+
+/**
+ * Fetches documents from a collection with optional query filters and ordering.
+ * @param collectionName The name of the collection.
+ * @param filters Array of where clauses (field, operator, value).
+ * @param orderBy Optional array of orderBy clauses (field, direction).
+ * @returns A promise that resolves to an array of documents with their IDs.
+ */
+export const getCollectionWithQuery = async <T>(
+    collectionName: string,
+    filters?: Array<{ field: string; operator: '<' | '<=' | '==' | '!=' | '>=' | '>' | 'array-contains' | 'in' | 'array-contains-any' | 'not-in'; value: any }>,
+    orderBy?: Array<{ field: string; direction: 'asc' | 'desc' }>
+): Promise<WithId<T>[]> => {
+    try {
+        const collectionRef = collection(db, collectionName);
+        let q: Query = query(collectionRef);
+        
+        // Apply filters
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                q = query(q, where(filter.field, filter.operator, filter.value));
+            });
+        }
+        
+        // Apply ordering
+        if (orderBy && orderBy.length > 0) {
+            orderBy.forEach(order => {
+                q = query(q, firestoreOrderBy(order.field, order.direction));
+            });
+        }
+        
+        const snapshot = await getDocs(q);
+        const data: WithId<T>[] = [];
+        snapshot.forEach((doc) => {
+            data.push({ id: doc.id, ...doc.data() } as WithId<T>);
+        });
+        return data;
+    } catch (error) {
+        console.error(`Error fetching collection ${collectionName} with query:`, error);
+        throw new Error(`Não foi possível carregar a coleção de ${collectionName} com os filtros especificados.`);
     }
 };
 

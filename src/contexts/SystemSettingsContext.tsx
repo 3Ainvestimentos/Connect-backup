@@ -19,6 +19,7 @@ export interface SystemSettings {
   collaboratorTableVersion: number;
   isRssNewsletterActive?: boolean;
   rssNewsletterUrl?: string;
+  loginFrequencyGoal?: number; // Meta de logins por mês por usuário (ex: 12 logins/mês)
 }
 
 interface SystemSettingsContextType {
@@ -44,6 +45,7 @@ const defaultSettings: SystemSettings = {
     collaboratorTableVersion: 1,
     isRssNewsletterActive: false,
     rssNewsletterUrl: '',
+    loginFrequencyGoal: 12, // Meta padrão: 12 logins/mês por usuário
 };
 
 export const SystemSettingsProvider = ({ children }: { children: ReactNode }) => {

@@ -17,7 +17,7 @@ const AUDIT_START_DATE = new Date('2024-08-01');
 
 export const AuditProvider = ({ children }: { children: ReactNode }) => {
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        from: subDays(new Date(), 7),
+        from: subDays(new Date(), 30),
         to: new Date(),
     });
 

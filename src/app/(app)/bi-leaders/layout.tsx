@@ -1,11 +1,10 @@
-
 "use client";
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function PersonalPanelLayout({
+export default function BILeadersLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -18,13 +17,13 @@ export default function PersonalPanelLayout({
     if (!loading) {
       if (!user) {
         router.replace('/login');
-      } else if (!permissions.canViewDirectoria) {
+      } else if (!permissions.canViewBILeaders) {
         router.replace('/dashboard');
       } else {
         setIsAuthorized(true);
       }
     }
-  }, [user, loading, permissions.canViewDirectoria, router]);
+  }, [user, loading, permissions.canViewBILeaders, router]);
 
   if (loading || !isAuthorized) {
     return (
@@ -38,7 +37,7 @@ export default function PersonalPanelLayout({
   }
 
   return (
-    <div className="flex-grow h-full">
+    <div className="flex-grow h-[calc(100vh-var(--header-height))]">
         {children}
     </div>
   );
