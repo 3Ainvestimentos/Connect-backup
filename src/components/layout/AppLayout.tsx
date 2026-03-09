@@ -225,7 +225,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { setOpen: setSidebarOpen } = useSidebar();
   
-  const isFullscreenPage = ['/chatbot', '/admin/crm', '/admin/strategic-panel', '/personal-panel'].includes(pathname);
+  const isFullscreenPage = false;
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
