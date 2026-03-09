@@ -351,7 +351,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
       if (typeof window === 'undefined') return;
 
-      const INACTIVITY_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
+      const INACTIVITY_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours — must remain >= 12h per session policy
       let inactivityTimer: NodeJS.Timeout;
 
       const resetTimer = () => {

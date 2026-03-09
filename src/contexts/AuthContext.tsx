@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, ReactNode, useMemo, useCallback } from 'react';
 import type { User } from 'firebase/auth';
 import { getFirebaseApp, googleProvider } from '@/lib/firebase';
 import { getAuth, signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged, GoogleAuthProvider } from 'firebase/auth';
@@ -32,6 +32,10 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Instâncias singleton fora do componente para garantir referência estável entre renders
+const _firebaseApp = getFirebaseApp();
+const _auth = getAuth(_firebaseApp);
 
 const normalizeEmail = (email: string | null | undefined): string | null => {
     if (!email) return null;
@@ -64,10 +68,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
-  const { settings: systemSettings, loading: settingsLoading } = useSystemSettings();
+  const { settings: systemSettings } = useSystemSettings();
   
-  const app = getFirebaseApp(); 
-  const auth = getAuth(app);
+  const auth = _auth;
+
+  const systemSettingsRef = useRef(systemSettings);
+  useEffect(() => {
+    systemSettingsRef.current = systemSettings;
+  }, [systemSettings]);
 
   const logAuthDebug = useCallback((label: string, extra?: Record<string, unknown>) => {
     if (typeof window === 'undefined') return;
@@ -118,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(true);
       if (firebaseUser) {
         try {
-            const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettings;
+            const { maintenanceMode, maintenanceMessage, allowedUserIds, superAdminEmails } = systemSettingsRef.current;
             const normalizedEmail = normalizeEmail(firebaseUser.email);
             // Normaliza também os emails da lista para comparar corretamente
             const normalizedAdminEmails = superAdminEmails.map(email => normalizeEmail(email)).filter((email): email is string => email !== null);
@@ -166,7 +174,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false); 
     });
     return () => unsubscribe();
-  }, [auth, systemSettings, fetchAndSetCollaborator]);
+  }, [auth, fetchAndSetCollaborator]);
 
   useEffect(() => {
     if (!user || isSuperAdmin) return;
@@ -312,14 +320,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(() => ({
       user,
       currentUserCollab,
-      loading: loading || settingsLoading,
+      loading,
       isAdmin,
       isSuperAdmin,
       permissions,
       accessToken,
       signInWithGoogle,
       signOut,
-  }), [user, currentUserCollab, loading, settingsLoading, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
+  }), [user, currentUserCollab, loading, isAdmin, isSuperAdmin, permissions, accessToken, signInWithGoogle, signOut]);
 
   return (
     <AuthContext.Provider value={value}>
