@@ -1,0 +1,4028 @@
+[
+  {
+    "id": "06R7AVRgswIl7kjgLMgU",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "formData": {},
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-24T14:55:15-03:00",
+          "userId": "SCL",
+          "status": "em_aprovacao",
+          "userName": "Samuel Coelho Leite",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-10-24T14:55:15-03:00",
+      "requestId": "0301",
+      "lastUpdatedAt": "2025-10-24T14:55:15-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "0eRqJJV5VTWuuH49C35Z",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "requestedAt": "2025-10-28T11:44:46-03:00",
+            "attachmentUrl": "",
+            "userId": "GA",
+            "status": "approved",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "respondedAt": "2025-10-28T11:45:09-03:00",
+            "comment": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "ti@3ariva.com.br",
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-28T11:44:31-03:00",
+          "userId": "DFZ2",
+          "status": "em_aberto",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\".",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "timestamp": "2025-10-28T11:44:46-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:44:46-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Aprovado - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-28T11:45:09-03:00",
+          "userId": "GA",
+          "status": "em_aprovacao",
+          "userName": "Gabriel Fernandes de Andrade Ayres",
+          "notes": "A\u00e7\u00e3o foi Aprovada."
+        }
+      ],
+      "status": "em_aprovacao",
+      "formData": {
+        "email2_destino": "Teste",
+        "conta_xp_origem": "Teste",
+        "nome_origem": "Teste",
+        "codigo_xp_destino": "Teste",
+        "nome_destino": "Teste",
+        "descricao": "Teste",
+        "codigo_xp_origem": "Teste",
+        "email_origem": "Teste",
+        "nome_sobrenome": "Teste"
+      },
+      "submittedAt": "2025-10-28T11:44:31-03:00",
+      "requestId": "0323",
+      "lastUpdatedAt": "2025-10-28T11:45:09-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "1AMiXpvadrsY4S3TLAs0",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "timestamp": "2025-10-16T10:00:51-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:33:00-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "conta_xp_origem": "15026474",
+        "nome_origem": "Carolina Albanez",
+        "codigo_xp_destino": "68419",
+        "nome_destino": "eduardo moraes",
+        "descricao": "sa\u00edda do assessor origem",
+        "codigo_xp_origem": "22140",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_sobrenome": "Jos\u00e9 Joaquim da Silva"
+      },
+      "submittedAt": "2025-10-16T10:00:51-03:00",
+      "requestId": "0270",
+      "lastUpdatedAt": "2025-10-28T11:33:00-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "2GPtZq9Wt1Ehg2LdgYOA",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-02T11:58:28-03:00",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-02T13:31:28-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "conta_xp_origem": "4990723",
+        "nome_origem": "Samuel Leite",
+        "codigo_xp_destino": "70629",
+        "nome_destino": "Fabiana Fracalossi ",
+        "descricao": "minha irm\u00e3 que est\u00e1 ativando a conta inativa.",
+        "codigo_xp_origem": "23779",
+        "email_origem": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "Juliana Fracalossi Correia"
+      },
+      "submittedAt": "2025-10-02T11:58:28-03:00",
+      "requestId": "0210",
+      "lastUpdatedAt": "2025-10-02T13:31:28-03:00",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "2nGDRdXbqdZG740x868T",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-16T13:34:55-03:00",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-09-22T10:09:19-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-10-28T11:40:53-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "7543537",
+        "campo_5": "A70310",
+        "campo_6": "A70864",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-16T13:34:55-03:00",
+      "requestId": "0127",
+      "lastUpdatedAt": "2025-10-28T11:40:53-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "isArchived": false
+    }
+  },
+  {
+    "id": "3ncxtTACDG6KMYaeF9UQ",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "formData": {},
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-27T15:57:38-03:00",
+          "userId": "DMS",
+          "status": "em_aprovacao",
+          "userName": "Daniel Miranda Silva",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "submittedBy": {
+        "userEmail": "daniel.miranda@3ainvestimentos.com.br",
+        "userId": "DMS",
+        "userName": "Daniel Miranda Silva"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-10-27T15:57:38-03:00",
+      "requestId": "0318",
+      "lastUpdatedAt": "2025-10-27T15:57:38-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "41eXpWiLzMkLMZPlpWau",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "respondedAt": "2025-10-01T10:55:45-03:00",
+            "attachmentUrl": "",
+            "userId": "GA",
+            "status": "approved",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-10-01T10:55:38-03:00",
+            "comment": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "timestamp": "2025-09-22T10:55:15-03:00",
+          "userId": "SCL",
+          "status": "solicitacao_aberta",
+          "userName": "Samuel Coelho Leite",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-09-29T16:40:28-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        },
+        {
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o - Diretoria\".",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-29T16:40:40-03:00"
+        },
+        {
+          "timestamp": "2025-09-29T16:40:40-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-09-29T16:40:47-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-29T16:40:48-03:00"
+        },
+        {
+          "timestamp": "2025-09-29T16:40:53-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-29T16:40:53-03:00"
+        },
+        {
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres.",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-29T16:43:00-03:00"
+        },
+        {
+          "timestamp": "2025-10-01T10:55:32-03:00",
+          "userId": "GA",
+          "status": "em_aprovacao",
+          "userName": "Gabriel Fernandes de Andrade Ayres",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-01T10:55:32-03:00",
+          "userId": "GA",
+          "status": "em_aprovacao",
+          "userName": "Gabriel Fernandes de Andrade Ayres",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-01T10:55:38-03:00",
+          "userId": "GA",
+          "status": "em_aprovacao",
+          "userName": "Gabriel Fernandes de Andrade Ayres",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-01T10:55:38-03:00",
+          "userId": "GA",
+          "status": "em_aprovacao",
+          "userName": "Gabriel Fernandes de Andrade Ayres",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-01T10:55:45-03:00",
+          "userId": "GA",
+          "status": "em_aprovacao",
+          "userName": "Gabriel Fernandes de Andrade Ayres",
+          "notes": "A\u00e7\u00e3o foi Aprovada."
+        }
+      ],
+      "formData": {
+        "descricao": "Unificar base da digital",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2F41eXpWiLzMkLMZPlpWau%2F1758549315692-Template_transf_interna_Digital_-_Copia.xlsx?alt=media&token=9acf5c89-2632-4a88-b420-2f85cc0e60e3",
+        "nome": "Digital",
+        "email": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "V\u00e1rios"
+      },
+      "status": "em_aprovacao",
+      "submittedAt": "2025-09-22T10:55:15-03:00",
+      "requestId": "0161",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "lastUpdatedAt": "2025-10-01T10:55:45-03:00",
+      "type": "Transfer\u00eancia de Cliente - Em lote"
+    }
+  },
+  {
+    "id": "4ZzH2cWqI3mzcHu9AJXB",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "timestamp": "2025-09-18T14:14:48-03:00"
+        },
+        {
+          "timestamp": "2025-09-22T09:59:47-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-10-28T11:40:35-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "8028924",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_6": "A24154",
+        "campo_5": "A23779",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-18T14:14:48-03:00",
+      "requestId": "0141",
+      "lastUpdatedAt": "2025-10-28T11:40:35-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico"
+    }
+  },
+  {
+    "id": "4ppBok91UfDa81q31Uyv",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-10-02T13:35:15-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "SCL",
+          "status": "solicitacao_aberta",
+          "userName": "Samuel Coelho Leite",
+          "timestamp": "2025-09-29T10:42:02-03:00"
+        },
+        {
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres.",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-29T16:41:37-03:00"
+        },
+        {
+          "timestamp": "2025-09-30T15:14:00-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-09-30T15:14:06-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o - Diretoria\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-30T15:14:06-03:00"
+        },
+        {
+          "notes": "A\u00e7\u00e3o foi Aprovada.",
+          "userId": "GA",
+          "status": "em_aprovacao",
+          "userName": "Gabriel Fernandes de Andrade Ayres",
+          "timestamp": "2025-10-01T10:55:16-03:00"
+        },
+        {
+          "timestamp": "2025-10-02T13:33:15-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-02T13:33:15-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-02T13:34:20-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        },
+        {
+          "timestamp": "2025-10-02T13:34:43-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-02T13:34:43-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-02T13:34:54-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-02T13:34:54-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-02T13:35:15-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-02T13:35:15-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        }
+      ],
+      "formData": {
+        "descricao": "Transf",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2F4ppBok91UfDa81q31Uyv%2F1759153323409-Clientes.xlsx?alt=media&token=d90243f9-5f72-4a72-8393-b3da5a373ba0",
+        "nome": "V\u00e1rios",
+        "email": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "Samuel Leite"
+      },
+      "status": "em_aprovacao",
+      "submittedAt": "2025-09-29T10:42:02-03:00",
+      "requestId": "0183",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "lastUpdatedAt": "2025-10-02T13:35:15-03:00",
+      "isArchived": false
+    }
+  },
+  {
+    "id": "5RPbUTWPCnROT8NBhVge",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "guilherme@3ainvestimentos.com.br",
+        "userId": "GBL2",
+        "userName": "Guilherme Boechat Muniz Lara"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-09T14:54:41-03:00",
+          "userId": "GBL2",
+          "status": "em_aprovacao",
+          "userName": "Guilherme Boechat Muniz Lara",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:36:55-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "rui.fontoura@3ainvestimentos.com.br",
+        "conta_xp_origem": "2426245",
+        "nome_origem": "Roberto Cunha Rettore",
+        "codigo_xp_destino": "A20909",
+        "nome_destino": "Gustavo Jordan",
+        "descricao": "Cliente \u00e9 amigo do Gustavo Jordan",
+        "codigo_xp_origem": "A20521",
+        "email_origem": "ivan.paes@3ariva.com.br",
+        "nome_sobrenome": "THEO VIEIRA REBELLO HORTA"
+      },
+      "submittedAt": "2025-10-09T14:54:41-03:00",
+      "requestId": "0244",
+      "lastUpdatedAt": "2025-10-28T11:36:55-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "5lYHDFy5tjeHYuJB6zx4",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {
+        "em_execucao": [
+          {
+            "userId": "RHP2",
+            "status": "pending",
+            "userName": "Rebeca Hadassa Pedras",
+            "respondedAt": "",
+            "requestedAt": "2025-09-22T11:37:13-03:00"
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "thais.andrade@3ariva.com.br",
+        "userId": "TAA",
+        "userName": "Thais Andrade Aparecido"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-18T16:18:43-03:00",
+          "userId": "TAA",
+          "status": "solicitacao_aberta",
+          "userName": "Thais Andrade Aparecido",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "notes": "Status alterado para \"Em an\u00e1lise\".",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-22T11:35:29-03:00"
+        },
+        {
+          "notes": "Status alterado para \"Em execu\u00e7\u00e3o\".",
+          "userId": "MPA2",
+          "status": "em_execucao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-22T11:37:13-03:00"
+        },
+        {
+          "timestamp": "2025-09-22T11:37:13-03:00",
+          "userId": "MPA2",
+          "status": "em_execucao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "A\u00e7\u00e3o de \"Ciente - BI / Gest\u00e3o\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "notes": "pedido cancelado",
+          "userId": "MPA2",
+          "status": "finalizado",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-22T11:37:32-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:40:23-03:00",
+          "userId": "DFZ2",
+          "status": "finalizado",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "nao sabemos",
+        "campo_2": "digital",
+        "campo_6": "24154",
+        "campo_5": "digital",
+        "campo_3": "thais.andrade@rivainvestimentos.com.br",
+        "nome_sobrenome": "11515553809"
+      },
+      "status": "finalizado",
+      "submittedAt": "2025-09-18T16:18:43-03:00",
+      "requestId": "0150",
+      "lastUpdatedAt": "2025-10-28T11:40:23-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "isArchived": false
+    }
+  },
+  {
+    "id": "61K9ngUdgdbQ3rhzyzhV",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "em_aberto",
+      "submittedBy": {
+        "userEmail": "fabiano.mariani@3ariva.com.br",
+        "userId": "FAM",
+        "userName": "Fabiano Mariani"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-12-01T17:20:01-03:00",
+          "userId": "FAM",
+          "status": "em_aberto",
+          "userName": "Fabiano Mariani",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "formData": {
+        "email2_destino": "mateus@3ainvestimentos.com.br",
+        "conta_xp_origem": "4532485",
+        "nome_origem": "Rommel de Resende Bicas",
+        "codigo_xp_destino": "A31042",
+        "nome_destino": "Apoliany Braga Da Silva",
+        "descricao": "Criei a solicita\u00e7\u00e3o em lote e este cliente foi informado na planilha por engano. Deve voltar/permenecer  com a Apoliany.",
+        "codigo_xp_origem": "A26730",
+        "email_origem": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "Andr\u00e9 Carvalho Guerra de Almeida"
+      },
+      "lastUpdatedAt": "2025-12-01T17:20:01-03:00",
+      "requestId": "0452",
+      "submittedAt": "2025-12-01T17:20:01-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "7ApYJwY4FAKETCWNSOWk",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "em_aberto",
+      "submittedBy": {
+        "userEmail": "rodrigo.alcantara@3ariva.com.br",
+        "userId": "ROS",
+        "userName": "Rodrigo Alc\u00e2ntara Silva "
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-12-29T15:11:54-03:00",
+          "userId": "ROS",
+          "status": "em_aberto",
+          "userName": "Rodrigo Alc\u00e2ntara Silva ",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "formData": {
+        "descricao": "Manuela estava usando meu c\u00f3digo, uma vez que o dela n\u00e3o estava dispon\u00edvel na XP. Agora o c\u00f3digo dela saiu. ",
+        "email_destino": "manuela.gama@3ainvestimentos.com.br",
+        "anexo": {},
+        "nome_origem": "Rodrigo Alc\u00e2ntara Silva",
+        "email_origem": "rodrigo.alcantara@rivainvestimentos.com.br",
+        "nome_destino": "Manuela Gama",
+        "nome_sobrenome": "Clientes em lote"
+      },
+      "lastUpdatedAt": "2025-12-29T15:11:54-03:00",
+      "requestId": "0499",
+      "submittedAt": "2025-12-29T15:11:54-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "8SSYMDa5P2GC99OUp7kZ",
+    "data": {
+      "actionRequests": {},
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "gabriel.miranda@3ainvestimentos.com.br",
+        "userId": "GMA2",
+        "userName": "Gabriel Miranda de Almeida Alves"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "GMA2",
+          "status": "solicitacao_aberta",
+          "userName": "Gabriel Miranda de Almeida Alves",
+          "timestamp": "2025-09-10T09:49:22-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:41:27-03:00",
+          "userId": "DFZ2",
+          "status": "solicitacao_aberta",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "status": "solicitacao_aberta",
+      "formData": {
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2F8SSYMDa5P2GC99OUp7kZ%2F1757508563243-Template_transf_interna_(2).xlsx?alt=media&token=1f886bb7-fca1-48cc-ae0a-bb3d4197a5ba",
+        "campo_2": "thais.andrade@rivainvestimentos.com.br",
+        "campo_3": "thais.andrade@rivainvestimentos.com.br",
+        "nome_sobrenome": "Gabriel Miranda de Almeida Alves"
+      },
+      "submittedAt": "2025-09-10T09:49:22-03:00",
+      "requestId": "0106",
+      "lastUpdatedAt": "2025-10-28T11:41:27-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote"
+    }
+  },
+  {
+    "id": "8x7x3cjdIWMWu0WyhDFq",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "timestamp": "2025-09-12T18:30:57-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:41:08-03:00",
+          "userId": "DFZ2",
+          "status": "solicitacao_aberta",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "formData": {
+        "campo_4": "4289404",
+        "campo_5": "A70310",
+        "campo_6": "A26848",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "submittedAt": "2025-09-12T18:30:57-03:00",
+      "requestId": "0117",
+      "lastUpdatedAt": "2025-10-28T11:41:08-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "status": "solicitacao_aberta"
+    }
+  },
+  {
+    "id": "9pTVKMh1PPFur9YlgTXf",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-07T18:17:01-03:00",
+          "userId": "SCL",
+          "status": "em_aprovacao",
+          "userName": "Samuel Coelho Leite",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:38:07-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "samuel.leite@rivainvestimentos.com.br",
+        "conta_xp_origem": "3353135",
+        "nome_origem": "FLAVIA KER",
+        "codigo_xp_destino": "AUGUSTO CARSALADE",
+        "nome_destino": "AUGUSTO CARSALADE",
+        "descricao": "sse cliente \u00e9 namorado da Agata, a prop tinha espelhamento do guimba e agora ela n\u00e3o tem mais acesso. Ela pediu para mandar para a prop esse cliente, pois \u00e9 ela que atua com esse cliente.  Segundo ela, o\u00a0Augusto\u00a0aprovou",
+        "codigo_xp_origem": "FLAVIA KER",
+        "email_origem": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "VICTOR PESSOA REGO TEIXEIRA DA COSTA"
+      },
+      "submittedAt": "2025-10-07T18:17:01-03:00",
+      "requestId": "0233",
+      "lastUpdatedAt": "2025-10-28T11:38:07-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "Afn7beXmGBGstqfR1iga",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "daniel.miranda@3ainvestimentos.com.br",
+        "userId": "DMS",
+        "userName": "Daniel Miranda Silva"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-15T14:58:05-03:00",
+          "userId": "DMS",
+          "status": "em_aprovacao",
+          "userName": "Daniel Miranda Silva",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:34:19-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": ".",
+        "conta_xp_origem": "11017820",
+        "nome_origem": "Jo\u00e3o V\u00edctor Roriz Cordeiro",
+        "codigo_xp_destino": "A21076",
+        "nome_destino": "Rafaella Duarte Miranda",
+        "descricao": "A Rafaella j\u00e1 atende a PJ desta cliente e gostaria de unificar a assessoria da conta PJ e PF na Rafaella",
+        "codigo_xp_origem": "A70310",
+        "email_origem": "daniel.miranda@3ainvestimentos.com.br",
+        "nome_sobrenome": "TAYNARA AMORIM DO NASCIMENTO"
+      },
+      "submittedAt": "2025-10-15T14:58:05-03:00",
+      "requestId": "0265",
+      "lastUpdatedAt": "2025-10-28T11:34:19-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "AklIePM1RQKkrzwdcolv",
+    "data": {
+      "actionRequests": {},
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "timestamp": "2025-09-17T14:59:31-03:00",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "notes": "Status alterado para \"Em an\u00e1lise\".",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-22T10:05:40-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:42:07-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "15666446",
+        "campo_5": "A23779",
+        "campo_6": "A43692",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-17T14:59:31-03:00",
+      "requestId": "0135",
+      "lastUpdatedAt": "2025-10-28T11:42:07-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico"
+    }
+  },
+  {
+    "id": "CEZZm6Vtw5zh5mDeuuWI",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "daniel.miranda@3ainvestimentos.com.br",
+        "userId": "DMS",
+        "userName": "Daniel Miranda Silva"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "DMS",
+          "status": "em_aprovacao",
+          "userName": "Daniel Miranda Silva",
+          "timestamp": "2025-10-23T11:47:40-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:30:44-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": ".",
+        "conta_xp_origem": "11941833",
+        "nome_origem": "Jo\u00e3o V\u00edctor Roriz Cordeiro",
+        "codigo_xp_destino": "A20994",
+        "nome_destino": "Katharyne Amorim Caiaffa",
+        "descricao": "Ex cliente da Katharyne",
+        "codigo_xp_origem": "A70310",
+        "email_origem": "daniel.miranda@3ainvestimentos.com.br",
+        "nome_sobrenome": "AZIZA DA CUNHA RAMALHO DA COSTA"
+      },
+      "submittedAt": "2025-10-23T11:47:40-03:00",
+      "requestId": "0295",
+      "lastUpdatedAt": "2025-10-28T11:30:44-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "COe22XwXAzqwWIRzlMS9",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "daniel.miranda@3ainvestimentos.com.br",
+        "userId": "DMS",
+        "userName": "Daniel Miranda Silva"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-21T16:01:22-03:00",
+          "userId": "DMS",
+          "status": "em_aprovacao",
+          "userName": "Daniel Miranda Silva",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:31:06-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": ".",
+        "conta_xp_origem": "2233642",
+        "nome_origem": "Jo\u00e3o V\u00edctor Roriz Cordeiro",
+        "codigo_xp_destino": "A20909",
+        "nome_destino": "Gustavo Jordan",
+        "descricao": "Este cliente \u00e9 amigo pessoal do Gustavo Jordan! Eles fizeram uma reuni\u00e3o na semana passada e realizaram um planejamento que ser\u00e1 acompanhado pelo Gustavo.",
+        "codigo_xp_origem": "A70310",
+        "email_origem": "daniel.miranda@3ainvestimentos.com.br",
+        "nome_sobrenome": "CARLOS FRANCISCO DE ARAUJO FREIRE"
+      },
+      "submittedAt": "2025-10-21T16:01:22-03:00",
+      "requestId": "0286",
+      "lastUpdatedAt": "2025-10-28T11:31:06-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "CZ8jzKoT1ARXoE0FSMDe",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-11-11T17:19:12-03:00",
+            "respondedAt": ""
+          }
+        ],
+        "em_execucao": [
+          {
+            "userId": "RHP2",
+            "status": "pending",
+            "userName": "Rebeca Hadassa Pedras",
+            "requestedAt": "2025-11-11T17:19:46-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "infra@3ainvestimentos.com.br",
+        "userId": "LHG",
+        "userName": "Luis Henrique Dusanek Guedes"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-11-11T14:43:54-03:00",
+          "userId": "LHG",
+          "status": "em_aberto",
+          "userName": "Luis Henrique Dusanek Guedes",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:12-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:12-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Aprovado - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:46-03:00",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em execu\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:46-03:00",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Conclu\u00eddo - BI\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:55-03:00",
+          "userId": "RHP2",
+          "status": "finalizado",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Finalizado\"."
+        }
+      ],
+      "formData": {
+        "email2_destino": "TESTE",
+        "conta_xp_origem": "TESTE",
+        "nome_origem": "TESTE",
+        "codigo_xp_destino": "TESTE",
+        "nome_destino": "TESTE",
+        "descricao": "ISSO \u00c9 APENAS UM TESTE ",
+        "codigo_xp_origem": "TESTE",
+        "email_origem": "TESTE",
+        "nome_sobrenome": "TESTE"
+      },
+      "status": "finalizado",
+      "submittedAt": "2025-11-11T14:43:54-03:00",
+      "requestId": "0386",
+      "lastUpdatedAt": "2025-11-11T17:19:55-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "ERoAesIMld4G4ljNOfeE",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-10-03T11:37:27-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "mauricio.oliveira@3ariva.com.br",
+        "userId": "MPO",
+        "userName": "Mauricio Pinto de Oliveira"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-02T18:33:40-03:00",
+          "userId": "MPO",
+          "status": "em_aprovacao",
+          "userName": "Mauricio Pinto de Oliveira",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-03T11:37:27-03:00",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-03T11:37:27-03:00",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-28T11:39:09-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "mauricio.oliveira@rivainvestimentos.com.br",
+        "conta_xp_origem": "13659105",
+        "nome_origem": "Rubem",
+        "codigo_xp_destino": "A39462",
+        "nome_destino": "Cibelle",
+        "descricao": "Relacionamento desgastou e n\u00e3o quero perder cliente aqui do time.",
+        "codigo_xp_origem": "A30063",
+        "email_origem": "mauricio.oliveira@rivainvestimentos.com.br",
+        "nome_sobrenome": "LARISSA MANCERA PIOSSEK"
+      },
+      "submittedAt": "2025-10-02T18:33:40-03:00",
+      "requestId": "0217",
+      "lastUpdatedAt": "2025-10-28T11:39:09-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "FnnNt17cFuAwnwLO8vAN",
+    "data": {
+      "ownerEmail": "ti@3ariva.com.br",
+      "actionRequests": {},
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "atendimento49@3ainvestimentos.com.br",
+        "userId": "IAS2",
+        "userName": "Italo de Assis Silva"
+      },
+      "type": "Solicita\u00e7\u00e3o de Compra / Equipamento",
+      "history": [
+        {
+          "timestamp": "2025-08-18T14:13:31-03:00",
+          "userId": "IAS2",
+          "status": "solicitacao_aberta",
+          "userName": "Italo de Assis Silva",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-08-18T14:59:12-03:00",
+          "userId": "DFZ2",
+          "status": "solicitacao_aberta",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Luis Henrique Dusanek Guedes."
+        },
+        {
+          "timestamp": "2025-08-18T15:00:04-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Status alterado para \"Em An\u00e1lise\"."
+        }
+      ],
+      "formData": {
+        "item_compra_ti": "Tela de computador e suporte para a mesma.",
+        "nome_completo": "\u00cdtalo de Assis Silva",
+        "email": "atendimento49@3ainvestimentos.com.br",
+        "quantiadade_compra_ti": "1",
+        "link_compra_ti": "",
+        "setor_area": "Renda Vari\u00e1vel"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-08-18T14:13:31-03:00",
+      "requestId": "0026",
+      "assignee": {
+        "id": "LHG",
+        "name": "Luis Henrique Dusanek Guedes"
+      },
+      "lastUpdatedAt": "2025-08-18T15:00:04-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "GF9g3pV2BspVTp309RxS",
+    "data": {
+      "actionRequests": {},
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-09-12T15:54:24-03:00",
+          "userId": "SCL",
+          "status": "solicitacao_aberta",
+          "userName": "Samuel Coelho Leite",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:41:18-03:00",
+          "userId": "DFZ2",
+          "status": "solicitacao_aberta",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FGF9g3pV2BspVTp309RxS%2F1757703264969-Template_transf_interna_(30).xlsx?alt=media&token=ac2d0d76-204b-4eae-82da-15ce5e757343",
+        "campo_2": "Lote",
+        "campo_3": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "Samuel Leite"
+      },
+      "submittedAt": "2025-09-12T15:54:24-03:00",
+      "requestId": "0115",
+      "lastUpdatedAt": "2025-10-28T11:41:18-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "status": "solicitacao_aberta"
+    }
+  },
+  {
+    "id": "GNWeJUY8zSjAqOsaw2m0",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-03T13:38:05-03:00",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:38:53-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "sa\u00edda do assessor origem",
+        "email_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FGNWeJUY8zSjAqOsaw2m0%2F1759509485554-Distribui%25C3%25A7%25C3%25A3o_Puccia_sexta.xlsx?alt=media&token=cea83d1d-9d42-4d86-b557-b321b8f95b20",
+        "nome_origem": "Andre Luiz Puccia",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_destino": "diversos",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      },
+      "submittedAt": "2025-10-03T13:38:05-03:00",
+      "requestId": "0221",
+      "lastUpdatedAt": "2025-10-28T11:38:53-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "HpXpDt3JU5NfLgpIV73r",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "formData": {},
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-15T13:01:12-03:00",
+          "userId": "FSG",
+          "status": "em_aprovacao",
+          "userName": "Fernando Soares Guimaraes",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "submittedBy": {
+        "userEmail": "fernando.guimaraes@3ariva.com.br",
+        "userId": "FSG",
+        "userName": "Fernando Soares Guimaraes"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-10-15T13:01:12-03:00",
+      "requestId": "0263",
+      "lastUpdatedAt": "2025-10-15T13:01:12-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "JFKi8eIfCoTCzizGwPTJ",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "respondedAt": "",
+            "requestedAt": "2025-11-11T17:19:16-03:00"
+          }
+        ],
+        "em_execucao": [
+          {
+            "userId": "RHP2",
+            "status": "pending",
+            "userName": "Rebeca Hadassa Pedras",
+            "requestedAt": "2025-11-11T17:19:50-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "paulo@3ainvestimentos.com.br",
+        "userId": "PCM",
+        "userName": "Paulo Caus Mesquita"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "PCM",
+          "status": "em_aberto",
+          "userName": "Paulo Caus Mesquita",
+          "timestamp": "2025-10-29T14:36:41-03:00"
+        },
+        {
+          "timestamp": "2025-11-11T17:19:16-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Aprovado - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "timestamp": "2025-11-11T17:19:16-03:00"
+        },
+        {
+          "notes": "Status alterado para \"Em execu\u00e7\u00e3o\".",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "timestamp": "2025-11-11T17:19:50-03:00"
+        },
+        {
+          "timestamp": "2025-11-11T17:19:50-03:00",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Conclu\u00eddo - BI\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-12-18T10:00:52-03:00",
+          "userId": "RHP2",
+          "status": "finalizado",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Finalizado\"."
+        }
+      ],
+      "formData": {
+        "email2_destino": "ivan.paes@3ariva.com.br",
+        "conta_xp_origem": "18372311",
+        "nome_origem": "PAULO CAUS MESQUITA",
+        "codigo_xp_destino": "A21405",
+        "nome_destino": "SAMUEL SAMPAIO CHAGAS",
+        "descricao": "CLIENTE FOI ABERTO NO MEU C\u00d3DIGO PELO TIME DE C\u00c2MBIO, CLIENTE \u00c9 DO SAMUEL SAMPAIO CHAGAS",
+        "codigo_xp_origem": "A71802",
+        "email_origem": "PAULO@3AINVESTIMENTOS.COM.BR",
+        "nome_sobrenome": "UNIQUE AUTOPE\u00c7AS LTDA"
+      },
+      "status": "finalizado",
+      "submittedAt": "2025-10-29T14:36:41-03:00",
+      "requestId": "0331",
+      "lastUpdatedAt": "2025-12-18T10:00:52-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "MOcxOjD1JcMgUcRgff4v",
+    "data": {
+      "ownerEmail": "ti@3ariva.com.br",
+      "actionRequests": {
+        "em_execucao": [
+          {
+            "userId": "LBC2",
+            "status": "pending",
+            "userName": "Leonardo Brum Cardoso",
+            "requestedAt": "2025-08-21T13:35:51-03:00",
+            "respondedAt": ""
+          },
+          {
+            "userId": "DFZ2",
+            "status": "pending",
+            "userName": "Danilo Freitas Zegrini",
+            "requestedAt": "2025-08-21T13:35:51-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "debora@3ainvestimentos.com.br",
+        "userId": "DLE",
+        "userName": "Debora Luiza Exposito Gon\u00e7alves"
+      },
+      "type": "Solicita\u00e7\u00e3o de Compra / Equipamento",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "DLE",
+          "status": "solicitacao_aberta",
+          "userName": "Debora Luiza Exposito Gon\u00e7alves",
+          "timestamp": "2025-08-20T12:24:17-03:00"
+        },
+        {
+          "timestamp": "2025-08-20T15:08:49-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Status alterado para \"Em An\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-08-21T13:35:51-03:00",
+          "userId": "LHG",
+          "status": "em_execucao",
+          "userName": "Luis Henrique Dusanek Guedes",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-08-21T13:35:51-03:00",
+          "userId": "LHG",
+          "status": "em_execucao",
+          "userName": "Luis Henrique Dusanek Guedes",
+          "notes": "A\u00e7\u00e3o de \"Aprova\u00e7\u00e3o TI / FIN\" solicitada automaticamente para 2 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-08-21T13:36:10-03:00",
+          "userId": "LHG",
+          "status": "finalizado",
+          "userName": "Luis Henrique Dusanek Guedes",
+          "notes": "Status alterado para \"Finalizado\"."
+        }
+      ],
+      "formData": {
+        "item_compra_ti": "Extens\u00e3o tomada (Com pelo menos 4 entradas)",
+        "nome_completo": "D\u00e9bora Exp\u00f3sito",
+        "email": "debora@3ainvestimentos.com.br",
+        "quantiadade_compra_ti": "1",
+        "link_compra_ti": "",
+        "setor_area": "Middle"
+      },
+      "status": "finalizado",
+      "submittedAt": "2025-08-20T12:24:17-03:00",
+      "requestId": "0038",
+      "assignee": {
+        "id": "LHG",
+        "name": "Luis Henrique Dusanek Guedes"
+      },
+      "lastUpdatedAt": "2025-08-21T13:36:10-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "MtxHJM6Dy6EcvsE6GFzF",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "timestamp": "2025-09-18T11:15:54-03:00",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-09-22T10:03:54-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-10-28T11:42:14-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "8761882",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_6": "A74253",
+        "campo_5": "A23779",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-18T11:15:54-03:00",
+      "requestId": "0136",
+      "lastUpdatedAt": "2025-10-28T11:42:14-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico"
+    }
+  },
+  {
+    "id": "NnAiPcPnjzC6iyoUTv8J",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "mateus@3ainvestimentos.com.br",
+        "userId": "MRG",
+        "userName": "Mateus Ribeiro Galhardo"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-30T13:49:20-03:00",
+          "userId": "MRG",
+          "status": "solicitacao_aberta",
+          "userName": "Mateus Ribeiro Galhardo",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-01T11:12:45-03:00",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres."
+        },
+        {
+          "timestamp": "2025-10-02T13:32:07-03:00",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        },
+        {
+          "timestamp": "2025-10-02T13:32:48-03:00",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "mateus@3ainvestimentos.com.br",
+        "conta_xp_origem": "18493075",
+        "nome_origem": "Mateus Ribeiro Galhardo",
+        "codigo_xp_destino": "A70670",
+        "nome_destino": "Mateus Ribeiro Galhardo",
+        "descricao": "Eu, como l\u00edder, possuo uma limita\u00e7\u00e3o de clientes em atendimento. Ocorre que tenho uma conta em que o titular faleceu (329936) e nesse m\u00eas de setembro o invent\u00e1rio concluiu e a herdeira (18493075) passou a receber os ativos. Desta forma, passarei a atender a conta 18493075 e a conta do falecido (329936) ir\u00e1 a zero. Assim sendo, favor incluir a conta 18493075 entre as contas que me remuneram.",
+        "codigo_xp_origem": "A70670",
+        "email_origem": "mateus@3ainvestimentos.com.br",
+        "nome_sobrenome": "Lilian Calic"
+      },
+      "submittedAt": "2025-09-30T13:49:20-03:00",
+      "requestId": "0195",
+      "lastUpdatedAt": "2025-10-02T13:32:48-03:00",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "OiIdP662J1tpesRGWWPO",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "mateus@3ainvestimentos.com.br",
+        "userId": "MRG",
+        "userName": "Mateus Ribeiro Galhardo"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-24T15:27:31-03:00",
+          "userId": "MRG",
+          "status": "solicitacao_aberta",
+          "userName": "Mateus Ribeiro Galhardo",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-09-29T16:42:40-03:00",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "conta_xp": "580592",
+        "descricao": "A cliente era do Marcelo Gon\u00e7alves e ele passou para o digital por conta do baixo valor alocado (R$39.000,00). Ocorre que a cliente (sogra de um clienta\u00e7o dele) ficava demandando ele dizendo que entraria um valor (R$500.000,00) devido a venda de um apartamento que estava prestes a realizar. Como a cliente n\u00e3o conseguia criar v\u00ednculo com o digital e continuava a demandar o Marcelo, ele entendeu que seria interessante que essa cliente fosse atendida por outro assessor e escolheu o Victor Bretas por gostar muito do trabalho dele. Passei a situa\u00e7\u00e3o para o Gabriel Ayres e ele est\u00e1 de acordo para a troca (digital > Victor Bretas). Marcelo e Victor fizeram hoje a reuni\u00e3o com a cliente e est\u00e1 tudo alinhado para que o Victor toque esse atendimento.",
+        "nome": "Digital",
+        "codigo_xp": "40065",
+        "email": "mateus@3ainvesimentos.com.br",
+        "nome_sobrenome": "Maria Sueli Pedrotti Tavares"
+      },
+      "submittedAt": "2025-09-24T15:27:31-03:00",
+      "requestId": "0176",
+      "lastUpdatedAt": "2025-09-29T16:42:40-03:00",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "OnrguY9r6CM83swniE4h",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-02T14:12:06-03:00",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:39:46-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "sa\u00edda da assessora origem",
+        "email_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FOnrguY9r6CM83swniE4h%2F1759425127528-Template_transf_interna.xlsx?alt=media&token=8ecb517e-c43e-4a09-b3a6-7ab0fb6a934a",
+        "nome_origem": "Carolina Albanez",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_destino": "Pedro Demarqui",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      },
+      "submittedAt": "2025-10-02T14:12:06-03:00",
+      "requestId": "0212",
+      "lastUpdatedAt": "2025-10-28T11:39:46-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "OzplYiBa0iwJJZ5c38uw",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "timestamp": "2025-10-14T12:03:53-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:35:56-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "conta_xp_origem": "4191461",
+        "nome_origem": "fabiana fracalossi",
+        "codigo_xp_destino": "41475",
+        "nome_destino": "Pedro Demarqui",
+        "descricao": "Pedro Demarqui conseguiu reativar relacionamento. Estamos transferindo para sequencia e gest\u00e3o.",
+        "codigo_xp_origem": "70629",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_sobrenome": "celso ramos"
+      },
+      "submittedAt": "2025-10-14T12:03:53-03:00",
+      "requestId": "0260",
+      "lastUpdatedAt": "2025-10-28T11:35:56-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "Pp3RaJ0RI4lgLanDM2Ug",
+    "data": {
+      "actionRequests": {},
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "timestamp": "2025-09-12T18:32:55-03:00"
+        },
+        {
+          "timestamp": "2025-09-22T10:10:59-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-10-28T11:41:01-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "3133074",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_6": "A24154",
+        "campo_5": "A23779",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-12T18:32:55-03:00",
+      "requestId": "0118",
+      "lastUpdatedAt": "2025-10-28T11:41:01-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico"
+    }
+  },
+  {
+    "id": "SvwNDBmy6o81fD95M54v",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-08T09:38:13-03:00",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:37:53-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "conta_xp_origem": "4403334",
+        "nome_origem": "pedro demarqui",
+        "codigo_xp_destino": "68419",
+        "nome_destino": "eduardo moraes",
+        "descricao": "erro na transfer\u00eancia. V\u00ednculo familiar com Eduardo Moraes",
+        "codigo_xp_origem": "41475",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_sobrenome": "Jose Eduardo Dutra do Valle"
+      },
+      "submittedAt": "2025-10-08T09:38:13-03:00",
+      "requestId": "0234",
+      "lastUpdatedAt": "2025-10-28T11:37:53-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "UWIoxgO1XK6tBNmjev6F",
+    "data": {
+      "actionRequests": {},
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "timestamp": "2025-09-18T14:14:33-03:00"
+        },
+        {
+          "timestamp": "2025-09-22T10:02:17-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-10-28T11:42:31-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "8016755",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_6": "A24154",
+        "campo_5": "A23779",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-18T14:14:33-03:00",
+      "requestId": "0140",
+      "lastUpdatedAt": "2025-10-28T11:42:31-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico"
+    }
+  },
+  {
+    "id": "WHjHLtGdC93kMreFxz2u",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "matheus@3ainvestimentos.com.br",
+        "userId": "MVS2",
+        "userName": "Matheus Vinicius Souza Mattos"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-10T17:08:09-03:00",
+          "userId": "MVS2",
+          "status": "solicitacao_aberta",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "notes": "Status alterado para \"Em an\u00e1lise\".",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-22T10:11:11-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:41:35-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "12345",
+        "campo_5": "A12345",
+        "campo_6": "A12345",
+        "campo_2": "teste@teste.com.br",
+        "campo_3": "teste@teste.com.br",
+        "nome_sobrenome": "Matheus Mattos"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-10T17:08:09-03:00",
+      "requestId": "0111",
+      "lastUpdatedAt": "2025-10-28T11:41:35-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "isArchived": false
+    }
+  },
+  {
+    "id": "WIdm2iUquyNaLHvOFmaR",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-08T14:11:26-03:00",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:37:36-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "sa\u00edda da assessora atual",
+        "email_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FWIdm2iUquyNaLHvOFmaR%2F1759943487052-Template_transf_interna_CVA.xlsx?alt=media&token=f63ae4b5-f1fb-40cc-a0ad-efc8d0e66938",
+        "nome_origem": "Carolina Albanez",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_destino": "diversos",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      },
+      "submittedAt": "2025-10-08T14:11:26-03:00",
+      "requestId": "0235",
+      "lastUpdatedAt": "2025-10-28T11:37:36-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "XUfjTBIY0iDAOdrCCdak",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LGN",
+          "status": "em_aprovacao",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "timestamp": "2025-10-01T11:41:47-03:00"
+        },
+        {
+          "timestamp": "2025-10-02T13:31:47-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "samuel.leite@3ariva.com.br",
+        "conta_xp_origem": "4153914",
+        "nome_origem": "Operacional",
+        "codigo_xp_destino": "A27624",
+        "nome_destino": "Gabriel Capanema",
+        "descricao": "Conta pessoal do Gabriel",
+        "codigo_xp_origem": "A23779",
+        "email_origem": "lennon@3ainvestimentos.com.br",
+        "nome_sobrenome": "GABRIEL LOPES CAPANEMA"
+      },
+      "submittedAt": "2025-10-01T11:41:47-03:00",
+      "requestId": "0205",
+      "lastUpdatedAt": "2025-10-02T13:31:47-03:00",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "XciLHAXdcZmtQ1HoAfSu",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "daniel.miranda@3ainvestimentos.com.br",
+        "userId": "DMS",
+        "userName": "Daniel Miranda Silva"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "DMS",
+          "status": "em_aprovacao",
+          "userName": "Daniel Miranda Silva",
+          "timestamp": "2025-10-16T14:57:02-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:31:23-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": ".",
+        "conta_xp_origem": "5237681",
+        "nome_origem": "Samuel Coelho Leite",
+        "codigo_xp_destino": "A72472",
+        "nome_destino": "Ana Paula Lopes Coelho Torres",
+        "descricao": "Depois que foi solicitada a passagem dessa conta para o c\u00f3digo do A23779, a Ana Paula informou que gostaria de deixar o cliente Helton DIas Freitas na carteira dela, pois ela atende a carteira da esposa e gostaria de deixar tudo na assessoria dela.",
+        "codigo_xp_origem": "A23779",
+        "email_origem": "daniel.miranda@3ainvestimentos.com.br",
+        "nome_sobrenome": "HELTON DIAS FREITAS"
+      },
+      "submittedAt": "2025-10-16T14:57:02-03:00",
+      "requestId": "0272",
+      "lastUpdatedAt": "2025-10-28T11:31:23-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "YFcIH1hNzCrDCcqhCLXP",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "guilherme@3ainvestimentos.com.br",
+        "userId": "GBL2",
+        "userName": "Guilherme Boechat Muniz Lara"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "GBL2",
+          "status": "em_aprovacao",
+          "userName": "Guilherme Boechat Muniz Lara",
+          "timestamp": "2025-10-27T15:48:57-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:29:01-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "Alinhado com o Augusto",
+        "email_destino": "augusto@3ainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FYFcIH1hNzCrDCcqhCLXP%2F1761590938556-Transferencia_Prop_-_Guilherme.xlsx?alt=media&token=a0dad2f2-36ca-4dd8-bdc0-1523e92f334d",
+        "nome_origem": "Thiago Nogueira Penna",
+        "email_origem": "augusto@3ainvestimentos.com.br",
+        "nome_destino": "Guilherme Boechat Muniz Lara",
+        "nome_sobrenome": "-"
+      },
+      "submittedAt": "2025-10-27T15:48:57-03:00",
+      "requestId": "0315",
+      "lastUpdatedAt": "2025-10-28T11:29:01-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "b6qi3SxIrOADc9avxqfS",
+    "data": {
+      "ownerEmail": "atendimento32@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Tombamentos - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-08-21T15:39:24-03:00",
+          "userId": "FFS",
+          "status": "solicitacao_aberta",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "isArchived": false,
+      "lastUpdatedAt": "2025-08-21T15:39:24-03:00",
+      "requestId": "0046",
+      "submittedAt": "2025-08-21T15:39:24-03:00",
+      "formData": {
+        "campo_4": "3730570",
+        "campo_2": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "campo_6": "70629",
+        "campo_5": "41475",
+        "campo_3": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      }
+    }
+  },
+  {
+    "id": "bp9luBmoLUGNbGklp9QB",
+    "data": {
+      "ownerEmail": "ti@3ariva.com.br",
+      "actionRequests": {
+        "em_execucao": [
+          {
+            "respondedAt": "2025-08-18T11:59:42-03:00",
+            "attachmentUrl": "",
+            "userId": "LBC2",
+            "status": "approved",
+            "userName": "Leonardo Brum Cardoso",
+            "requestedAt": "2025-08-18T09:54:45-03:00",
+            "comment": ""
+          },
+          {
+            "requestedAt": "2025-08-18T09:54:45-03:00",
+            "attachmentUrl": "",
+            "userId": "DFZ2",
+            "status": "approved",
+            "userName": "Danilo Freitas Zegrini",
+            "respondedAt": "2025-08-18T09:54:47-03:00",
+            "comment": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "debora@3ainvestimentos.com.br",
+        "userId": "DLE",
+        "userName": "Debora Luiza Exposito Gon\u00e7alves"
+      },
+      "type": "Solicita\u00e7\u00e3o de Compra / Equipamento",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "DLE",
+          "status": "solicitacao_aberta",
+          "userName": "Debora Luiza Exposito Gon\u00e7alves",
+          "timestamp": "2025-08-18T09:51:07-03:00"
+        },
+        {
+          "timestamp": "2025-08-18T09:54:39-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Status alterado para \"Em An\u00e1lise\"."
+        },
+        {
+          "timestamp": "2025-08-18T09:54:45-03:00",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Aprova\u00e7\u00e3o TI / FIN\" solicitada automaticamente para 2 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "timestamp": "2025-08-18T09:54:45-03:00"
+        },
+        {
+          "notes": "A\u00e7\u00e3o foi Aprovada.",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "timestamp": "2025-08-18T09:54:47-03:00"
+        },
+        {
+          "timestamp": "2025-08-18T11:59:42-03:00",
+          "userId": "LBC2",
+          "status": "em_execucao",
+          "userName": "Leonardo Brum Cardoso",
+          "notes": "A\u00e7\u00e3o foi Aprovada."
+        }
+      ],
+      "status": "em_execucao",
+      "formData": {
+        "item_compra_ti": "1 monitor de computador",
+        "nome_completo": "D\u00e9bora Exp\u00f3sito",
+        "email": "debora@3ainvestimentos.com.br",
+        "quantiadade_compra_ti": "1",
+        "link_compra_ti": "",
+        "setor_area": "Middle"
+      },
+      "submittedAt": "2025-08-18T09:51:07-03:00",
+      "requestId": "0023",
+      "assignee": {
+        "id": "DFZ2",
+        "name": "Danilo Freitas Zegrini"
+      },
+      "lastUpdatedAt": "2025-08-18T11:59:42-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "cbWipS1hTb8JCBN3Bagv",
+    "data": {
+      "actionRequests": {},
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-16T13:36:54-03:00",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "notes": "Status alterado para \"Em an\u00e1lise\".",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-22T10:07:31-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:40:45-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "8414490",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_6": "A36747",
+        "campo_5": "A70254",
+        "campo_3": "samuel.leite@3ariva.com.br",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-16T13:36:54-03:00",
+      "requestId": "0128",
+      "lastUpdatedAt": "2025-10-28T11:40:45-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "isArchived": false
+    }
+  },
+  {
+    "id": "e1MCRaOlCqkwd0M56Hdc",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "guilherme@3ainvestimentos.com.br",
+        "userId": "GBL2",
+        "userName": "Guilherme Boechat Muniz Lara"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "GBL2",
+          "status": "em_aprovacao",
+          "userName": "Guilherme Boechat Muniz Lara",
+          "timestamp": "2025-10-23T12:09:56-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:30:14-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "rui.fontoura@3ainvestimentos.com.br",
+        "conta_xp_origem": "203881",
+        "nome_origem": "Guilherme Boechat",
+        "codigo_xp_destino": "A26848",
+        "nome_destino": "Lucas Wolf",
+        "descricao": "Cliente alinhou essa transfer\u00eancia com o Lucas Wolf",
+        "codigo_xp_origem": "A23336",
+        "email_origem": "augusto@3ainvestimentos.com.br",
+        "nome_sobrenome": "BARBARA COSTA SILVA MATOS"
+      },
+      "submittedAt": "2025-10-23T12:09:56-03:00",
+      "requestId": "0297",
+      "lastUpdatedAt": "2025-10-28T11:30:14-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "eDIDejGFHQIS3GQpE8N3",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-10-03T11:30:40-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "mauricio.oliveira@3ariva.com.br",
+        "userId": "MPO",
+        "userName": "Mauricio Pinto de Oliveira"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "MPO",
+          "status": "em_aprovacao",
+          "userName": "Mauricio Pinto de Oliveira",
+          "timestamp": "2025-10-02T18:34:51-03:00"
+        },
+        {
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\".",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "timestamp": "2025-10-03T11:19:22-03:00"
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "timestamp": "2025-10-03T11:19:23-03:00"
+        },
+        {
+          "timestamp": "2025-10-03T11:19:30-03:00",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "timestamp": "2025-10-03T11:19:30-03:00"
+        },
+        {
+          "timestamp": "2025-10-03T11:23:10-03:00",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "timestamp": "2025-10-03T11:23:10-03:00"
+        },
+        {
+          "timestamp": "2025-10-03T11:28:16-03:00",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-03T11:28:16-03:00",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\".",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "timestamp": "2025-10-03T11:30:40-03:00"
+        },
+        {
+          "timestamp": "2025-10-03T11:30:40-03:00",
+          "userId": "MVS2",
+          "status": "em_aprovacao",
+          "userName": "Matheus Vinicius Souza Mattos",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-28T11:39:19-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "mauricio.oliveira@rivainvestimentos.com.br",
+        "conta_xp_origem": "14253757",
+        "nome_origem": "Rubem",
+        "codigo_xp_destino": "A39462",
+        "nome_destino": "Cibelle",
+        "descricao": "Relacionamento desgastou e n\u00e3o quero perder cliente aqui do time.",
+        "codigo_xp_origem": "A30063",
+        "email_origem": "mauricio.oliveira@rivainvestimentos.com.br",
+        "nome_sobrenome": "FRANZ PAULO PIOSSEK"
+      },
+      "submittedAt": "2025-10-02T18:34:51-03:00",
+      "requestId": "0218",
+      "lastUpdatedAt": "2025-10-28T11:39:19-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "f0Sp4Z3uD8aS1r0jLu9s",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "em_aberto",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-11-28T15:23:06-03:00",
+          "userId": "FFS",
+          "status": "em_aberto",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "formData": {
+        "descricao": "sa\u00edda do assessor origem",
+        "email_destino": "fabianafracalossi@hotmail.com",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2Ff0Sp4Z3uD8aS1r0jLu9s%2F1764354187386-Template_transf_interna_(10).xlsx?alt=media&token=01e8e7cf-a35c-4c1d-ae25-0290d292cb44",
+        "nome_origem": "andrea lasevitch",
+        "email_origem": "fabianafracalossi@hotmail.com",
+        "nome_destino": "Fabiana Fracalossi ",
+        "nome_sobrenome": "planilha"
+      },
+      "lastUpdatedAt": "2025-11-28T15:23:06-03:00",
+      "requestId": "0442",
+      "submittedAt": "2025-11-28T15:23:06-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "gN9251fFn2pBeJAXNeNJ",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "formData": {},
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-24T14:56:29-03:00",
+          "userId": "SCL",
+          "status": "em_aprovacao",
+          "userName": "Samuel Coelho Leite",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-10-24T14:56:29-03:00",
+      "requestId": "0302",
+      "lastUpdatedAt": "2025-10-24T14:56:29-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "gnS7eoR1mVAvSAJOBSCt",
+    "data": {
+      "ownerEmail": "atendimento32@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Tombamentos - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-08-21T15:40:32-03:00",
+          "userId": "FFS",
+          "status": "solicitacao_aberta",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "isArchived": false,
+      "lastUpdatedAt": "2025-08-21T15:40:32-03:00",
+      "requestId": "0047",
+      "submittedAt": "2025-08-21T15:40:32-03:00",
+      "formData": {
+        "campo_4": "7551239",
+        "campo_2": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "campo_6": "70629",
+        "campo_5": "68419",
+        "campo_3": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      }
+    }
+  },
+  {
+    "id": "hD5sKGIiZ6vd4spIunbW",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "formData": {},
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-27T15:56:49-03:00",
+          "userId": "DMS",
+          "status": "em_aprovacao",
+          "userName": "Daniel Miranda Silva",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "submittedBy": {
+        "userEmail": "daniel.miranda@3ainvestimentos.com.br",
+        "userId": "DMS",
+        "userName": "Daniel Miranda Silva"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-10-27T15:56:49-03:00",
+      "requestId": "0317",
+      "lastUpdatedAt": "2025-10-27T15:56:49-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "hbkFcPAsxBrfJR2HpGfW",
+    "data": {
+      "actionRequests": {},
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "isArchived": false,
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "timestamp": "2025-09-18T14:14:10-03:00"
+        },
+        {
+          "notes": "Status alterado para \"Em an\u00e1lise\".",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-22T10:03:01-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:42:22-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "formData": {
+        "campo_4": "4983267",
+        "campo_5": "A23779",
+        "campo_6": "A24154",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_3": ".",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "status": "em_analise",
+      "submittedAt": "2025-09-18T14:14:10-03:00",
+      "requestId": "0139",
+      "lastUpdatedAt": "2025-10-28T11:42:22-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico"
+    }
+  },
+  {
+    "id": "hiwZskAxcWk9606PU3Vc",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "em_aberto",
+      "submittedBy": {
+        "userEmail": "fabiano.mariani@3ariva.com.br",
+        "userId": "FAM",
+        "userName": "Fabiano Mariani"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-12-01T16:57:52-03:00",
+          "userId": "FAM",
+          "status": "em_aberto",
+          "userName": "Fabiano Mariani",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "formData": {
+        "descricao": "Apoliany migrando Minst para B2B e Rommel migrando de B2B para Minst",
+        "email_destino": "samuel.leite@rivainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FhiwZskAxcWk9606PU3Vc%2F1764619074056-Template_transf_interna.xlsx?alt=media&token=dc717c90-dba5-44bd-868d-052f99b0e00c",
+        "nome_origem": "Apoliany Braga Da Silva",
+        "email_origem": "mateus@3ainvestimentos.com.br",
+        "nome_destino": "Rommel de Resende Bicas",
+        "nome_sobrenome": "Todos da planilha"
+      },
+      "lastUpdatedAt": "2025-12-01T16:57:52-03:00",
+      "requestId": "0451",
+      "submittedAt": "2025-12-01T16:57:52-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "j9NcDIlBrCDa2wiU2922",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-10-03T09:22:14-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "timestamp": "2025-10-02T17:26:00-03:00"
+        },
+        {
+          "timestamp": "2025-10-03T09:21:45-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-10-03T09:21:45-03:00"
+        },
+        {
+          "timestamp": "2025-10-03T09:22:13-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-03T09:22:14-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "A\u00e7\u00e3o de \"Ciente - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-10-28T11:39:26-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "sa\u00edda do assessor origem",
+        "email_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2Fj9NcDIlBrCDa2wiU2922%2F1759436761396-Template_transf_interna_(1).xlsx?alt=media&token=b0d557b3-92f3-49ec-8feb-5a5f04f15f2a",
+        "nome_origem": "Andre Luiz Puccia",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_destino": "diversos",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      },
+      "submittedAt": "2025-10-02T17:26:00-03:00",
+      "requestId": "0215",
+      "lastUpdatedAt": "2025-10-28T11:39:26-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "mICfmV5GOO8jPpDkwpoj",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "flavio.pacelli@3ariva.com.br",
+        "userId": "FP2",
+        "userName": "Flavio Pacelli Ziviani de Oliveira"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "FP2",
+          "status": "solicitacao_aberta",
+          "userName": "Flavio Pacelli Ziviani de Oliveira",
+          "timestamp": "2025-09-30T13:34:05-03:00"
+        },
+        {
+          "timestamp": "2025-10-01T11:13:09-03:00",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "rafael.fernandes@rivainvestimentos.com.br",
+        "conta_xp_origem": "2126454",
+        "nome_origem": "Digital 3A RIVA",
+        "codigo_xp_destino": "A67964",
+        "nome_destino": "Fl\u00e1vio Pacelli",
+        "descricao": "Minha conta pessoal. Preciso enxergar ela no meu hub. ",
+        "codigo_xp_origem": "N\u00e3o sei. Est\u00e1 na digital 3A RIVA",
+        "email_origem": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "Fl\u00e1vio Pacelli Ziviani de Oliveira"
+      },
+      "submittedAt": "2025-09-30T13:34:05-03:00",
+      "requestId": "0194",
+      "lastUpdatedAt": "2025-10-01T11:13:09-03:00",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "nDva0Y46EhrvAanrVG4v",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-11-11T17:19:14-03:00",
+            "respondedAt": ""
+          }
+        ],
+        "em_execucao": [
+          {
+            "userId": "RHP2",
+            "status": "pending",
+            "userName": "Rebeca Hadassa Pedras",
+            "requestedAt": "2025-11-11T17:19:48-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "FFS",
+          "status": "em_aberto",
+          "userName": "Fabiana Fracalossi Serafim",
+          "timestamp": "2025-10-31T13:45:01-03:00"
+        },
+        {
+          "timestamp": "2025-11-11T17:19:14-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:14-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Aprovado - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:48-03:00",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em execu\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:48-03:00",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Conclu\u00eddo - BI\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:57-03:00",
+          "userId": "RHP2",
+          "status": "finalizado",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Finalizado\"."
+        }
+      ],
+      "formData": {
+        "descricao": "sa\u00edda do assessor origem",
+        "email_destino": "fabianafracalossi@hotmail.com",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FnDva0Y46EhrvAanrVG4v%2F1761929102187-Template_transf_interna_(5).xlsx?alt=media&token=9ad22d82-5501-4a15-bc87-edec9343d6fd",
+        "nome_origem": "Karla Fabiane Pires",
+        "email_origem": "fabianafracalossi@hotmail.com",
+        "nome_destino": "diversos",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      },
+      "status": "finalizado",
+      "submittedAt": "2025-10-31T13:45:01-03:00",
+      "requestId": "0337",
+      "lastUpdatedAt": "2025-11-11T17:19:57-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "nlpDXurdgMKVEDDj5QYL",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "guilherme@3ainvestimentos.com.br",
+        "userId": "GBL2",
+        "userName": "Guilherme Boechat Muniz Lara"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-27T15:49:35-03:00",
+          "userId": "GBL2",
+          "status": "em_aprovacao",
+          "userName": "Guilherme Boechat Muniz Lara",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:28:48-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "Alinhado com o Augusto",
+        "email_destino": "augusto@3ainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FnlpDXurdgMKVEDDj5QYL%2F1761590975849-Transferencia_Prop_-_Augusto.xlsx?alt=media&token=7b63f430-3510-4e1c-8c33-b360b1d98147",
+        "nome_origem": "Thiago Nogueira Penna",
+        "email_origem": "augusto@3ainvestimentos.com.br",
+        "nome_destino": "Augusto Cesar Carsalade Vieira",
+        "nome_sobrenome": "-"
+      },
+      "submittedAt": "2025-10-27T15:49:35-03:00",
+      "requestId": "0316",
+      "lastUpdatedAt": "2025-10-28T11:28:48-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "oZt9bd0JiHawZbrXKQly",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "formData": {},
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "timestamp": "2025-10-24T14:54:03-03:00",
+          "userId": "SCL",
+          "status": "em_aprovacao",
+          "userName": "Samuel Coelho Leite",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-10-24T14:54:03-03:00",
+      "requestId": "0300",
+      "lastUpdatedAt": "2025-10-24T14:54:03-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "q6QEpVRlP1K3WZJM4EMb",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-02T16:39:23-03:00",
+          "userId": "LGN",
+          "status": "em_aprovacao",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:39:38-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": ".",
+        "conta_xp_origem": "18687012",
+        "nome_origem": "Operacional",
+        "codigo_xp_destino": "A68755",
+        "nome_destino": "Juan",
+        "descricao": "Conta aberta pelo Corporate, s\u00f3 passando para o assessor",
+        "codigo_xp_origem": "A71802",
+        "email_origem": "lennon@3ainvestimentos.com.br",
+        "nome_sobrenome": "CASA ALVORADA FERRO E ACO LTDA"
+      },
+      "submittedAt": "2025-10-02T16:39:23-03:00",
+      "requestId": "0214",
+      "lastUpdatedAt": "2025-10-28T11:39:38-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "qI62BQHyVKFRUO4cvcCv",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "guilherme@3ainvestimentos.com.br",
+        "userId": "GBL2",
+        "userName": "Guilherme Boechat Muniz Lara"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "GBL2",
+          "status": "em_aprovacao",
+          "userName": "Guilherme Boechat Muniz Lara",
+          "timestamp": "2025-10-09T14:49:18-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:37:05-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "Sa\u00edda do Roberto",
+        "email_destino": "augusto@3ainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FqI62BQHyVKFRUO4cvcCv%2F1760032158796-Primeira_Leva_Proprieta%25CC%2581ria.xlsx?alt=media&token=a6a5d345-5ddb-4423-b5c7-e173e579bfce",
+        "nome_origem": "Roberto Cunha Rettore",
+        "email_origem": "ivan.paes@3ariva.com.br",
+        "nome_destino": "Guilherme Boechat Muniz Lara",
+        "nome_sobrenome": "-"
+      },
+      "submittedAt": "2025-10-09T14:49:18-03:00",
+      "requestId": "0243",
+      "lastUpdatedAt": "2025-10-28T11:37:05-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "qSM9oHIH1bFuKBOf6Cdj",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "FFS",
+          "status": "em_aprovacao",
+          "userName": "Fabiana Fracalossi Serafim",
+          "timestamp": "2025-10-14T10:25:44-03:00"
+        },
+        {
+          "timestamp": "2025-10-28T11:35:47-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Rebeca Hadassa Pedras."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "descricao": "sa\u00edda da assessora origem, clientes indo para assessores Minst para reten\u00e7\u00e3o.",
+        "email_destino": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2FqSM9oHIH1bFuKBOf6Cdj%2F1760448344604-Template_transf_interna_(4).xlsx?alt=media&token=8548b05d-cfda-4cff-a738-63c88f2dd56a",
+        "nome_origem": "Carolina Albanez",
+        "email_origem": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_destino": "diversos",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      },
+      "submittedAt": "2025-10-14T10:25:44-03:00",
+      "requestId": "0259",
+      "lastUpdatedAt": "2025-10-28T11:35:47-03:00",
+      "assignee": {
+        "id": "RHP2",
+        "name": "Rebeca Hadassa Pedras"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "rMvUSaqit8UqVQsCxV43",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "samuel.leite@3ariva.com.br",
+        "userId": "SCL",
+        "userName": "Samuel Coelho Leite"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-25T16:12:51-03:00",
+          "userId": "SCL",
+          "status": "solicitacao_aberta",
+          "userName": "Samuel Coelho Leite",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres.",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-29T16:41:51-03:00"
+        },
+        {
+          "timestamp": "2025-09-30T15:14:29-03:00",
+          "userId": "MPA2",
+          "status": "em_analise",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Status alterado para \"Em an\u00e1lise\"."
+        }
+      ],
+      "formData": {
+        "conta_xp": "13551478",
+        "descricao": "Unificar grupo familiar",
+        "codigo_xp": "450.000",
+        "nome": "Flavia Ker -> Pedro Lara",
+        "email": "samuel.leite@rivainvestimentos.com.br",
+        "nome_sobrenome": "ALEXANDRE LUCIO SOARES DE ASSUNCAO"
+      },
+      "isArchived": false,
+      "submittedAt": "2025-09-25T16:12:51-03:00",
+      "requestId": "0180",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "lastUpdatedAt": "2025-09-30T15:14:29-03:00",
+      "status": "em_analise"
+    }
+  },
+  {
+    "id": "sEn6xoInPs6kRWr1aZoS",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "type": "Tombamentos - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-09-05T15:22:09-03:00",
+          "userId": "LGN",
+          "status": "solicitacao_aberta",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "formData": {
+        "campo_4": "4078404",
+        "campo_2": "lennon@3ainvestimentos.com.br",
+        "campo_6": "A21418",
+        "campo_5": "A23779",
+        "campo_3": "samuel.leite@3ariva.com.br",
+        "nome_sobrenome": "Lennon Menegati"
+      },
+      "lastUpdatedAt": "2025-09-05T15:22:09-03:00",
+      "requestId": "0091",
+      "submittedAt": "2025-09-05T15:22:09-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "t7VPPWErbQK2OJAQnK4h",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "respondedAt": "",
+            "requestedAt": "2025-11-11T17:19:10-03:00"
+          }
+        ],
+        "em_execucao": [
+          {
+            "userId": "RHP2",
+            "status": "pending",
+            "userName": "Rebeca Hadassa Pedras",
+            "requestedAt": "2025-11-11T17:19:43-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "infra@3ainvestimentos.com.br",
+        "userId": "LHG",
+        "userName": "Luis Henrique Dusanek Guedes"
+      },
+      "type": "Transfer\u00eancia de Cliente - Em lote",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LHG",
+          "status": "em_aberto",
+          "userName": "Luis Henrique Dusanek Guedes",
+          "timestamp": "2025-11-11T14:44:20-03:00"
+        },
+        {
+          "timestamp": "2025-11-11T17:19:10-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:10-03:00",
+          "userId": "RHP2",
+          "status": "em_aprovacao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Aprovado - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:43-03:00",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Em execu\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:43-03:00",
+          "userId": "RHP2",
+          "status": "em_execucao",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "A\u00e7\u00e3o de \"Conclu\u00eddo - BI\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        },
+        {
+          "timestamp": "2025-11-11T17:19:52-03:00",
+          "userId": "RHP2",
+          "status": "finalizado",
+          "userName": "Rebeca Hadassa Pedras",
+          "notes": "Status alterado para \"Finalizado\"."
+        }
+      ],
+      "formData": {
+        "descricao": "ISSO \u00c9 APENAS UM TESTE ",
+        "email_destino": "TESTE",
+        "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FBusiness%20Intelligence%2Ft7VPPWErbQK2OJAQnK4h%2F1762883061019-logo_branca.png?alt=media&token=1f7bb37b-79c5-4d76-bed2-e2976684fb23",
+        "nome_origem": "TESTE",
+        "email_origem": "TESTE",
+        "nome_destino": "TESTE",
+        "nome_sobrenome": "TESTE"
+      },
+      "status": "finalizado",
+      "submittedAt": "2025-11-11T14:44:20-03:00",
+      "requestId": "0387",
+      "lastUpdatedAt": "2025-11-11T17:19:52-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "tMbbR9ruLftLhAF5gLS7",
+    "data": {
+      "ownerEmail": "ti@3ariva.com.br",
+      "actionRequests": {
+        "em_execucao": [
+          {
+            "respondedAt": "2025-08-18T11:59:22-03:00",
+            "attachmentUrl": "",
+            "userId": "LBC2",
+            "status": "rejected",
+            "userName": "Leonardo Brum Cardoso",
+            "requestedAt": "2025-08-18T09:51:15-03:00",
+            "comment": ""
+          },
+          {
+            "respondedAt": "2025-08-18T09:51:21-03:00",
+            "attachmentUrl": "",
+            "userId": "DFZ2",
+            "status": "rejected",
+            "userName": "Danilo Freitas Zegrini",
+            "requestedAt": "2025-08-18T09:51:15-03:00",
+            "comment": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "stefania.otoni@3ainvestimentos.com.br",
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni"
+      },
+      "type": "Solicita\u00e7\u00e3o de Compra / Equipamento",
+      "history": [
+        {
+          "timestamp": "2025-08-14T13:30:26-03:00",
+          "userId": "SMO2",
+          "status": "solicitacao_aberta",
+          "userName": "Stefania Marcia Otoni",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-08-14T14:28:13-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Status alterado para \"Em An\u00e1lise\"."
+        },
+        {
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Luis Henrique Dusanek Guedes.",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "timestamp": "2025-08-14T14:31:54-03:00"
+        },
+        {
+          "notes": "N\u00e3o h\u00e1 necessidade, a solicita\u00e7\u00e3o ser\u00e1 finalizada",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "timestamp": "2025-08-18T09:51:15-03:00"
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Aprova\u00e7\u00e3o TI / FIN\" solicitada automaticamente para 2 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "timestamp": "2025-08-18T09:51:15-03:00"
+        },
+        {
+          "timestamp": "2025-08-18T09:51:21-03:00",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "A\u00e7\u00e3o foi Rejeitada."
+        },
+        {
+          "timestamp": "2025-08-18T11:59:22-03:00",
+          "userId": "LBC2",
+          "status": "em_execucao",
+          "userName": "Leonardo Brum Cardoso",
+          "notes": "A\u00e7\u00e3o foi Rejeitada."
+        },
+        {
+          "timestamp": "2025-08-21T13:51:13-03:00",
+          "userId": "LHG",
+          "status": "finalizado",
+          "userName": "Luis Henrique Dusanek Guedes",
+          "notes": "Status alterado para \"Finalizado\"."
+        }
+      ],
+      "formData": {
+        "item_compra_ti": "Segunda tela para o Henrique Monteiro",
+        "nome_completo": "Stef\u00e2nia Otoni",
+        "email": "stefania.otoni@3ainvestimentos.com.br",
+        "quantiadade_compra_ti": "1",
+        "link_compra_ti": "https://www.amazon.com.br/Monitor-LG-19-5-LED-Inclina%C3%A7%C3%A3o/dp/B084TKF88Q/ref=sr_1_1_sspa?__mk_pt_BR=%C3%85M%C3%85%C5%BD%C3%95%C3%91&crid=4Y55MB8JVTOY&dib=eyJ2IjoiMSJ9.AiWF2ADZdFknWImQzwpK8Rk6xdN6F0iQLXvmP1CvWfDo5lis0m1fm_9ZvCsupWYLbmL1C0Ua4ROudaVLx_A0Od--TOJ4OlY_-RrzGnHwcVT7FmS_sIm-SeKfLi3xRo1BiPYhhKFptg5Oj-MIAGE-9YoOrTEHzCbYesh8IoDn3QpLPRm6NqoAi2FRPXoK54zkY95YRg_J_iYvMFZQa6yt66wpaviyXbYdUcmaZ5-QOHPHFYBXtOT2U8IbBLzBN9E9wU9kdJ6cSshtx4OTNlp-as7i3upHhBXi-9BBesiW3-8.WTvE71I4QTBtUWd_KiFgwChmtkyv32I56s8Rhm_6xf8&dib_tag=se&keywords=tela+19%2C5+lg&qid=1755188969&sprefix=tela+19+5+lg%2Caps%2C189&sr=8-1-spons&ufe=app_do%3Aamzn1.fos.e05b01e0-91a7-477e-a514-15a32325a6d6&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1\n",
+        "setor_area": "ADM"
+      },
+      "status": "finalizado",
+      "submittedAt": "2025-08-14T13:30:26-03:00",
+      "requestId": "0016",
+      "assignee": {
+        "id": "LHG",
+        "name": "Luis Henrique Dusanek Guedes"
+      },
+      "lastUpdatedAt": "2025-08-21T13:51:13-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "tiWtQmL4xvxTm2fKofIH",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "fabiana.fracalossi@3ariva.com.br",
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim"
+      },
+      "type": "Tombamentos - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-08-28T14:24:17-03:00",
+          "userId": "FFS",
+          "status": "solicitacao_aberta",
+          "userName": "Fabiana Fracalossi Serafim",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "viewedBy": [],
+      "formData": {
+        "campo_4": "304981",
+        "campo_2": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "campo_6": "41475",
+        "campo_5": "70629",
+        "campo_3": "fabiana.fracalossi@rivainvestimentos.com.br",
+        "nome_sobrenome": "Fabiana Fracalossi Serafim"
+      },
+      "lastUpdatedAt": "2025-08-28T14:24:17-03:00",
+      "requestId": "0065",
+      "submittedAt": "2025-08-28T14:24:17-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "tqQ0D24zotJNTtq8rqhI",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "formData": {},
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-27T15:58:45-03:00",
+          "userId": "DMS",
+          "status": "em_aprovacao",
+          "userName": "Daniel Miranda Silva",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        }
+      ],
+      "submittedBy": {
+        "userEmail": "daniel.miranda@3ainvestimentos.com.br",
+        "userId": "DMS",
+        "userName": "Daniel Miranda Silva"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-10-27T15:58:45-03:00",
+      "requestId": "0319",
+      "lastUpdatedAt": "2025-10-27T15:58:45-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "u6lZqzFYOTvq983ZpYT1",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "em_aprovacao",
+      "submittedBy": {
+        "userEmail": "lennon@3ainvestimentos.com.br",
+        "userId": "LGN",
+        "userName": "Lennon Galantini Menegati Nascimento"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "LGN",
+          "status": "em_aprovacao",
+          "userName": "Lennon Galantini Menegati Nascimento",
+          "timestamp": "2025-10-01T11:42:26-03:00"
+        },
+        {
+          "timestamp": "2025-10-02T13:31:00-03:00",
+          "userId": "MPA2",
+          "status": "em_aprovacao",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres."
+        }
+      ],
+      "isArchived": false,
+      "formData": {
+        "email2_destino": "samuel.leite@3ariva.com.br",
+        "conta_xp_origem": "14936610",
+        "nome_origem": "Operacional",
+        "codigo_xp_destino": "A27624",
+        "nome_destino": "Gabriel Capanema",
+        "descricao": "Conta do irm\u00e3o do Gabriel",
+        "codigo_xp_origem": "A23779",
+        "email_origem": "lennon@3ainvestimentos.com.br",
+        "nome_sobrenome": "LUIS OTAVIO LOPES CAPANEMA"
+      },
+      "submittedAt": "2025-10-01T11:42:26-03:00",
+      "requestId": "0206",
+      "lastUpdatedAt": "2025-10-02T13:31:00-03:00",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "viewedBy": []
+    }
+  },
+  {
+    "id": "veT5NDXEpuISFndNY7ek",
+    "data": {
+      "ownerEmail": "marcio.peixoto@3ariva.com.br",
+      "actionRequests": {},
+      "status": "solicitacao_aberta",
+      "submittedBy": {
+        "userEmail": "ivan.paes@3ariva.com.br",
+        "userId": "IBP",
+        "userName": "Ivan Maschtakow Baresani Paes"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "IBP",
+          "status": "solicitacao_aberta",
+          "userName": "Ivan Maschtakow Baresani Paes",
+          "timestamp": "2025-09-19T14:37:50-03:00"
+        },
+        {
+          "notes": "Solicita\u00e7\u00e3o atribu\u00edda a Gabriel Fernandes de Andrade Ayres.",
+          "userId": "MPA2",
+          "status": "solicitacao_aberta",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "timestamp": "2025-09-29T16:43:15-03:00"
+        }
+      ],
+      "formData": {
+        "campo_4": "7010966",
+        "campo_5": "A68621",
+        "campo_6": "A71616",
+        "campo_2": "ivan.paes@rivainvestimentos.com.br",
+        "campo_3": "ivan.paes@rivainvestimentos.com.br",
+        "nome_sobrenome": "MARINA GONTIJO OSORIO AMORIM"
+      },
+      "viewedBy": [],
+      "submittedAt": "2025-09-19T14:37:50-03:00",
+      "requestId": "0158",
+      "lastUpdatedAt": "2025-09-29T16:43:15-03:00",
+      "assignee": {
+        "id": "GA",
+        "name": "Gabriel Fernandes de Andrade Ayres"
+      },
+      "isArchived": true
+    }
+  },
+  {
+    "id": "wCKlSILrMSwCORcXG1WT",
+    "data": {
+      "ownerEmail": "rebeca.hadassa@3ainvestimentos.com.br",
+      "actionRequests": {
+        "em_aprovacao": [
+          {
+            "userId": "GA",
+            "status": "pending",
+            "userName": "Gabriel Fernandes de Andrade Ayres",
+            "requestedAt": "2025-10-28T11:24:15-03:00",
+            "respondedAt": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "ti@3ariva.com.br",
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini"
+      },
+      "type": "Transfer\u00eancia de Cliente - Caso \u00danico",
+      "history": [
+        {
+          "timestamp": "2025-10-28T11:24:01-03:00",
+          "userId": "DFZ2",
+          "status": "em_aberto",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Solicita\u00e7\u00e3o criada."
+        },
+        {
+          "timestamp": "2025-10-28T11:24:15-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\"."
+        },
+        {
+          "timestamp": "2025-10-28T11:24:15-03:00",
+          "userId": "DFZ2",
+          "status": "em_aprovacao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "A\u00e7\u00e3o de \"Aprovado - Diretoria Comercial\" solicitada automaticamente para 1 colaborador(es) pr\u00e9-definido(s)."
+        }
+      ],
+      "formData": {
+        "email2_destino": "Teste",
+        "conta_xp_origem": "Teste",
+        "nome_origem": "Teste",
+        "codigo_xp_destino": "Teste",
+        "nome_destino": "Teste",
+        "descricao": "Teste",
+        "codigo_xp_origem": "Teste",
+        "email_origem": "Teste",
+        "nome_sobrenome": "Teste"
+      },
+      "status": "em_aprovacao",
+      "submittedAt": "2025-10-28T11:24:01-03:00",
+      "requestId": "0322",
+      "lastUpdatedAt": "2025-10-28T11:24:15-03:00",
+      "isArchived": true
+    }
+  },
+  {
+    "id": "xUz1RWQkFNjuK7QYtoUn",
+    "data": {
+      "ownerEmail": "ti@3ariva.com.br",
+      "actionRequests": {
+        "em_execucao": [
+          {
+            "requestedAt": "2025-08-18T09:53:21-03:00",
+            "attachmentUrl": "",
+            "userId": "LBC2",
+            "status": "approved",
+            "userName": "Leonardo Brum Cardoso",
+            "respondedAt": "2025-08-18T11:59:53-03:00",
+            "comment": ""
+          },
+          {
+            "status": "approved",
+            "requestedAt": "2025-08-18T09:53:21-03:00",
+            "userId": "DFZ2",
+            "attachmentUrl": "",
+            "userName": "Danilo Freitas Zegrini",
+            "respondedAt": "2025-08-18T09:53:35-03:00",
+            "comment": ""
+          }
+        ]
+      },
+      "viewedBy": [],
+      "submittedBy": {
+        "userEmail": "joao.pompeu@3ainvestimentos.com.br",
+        "userId": "JPU",
+        "userName": "Jo\u00e3o Pedro Pompeu Ulhoa"
+      },
+      "type": "Solicita\u00e7\u00e3o de Compra / Equipamento",
+      "history": [
+        {
+          "notes": "Solicita\u00e7\u00e3o criada.",
+          "userId": "JPU",
+          "status": "solicitacao_aberta",
+          "userName": "Jo\u00e3o Pedro Pompeu Ulhoa",
+          "timestamp": "2025-08-18T09:49:26-03:00"
+        },
+        {
+          "timestamp": "2025-08-18T09:53:19-03:00",
+          "userId": "DFZ2",
+          "status": "em_analise",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "Status alterado para \"Em An\u00e1lise\"."
+        },
+        {
+          "notes": "Status alterado para \"Em aprova\u00e7\u00e3o\".",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "timestamp": "2025-08-18T09:53:21-03:00"
+        },
+        {
+          "notes": "A\u00e7\u00e3o de \"Aprova\u00e7\u00e3o TI / FIN\" solicitada automaticamente para 2 colaborador(es) pr\u00e9-definido(s).",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "timestamp": "2025-08-18T09:53:21-03:00"
+        },
+        {
+          "timestamp": "2025-08-18T09:53:35-03:00",
+          "userId": "DFZ2",
+          "status": "em_execucao",
+          "userName": "Danilo Freitas Zegrini",
+          "notes": "A\u00e7\u00e3o foi Aprovada."
+        },
+        {
+          "timestamp": "2025-08-18T11:59:53-03:00",
+          "userId": "LBC2",
+          "status": "em_execucao",
+          "userName": "Leonardo Brum Cardoso",
+          "notes": "A\u00e7\u00e3o foi Aprovada."
+        }
+      ],
+      "status": "em_execucao",
+      "formData": {
+        "item_compra_ti": "Monitor",
+        "nome_completo": "Jo\u00e3o Pedro Pompeu Ulhoa",
+        "email": "joao.pompeu@3ainvestimentos.com.br",
+        "quantiadade_compra_ti": "1",
+        "link_compra_ti": "",
+        "setor_area": "Marketing"
+      },
+      "submittedAt": "2025-08-18T09:49:26-03:00",
+      "requestId": "0022",
+      "assignee": {
+        "id": "DFZ2",
+        "name": "Danilo Freitas Zegrini"
+      },
+      "lastUpdatedAt": "2025-08-18T11:59:53-03:00",
+      "isArchived": true
+    }
+  }
+]

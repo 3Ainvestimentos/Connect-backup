@@ -1,0 +1,65 @@
+{
+  "2SxPtLhzpMhpw66xkcNu": {
+    "icon": "FileText",
+    "name": "Jurídico",
+    "storageFolderPath": "gs://a-riva-hub.firebasestorage.app/Workflows/Jurídico"
+  },
+  "3i5eo3hPQrfWcAtfPkBt": {
+    "icon": "Monitor",
+    "workflowOrder": [
+      "L1E0hJpRaJ3xFYufilyG",
+      "BhCq9faCPTmGEXjYCg1t",
+      "LL9f3hMXcv4xVbyy3Nne",
+      "1FEfsHnEALOAETwq6H3S",
+      "sgL9XCECAOreWgGalI2m",
+      "j6DVhDS9mVQXmwDjptNs",
+      "ryj6rF4H2gBJUJiaKe8t",
+      "2bsVIVhd22bV3bN5rp7W"
+    ],
+    "name": "TI",
+    "storageFolderPath": "gs://a-riva-hub.firebasestorage.app/Workflows/TI de Help Desk"
+  },
+  "8F08NcmZ9ad7D5qMaZZz": {
+    "icon": "Layers",
+    "name": "Business Intelligence",
+    "storageFolderPath": "gs://a-riva-hub.firebasestorage.app/Workflows/Business Intelligence"
+  },
+  "9iuhbwx2KVxwXUiqywDZ": {
+    "icon": "Lock",
+    "name": "Governança",
+    "storageFolderPath": "Workflows/Governanca"
+  },
+  "LDen2yCCXjlVXsWQKREo": {
+    "icon": "Gift",
+    "name": "Marketing",
+    "storageFolderPath": "gs://a-riva-hub.firebasestorage.app/Workflows/Marketing"
+  },
+  "gB7QZh8zrng4ioaGILPX": {
+    "icon": "Users",
+    "workflowOrder": [
+      "YVfXjlFxZciT4zaD5UAP",
+      "d3MLICQmG7qtsQMKMUUu",
+      "IPWhvTC82Dv4nn9vC2Xa",
+      "Eqlgq3ZBINFo6TLONl9g",
+      "Vz53Sn7cdupJpFVNA7X6",
+      "98fUoidQBMm3MPW4NTic",
+      "1tmzWIwCC21zxB3vaV5J",
+      "jyH7H6FCjPMJ2MjCefQN",
+      "q55MFr8p9Tbcbsh6kpm1",
+      "RABkxl7grAbuECLvvyWa",
+      "NA1cQ6ejRgZhoB0ZMPY2"
+    ],
+    "name": "Gente e Comunicação",
+    "storageFolderPath": "gs://a-riva-hub.firebasestorage.app/Workflows/Gente e Comunicação"
+  },
+  "pZi0P2z6yVSsollt4cFt": {
+    "icon": "CreditCard",
+    "name": "Financeiro",
+    "storageFolderPath": "gs://a-riva-hub.firebasestorage.app/Workflows/Financeiro"
+  },
+  "u3entfMNB17iklBOdq5H": {
+    "icon": "Building",
+    "name": "Facilities e Suprimentos",
+    "storageFolderPath": "gs://a-riva-hub.firebasestorage.app/Workflows/Facilities e Suprimentos"
+  }
+}
