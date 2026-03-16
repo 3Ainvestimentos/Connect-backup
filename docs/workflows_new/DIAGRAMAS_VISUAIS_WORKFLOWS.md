@@ -7,9 +7,11 @@ Este documento consolida um diagrama visual para cada tipo de workflow ativo, co
 - `Solicitante` representa quem abre o chamado.
 - `Owner inicial` representa a fila que recebe o workflow na abertura.
 - Os retângulos mostram a sequência declarada de status.
-- Os losangos mostram checkpoints de ação configurados (`approval`, `acknowledgement` ou `execution`).
+- Os losangos mostram statuses com `action` configurada (`approval`, `acknowledgement` ou `execution`).
 - A atribuição manual para `assignee` pode acontecer entre etapas, mas não foi desenhada em cada diagrama para manter a leitura limpa.
 - Estes diagramas representam o fluxo configurado atual. Divergências históricas de samples só aparecem quando afetam a leitura do fluxo atual.
+- No runtime atual, uma `action` não bloqueia automaticamente o avanço para o próximo status.
+- Quando um workflow repete o mesmo `status.id` em etapas diferentes, o diagrama abaixo deve ser lido como sequenciamento declarativo, não como estados distinguíveis de forma confiável na UI atual.
 
 ## Facilities e Suprimentos
 
@@ -120,8 +122,8 @@ flowchart LR
 - Owner inicial: `barbara@3ainvestimentos.com.br`
 - Quem pode abrir: Lista restrita (36 IDs)
 - Campos no formulário: `11`
-- Checkpoints de ação: `Em análise - BI` -> `Análise BI - Concluída ` (execution, 1 aprovador(es)), `Em análise - Financeiro` -> `Análise Financeiro - Concluída` (execution, 3 aprovador(es)), `Em análise - Jurídico ` -> `Análise Jurídico - Concluída` (execution, 1 aprovador(es)), `Em análise - Governança` -> `Análise Governaça - Concluída` (execution, 1 aprovador(es)), `Re-analise do Jurídico ` -> `Re-Análise Jurídico - Concluída` (execution, 3 aprovador(es)), `Desligamento - Governança` -> `Desligamento - Gov. - Concluído (Avisae áreas)` (acknowledgement, 1 aprovador(es))
-- Alerta: o fluxo tem `status.id = em_analise` repetido em várias etapas.
+- Checkpoints de ação: `Em análise - BI` -> `Análise BI - Concluída` (execution, 1 aprovador(es)), `Em análise - Financeiro` -> `Análise Financeiro - Concluída` (execution, 3 aprovador(es)), `Em análise - Jurídico` -> `Análise Jurídico - Concluída` (execution, 1 aprovador(es)), `Em análise - Governança` -> `Análise Governaça - Concluída` (execution, 1 aprovador(es)), `Re-analise do Jurídico` -> `Re-Análise Jurídico - Concluída` (execution, 3 aprovador(es)), `Desligamento - Governança` -> `Desligamento - Gov. - Concluído (Avisae áreas)` (acknowledgement, 1 aprovador(es))
+- Alerta: o fluxo tem `status.id = em_analise` repetido em várias etapas; no runtime atual isso impede distinguir corretamente essas etapas e seus checkpoints associados.
 
 ```mermaid
 flowchart LR
@@ -147,7 +149,7 @@ flowchart LR
 - Owner inicial: `fernanda.adami@3ainvestimentos.com.br`
 - Quem pode abrir: Lista restrita (33 IDs)
 - Campos no formulário: `11`
-- Checkpoints de ação: `Enviado ao TI (Acessos)` -> `Ciente - TI` (acknowledgement, 1 aprovador(es)), `Enviado ao Jurídico` -> `Ciente - Jurídico ` (acknowledgement, 3 aprovador(es))
+- Checkpoints de ação: `Enviado ao TI (Acessos)` -> `Ciente - TI` (acknowledgement, 1 aprovador(es)), `Enviado ao Jurídico` -> `Ciente - Jurídico` (acknowledgement, 3 aprovador(es))
 
 ```mermaid
 flowchart LR
@@ -538,7 +540,7 @@ flowchart LR
 - Quem pode abrir: Todos os usuários
 - Campos no formulário: `6`
 - Checkpoints de ação: nenhum configurado
-- Alerta: o fluxo tem `status.id = em_execucao` duplicado em duas etapas distintas.
+- Alerta: o fluxo tem `status.id = em_execucao` duplicado em duas etapas distintas; no runtime atual essas etapas não são distinguíveis de forma confiável.
 
 ```mermaid
 flowchart LR
