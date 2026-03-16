@@ -12,6 +12,7 @@ export interface CollaboratorPermissions {
   canManageRequests: boolean;
   canManageContent: boolean;
   canManageTripsBirthdays: boolean;
+  canManageVacation: boolean;
   canViewTasks: boolean;
   canViewBI: boolean;
   canViewRankings: boolean;
@@ -67,6 +68,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageRequests: false,
   canManageContent: false,
   canManageTripsBirthdays: false,
+  canManageVacation: false,
   canViewTasks: false,
   canViewBI: false,
   canViewRankings: false,

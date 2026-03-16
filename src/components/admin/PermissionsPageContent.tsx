@@ -20,6 +20,7 @@ const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] 
     { key: 'canManageWorkflows', label: 'Workflows' },
     { key: 'canManageRequests', label: 'Solicitações' },
     { key: 'canManageTripsBirthdays', label: 'Viagens/Aniversários' },
+    { key: 'canManageVacation', label: 'Férias' },
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
     { key: 'canViewBI', label: 'Business Intelligence' },
     { key: 'canViewRankings', label: 'Rankings' },
