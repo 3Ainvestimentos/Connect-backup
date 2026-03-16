@@ -150,7 +150,6 @@ Formatos a evitar:
 ### 4.4. Politica de alteracao de etapa
 
 - toda etapa tera `stepName` como nome exibido e editavel;
-- nao sera usado `clientLabel`;
 - qualquer alteracao em `stepName` exige nova versao;
 - qualquer alteracao em ordem, criacao ou exclusao de etapa exige nova versao;
 - versao publicada nao pode sofrer alteracao retroativa de nome ou estrutura.
