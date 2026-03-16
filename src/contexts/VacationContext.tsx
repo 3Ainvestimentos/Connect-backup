@@ -54,10 +54,11 @@ export function VacationProvider({ children }: { children: ReactNode }) {
   const { user, currentUserCollab, isSuperAdmin } = useAuth();
 
   const { data: vacations = [], isFetching } = useQuery<VacationType[]>({
-    queryKey: [VACATIONS_COLLECTION],
+    queryKey: [VACATIONS_COLLECTION, user?.uid, isSuperAdmin ? "all" : "own"],
     queryFn: async () => {
       const all = await getCollection<VacationType>(VACATIONS_COLLECTION);
-      return sortVacations(all);
+      if (isSuperAdmin) return sortVacations(all);
+      return sortVacations(all.filter((item) => item.collaboratorUid === user?.uid));
     },
     enabled: !!user,
     staleTime: Infinity,
@@ -69,14 +70,16 @@ export function VacationProvider({ children }: { children: ReactNode }) {
     const unsubscribe = listenToCollection<VacationType>(
       VACATIONS_COLLECTION,
       (newData) => {
-        queryClient.setQueryData([VACATIONS_COLLECTION], sortVacations(newData as VacationType[]));
+        const normalized = newData as VacationType[];
+        const visible = isSuperAdmin ? normalized : normalized.filter((item) => item.collaboratorUid === user.uid);
+        queryClient.setQueryData([VACATIONS_COLLECTION, user.uid, isSuperAdmin ? "all" : "own"], sortVacations(visible));
       },
       (error) => {
         console.error("Failed to listen to vacations:", error);
       }
     );
     return () => unsubscribe();
-  }, [queryClient, user]);
+  }, [queryClient, user, isSuperAdmin]);
 
   const addVacationMutation = useMutation<WithId<Omit<VacationType, "id">>, Error, AddVacationInput>({
     mutationFn: async (input) => {
@@ -94,7 +97,7 @@ export function VacationProvider({ children }: { children: ReactNode }) {
         updatedAt: now,
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [VACATIONS_COLLECTION] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [VACATIONS_COLLECTION, user?.uid, isSuperAdmin ? "all" : "own"] }),
   });
 
   const updateVacationMutation = useMutation<void, Error, VacationType>({
@@ -113,7 +116,7 @@ export function VacationProvider({ children }: { children: ReactNode }) {
         updatedAt: new Date().toISOString(),
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [VACATIONS_COLLECTION] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [VACATIONS_COLLECTION, user?.uid, isSuperAdmin ? "all" : "own"] }),
   });
 
   const deleteVacationMutation = useMutation<void, Error, string>({
@@ -127,7 +130,7 @@ export function VacationProvider({ children }: { children: ReactNode }) {
       }
       await deleteDocumentFromCollection(VACATIONS_COLLECTION, id);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [VACATIONS_COLLECTION] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [VACATIONS_COLLECTION, user?.uid, isSuperAdmin ? "all" : "own"] }),
   });
 
   const myVacations = useMemo(

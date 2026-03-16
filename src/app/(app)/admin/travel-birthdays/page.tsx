@@ -16,7 +16,7 @@ export default function TravelBirthdaysControlPage() {
   return (
     <div className="space-y-6 p-6 md:p-8 admin-panel">
       <PageHeader
-        title="Viagens/Férias"
+        title="Controle de Viagens/Ferias"
         description="Gerencie viagens dos líderes e seus períodos de férias em uma única área."
       />
 
