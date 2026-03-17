@@ -174,8 +174,8 @@ function PermissionsTable() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="border rounded-lg overflow-x-auto">
-                    <Table>
+                <div className="border rounded-lg overflow-x-auto max-w-full">
+                    <Table className="min-w-[1400px]">
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Colaborador</TableHead>
