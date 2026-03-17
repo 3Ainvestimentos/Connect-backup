@@ -10,7 +10,11 @@ interface FeriadosApiResponse {
   feriados?: FeriadosApiHoliday[];
 }
 
-function parseBrDateToISO(date: string) {
+function normalizeToISO(date: string): string {
+  if (date.includes("-")) {
+    return date;
+  }
+
   const [day, month, year] = date.split("/");
   if (!day || !month || !year) {
     throw new Error("Formato de data invalido retornado pela API de feriados.");
@@ -63,7 +67,7 @@ export async function GET(request: Request) {
     const feriados = await callFeriadosApi(nationalEndpoint, apiKey);
 
     const normalized = feriados.map((holiday) => ({
-      dateISO: parseBrDateToISO(holiday.data),
+      dateISO: normalizeToISO(holiday.data),
       name: holiday.nome,
       type: holiday.tipo,
     }));
