@@ -227,7 +227,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { setOpen: setSidebarOpen } = useSidebar();
   
   const isFullscreenPage = false;
-  const noZoomRoutes = ['/chatbot', '/admin/crm', '/bi'];
+  const noZoomRoutes = [
+    '/chatbot',
+    '/admin/crm',
+    '/admin/strategic-panel',
+    '/bi',
+    '/bi-leaders',
+    '/personal-panel',
+    '/store',
+  ];
   const shouldApplyContentZoom = !noZoomRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
@@ -456,9 +464,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Sidebar>
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
-          <div style={shouldApplyContentZoom ? { zoom: "0.85" } : undefined}>
-            {children}
-          </div>
+          {shouldApplyContentZoom ? (
+            <div style={{ zoom: "0.85" }}>
+              {children}
+            </div>
+          ) : (
+            children
+          )}
           <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />
         </main>
       </div>
