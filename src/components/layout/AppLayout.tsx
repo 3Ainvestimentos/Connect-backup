@@ -227,6 +227,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { setOpen: setSidebarOpen } = useSidebar();
   
   const isFullscreenPage = false;
+  const noZoomRoutes = ['/chatbot', '/admin/crm', '/bi'];
+  const shouldApplyContentZoom = !noZoomRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -454,8 +456,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Sidebar>
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
-          {children}
-            <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />
+          <div style={shouldApplyContentZoom ? { zoom: "0.85" } : undefined}>
+            {children}
+          </div>
+          <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />
         </main>
       </div>
       <PollTrigger />

@@ -17,44 +17,42 @@ export default function TravelBirthdaysControlPage() {
 
   return (
     <div className="space-y-6 p-6 md:p-8 admin-panel">
-      <div style={{ zoom: "0.85" }}>
-        <PageHeader
-          title="Controle de Viagens/Ferias"
-          description="Gerencie viagens dos líderes e seus períodos de férias em uma única área."
-        />
+      <PageHeader
+        title="Controle de Viagens/Ferias"
+        description="Gerencie viagens dos líderes e seus períodos de férias em uma única área."
+      />
 
-        {showTabs ? (
-          <Tabs defaultValue={defaultTab} className="w-full">
-            <TabsList className={`grid w-full ${tabsGridClass}`}>
-              {canViewTrips && (
-                <TabsTrigger value="viagens">
-                  Viagens
-                </TabsTrigger>
-              )}
-              {canViewVacation && (
-                <TabsTrigger value="ferias">
-                  Férias
-                </TabsTrigger>
-              )}
-            </TabsList>
-
+      {showTabs ? (
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <TabsList className={`grid w-full ${tabsGridClass}`}>
             {canViewTrips && (
-              <TabsContent value="viagens">
-                <ManageTripsBirthdays />
-              </TabsContent>
+              <TabsTrigger value="viagens">
+                Viagens
+              </TabsTrigger>
             )}
             {canViewVacation && (
-              <TabsContent value="ferias">
-                <ManageVacations />
-              </TabsContent>
+              <TabsTrigger value="ferias">
+                Férias
+              </TabsTrigger>
             )}
-          </Tabs>
-        ) : canViewVacation ? (
-          <ManageVacations />
-        ) : (
-          <ManageTripsBirthdays />
-        )}
-      </div>
+          </TabsList>
+
+          {canViewTrips && (
+            <TabsContent value="viagens">
+              <ManageTripsBirthdays />
+            </TabsContent>
+          )}
+          {canViewVacation && (
+            <TabsContent value="ferias">
+              <ManageVacations />
+            </TabsContent>
+          )}
+        </Tabs>
+      ) : canViewVacation ? (
+        <ManageVacations />
+      ) : (
+        <ManageTripsBirthdays />
+      )}
     </div>
   );
 }

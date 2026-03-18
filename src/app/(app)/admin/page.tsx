@@ -16,28 +16,26 @@ export default function AdminPage() {
     return (
         <SuperAdminGuard>
             <div className="space-y-6 p-6 md:p-8 overflow-x-hidden">
-                <div style={{ zoom: "0.85" }}>
-                    <PageHeader 
-                        title="Administração do Sistema"
-                        description="Gerencie colaboradores, permissões de acesso e o estado da plataforma."
-                    />
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
-                            <TabsTrigger value="permissions">Permissões</TabsTrigger>
-                            <TabsTrigger value="maintenance">Configurações</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="collaborators">
-                            <ManageCollaborators />
-                        </TabsContent>
-                        <TabsContent value="permissions">
-                            <PermissionsPageContent />
-                        </TabsContent>
-                        <TabsContent value="maintenance">
-                            <MaintenanceMode />
-                        </TabsContent>
-                    </Tabs>
-                </div>
+                <PageHeader 
+                    title="Administração do Sistema"
+                    description="Gerencie colaboradores, permissões de acesso e o estado da plataforma."
+                />
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="collaborators">Colaboradores</TabsTrigger>
+                        <TabsTrigger value="permissions">Permissões</TabsTrigger>
+                        <TabsTrigger value="maintenance">Configurações</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="collaborators">
+                        <ManageCollaborators />
+                    </TabsContent>
+                    <TabsContent value="permissions">
+                        <PermissionsPageContent />
+                    </TabsContent>
+                    <TabsContent value="maintenance">
+                        <MaintenanceMode />
+                    </TabsContent>
+                </Tabs>
             </div>
         </SuperAdminGuard>
     );
