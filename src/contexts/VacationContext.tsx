@@ -13,7 +13,7 @@ import {
 import { useAuth } from "./AuthContext";
 
 const VACATIONS_COLLECTION = "vacations";
-const TOTAL_VACATION_DAYS = 30;
+const TOTAL_VACATION_DAYS = 22;
 
 export interface VacationType {
   id: string;

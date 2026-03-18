@@ -324,7 +324,7 @@ export default function ManageVacations() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CalendarRange className="h-4 w-4" />
-              Dias Totais
+              Dias Úteis Totais
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -335,7 +335,7 @@ export default function ManageVacations() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CalendarClock className="h-4 w-4" />
-              Dias Utilizados
+              Dias Utilizados Totais
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -346,7 +346,7 @@ export default function ManageVacations() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CalendarCheck className="h-4 w-4" />
-              Dias Restantes
+              Dias Úteis Restantes
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -358,7 +358,7 @@ export default function ManageVacations() {
       <Card className="border-l-4 border-l-emerald-600">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Ferias</CardTitle>
+            <CardTitle>Férias</CardTitle>
             <CardDescription>
               Registre os seus periodos de ferias em dias uteis. Feriados nacionais sao desconsiderados automaticamente.
               Alteracoes e exclusoes devem ser solicitadas a um administrador.
