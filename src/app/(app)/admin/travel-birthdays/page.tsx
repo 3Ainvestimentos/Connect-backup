@@ -25,14 +25,14 @@ export default function TravelBirthdaysControlPage() {
 
         {showTabs ? (
           <Tabs defaultValue={defaultTab} className="w-full">
-            <TabsList className={`grid w-full h-10 p-[1px] ${tabsGridClass}`}>
+            <TabsList className={`grid w-full ${tabsGridClass}`}>
               {canViewTrips && (
-                <TabsTrigger value="viagens" className="py-[0.35rem]">
+                <TabsTrigger value="viagens">
                   Viagens
                 </TabsTrigger>
               )}
               {canViewVacation && (
-                <TabsTrigger value="ferias" className="py-[0.35rem]">
+                <TabsTrigger value="ferias">
                   Férias
                 </TabsTrigger>
               )}
