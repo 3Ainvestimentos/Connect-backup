@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, PlusCircle, Trash2, Edit, CalendarRange, CalendarCheck, CalendarClock } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { ptBR } from "date-fns/locale";
@@ -46,6 +47,8 @@ export default function ManageVacations() {
   const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [holidaysByYear, setHolidaysByYear] = useState<Record<number, HolidayItem[]>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [collaboratorFilter, setCollaboratorFilter] = useState<string>("all");
+  const canUseAdminFilter = isSuperAdmin;
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -163,6 +166,45 @@ export default function ManageVacations() {
       })
       .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
   }, [selectedRange, allHolidays]);
+
+  const availableCollaborators = useMemo(() => {
+    const collaboratorMap = new Map<string, string>();
+    vacations.forEach((vacation) => {
+      const uid = vacation.collaboratorUid?.trim();
+      if (!uid) return;
+      if (!collaboratorMap.has(uid)) {
+        collaboratorMap.set(uid, vacation.collaboratorName?.trim() || "Colaborador sem nome");
+      }
+    });
+
+    return Array.from(collaboratorMap.entries())
+      .map(([uid, name]) => ({ uid, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [vacations]);
+
+  useEffect(() => {
+    if (!canUseAdminFilter) {
+      if (collaboratorFilter !== "all") {
+        setCollaboratorFilter("all");
+      }
+      return;
+    }
+    if (collaboratorFilter === "all") return;
+
+    const hasSelectedCollaborator = availableCollaborators.some(
+      (collaborator) => collaborator.uid === collaboratorFilter
+    );
+
+    if (!hasSelectedCollaborator) {
+      setCollaboratorFilter("all");
+    }
+  }, [canUseAdminFilter, collaboratorFilter, availableCollaborators]);
+
+  const filteredVacations = useMemo(() => {
+    if (!canUseAdminFilter) return vacations;
+    if (collaboratorFilter === "all") return vacations;
+    return vacations.filter((vacation) => vacation.collaboratorUid === collaboratorFilter);
+  }, [vacations, canUseAdminFilter, collaboratorFilter]);
 
   const getUserUsedDaysInCurrentYear = (collaboratorUid: string, ignoreVacationId?: string) =>
     vacations
@@ -322,10 +364,27 @@ export default function ManageVacations() {
               Alteracoes e exclusoes devem ser solicitadas a um administrador.
             </CardDescription>
           </div>
-          <Button onClick={handleOpenCreateDialog} className="bg-admin-primary hover:bg-admin-primary/90">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Adicionar Ferias
-          </Button>
+          <div className="flex w-full md:w-auto flex-wrap items-center gap-2 justify-end">
+            {canUseAdminFilter && (
+              <Select value={collaboratorFilter} onValueChange={setCollaboratorFilter}>
+                <SelectTrigger className="w-[240px]">
+                  <SelectValue placeholder="Filtrar colaborador" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os colaboradores</SelectItem>
+                  {availableCollaborators.map((collaborator) => (
+                    <SelectItem key={collaborator.uid} value={collaborator.uid}>
+                      {collaborator.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Button onClick={handleOpenCreateDialog} className="bg-admin-primary hover:bg-admin-primary/90">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Adicionar Ferias
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="border rounded-md">
@@ -340,7 +399,7 @@ export default function ManageVacations() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vacations.map((vacation) => (
+                {filteredVacations.map((vacation) => (
                   <TableRow key={vacation.id}>
                     <TableCell>{vacation.collaboratorName}</TableCell>
                     <TableCell>
@@ -394,7 +453,7 @@ export default function ManageVacations() {
                     </TableCell>
                   </TableRow>
                 ))}
-                {vacations.length === 0 && (
+                {filteredVacations.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center text-muted-foreground">
                       Nenhum periodo de ferias registrado.
