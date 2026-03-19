@@ -234,6 +234,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     '/bi',
     '/bi-leaders',
     '/personal-panel',
+    '/rankings',
     '/store',
   ];
   const shouldApplyContentZoom = !noZoomRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
