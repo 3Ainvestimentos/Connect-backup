@@ -16,6 +16,8 @@ Este documento cobre principalmente a estrutura de dados e o versionamento de de
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-19` | `Medium` | inclusao de `createdBy` e `updatedBy` em `workflowTypes`, `workflowTypeId` e `ownerEmailAtPublish` em `versions`, e `statusKey` em `stepsById` |
+| `2026-03-19` | `High` | `versions` passa a ser subcolecao de `workflowTypes`, `active` vira boolean e `ownerEmail` passa a ser tratado em `workflowTypes` |
 | `2026-03-16` | `High` | decisao consolidada de `stepId` auto-gerado e nao editavel, remocao de `clientLabel` e obrigatoriedade de nova versao para qualquer alteracao em `stepName` ou no fluxo |
 
 ---
@@ -266,14 +268,16 @@ Esse desenho deixa claro que:
                     |           workflowTypes            |
                     | identidade estavel do workflow     |
                     | ex: solicitacao_pagamento          |
+                    | workflowTypeId, metadados estaveis |
+                    | e ownerEmail atual do tipo         |
                     +-----------------+------------------+
                                       |
-                       1 workflowType | N versions
+                       1 workflowType | N version docs
                                       |
                     +-----------------v------------------+
-                    |    workflowDefinitionVersions      |
+                    | workflowTypes/{typeId}/versions    |
                     | definicao versionada do processo   |
-                    | ex: solicitacao_pagamento v3       |
+                    | ex: versions/3                     |
                     +-----------------+------------------+
                                       |
                    1 definitionVersion| N workflow requests
@@ -310,32 +314,32 @@ Representar a identidade estavel de cada tipo de workflow, independentemente de 
 | campo | tipo | obrigatorio | observacao |
 | --- | --- | --- | --- |
 | `workflowTypeId` | `string` | sim | igual ao id do documento |
-| `legacyDefinitionId` | `string` | nao | id legado de `workflowDefinitions`, para migracao |
 | `name` | `string` | sim | nome atual de exibicao |
-| `subtitle` | `string` | nao | subtitulo atual, se houver |
 | `description` | `string` | sim | descricao funcional do workflow |
 | `icon` | `string` | sim | icone usado na UI |
 | `areaId` | `string` | sim | referencia a `workflowAreas` |
-| `status` | `string` | sim | `active` ou `inactive` |
+| `ownerEmail` | `string` | sim | owner atual do tipo, sem exigir nova versao para alteracao |
+| `allowedUserIds` | `string[]` | sim | controle de acesso de abertura |
+| `active` | `boolean` | sim | habilita ou desabilita novas aberturas desse tipo |
 | `latestDraftVersion` | `number` | nao | versao em rascunho, se existir |
 | `latestPublishedVersion` | `number` | nao | versao publicada mais recente |
 | `createdAt` | `string` | sim | ISO date-time |
-| `createdBy` | `string` | nao | id do usuario |
+| `createdBy` | `string` | nao | id do usuario que criou o tipo |
 | `updatedAt` | `string` | sim | ISO date-time |
-| `updatedBy` | `string` | nao | id do usuario |
+| `updatedBy` | `string` | nao | id do usuario que atualizou o tipo por ultimo |
 
 ### Exemplo
 
 ```json
 {
   "workflowTypeId": "solicitacao_pagamento",
-  "legacyDefinitionId": "OA1RjWNmKby613e6YgQ9",
   "name": "Solicitacao de Pagamentos",
-  "subtitle": "Financeiro",
   "description": "Solicitacao operacional de pagamentos.",
   "icon": "CreditCard",
   "areaId": "pZi0P2z6yVSsollt4cFt",
-  "status": "active",
+  "ownerEmail": "financeiro@empresa.com.br",
+  "allowedUserIds": ["all"],
+  "active": true,
   "latestDraftVersion": 4,
   "latestPublishedVersion": 3,
   "createdAt": "2026-03-16T10:00:00Z",
@@ -347,12 +351,12 @@ Representar a identidade estavel de cada tipo de workflow, independentemente de 
 
 ### Observacoes
 
-- `ownerEmail` nao fica aqui como fonte principal.
-- Propriedade operacional deve viver na versao, porque pode mudar entre versoes.
+- `ownerEmail` fica em `workflowTypes` porque a troca de owner nao deve exigir nova versao do fluxo.
+- `active` substitui o antigo `status: active|inactive`.
 
 ---
 
-## 7.2. `workflowDefinitionVersions`
+## 7.2. `workflowTypes/{workflowTypeId}/versions`
 
 ### Responsabilidade
 
@@ -367,11 +371,11 @@ Representar a definicao versionada do workflow.
 
 ### Documento sugerido
 
-`workflowDefinitionVersions/{workflowTypeId}__v{version}`
+`workflowTypes/{workflowTypeId}/versions/{version}`
 
 Exemplo:
 
-- `workflowDefinitionVersions/solicitacao_pagamento__v3`
+- `workflowTypes/solicitacao_pagamento/versions/3`
 
 ### Regra de mutabilidade
 
@@ -384,30 +388,17 @@ Exemplo:
 
 | campo | tipo | obrigatorio | observacao |
 | --- | --- | --- | --- |
-| `definitionVersionId` | `string` | sim | igual ao id do documento |
-| `workflowTypeId` | `string` | sim | referencia ao tipo |
+| `workflowTypeId` | `string` | sim | referencia ao tipo, redundante ao path mas util para leitura e auditoria |
 | `version` | `number` | sim | versao numerica |
 | `state` | `string` | sim | `draft`, `published` ou `retired` |
+| `ownerEmailAtPublish` | `string` | sim | owner que estava configurado em `workflowTypes` quando a versao foi publicada |
+| `defaultSlaDays` | `number` | nao | SLA padrao |
+| `fields` | `array` | sim | definicao do formulario |
+| `initialStepId` | `string` | sim | etapa inicial |
+| `stepOrder` | `string[]` | sim | ordem do fluxo na versao |
+| `stepsById` | `map` | sim | definicao das etapas por id |
 | `publishedAt` | `string` | nao | preenchido quando publicado |
 | `publishedBy` | `string` | nao | id do usuario |
-| `name` | `string` | sim | nome de exibicao da versao |
-| `subtitle` | `string` | nao | subtitulo |
-| `description` | `string` | sim | descricao da versao |
-| `icon` | `string` | sim | icone da versao |
-| `areaId` | `string` | sim | area da versao |
-| `ownerEmail` | `string` | sim | owner inicial da fila |
-| `allowedUserIds` | `string[]` | sim | controle de acesso de abertura |
-| `defaultSlaDays` | `number` | nao | SLA padrao |
-| `slaRules` | `array` | nao | regras condicionais de SLA |
-| `routingRules` | `array` | nao | regras condicionais de roteamento/notificacao |
-| `fields` | `array` | sim | definicao do formulario |
-| `flow.initialStepId` | `string` | sim | etapa inicial |
-| `flow.finalStepIds` | `string[]` | sim | etapas terminais |
-| `flow.stepOrder` | `string[]` | sim | ordem do fluxo na versao |
-| `flow.stepsById` | `map` | sim | definicao das etapas por id |
-| `createdAt` | `string` | sim | ISO date-time |
-| `createdBy` | `string` | nao | id do usuario |
-| `notes` | `string` | nao | anotacao de publicacao |
 
 ### Estrutura sugerida de `stepsById`
 
@@ -419,6 +410,7 @@ Campos sugeridos:
 | --- | --- | --- | --- |
 | `stepId` | `string` | sim | id tecnico estavel, auto-gerado pelo sistema |
 | `stepName` | `string` | sim | nome exibido da etapa naquela versao |
+| `statusKey` | `string` | sim | status operacional associado a etapa, por exemplo `solicitacao_aberta`, `em_andamento`, `concluido` |
 | `kind` | `string` | sim | `start`, `work`, `action`, `final` |
 | `action` | `object` | nao | definicao da acao pedida a terceiros |
 | `assignmentMode` | `string` | nao | comportamento esperado de atribuicao |
@@ -429,22 +421,11 @@ Campos sugeridos:
 
 ```json
 {
-  "definitionVersionId": "solicitacao_pagamento__v3",
   "workflowTypeId": "solicitacao_pagamento",
   "version": 3,
   "state": "published",
-  "publishedAt": "2026-03-16T12:00:00Z",
-  "publishedBy": "BFG2",
-  "name": "Solicitacao de Pagamentos",
-  "subtitle": "Financeiro",
-  "description": "Fluxo canonico de solicitacao de pagamentos.",
-  "icon": "CreditCard",
-  "areaId": "pZi0P2z6yVSsollt4cFt",
-  "ownerEmail": "financeiro@empresa.com.br",
-  "allowedUserIds": ["all"],
+  "ownerEmailAtPublish": "financeiro@empresa.com.br",
   "defaultSlaDays": 3,
-  "slaRules": [],
-  "routingRules": [],
   "fields": [
     {
       "id": "centro_custo",
@@ -459,38 +440,37 @@ Campos sugeridos:
       "required": true
     }
   ],
-  "flow": {
-    "initialStepId": "stp_a1f0",
-    "finalStepIds": ["stp_c9m4"],
-    "stepOrder": [
-      "stp_a1f0",
-      "stp_b7k2",
-      "stp_c9m4"
-    ],
-    "stepsById": {
-      "stp_a1f0": {
-        "stepId": "stp_a1f0",
-        "stepName": "Solicitacao Aberta",
-        "kind": "start"
-      },
-      "stp_b7k2": {
-        "stepId": "stp_b7k2",
-        "stepName": "Em analise - Financeiro",
-        "kind": "work",
-        "assignmentMode": "manual_owner_or_responsible",
-        "allowComment": true,
-        "allowAttachment": true
-      },
-      "stp_c9m4": {
-        "stepId": "stp_c9m4",
-        "stepName": "Finalizado",
-        "kind": "final"
-      }
+  "initialStepId": "stp_a1f0",
+  "stepOrder": [
+    "stp_a1f0",
+    "stp_b7k2",
+    "stp_c9m4"
+  ],
+  "stepsById": {
+    "stp_a1f0": {
+      "stepId": "stp_a1f0",
+      "stepName": "Solicitacao Aberta",
+      "statusKey": "solicitacao_aberta",
+      "kind": "start"
+    },
+    "stp_b7k2": {
+      "stepId": "stp_b7k2",
+      "stepName": "Em analise - Financeiro",
+      "statusKey": "em_andamento",
+      "kind": "work",
+      "assignmentMode": "manual_owner_or_responsible",
+      "allowComment": true,
+      "allowAttachment": true
+    },
+    "stp_c9m4": {
+      "stepId": "stp_c9m4",
+      "stepName": "Finalizado",
+      "statusKey": "concluido",
+      "kind": "final"
     }
   },
-  "createdAt": "2026-03-16T11:30:00Z",
-  "createdBy": "BFG2",
-  "notes": "Versao publicada apos validacao funcional."
+  "publishedAt": "2026-03-16T12:00:00Z",
+  "publishedBy": "BFG2"
 }
 ```
 
@@ -499,7 +479,7 @@ Campos sugeridos:
 - evita que o motor trate a posicao do array como identidade;
 - permite reorder sem perder referencia tecnica;
 - deixa explicito que `stepId` e a chave real do fluxo;
-- facilita manter nome exibido e metadados da etapa organizados por identidade.
+- facilita manter nome exibido, status operacional e metadados da etapa organizados por identidade.
 
 ### Sobre transicoes
 
@@ -507,7 +487,7 @@ Na primeira iteracao do novo motor, a recomendacao e manter o fluxo linear por o
 
 Ou seja:
 
-- a sequencia e determinada por `flow.stepOrder`;
+- a sequencia e determinada por `stepOrder`;
 - o motor avanca para o proximo `stepId` da lista daquela versao.
 
 Transicoes explicitas por grafo podem ser adicionadas em fase posterior, caso o produto precise de branching real.
@@ -542,7 +522,7 @@ Representar o chamado concreto em execucao.
 | `workflowVersion` | `number` | sim | versao usada pelo chamado |
 | `workflowName` | `string` | sim | denormalizacao de exibicao |
 | `areaId` | `string` | sim | denormalizacao de exibicao e filtro |
-| `ownerEmail` | `string` | sim | owner da versao no momento da abertura |
+| `ownerEmail` | `string` | sim | owner vigente em `workflowTypes` no momento da abertura |
 | `submittedBy` | `object` | sim | usuario solicitante |
 | `submittedAt` | `string` | sim | ISO date-time |
 | `lastUpdatedAt` | `string` | sim | ISO date-time |
@@ -657,13 +637,13 @@ Campos sugeridos por etapa:
 ```ts
 export interface WorkflowType {
   workflowTypeId: string;
-  legacyDefinitionId?: string;
   name: string;
-  subtitle?: string;
   description: string;
   icon: string;
   areaId: string;
-  status: 'active' | 'inactive';
+  ownerEmail: string;
+  allowedUserIds: string[];
+  active: boolean;
   latestDraftVersion?: number;
   latestPublishedVersion?: number;
   createdAt: string;
@@ -684,6 +664,7 @@ export interface WorkflowActionDefinition {
 export interface WorkflowStepDefinition {
   stepId: string;
   stepName: string;
+  statusKey: string;
   kind: 'start' | 'work' | 'action' | 'final';
   action?: WorkflowActionDefinition;
   assignmentMode?: 'owner_queue' | 'manual_owner_or_responsible';
@@ -692,30 +673,11 @@ export interface WorkflowStepDefinition {
 }
 
 export interface WorkflowDefinitionVersion {
-  definitionVersionId: string;
   workflowTypeId: string;
   version: number;
   state: 'draft' | 'published' | 'retired';
-  publishedAt?: string;
-  publishedBy?: string;
-  name: string;
-  subtitle?: string;
-  description: string;
-  icon: string;
-  areaId: string;
-  ownerEmail: string;
-  allowedUserIds: string[];
+  ownerEmailAtPublish: string;
   defaultSlaDays?: number;
-  slaRules: Array<{
-    field: string;
-    value: string;
-    days: number;
-  }>;
-  routingRules: Array<{
-    field: string;
-    value: string;
-    notify: string[];
-  }>;
   fields: Array<{
     id: string;
     label: string;
@@ -724,15 +686,11 @@ export interface WorkflowDefinitionVersion {
     placeholder?: string;
     options?: string[];
   }>;
-  flow: {
-    initialStepId: string;
-    finalStepIds: string[];
-    stepOrder: string[];
-    stepsById: Record<string, WorkflowStepDefinition>;
-  };
-  createdAt: string;
-  createdBy?: string;
-  notes?: string;
+  initialStepId: string;
+  stepOrder: string[];
+  stepsById: Record<string, WorkflowStepDefinition>;
+  publishedAt?: string;
+  publishedBy?: string;
 }
 
 export interface WorkflowStepState {
@@ -812,12 +770,13 @@ export interface WorkflowRequest {
 
 - o frontend pede abertura informando `workflowTypeId`;
 - o backend resolve `latestPublishedVersion`;
+- o backend resolve `ownerEmail` a partir de `workflowTypes`;
 - o chamado nasce com `workflowVersion` fixo;
-- o backend inicializa `currentStepId = flow.initialStepId`.
+- o backend inicializa `currentStepId = initialStepId`.
 
 ### 9.3. Reordenacao de etapas
 
-- reordenar etapas altera apenas `flow.stepOrder` da nova versao;
+- reordenar etapas altera apenas `stepOrder` da nova versao;
 - `stepId` permanece o mesmo;
 - chamados antigos nao sofrem impacto porque continuam ligados a versao anterior.
 
@@ -829,7 +788,7 @@ export interface WorkflowRequest {
 
 ### 9.5. Finalizacao
 
-- finalizacao deve ser definida por `flow.finalStepIds` da versao;
+- finalizacao deve ser definida pelas etapas marcadas como `kind: final` em `stepsById`;
 - heuristica textual de label final deve ser removida do motor novo;
 - arquivamento continua sendo operacao separada.
 
@@ -897,7 +856,7 @@ O modelo atual de `workflowDefinitions` deixa de ser a fonte final de runtime do
 
 Destino sugerido:
 
-- converter documentos atuais em `workflowTypes` + `workflowDefinitionVersions`;
+- converter documentos atuais em `workflowTypes` + `workflowTypes/{workflowTypeId}/versions/{version}`;
 - manter a colecao antiga apenas durante a fase de transicao;
 - substituir gradualmente leituras do frontend pela nova fonte.
 
@@ -905,13 +864,14 @@ Destino sugerido:
 
 `statuses` do modelo atual devem ser migrados para:
 
-- `flow.stepOrder`
-- `flow.stepsById`
+- `stepOrder`
+- `stepsById`
 
 Mapeamento inicial:
 
 - `status.id` atual -> `stepId`
 - `status.label` atual -> `stepName`
+- `status.label` canonico por etapa -> `statusKey`
 - `status.action` atual -> `action`
 
 ### 11.3. `workflows`
@@ -979,7 +939,7 @@ Principalmente:
 O modelo recomendado para este projeto e:
 
 - `workflowTypes` para identidade estavel;
-- `workflowDefinitionVersions` para definicao versionada e imutavel apos publicacao;
+- `workflowTypes/{workflowTypeId}/versions/{version}` para definicao versionada e imutavel apos publicacao;
 - `workflows` para chamadas concretas presas a uma versao.
 
 Essa arquitetura resolve o problema principal do sistema atual:
