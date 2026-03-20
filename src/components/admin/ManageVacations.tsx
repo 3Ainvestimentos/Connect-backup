@@ -2,6 +2,8 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useVacation } from "@/contexts/VacationContext";
+import { useVacationRequests } from "@/contexts/VacationRequestsContext";
+import { useVacationApprovers } from "@/contexts/VacationApproversContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { calculateBusinessDays, fetchHolidays, HolidayItem } from "@/lib/holidays";
 import { toast } from "@/hooks/use-toast";
@@ -12,10 +14,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, PlusCircle, Trash2, Edit, CalendarRange, CalendarCheck, CalendarClock } from "lucide-react";
+import { Loader2, PlusCircle, Trash2, Edit, CalendarRange, CalendarCheck, CalendarClock, CheckCircle2, XCircle, Clock, History, Archive } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { ptBR } from "date-fns/locale";
+import type { VacationRequest } from "@/types/vacation";
 
 function formatIsoDate(isoDate: string) {
   return new Date(`${isoDate}T00:00:00`).toLocaleDateString("pt-BR");
@@ -38,9 +42,18 @@ function doesOverlap(
   });
 }
 
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Pendente", variant: "outline" },
+  approved: { label: "Aprovada", variant: "default" },
+  rejected: { label: "Reprovada", variant: "destructive" },
+};
+
 export default function ManageVacations() {
   const { currentUserCollab, user, isSuperAdmin } = useAuth();
   const { vacations, totalDays, usedDays, remainingDays, addVacation, updateVacation, deleteVacationMutation } = useVacation();
+  const { requests, pendingRequests, approvedRequests, createRequest, approveRequest, rejectRequest, archiveRejectedRequest } = useVacationRequests();
+  const { canApproveVacationRequests } = useVacationApprovers();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVacationId, setEditingVacationId] = useState<string | null>(null);
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>();
@@ -48,7 +61,14 @@ export default function ManageVacations() {
   const [holidaysByYear, setHolidaysByYear] = useState<Record<number, HolidayItem[]>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [collaboratorFilter, setCollaboratorFilter] = useState<string>("all");
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectingRequestId, setRejectingRequestId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [processingRequestId, setProcessingRequestId] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
+
   const canUseAdminFilter = isSuperAdmin;
+  const isRequestMode = !isSuperAdmin;
 
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -71,11 +91,8 @@ export default function ManageVacations() {
         if (mounted) setLoadingHolidays(false);
       }
     };
-
     loadCurrentYear();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [currentYear]);
 
   useEffect(() => {
@@ -86,7 +103,6 @@ export default function ManageVacations() {
     const missingYears = new Set<number>();
     if (!holidaysByYear[fromYear]) missingYears.add(fromYear);
     if (toYear && !holidaysByYear[toYear]) missingYears.add(toYear);
-
     if (missingYears.size === 0) return;
 
     let mounted = true;
@@ -99,9 +115,7 @@ export default function ManageVacations() {
         if (!mounted) return;
         setHolidaysByYear((prev) => {
           const next = { ...prev };
-          entries.forEach(([year, holidays]) => {
-            next[year] = holidays;
-          });
+          entries.forEach(([year, holidays]) => { next[year] = holidays; });
           return next;
         });
       } catch (error) {
@@ -114,11 +128,8 @@ export default function ManageVacations() {
         if (mounted) setLoadingHolidays(false);
       }
     };
-
     loadMissingYears();
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [selectedRange, holidaysByYear]);
 
   const allHolidays = useMemo(() => Object.values(holidaysByYear).flat(), [holidaysByYear]);
@@ -176,7 +187,6 @@ export default function ManageVacations() {
         collaboratorMap.set(uid, vacation.collaboratorName?.trim() || "Colaborador sem nome");
       }
     });
-
     return Array.from(collaboratorMap.entries())
       .map(([uid, name]) => ({ uid, name }))
       .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
@@ -184,20 +194,12 @@ export default function ManageVacations() {
 
   useEffect(() => {
     if (!canUseAdminFilter) {
-      if (collaboratorFilter !== "all") {
-        setCollaboratorFilter("all");
-      }
+      if (collaboratorFilter !== "all") setCollaboratorFilter("all");
       return;
     }
     if (collaboratorFilter === "all") return;
-
-    const hasSelectedCollaborator = availableCollaborators.some(
-      (collaborator) => collaborator.uid === collaboratorFilter
-    );
-
-    if (!hasSelectedCollaborator) {
-      setCollaboratorFilter("all");
-    }
+    const hasSelectedCollaborator = availableCollaborators.some((c) => c.uid === collaboratorFilter);
+    if (!hasSelectedCollaborator) setCollaboratorFilter("all");
   }, [canUseAdminFilter, collaboratorFilter, availableCollaborators]);
 
   const filteredVacations = useMemo(() => {
@@ -232,19 +234,14 @@ export default function ManageVacations() {
 
   const handleOpenEditDialog = (vacationId: string, startDate: string, endDate: string) => {
     if (!isSuperAdmin) {
-      toast({
-        title: "Acesso restrito",
-        description: "Somente administradores podem editar ferias.",
-        variant: "destructive",
-      });
+      toast({ title: "Acesso restrito", description: "Somente administradores podem editar ferias.", variant: "destructive" });
       return;
     }
     const [startYear, startMonth, startDay] = startDate.split("-").map(Number);
     const [endYear, endMonth, endDay] = endDate.split("-").map(Number);
-    const startDateObj = new Date(startYear, startMonth - 1, startDay);
     setEditingVacationId(vacationId);
     setSelectedRange({
-      from: startDateObj,
+      from: new Date(startYear, startMonth - 1, startDay),
       to: new Date(endYear, endMonth - 1, endDay),
     });
     setIsDialogOpen(true);
@@ -271,9 +268,7 @@ export default function ManageVacations() {
       setIsSaving(true);
       if (editingVacationId) {
         const editing = vacations.find((item) => item.id === editingVacationId);
-        if (!editing) {
-          throw new Error("Registro de ferias nao encontrado.");
-        }
+        if (!editing) throw new Error("Registro de ferias nao encontrado.");
         await updateVacation({
           ...editing,
           startDate: toISO(selectedRange.from),
@@ -281,6 +276,13 @@ export default function ManageVacations() {
           businessDays: selectedBusinessDays,
         });
         toast({ title: "Ferias atualizadas com sucesso." });
+      } else if (isRequestMode) {
+        await createRequest({
+          startDate: toISO(selectedRange.from),
+          endDate: toISO(selectedRange.to),
+          businessDays: selectedBusinessDays,
+        });
+        toast({ title: "Solicitação de férias enviada com sucesso.", description: "Aguarde a aprovação de um gestor." });
       } else {
         await addVacation({
           startDate: toISO(selectedRange.from),
@@ -315,6 +317,190 @@ export default function ManageVacations() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleApproveRequest = async (requestId: string) => {
+    setProcessingRequestId(requestId);
+    try {
+      await approveRequest(requestId);
+      toast({ title: "Solicitação aprovada com sucesso.", description: "As férias foram registradas." });
+    } catch (error) {
+      toast({
+        title: "Erro ao aprovar solicitação",
+        description: error instanceof Error ? error.message : "Falha inesperada.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const handleOpenRejectDialog = (requestId: string) => {
+    setRejectingRequestId(requestId);
+    setRejectReason("");
+    setRejectDialogOpen(true);
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectingRequestId) return;
+    setProcessingRequestId(rejectingRequestId);
+    try {
+      await rejectRequest(rejectingRequestId, rejectReason);
+      toast({ title: "Solicitação reprovada." });
+      setRejectDialogOpen(false);
+      setRejectingRequestId(null);
+      setRejectReason("");
+    } catch (error) {
+      toast({
+        title: "Erro ao reprovar solicitação",
+        description: error instanceof Error ? error.message : "Falha inesperada.",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingRequestId(null);
+    }
+  };
+
+  const requesterVisibleQueue = useMemo(
+    () =>
+      requests
+        .filter((request) => {
+          if (request.status === "pending") return true;
+          if (request.status === "rejected" && !request.requesterArchivedAt) return true;
+          return false;
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.updatedAt ?? b.createdAt).getTime() -
+            new Date(a.updatedAt ?? a.createdAt).getTime()
+        ),
+    [requests]
+  );
+
+  const isApprover = isSuperAdmin || canApproveVacationRequests;
+
+  const approverPendingQueue = useMemo(
+    () =>
+      pendingRequests.filter((r) => {
+        if (isSuperAdmin) return true;
+        return r.responsibleUid === user?.uid;
+      }),
+    [pendingRequests, isSuperAdmin, user?.uid]
+  );
+
+  const queueRequests = useMemo(
+    () => (isApprover ? approverPendingQueue : requesterVisibleQueue),
+    [isApprover, approverPendingQueue, requesterVisibleQueue]
+  );
+
+  const historyRequests = useMemo(
+    () => [...approvedRequests].sort(
+      (a, b) => new Date(b.reviewedAt ?? b.updatedAt).getTime() - new Date(a.reviewedAt ?? a.updatedAt).getTime()
+    ),
+    [approvedRequests]
+  );
+
+  const canApproveRequest = (request: VacationRequest) => {
+    if (isSuperAdmin) return true;
+    if (!canApproveVacationRequests) return false;
+    if (!request.responsibleUid) return false;
+    return request.responsibleUid === user?.uid;
+  };
+
+  const renderRequestRow = (request: VacationRequest, showActions: boolean) => {
+    const config = statusConfig[request.status] ?? statusConfig.pending;
+    const isProcessing = processingRequestId === request.id;
+    const userCanApprove = canApproveRequest(request);
+
+    return (
+      <TableRow key={request.id}>
+        <TableCell>{request.requesterName}</TableCell>
+        <TableCell>
+          {formatIsoDate(request.startDate)} - {formatIsoDate(request.endDate)}
+        </TableCell>
+        <TableCell>
+          <Badge variant="secondary">{request.businessDays} dias</Badge>
+        </TableCell>
+        <TableCell>
+          <Badge variant={config.variant}>{config.label}</Badge>
+        </TableCell>
+        <TableCell className="text-xs text-muted-foreground">
+          {request.responsibleName || "Sem responsável"}
+        </TableCell>
+        <TableCell>{new Date(request.createdAt).toLocaleDateString("pt-BR")}</TableCell>
+        {showActions && userCanApprove && request.status === "pending" && (
+          <TableCell className="text-right space-x-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+              disabled={isProcessing}
+              onClick={() => handleApproveRequest(request.id)}
+            >
+              {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-1" />}
+              Aprovar
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="text-red-700 border-red-300 hover:bg-red-50"
+              disabled={isProcessing}
+              onClick={() => handleOpenRejectDialog(request.id)}
+            >
+              <XCircle className="h-4 w-4 mr-1" />
+              Reprovar
+            </Button>
+          </TableCell>
+        )}
+        {showActions && userCanApprove && request.status !== "pending" && (
+          <TableCell className="text-right">
+            {request.reviewedByName && (
+              <span className="text-xs text-muted-foreground">
+                {request.status === "approved" ? "Aprovado" : "Reprovado"} por {request.reviewedByName}
+              </span>
+            )}
+          </TableCell>
+        )}
+        {showActions && !userCanApprove && (
+          <TableCell className="text-right">
+            {request.status === "rejected" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isProcessing}
+                onClick={async () => {
+                  setProcessingRequestId(request.id);
+                  try {
+                    await archiveRejectedRequest(request.id);
+                    toast({ title: "Solicitação arquivada." });
+                  } catch (error) {
+                    toast({
+                      title: "Erro ao arquivar solicitação",
+                      description:
+                        error instanceof Error ? error.message : "Falha inesperada.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setProcessingRequestId(null);
+                  }
+                }}
+              >
+                {isProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Archive className="h-4 w-4 mr-1" />
+                )}
+                Arquivar
+              </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                Pendente de aprovação
+              </span>
+            )}
+          </TableCell>
+        )}
+      </TableRow>
+    );
   };
 
   return (
@@ -355,13 +541,51 @@ export default function ManageVacations() {
         </Card>
       </div>
 
+      {queueRequests.length > 0 && (
+        <Card className="border-l-4 border-l-amber-500">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-amber-600" />
+              {isApprover ? "Solicitações Pendentes" : "Solicitações"}
+              <Badge variant="outline" className="ml-2">{queueRequests.length}</Badge>
+            </CardTitle>
+            <CardDescription>
+              {isApprover
+                ? "Solicitações aguardando sua aprovação ou reprovação."
+                : "Suas solicitações pendentes de aprovação e reprovadas ainda não arquivadas."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Colaborador</TableHead>
+                    <TableHead>Período</TableHead>
+                    <TableHead>Dias Úteis</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead>Solicitado Em</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {queueRequests.map((req) => renderRequestRow(req, true))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-l-4 border-l-emerald-600">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Férias</CardTitle>
             <CardDescription>
-              Registre os seus periodos de ferias em dias uteis. Feriados nacionais sao desconsiderados automaticamente.
-              Alteracoes e exclusoes devem ser solicitadas a um administrador.
+              {isRequestMode
+                ? "Solicite seus períodos de férias. Feriados nacionais são desconsiderados automaticamente. A solicitação será analisada por um aprovador."
+                : "Registre os seus periodos de ferias em dias uteis. Feriados nacionais sao desconsiderados automaticamente. Alteracoes e exclusoes devem ser solicitadas a um administrador."}
             </CardDescription>
           </div>
           <div className="flex w-full md:w-auto flex-wrap items-center gap-2 justify-end">
@@ -382,7 +606,7 @@ export default function ManageVacations() {
             )}
             <Button onClick={handleOpenCreateDialog} className="bg-admin-primary hover:bg-admin-primary/90">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Adicionar Ferias
+              {isRequestMode ? "Solicitar Férias" : "Adicionar Férias"}
             </Button>
           </div>
         </CardHeader>
@@ -392,10 +616,10 @@ export default function ManageVacations() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Colaborador</TableHead>
-                  <TableHead>Periodo</TableHead>
-                  <TableHead>Dias Uteis</TableHead>
+                  <TableHead>Período</TableHead>
+                  <TableHead>Dias Úteis</TableHead>
                   <TableHead>Registrado Em</TableHead>
-                  <TableHead className="text-right">Acoes</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -419,11 +643,7 @@ export default function ManageVacations() {
                               size="icon"
                               onClick={() => handleOpenEditDialog(vacation.id, vacation.startDate, vacation.endDate)}
                               disabled={!canEditOrDelete}
-                              title={
-                                canEditOrDelete
-                                  ? "Editar ferias"
-                                  : "Somente administradores podem editar"
-                              }
+                              title={canEditOrDelete ? "Editar ferias" : "Somente administradores podem editar"}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -431,15 +651,8 @@ export default function ManageVacations() {
                               variant="ghost"
                               size="icon"
                               onClick={() => handleDeleteVacation(vacation.id)}
-                              disabled={
-                                !canEditOrDelete ||
-                                (deleteVacationMutation.isPending && deleteVacationMutation.variables === vacation.id)
-                              }
-                              title={
-                                canEditOrDelete
-                                  ? "Excluir ferias"
-                                  : "Somente administradores podem excluir"
-                              }
+                              disabled={!canEditOrDelete || (deleteVacationMutation.isPending && deleteVacationMutation.variables === vacation.id)}
+                              title={canEditOrDelete ? "Excluir ferias" : "Somente administradores podem excluir"}
                             >
                               {deleteVacationMutation.isPending && deleteVacationMutation.variables === vacation.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -466,6 +679,70 @@ export default function ManageVacations() {
         </CardContent>
       </Card>
 
+      {historyRequests.length > 0 && (
+        <Card className="border-l-4 border-l-slate-400">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Histórico de Solicitações
+              </CardTitle>
+              <CardDescription>
+                Registro de solicitações aprovadas.
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? "Ocultar" : "Mostrar"}
+            </Button>
+          </CardHeader>
+          {showHistory && (
+            <CardContent>
+              <div className="border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Colaborador</TableHead>
+                      <TableHead>Período</TableHead>
+                      <TableHead>Dias Úteis</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Decisão Por</TableHead>
+                      <TableHead>Data Decisão</TableHead>
+                      <TableHead>Motivo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {historyRequests.map((req) => {
+                      const config = statusConfig[req.status] ?? statusConfig.pending;
+                      return (
+                        <TableRow key={req.id}>
+                          <TableCell>{req.requesterName}</TableCell>
+                          <TableCell>
+                            {formatIsoDate(req.startDate)} - {formatIsoDate(req.endDate)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">{req.businessDays} dias</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={config.variant}>{config.label}</Badge>
+                          </TableCell>
+                          <TableCell>{req.reviewedByName || "-"}</TableCell>
+                          <TableCell>
+                            {req.reviewedAt ? new Date(req.reviewedAt).toLocaleDateString("pt-BR") : "-"}
+                          </TableCell>
+                          <TableCell className="max-w-[200px] truncate" title={req.reviewReason || ""}>
+                            {req.reviewReason || "-"}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
       <Dialog
         open={isDialogOpen}
         onOpenChange={(open) => {
@@ -478,7 +755,13 @@ export default function ManageVacations() {
       >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>{editingVacationId ? "Editar Ferias" : "Adicionar Ferias"}</DialogTitle>
+            <DialogTitle>
+              {editingVacationId
+                ? "Editar Férias"
+                : isRequestMode
+                  ? "Solicitar Férias"
+                  : "Adicionar Férias"}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -496,12 +779,8 @@ export default function ManageVacations() {
                   onSelect={setSelectedRange}
                   numberOfMonths={2}
                   locale={ptBR}
-                  modifiers={{
-                    holiday: holidayDates,
-                  }}
-                  modifiersClassNames={{
-                    holiday: "bg-amber-100 text-amber-900 font-semibold rounded-md",
-                  }}
+                  modifiers={{ holiday: holidayDates }}
+                  modifiersClassNames={{ holiday: "bg-amber-100 text-amber-900 font-semibold rounded-md" }}
                 />
               </div>
               <p className="text-xs text-muted-foreground">Feriados sao destacados no calendario.</p>
@@ -552,7 +831,42 @@ export default function ManageVacations() {
             </DialogClose>
             <Button type="button" onClick={handleSaveVacation} disabled={!canSave || isSaving}>
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar
+              {editingVacationId ? "Salvar" : isRequestMode ? "Enviar Solicitação" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Reprovar Solicitação</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Motivo da reprovação (opcional)</Label>
+              <Textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Descreva o motivo..."
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancelar
+              </Button>
+            </DialogClose>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmReject}
+              disabled={processingRequestId !== null}
+            >
+              {processingRequestId && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmar Reprovação
             </Button>
           </DialogFooter>
         </DialogContent>

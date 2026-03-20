@@ -19,6 +19,8 @@ import { ContactsProvider } from '@/contexts/ContactsContext';
 import { MeetingAnalysesProvider } from '@/contexts/MeetingAnalysesContext';
 import { TripsBirthdaysProvider } from '@/contexts/TripsBirthdaysContext';
 import { VacationProvider } from '@/contexts/VacationContext';
+import { VacationApproversProvider } from '@/contexts/VacationApproversContext';
+import { VacationRequestsProvider } from '@/contexts/VacationRequestsContext';
 
 function AppProviders({ children }: { children: React.ReactNode }) {
     return (
@@ -38,9 +40,13 @@ function AppProviders({ children }: { children: React.ReactNode }) {
                                       <ContactsProvider>
                                         <MeetingAnalysesProvider>
                                           <TripsBirthdaysProvider>
-                                            <VacationProvider>
-                                              {children}
-                                            </VacationProvider>
+                                            <VacationApproversProvider>
+                                              <VacationRequestsProvider>
+                                                <VacationProvider>
+                                                  {children}
+                                                </VacationProvider>
+                                              </VacationRequestsProvider>
+                                            </VacationApproversProvider>
                                           </TripsBirthdaysProvider>
                                         </MeetingAnalysesProvider>
                                       </ContactsProvider>

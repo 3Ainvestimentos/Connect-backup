@@ -6,8 +6,8 @@ import {
   addDocumentToCollection,
   deleteDocumentFromCollection,
   updateDocumentInCollection,
-  getCollection,
-  listenToCollection,
+  getCollectionWithQuery,
+  listenToCollectionWithQuery,
   WithId,
 } from "@/lib/firestore-service";
 import { useAuth } from "./AuthContext";
@@ -22,6 +22,7 @@ export interface VacationType {
   startDate: string;
   endDate: string;
   businessDays: number;
+  sourceRequestId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,9 +57,11 @@ export function VacationProvider({ children }: { children: ReactNode }) {
   const { data: vacations = [], isFetching } = useQuery<VacationType[]>({
     queryKey: [VACATIONS_COLLECTION, user?.uid, isSuperAdmin ? "all" : "own"],
     queryFn: async () => {
-      const all = await getCollection<VacationType>(VACATIONS_COLLECTION);
-      if (isSuperAdmin) return sortVacations(all);
-      return sortVacations(all.filter((item) => item.collaboratorUid === user?.uid));
+      const data = await getCollectionWithQuery<VacationType>(
+        VACATIONS_COLLECTION,
+        isSuperAdmin ? undefined : [{ field: "collaboratorUid", operator: "==", value: user?.uid }]
+      );
+      return sortVacations(data);
     },
     enabled: !!user,
     staleTime: Infinity,
@@ -67,16 +70,18 @@ export function VacationProvider({ children }: { children: ReactNode }) {
 
   React.useEffect(() => {
     if (!user) return;
-    const unsubscribe = listenToCollection<VacationType>(
+    const unsubscribe = listenToCollectionWithQuery<VacationType>(
       VACATIONS_COLLECTION,
       (newData) => {
-        const normalized = newData as VacationType[];
-        const visible = isSuperAdmin ? normalized : normalized.filter((item) => item.collaboratorUid === user.uid);
-        queryClient.setQueryData([VACATIONS_COLLECTION, user.uid, isSuperAdmin ? "all" : "own"], sortVacations(visible));
+        queryClient.setQueryData(
+          [VACATIONS_COLLECTION, user.uid, isSuperAdmin ? "all" : "own"],
+          sortVacations(newData as VacationType[])
+        );
       },
       (error) => {
         console.error("Failed to listen to vacations:", error);
-      }
+      },
+      isSuperAdmin ? undefined : [{ field: "collaboratorUid", operator: "==", value: user.uid }]
     );
     return () => unsubscribe();
   }, [queryClient, user, isSuperAdmin]);
