@@ -27,9 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { ChevronDown, ChevronUp, Loader2, ShieldCheck } from "lucide-react";
 
 const NO_RESPONSIBLE = "__none__";
+type ApproverSortKey = "name" | "area" | "position" | "responsibleName";
 
 export default function ManageVacationApprovers() {
   const { isSuperAdmin } = useAuth();
@@ -42,6 +43,8 @@ export default function ManageVacationApprovers() {
     removeResponsible,
   } = useVacationApprovers();
   const [savingUid, setSavingUid] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<ApproverSortKey>("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const collaboratorsWithVacationAccess = useMemo(() => {
     return collaborators
@@ -59,6 +62,58 @@ export default function ManageVacationApprovers() {
     );
     return map;
   }, [approvers]);
+
+  const displayedCollaborators = useMemo(() => {
+    const data = [...collaboratorsWithVacationAccess];
+    return data.sort((a, b) => {
+      const aUid = a.authUid ?? "";
+      const bUid = b.authUid ?? "";
+      const aResponsible = approverMap.get(aUid)?.responsibleName || "Sem responsável";
+      const bResponsible = approverMap.get(bUid)?.responsibleName || "Sem responsável";
+
+      let comparison = 0;
+      if (sortKey === "name") {
+        comparison = a.name.localeCompare(b.name, "pt-BR");
+      } else if (sortKey === "area") {
+        comparison = (a.area || "").localeCompare(b.area || "", "pt-BR");
+      } else if (sortKey === "position") {
+        comparison = (a.position || "").localeCompare(b.position || "", "pt-BR");
+      } else if (sortKey === "responsibleName") {
+        comparison = aResponsible.localeCompare(bResponsible, "pt-BR");
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+  }, [collaboratorsWithVacationAccess, approverMap, sortKey, sortDirection]);
+
+  const handleSort = (key: ApproverSortKey) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDirection("asc");
+    }
+  };
+
+  const SortableHeader = ({
+    tkey,
+    label,
+  }: {
+    tkey: ApproverSortKey;
+    label: string;
+  }) => (
+    <TableHead onClick={() => handleSort(tkey)} className="cursor-pointer hover:bg-muted/50">
+      <div className="flex items-center gap-1">
+        {label}
+        {sortKey === tkey &&
+          (sortDirection === "asc" ? (
+            <ChevronUp className="h-4 w-4" />
+          ) : (
+            <ChevronDown className="h-4 w-4" />
+          ))}
+      </div>
+    </TableHead>
+  );
 
   const handleChange = async (
     collabUid: string,
@@ -126,14 +181,14 @@ export default function ManageVacationApprovers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Colaborador</TableHead>
-                  <TableHead>Área</TableHead>
-                  <TableHead>Cargo</TableHead>
-                  <TableHead>Responsável</TableHead>
+                  <SortableHeader tkey="name" label="Colaborador" />
+                  <SortableHeader tkey="area" label="Área" />
+                  <SortableHeader tkey="position" label="Cargo" />
+                  <SortableHeader tkey="responsibleName" label="Responsável" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {collaboratorsWithVacationAccess.map((collab) => {
+                {displayedCollaborators.map((collab) => {
                   const uid = collab.authUid ?? "";
                   const current = approverMap.get(uid);
                   const isSaving = savingUid === uid;
@@ -182,7 +237,7 @@ export default function ManageVacationApprovers() {
                     </TableRow>
                   );
                 })}
-                {collaboratorsWithVacationAccess.length === 0 && (
+                {displayedCollaborators.length === 0 && (
                   <TableRow>
                     <TableCell
                       colSpan={4}
