@@ -1,0 +1,37 @@
+flowchart LR
+    R["Task rule<br/>individual artifact more specific than synthesis"] -. governs .-> S
+
+    subgraph P["Primary source artifacts"]
+        A["ARQUITETURA_WORKFLOWS_VERSIONADOS.md<br/>versioning, collections, schemas"]
+        B["DESIGN_TECNICO_RUNTIME_WORKFLOWS.md<br/>runtime flows, endpoints, layers"]
+        C["DESIGN_READ_MODEL_WORKFLOWS.md<br/>read model, queries, indexes"]
+        D["MAPEAMENTO_ESTADOS_UI_WORKFLOWS.md<br/>UI derivation, labels, precedence"]
+        E["REQUISITOS_FRONTEND_GESTAO_CHAMADOS.md<br/>tabs, modal, list constraints"]
+        F["RESOLUCAO_PENDENCIAS_READ_MODEL_RUNTIME.md<br/>closed decisions and semantics"]
+    end
+
+    S["WORKFLOWS_PRE_BUILD_OFICIAL.md<br/>synthesis and tie-out only"]
+
+    A --> S
+    B --> S
+    C --> S
+    D --> S
+    E --> S
+    F --> S
+
+    A --> D1["01 Firestore Collections ERD"]
+    A --> D2["02 Workflows Document Map"]
+    B --> D4["04 Request End-to-End Sequence"]
+    B --> D5["05 Advance vs Finalize Flow"]
+    B --> D6["06 Runtime Layers"]
+    C --> D3["03 Status Category State Machine"]
+    C --> D7["07 Queries and Indexes"]
+    D --> D3
+    E --> D4
+    F --> D1
+    F --> D3
+    F --> D7
+    S -. validates .-> D1
+    S -. validates .-> D3
+    S -. validates .-> D4
+    S -. validates .-> D7

@@ -1,0 +1,26 @@
+sequenceDiagram
+    actor User as Usuario
+    participant UI
+    participant BE as API + Runtime
+    participant FS as Firestore
+    User->>UI: Abrir chamado
+    UI->>BE: POST /runtime/requests
+    BE->>FS: tx read workflowType + version + counter
+    BE->>FS: tx create workflows/{docId}
+    BE-->>UI: requestId, status=open
+    UI->>BE: POST /requests/{id}/assign
+    BE->>FS: update responsible + status=in_progress
+    BE-->>UI: responsavel definido
+    UI->>BE: POST /requests/{id}/request-action
+    BE->>FS: append actionRequests + status=waiting_action
+    BE-->>UI: aguardando resposta de terceiro
+    User->>UI: Responder acao pendente
+    UI->>BE: POST /requests/{id}/respond-action
+    BE->>FS: update actionRequests + recalc statusCategory
+    BE-->>UI: controle volta ao usuario responsavel
+    UI->>BE: POST /requests/{id}/advance ou /finalize
+    BE->>FS: update stepStates + currentStepId + fechamento quando aplicavel
+    BE-->>UI: status=in_progress ou finalized
+    UI->>BE: POST /requests/{id}/archive
+    BE->>FS: set isArchived=true + status=archived
+    BE-->>UI: item arquivado

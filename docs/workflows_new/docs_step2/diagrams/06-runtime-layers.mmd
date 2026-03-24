@@ -1,0 +1,23 @@
+flowchart TB
+    U["Frontend<br/>abertura, listas, modal"] --> RH["Next.js Route Handlers<br/>/api/workflows/runtime/..."]
+
+    RH --> AUTH["Auth<br/>Firebase ID token"]
+    RH --> UC["Runtime use cases<br/>open, assign, request-action,<br/>respond-action, advance, finalize, archive"]
+
+    subgraph SRV["Workflow runtime service"]
+        UC --> REPO["Repository<br/>workflowTypes / versions / workflows / counters"]
+        UC --> ENG["Engine<br/>stepOrder, currentStepId, next-step rules"]
+        UC --> AUTHZ["Authz<br/>owner, responsible, action recipient"]
+        UC --> HIST["History builder<br/>audit events"]
+        UC --> RM["Read-model updates<br/>statusCategory + denormalized fields"]
+        UC --> NOTIF["Notification dispatcher<br/>Connect + Slack"]
+    end
+
+    subgraph DB["Firestore"]
+        REPO --> WT["workflowTypes/{workflowTypeId}"]
+        REPO --> WV["workflowTypes/{workflowTypeId}/versions/{version}"]
+        REPO --> WF["workflows/{docId}"]
+        REPO --> CTR["counters/workflowCounter"]
+    end
+
+    NOTIF --> OUT["Side effects only after successful write"]

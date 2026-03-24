@@ -1,0 +1,24 @@
+stateDiagram-v2
+    [*] --> Open
+
+    state "Open\nstatusCategory=open\nUI: Aguardando atribuicao" as Open
+    state "In Progress\nstatusCategory=in_progress\nUI: Em andamento" as InProgress
+    state "Waiting Action\nstatusCategory=waiting_action\nUI: Aguardando acao" as WaitingAction
+    state "Finalized\nstatusCategory=finalized\nUI: Concluido" as Finalized
+    state "Archived\nstatusCategory=archived\nUI: Arquivado" as Archived
+
+    Open --> InProgress : assignResponsible\nor advanceStep
+    Open --> WaitingAction : requestAction
+    Open --> Finalized : finalize\nwhen terminal step applies
+    InProgress --> InProgress : advanceStep\nnext step is not final
+    InProgress --> WaitingAction : requestAction
+    InProgress --> Finalized : finalize\nnext valid step is final
+    WaitingAction --> WaitingAction : respondAction\npending actions remain
+    WaitingAction --> InProgress : respondAction\nno pending actions remain
+    Finalized --> Archived : archive
+
+    note right of Finalized
+      closedAt = finalizedAt
+      closedMonthKey = YYYY-MM
+      archivedAt stays separate
+    end note

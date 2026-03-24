@@ -1,0 +1,22 @@
+flowchart TD
+    A["Chamado ativo na etapa atual"] --> B{"Ha actionRequests pendentes<br/>na etapa atual?"}
+    B -- "Sim" --> X["Bloquear operacao<br/>Responder acao antes de seguir"]
+    B -- "Nao" --> C["Localizar currentStepId em stepOrder"]
+    C --> D{"A proxima etapa valida existe?"}
+    D -- "Nao" --> Y["Erro de fluxo ou versao invalida"]
+    D -- "Sim" --> E{"A proxima etapa valida<br/>e kind = final?"}
+
+    E -- "Nao" --> F["POST /advance"]
+    F --> G["Concluir etapa atual"]
+    G --> H["Ativar proxima etapa operacional"]
+    H --> I["currentStepId = proxima etapa"]
+    I --> J["statusCategory = in_progress"]
+
+    E -- "Sim" --> K["POST /finalize"]
+    K --> L["Resolver etapa final aplicavel"]
+    L --> M["Concluir etapa atual se necessario"]
+    M --> N["Marcar etapa final como concluida"]
+    N --> O["currentStepId = etapa final"]
+    O --> P["statusCategory = finalized"]
+    P --> Q["finalizedAt = closedAt"]
+    Q --> R["closedMonthKey = YYYY-MM"]
