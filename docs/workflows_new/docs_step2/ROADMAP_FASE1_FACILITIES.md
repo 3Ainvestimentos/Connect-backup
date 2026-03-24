@@ -167,11 +167,10 @@ Transformar os tres fluxos da area em contratos canonicos do novo motor antes de
 
 - lista fechada dos `workflowTypeId`
 - versao inicial de cada workflow
-- `stepId`
 - `stepName`
 - `statusKey`
-- `initialStepId`
-- `stepOrder`
+- `initialStep` logico
+- `stepOrder` logico
 - owner da area
 
 ### Agente principal
@@ -191,11 +190,19 @@ Transformar os tres fluxos da area em contratos canonicos do novo motor antes de
 - se `Manutencao / Solicitacoes Gerais` e `Solicitacao de Suprimentos` compartilham o mesmo template ou sao tipos distintos
 - `statusKey` canonico de cada etapa
 - `kind` de cada etapa
+- ordem logica das etapas e etapa inicial
 - confirmar formalmente que os workflows simples de Facilities serao reduzidos para:
   - `Solicitacao Aberta`
   - `Em andamento`
   - `Finalizado`
 - registrar `Solicitacao de Compras` no mesmo modelo reduzido adotado para o piloto
+
+### Observacao importante
+
+Nesta etapa, o `define` nao fecha valores reais de `stepId`.
+
+- `stepId` sera auto-gerado depois pelo sistema na materializacao tecnica;
+- o que fica fechado aqui e a identidade funcional das etapas (`stepName`, `statusKey`, `kind`, ordem logica e etapa inicial).
 
 ### Criterio de aceite
 
@@ -203,11 +210,11 @@ Os workflows de Facilities precisam estar traduzidos para o schema do motor novo
 
 ---
 
-## 5.2. Etapa 1 - Fundacao tecnica do motor
+## 5.2. Etapa 1 - Validacao e gap-fill da fundacao tecnica
 
 ### Objetivo
 
-Implementar a base comum do runtime e do schema, ainda sem focar em um workflow especifico.
+Validar e operacionalizar a base comum do runtime para a Fase 1, usando o pre-build oficial como fonte autoritativa e fechando apenas o que ainda precisa virar manifest de execucao para Facilities.
 
 ### Escopo tecnico
 
@@ -221,6 +228,16 @@ Implementar a base comum do runtime e do schema, ainda sem focar em um workflow 
 - `advance-step`
 - `finalize-request`
 - `archive-request`
+
+### Diretriz da etapa
+
+Esta etapa nao deve redesenhar a arquitetura do motor do zero.
+
+Ela deve:
+
+- confirmar que o pre-build cobre o piloto de Facilities;
+- preencher gaps de execucao da Fase 1;
+- fechar manifest de arquivos, bootstrap, testes e contratos operacionais da etapa.
 
 ### Agente principal
 
@@ -253,7 +270,7 @@ Sem nenhuma dependencia do frontend legado para calcular regra de negocio.
 
 ### Objetivo
 
-Materializar no documento `workflows` os campos desnormalizados necessarios para o piloto de Facilities e para a futura tela unificada.
+Validar e operacionalizar o read-model backbone da Fase 1, confirmando que os campos desnormalizados e os indices definidos no pre-build atendem os workflows reais de Facilities.
 
 ### Escopo tecnico
 
@@ -264,6 +281,16 @@ Materializar no documento `workflows` os campos desnormalizados necessarios para
 - `submittedMonthKey`
 - queries por aba
 - indices compostos do Firestore
+
+### Diretriz da etapa
+
+Esta etapa nao deve redesenhar o read model do zero.
+
+Ela deve:
+
+- confirmar o contrato oficial do documento `workflows`;
+- materializar o backbone persistido necessario para a Fase 1;
+- deixar as queries e indices prontos para o frontend minimo do piloto e para a consolidacao posterior da 5.7.
 
 ### Agente principal
 
@@ -284,11 +311,11 @@ As filas do piloto devem poder ser consultadas sem joins profundos e sem depende
 
 ---
 
-## 5.4. Etapa 3 - Workflow 1: Manutencao / Solicitacoes Gerais
+## 5.4. Etapa 3 - Workflow 1: Manutencao / Solicitacoes Gerais + frontend minimo
 
 ### Objetivo
 
-Validar o primeiro fluxo linear ponta a ponta.
+Validar o primeiro fluxo linear ponta a ponta, ja com uma interface minima suficiente para provar runtime + read model + UX basica em operacao real.
 
 ### Etapas do workflow a implementar
 
@@ -318,11 +345,13 @@ Validar o primeiro fluxo linear ponta a ponta.
 - owner atribui um responsavel
 - responsavel conduz o fluxo em `Em andamento` ate `Finalizado`
 - owner arquiva depois
-- listas e modal mostram estado coerente
+- tela minima mostra fila do owner, detalhes do chamado e acoes operacionais basicas
+- `Minhas solicitacoes` exibe o chamado aberto e finalizado de forma coerente
+- modal e listas mostram estado coerente
 
 ### Criterio de aceite
 
-Primeiro workflow de Facilities rodando ponta a ponta no motor novo.
+Primeiro workflow de Facilities rodando ponta a ponta no motor novo, com frontend minimo funcional para abrir, atribuir, finalizar, arquivar e consultar o chamado.
 
 ---
 
@@ -356,7 +385,8 @@ Validar reutilizacao da mesma base tecnica em um segundo fluxo linear da mesma a
 
 - reuso do mesmo motor sem hardcode por workflow
 - consistencia de versionamento entre tipos diferentes
-- leitura correta na tela unificada e em `Minhas solicitacoes`
+- reuso do frontend minimo sem excecao estrutural por workflow
+- leitura correta no frontend minimo e em `Minhas solicitacoes`
 
 ### Criterio de aceite
 
@@ -396,6 +426,7 @@ Validar o terceiro workflow de Facilities no mesmo modelo simplificado adotado p
 - reuso do mesmo motor em um terceiro tipo da area
 - ausencia de dependencia estrutural de labels herdados como `Em aprovacao - FIN` ou `Em execucao`
 - consistencia do handoff owner -> responsavel -> finalizacao no workflow de Compras
+- compatibilidade do workflow com o frontend minimo ja validado no workflow 1
 
 ### Criterio de aceite
 
@@ -403,11 +434,11 @@ Workflow de Compras implementado no mesmo modelo simplificado do piloto, sem int
 
 ---
 
-## 5.7. Etapa 6 - Frontend do piloto
+## 5.7. Etapa 6 - Frontend consolidado do piloto
 
 ### Objetivo
 
-Conectar o runtime novo a experiencia inicial do piloto.
+Expandir o frontend minimo validado no workflow 1 para a experiencia consolidada do piloto, cobrindo a gestao de chamados da area com a estrutura oficial da UI nova.
 
 ### Escopo tecnico
 
@@ -442,6 +473,8 @@ Usuario consegue:
 - responsavel acompanhar e operar chamados
 - consultar concluidos e detalhes no modal novo
 
+Sem precisar recorrer ao frontend legado para operar os tres workflows de Facilities.
+
 ---
 
 ## 5.8. Etapa 7 - Hardening e readiness para expansao
@@ -457,6 +490,16 @@ Fechar a Fase 1 sem comprometer a Fase 2.
 - verificacao de regras de transacao
 - validacao de logs e historico
 - checagem de pontos de extensao para `requestAction`
+
+### Criterio de entrada
+
+Esta etapa so deve comecar quando:
+
+- os tres workflows piloto estiverem rodando ponta a ponta no motor novo;
+- o frontend minimo e o frontend consolidado ja estiverem integrados ao runtime novo;
+- o fluxo basico de regressao estiver verde para abrir, atribuir, finalizar e arquivar nos tres tipos;
+- os indices necessarios ja estiverem provisionados;
+- nao houver bloqueio funcional conhecido nos caminhos principais do piloto.
 
 ### Agente principal
 
@@ -488,7 +531,7 @@ A base fica pronta para:
 Usar para:
 
 - canonizar cada workflow de Facilities no modelo novo;
-- fechar `workflowTypeId`, `stepId`, `statusKey`, `kind`, `stepOrder`;
+- fechar `workflowTypeId`, `statusKey`, `kind`, `stepOrder` logico e etapa inicial;
 - produzir ou atualizar documentos especificos do piloto.
 
 ### Entrada minima
