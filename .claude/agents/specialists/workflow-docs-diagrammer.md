@@ -98,11 +98,11 @@ Tipos recomendados:
 
 Salvar os arquivos em:
 
-- `/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagramas`
+- `/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagrams`
 
 Criar também um índice:
 
-- `/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagramas/INDEX.md`
+- `/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagrams/INDEX.md`
 
 O índice deve listar:
 
@@ -350,7 +350,7 @@ Só concluir se:
 ### Estrutura esperada
 
 ```text
-docs/workflows_new/docs_step2/diagramas/
+docs/workflows_new/docs_step2/diagrams/
 ├── 01-firestore-collections-erd.mmd
 ├── 02-workflows-document-map.mmd
 ├── 03-status-category-state-machine.mmd
