@@ -35,6 +35,7 @@ Documentos base:
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | endurecimento operacional do contador v2: `open-request` falha sem `counters/workflowCounter_v2` valido e `799` vira apenas bootstrap controlado |
 | `2026-03-25` | `Medium` | normalizacao das referencias operacionais da Fase 1 para `workflowTypes_v2`, `workflows_v2` e `counters/workflowCounter_v2` |
 | `2026-03-23` | `High` | criacao do design tecnico do runtime do novo motor de workflows |
 
@@ -337,13 +338,16 @@ type OpenWorkflowRequestInput = {
 4. validar `allowedUserIds`;
 5. resolver `latestPublishedVersion`;
 6. carregar `workflowTypes_v2/{workflowTypeId}/versions/{version}`;
-7. gerar `requestId` sequencial em `counters/workflowCounter_v2`;
-8. copiar `ownerEmail` vigente de `workflowTypes_v2`;
-9. inicializar `stepStates` com base em `stepOrder`;
-10. marcar `initialStepId` como etapa atual;
-11. criar documento em `workflows_v2`;
-12. registrar historico inicial;
-13. disparar notificacoes de abertura.
+7. ler e validar `counters/workflowCounter_v2.lastRequestNumber`, falhando se o contador nao existir ou estiver invalido;
+8. gerar `requestId` sequencial a partir do contador validado;
+9. copiar `ownerEmail` vigente de `workflowTypes_v2`;
+10. inicializar `stepStates` com base em `stepOrder`;
+11. marcar `initialStepId` como etapa atual;
+12. criar documento em `workflows_v2`;
+13. registrar historico inicial;
+14. disparar notificacoes de abertura.
+
+`799` existe apenas como bootstrap controlado em ambiente virgem. O runtime nao pode usar fallback silencioso para abrir requests.
 
 ### Escrita sugerida
 

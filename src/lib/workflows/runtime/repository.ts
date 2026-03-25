@@ -5,8 +5,9 @@
  * This module isolates raw Firestore access from business logic.
  */
 
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import { RuntimeError, RuntimeErrorCode } from './errors';
 import type { HistoryEntry, WorkflowTypeV2, WorkflowVersionV2, WorkflowRequestV2 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -16,9 +17,22 @@ import type { HistoryEntry, WorkflowTypeV2, WorkflowVersionV2, WorkflowRequestV2
 const WORKFLOW_TYPES_COLLECTION = 'workflowTypes_v2';
 const WORKFLOWS_COLLECTION = 'workflows_v2';
 const COUNTER_DOC_PATH = 'counters/workflowCounter_v2';
+const COUNTER_LAST_REQUEST_NUMBER_FIELD = 'lastRequestNumber';
 
 function getDb() {
   return getFirestore(getFirebaseAdminApp());
+}
+
+function resolveCurrentLastRequestNumber(rawValue: unknown): number {
+  if (typeof rawValue === 'number' && Number.isInteger(rawValue)) {
+    return rawValue;
+  }
+
+  throw new RuntimeError(
+    RuntimeErrorCode.INVALID_REQUEST_COUNTER,
+    'Contador v2 invalido: counters/workflowCounter_v2.lastRequestNumber deve ser um numero inteiro.',
+    500,
+  );
 }
 
 function cleanRuntimeDataForFirestore<T>(value: T): T {
@@ -128,10 +142,21 @@ export async function createRequestTransactionally(
 
   const requestId = await db.runTransaction(async (tx) => {
     const counterSnap = await tx.get(counterRef);
-    const currentCount = counterSnap.exists ? (counterSnap.data()?.count as number) ?? 0 : 0;
-    const nextId = currentCount + 1;
 
-    tx.set(counterRef, { count: nextId }, { merge: true });
+    if (!counterSnap.exists) {
+      throw new RuntimeError(
+        RuntimeErrorCode.COUNTER_NOT_INITIALIZED,
+        'Contador v2 nao inicializado: provisionar counters/workflowCounter_v2 antes de abrir requests.',
+        500,
+      );
+    }
+
+    const currentLastRequestNumber = resolveCurrentLastRequestNumber(
+      counterSnap.data()?.[COUNTER_LAST_REQUEST_NUMBER_FIELD],
+    );
+    const nextId = currentLastRequestNumber + 1;
+
+    tx.set(counterRef, { [COUNTER_LAST_REQUEST_NUMBER_FIELD]: nextId }, { merge: true });
 
     const fullPayload: WorkflowRequestV2 = {
       ...payload,
@@ -229,4 +254,29 @@ export async function seedWorkflowVersion(
     .collection('versions')
     .doc(String(version))
     .set(cleanRuntimeDataForFirestore(data));
+}
+
+/**
+ * Seeds the v2 global request counter for the Facilities pilot without
+ * resetting an existing sequence.
+ */
+export async function seedWorkflowCounterV2(
+  lastRequestNumber: number,
+): Promise<'created' | 'preserved'> {
+  const counterRef = getDb().doc(COUNTER_DOC_PATH);
+  const counterSnap = await counterRef.get();
+
+  if (counterSnap.exists) {
+    resolveCurrentLastRequestNumber(counterSnap.data()?.[COUNTER_LAST_REQUEST_NUMBER_FIELD]);
+    return 'preserved';
+  }
+
+  await counterRef.set(
+    cleanRuntimeDataForFirestore({ [COUNTER_LAST_REQUEST_NUMBER_FIELD]: lastRequestNumber }),
+    {
+      merge: true,
+    },
+  );
+
+  return 'created';
 }

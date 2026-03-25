@@ -355,8 +355,11 @@ Regra de bootstrap:
 - `fase1-facilities-v1.ts` e um builder de payload;
 - a gravacao em Firestore deve acontecer via script manual de seed;
 - a Etapa 1 nao deve expor isso por rota publica.
-- o seed deve gravar em `workflowTypes_v2`, `workflowTypes_v2/{workflowTypeId}/versions/{version}` e `workflows_v2`;
-- o contador do piloto deve usar `counters/workflowCounter_v2`.
+- o seed deve gravar em `workflowTypes_v2`, `workflowTypes_v2/{workflowTypeId}/versions/{version}` e `counters/workflowCounter_v2`;
+- o contador do piloto deve usar `counters/workflowCounter_v2.lastRequestNumber`.
+- o seed deve criar `counters/workflowCounter_v2` com `lastRequestNumber = 799` apenas quando o documento estiver ausente;
+- se `counters/workflowCounter_v2` ja existir, o seed deve preservar o valor atual e nunca resetar a faixa sequencial;
+- `open-request` deve falhar se o contador estiver ausente ou invalido; nao existe fallback automatico para `799`.
 
 ---
 

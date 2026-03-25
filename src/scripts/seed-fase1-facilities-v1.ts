@@ -8,6 +8,7 @@
  * Writes only to:
  * - workflowTypes_v2/{workflowTypeId}
  * - workflowTypes_v2/{workflowTypeId}/versions/1
+ * - counters/workflowCounter_v2
  */
 
 import { getFirestore } from 'firebase-admin/firestore';
@@ -18,7 +19,13 @@ import {
   FACILITIES_FASE1_OWNER_USER_ID,
   buildSeedPayloads,
 } from '../lib/workflows/bootstrap/fase1-facilities-v1';
-import { seedWorkflowType, seedWorkflowVersion } from '../lib/workflows/runtime/repository';
+import {
+  seedWorkflowCounterV2,
+  seedWorkflowType,
+  seedWorkflowVersion,
+} from '../lib/workflows/runtime/repository';
+
+const FACILITIES_V2_INITIAL_LAST_REQUEST_NUMBER = 799;
 
 type CollaboratorRecord = {
   email?: string;
@@ -71,6 +78,11 @@ async function run(): Promise<void> {
             workflowTypeId: payload.workflowTypeId,
             latestPublishedVersion: payload.typePayload.latestPublishedVersion,
             versionDocPath: `workflowTypes_v2/${payload.workflowTypeId}/versions/1`,
+            counterDocPath: 'counters/workflowCounter_v2',
+            counterPayload: {
+              lastRequestNumber: FACILITIES_V2_INITIAL_LAST_REQUEST_NUMBER,
+            },
+            counterPolicy: 'create_if_missing_preserve_if_exists',
             fields: (payload.versionPayload.fields as Array<{ id: string }>).map((field) => field.id),
           },
           null,
@@ -88,7 +100,21 @@ async function run(): Promise<void> {
     console.log(`[seed-fase1-facilities-v1] Gravado ${workflowTypeId}`);
   }
 
-  console.log('[seed-fase1-facilities-v1] Seed concluido em workflowTypes_v2.');
+  const counterSeedResult = await seedWorkflowCounterV2(FACILITIES_V2_INITIAL_LAST_REQUEST_NUMBER);
+
+  if (counterSeedResult === 'created') {
+    console.log(
+      `[seed-fase1-facilities-v1] Criado counters/workflowCounter_v2 com lastRequestNumber=${FACILITIES_V2_INITIAL_LAST_REQUEST_NUMBER}`,
+    );
+  } else {
+    console.log(
+      '[seed-fase1-facilities-v1] Preservado counters/workflowCounter_v2 existente; nenhum reset de lastRequestNumber foi aplicado.',
+    );
+  }
+
+  console.log(
+    '[seed-fase1-facilities-v1] Seed concluido em workflowTypes_v2 e validacao do contador v2.',
+  );
 }
 
 run().catch((error) => {

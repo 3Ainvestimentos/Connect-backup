@@ -34,6 +34,7 @@ Nos artefatos de build da Fase 1, toda referencia operacional a `workflowTypes`,
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | endurecimento do contador v2: sem fallback de runtime para `799` e seed preservando `counters/workflowCounter_v2` existente |
 | `2026-03-25` | `Medium` | normalizacao das referencias operacionais da Fase 1 para colecoes `_v2` no banco compartilhado com o legado |
 | `2026-03-23` | `High` | correcoes de build: transacao atomica na abertura, semantica de finalize, `ownerUserId` no schema, remocao de `pendingActionCount`, label `Atribuido` e nota de provisionamento de indices |
 | `2026-03-23` | `High` | incorporacao de governanca, contratos de API, regras de atualizacao do read model, requisitos de UX e pendencias residuais |
@@ -406,9 +407,20 @@ Passos oficiais:
 
 ### Regra transacional critica
 
-`counter` + geracao de `requestId` + criacao do documento em `workflows_v2` devem acontecer dentro da mesma `runTransaction` do Firestore.
+`counters/workflowCounter_v2.lastRequestNumber` + geracao de `requestId` + criacao do documento em `workflows_v2` devem acontecer dentro da mesma `runTransaction` do Firestore.
 
 Notificacoes devem rodar apenas apos commit bem sucedido da transacao.
+
+### Regra operacional do contador v2
+
+`counters/workflowCounter_v2` e pre-condicao explicita para `open-request`.
+
+Regras:
+
+- se o documento nao existir, a abertura deve falhar;
+- se `lastRequestNumber` estiver ausente ou invalido, a abertura deve falhar;
+- `799` existe apenas como bootstrap controlado em ambiente virgem, nunca como fallback silencioso de runtime;
+- o seed manual do piloto deve criar o contador apenas quando ausente e preservar qualquer documento existente.
 
 ### Resultado esperado
 
