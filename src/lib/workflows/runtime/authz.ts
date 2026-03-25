@@ -9,7 +9,7 @@ import type { WorkflowTypeV2 } from './types';
  * Validates that the user is allowed to open a request for the given workflow type.
  *
  * @param workflowType - The workflow type document.
- * @param userId - The authenticated user's ID (short code or UID).
+ * @param userId - The authenticated user's operational `id3a`.
  * @throws {RuntimeError} If the workflow type is inactive or the user is not allowed.
  */
 export function assertCanOpen(workflowType: WorkflowTypeV2, userId: string): void {
@@ -35,7 +35,7 @@ export function assertCanOpen(workflowType: WorkflowTypeV2, userId: string): voi
  * Only the owner of the workflow type can assign/reassign.
  *
  * @param ownerUserId - The ownerUserId from the workflow type.
- * @param actorUserId - The UID of the user attempting the action.
+ * @param actorUserId - The operational `id3a` of the user attempting the action.
  */
 export function assertCanAssign(ownerUserId: string, actorUserId: string): void {
   if (actorUserId !== ownerUserId) {
@@ -53,7 +53,7 @@ export function assertCanAssign(ownerUserId: string, actorUserId: string): void 
  *
  * @param ownerUserId - The ownerUserId from the workflow type.
  * @param responsibleUserId - The current responsible on the request (may be null).
- * @param actorUserId - The UID of the user attempting finalization.
+ * @param actorUserId - The operational `id3a` of the user attempting finalization.
  */
 export function assertCanFinalize(
   ownerUserId: string,
@@ -76,7 +76,7 @@ export function assertCanFinalize(
  * Only the owner can archive.
  *
  * @param ownerUserId - The ownerUserId from the request document.
- * @param actorUserId - The UID of the user attempting archival.
+ * @param actorUserId - The operational `id3a` of the user attempting archival.
  */
 export function assertCanArchive(ownerUserId: string, actorUserId: string): void {
   if (actorUserId !== ownerUserId) {

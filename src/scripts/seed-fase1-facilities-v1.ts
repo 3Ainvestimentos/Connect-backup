@@ -22,6 +22,7 @@ import { seedWorkflowType, seedWorkflowVersion } from '../lib/workflows/runtime/
 
 type CollaboratorRecord = {
   email?: string;
+  id3a?: string;
   authUid?: string;
   name?: string;
 };
@@ -47,9 +48,9 @@ async function assertPilotOwner(): Promise<void> {
   }
 
   const owner = matchingCollaborators[0].data() as CollaboratorRecord;
-  if (owner.authUid !== FACILITIES_FASE1_OWNER_USER_ID) {
+  if (owner.id3a !== FACILITIES_FASE1_OWNER_USER_ID) {
     throw new Error(
-      `Owner do piloto divergente: authUid atual="${owner.authUid ?? 'ausente'}", esperado="${FACILITIES_FASE1_OWNER_USER_ID}".`,
+      `Owner do piloto divergente: id3a atual="${owner.id3a ?? 'ausente'}", esperado="${FACILITIES_FASE1_OWNER_USER_ID}".`,
     );
   }
 }

@@ -50,6 +50,7 @@ export interface WorkflowTypeV2 {
   icon: string;
   areaId: string;
   ownerEmail: string;
+  /** Operational owner identity (`id3a`), never Firebase `authUid`. */
   ownerUserId: string;
   allowedUserIds: string[];
   active: boolean;
@@ -121,9 +122,12 @@ export interface WorkflowRequestV2 {
   workflowName: string;
   areaId: string;
   ownerEmail: string;
+  /** Operational owner identity (`id3a`). */
   ownerUserId: string;
+  /** Operational requester identity (`id3a`). */
   requesterUserId: string;
   requesterName: string;
+  /** Operational responsible identity (`id3a`). */
   responsibleUserId: string | null;
   responsibleName: string | null;
   currentStepId: string;
@@ -134,6 +138,7 @@ export interface WorkflowRequestV2 {
   hasPendingActions: boolean;
   pendingActionRecipientIds: string[];
   pendingActionTypes: string[];
+  /** Operational participants tracked only with `id3a`. */
   operationalParticipantIds: string[];
   slaDays: number;
   expectedCompletionAt: Timestamp | null;

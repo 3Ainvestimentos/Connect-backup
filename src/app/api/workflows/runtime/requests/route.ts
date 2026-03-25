@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
 import { openRequest } from '@/lib/workflows/runtime/use-cases/open-request';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
@@ -30,23 +31,28 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { workflowTypeId, formData, requesterName } = body;
 
-    if (!workflowTypeId || !formData || !requesterName) {
+    if (!workflowTypeId || !formData) {
       return NextResponse.json(
         {
           ok: false,
           code: 'INVALID_FORM_DATA',
-          message: 'Campos obrigatorios ausentes: workflowTypeId, formData, requesterName.',
+          message: 'Campos obrigatorios ausentes: workflowTypeId, formData.',
         },
         { status: 400 },
       );
     }
 
+    const actor = await resolveRuntimeActor(decodedToken);
+
     // --- Execute use case ---
     const result = await openRequest({
       workflowTypeId,
       formData,
-      requesterUserId: decodedToken.uid,
-      requesterName,
+      requesterUserId: actor.actorUserId,
+      requesterName:
+        typeof requesterName === 'string' && requesterName.trim() !== ''
+          ? requesterName.trim()
+          : actor.actorName,
     });
 
     return NextResponse.json({ ok: true, data: result }, { status: 201 });

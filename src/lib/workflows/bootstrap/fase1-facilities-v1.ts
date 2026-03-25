@@ -13,7 +13,7 @@ import { generateStepId } from './step-id';
 import type { StepKind, VersionFieldDef } from '../runtime/types';
 
 export const FACILITIES_FASE1_OWNER_EMAIL = 'stefania.otoni@3ainvestimentos.com.br';
-export const FACILITIES_FASE1_OWNER_USER_ID = '3gEXjlKgxJFl0q6udVMu';
+export const FACILITIES_FASE1_OWNER_USER_ID = 'SMO2';
 export const FACILITIES_FASE1_DEFAULT_SLA_DAYS = 5;
 export const FACILITIES_FASE1_AREA_ID = 'u3entfMNB17iklBOdq5H';
 

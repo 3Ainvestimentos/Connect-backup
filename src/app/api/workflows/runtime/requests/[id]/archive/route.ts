@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
 import { archiveRequest } from '@/lib/workflows/runtime/use-cases/archive-request';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
@@ -42,22 +43,16 @@ export async function POST(
     const body = await request.json();
     const { actorName } = body;
 
-    if (!actorName) {
-      return NextResponse.json(
-        {
-          ok: false,
-          code: 'INVALID_FORM_DATA',
-          message: 'Campo obrigatorio ausente: actorName.',
-        },
-        { status: 400 },
-      );
-    }
+    const actor = await resolveRuntimeActor(decodedToken);
 
     // --- Execute use case ---
     const result = await archiveRequest({
       requestId,
-      actorUserId: decodedToken.uid,
-      actorName,
+      actorUserId: actor.actorUserId,
+      actorName:
+        typeof actorName === 'string' && actorName.trim() !== ''
+          ? actorName.trim()
+          : actor.actorName,
     });
 
     return NextResponse.json({ ok: true, data: result });

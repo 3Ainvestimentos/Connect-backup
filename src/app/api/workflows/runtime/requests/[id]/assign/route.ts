@@ -8,6 +8,7 @@
 import { NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
 import { assignResponsible } from '@/lib/workflows/runtime/use-cases/assign-responsible';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
@@ -42,24 +43,29 @@ export async function POST(
     const body = await request.json();
     const { responsibleUserId, responsibleName, actorName } = body;
 
-    if (!responsibleUserId || !responsibleName || !actorName) {
+    if (!responsibleUserId || !responsibleName) {
       return NextResponse.json(
         {
           ok: false,
           code: 'INVALID_FORM_DATA',
-          message: 'Campos obrigatorios ausentes: responsibleUserId, responsibleName, actorName.',
+          message: 'Campos obrigatorios ausentes: responsibleUserId, responsibleName.',
         },
         { status: 400 },
       );
     }
+
+    const actor = await resolveRuntimeActor(decodedToken);
 
     // --- Execute use case ---
     const result = await assignResponsible({
       requestId,
       responsibleUserId,
       responsibleName,
-      actorUserId: decodedToken.uid,
-      actorName,
+      actorUserId: actor.actorUserId,
+      actorName:
+        typeof actorName === 'string' && actorName.trim() !== ''
+          ? actorName.trim()
+          : actor.actorName,
     });
 
     return NextResponse.json({ ok: true, data: result });
