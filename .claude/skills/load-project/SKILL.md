@@ -11,9 +11,10 @@ Carregue o contexto completo do projeto 3A RIVA Connect.
 ### Fase 1 -- Documentacao (fonte de verdade estavel)
 
 1. **Leia os arquivos de contexto obrigatorios:**
-   - README.md e DESIGN_GUIDELINES.md (regras do projeto, arquitetura, stack). Se existir CLAUDE.md, leia tambem.
-   - `.claude/kb/project/concepts.md` e `.claude/kb/project/specs.md` (especificacoes do 3A RIVA Connect)
-   - `.cursor/plans/*.plan.md` (planos ativos de implementacao, se existirem)
+   - `CLAUDE.md` (regras do projeto, arquitetura, stack, convencoes)
+   - `README.md` (visao geral, se existir)
+   - `.claude/kb/project/concepts.md` e `.claude/kb/project/specs.md` (especificacoes do 3A RIVA Connect, se existirem)
+   - `.claude/sdd/` (documentos SDD ativos: BRAINSTORM, DEFINE, DESIGN)
 
 ### Fase 2 -- Estado real do repositorio (Git)
 
@@ -31,24 +32,26 @@ Carregue o contexto completo do projeto 3A RIVA Connect.
 ### Fase 3 -- Estrutura do codigo
 
 4. **Entenda a estrutura atual:**
-   - Liste as rotas em `src/app/(app)/` e `src/app/(auth)/`
-   - Liste as paginas em `src/app/**/page.tsx`
-   - Liste os componentes em `src/components/`
-   - Liste os contextos em `src/contexts/`
-   - Liste os servicos em `src/lib/` (firestore-service, firebase-admin, etc.)
-   - Cloud Functions em `functions/src/`
+   - Rotas: `src/app/(app)/` (autenticado) e `src/app/(auth)/` (publico)
+   - Paginas: `src/app/**/page.tsx`
+   - Componentes: `src/components/`
+   - Contextos (logica de negocio): `src/contexts/`
+   - Hooks: `src/hooks/`
+   - Servicos: `src/lib/` (firestore-service.ts, path-sanitizer.ts, etc.)
+   - Cloud Functions: `functions/src/`
+   - Firestore rules: `firestore.rules` e `firestore.indexes.json`
 
 ### Fase 4 -- Resumo executivo
 
 5. **Forneca um resumo conciso contendo:**
    - Stack tecnologico (Next.js 15, React 19, TypeScript, Firebase Firestore/Auth/Storage, Cloud Functions)
    - Estrutura de pastas principal (src/app/, src/components/, src/contexts/, src/lib/, functions/)
-   - Status atual do projeto (da documentacao + planos ativos)
+   - Status atual do projeto (da documentacao + SDD ativos)
    - **Ultimos commits reais** (do git log)
    - **Trabalho em andamento** (uncommitted changes, feature branches)
    - **Divergencias** entre docs e git (se houver)
    - Issues conhecidos ou divida tecnica
-   - Planos ativos em `.cursor/plans/`
+   - Documentos SDD ativos em `.claude/sdd/`
 
 6. **Confirme que esta pronto** para ajudar com qualquer tarefa do projeto.
 
@@ -57,6 +60,6 @@ Carregue o contexto completo do projeto 3A RIVA Connect.
 - Responder sempre em PORTUGUES (PT-BR)
 - NUNCA commitar sem permissao explicita do PM
 - Usar feature branches para commits
-- Seguir Plan-First Workflow (criar plano antes de implementar; .cursor/plans/ ou .claude/sdd/)
+- Seguir Plan-First Workflow (criar plano antes de implementar; .claude/sdd/)
 - Seguir Conventional Commits para mensagens
 - Manter separacao de responsabilidades (Contexts = orquestrador, firestore-service = logica de dados)

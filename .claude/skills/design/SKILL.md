@@ -12,18 +12,21 @@ Crie a especificacao tecnica para a feature: $ARGUMENTS
    - `.claude/sdd/features/DEFINE_{FEATURE}.md`
 
 2. Explore padroes existentes no codigo:
-   - Backend: `airchtect-back/utils/core/` (separacao core/service)
-   - Frontend: `airchtect-front/components/` e `airchtect-front/hooks/`
-   - AI: `airchtect-back/utils/core/ai/` (modular architecture)
-   - Database: `airchtect-back/utils/database/models.py`
+   - Contextos (orquestracao): `src/contexts/`
+   - Componentes: `src/components/`
+   - Hooks: `src/hooks/`
+   - Servicos Firestore: `src/lib/firestore-service.ts`
+   - Utilitarios: `src/lib/`
+   - Cloud Functions: `functions/src/`
+   - Paginas: `src/app/(app)/`
 
 3. Crie:
    - ASCII Architecture Diagram
    - ADRs (Architecture Decision Records)
-   - File Manifest com agents (@firebase-specialist, @react-frontend-developer, @)
-   - Code Patterns copy-paste
-   - API Contract (se endpoint)
-   - Testing Strategy
+   - File Manifest com agents (@firebase-specialist, @react-frontend-developer)
+   - Code Patterns copy-paste (seguindo CLAUDE.md: Context=Logic, cleanDataForFirestore, buildStorageFilePath)
+   - Firestore schema (se houver novos documentos/colecoes)
+   - Testing Strategy (jest + mock-firestore-service)
    - Rollback Plan
 
 4. Gere o documento em `.claude/sdd/features/DESIGN_{FEATURE}.md`

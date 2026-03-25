@@ -10,11 +10,14 @@ Inicie uma sessao de brainstorm para a seguinte ideia: $ARGUMENTS
 
 1. Primeiro, leia o contexto do projeto:
    - CLAUDE.md
-   - Planos ativos em `.cursor/plans/` (se relevantes)
+   - Planos ativos em `.claude/sdd/` (se relevantes)
 
 2. Explore o codigo existente relacionado a ideia:
-   - Backend: `airchtect-back/utils/core/` e `airchtect-back/utils/api/routes/`
-   - Frontend: `airchtect-front/app/` e `airchtect-front/components/`
+   - Contextos (logica de negocio): `src/contexts/`
+   - Componentes: `src/components/`
+   - Paginas: `src/app/(app)/`
+   - Servicos: `src/lib/`
+   - Cloud Functions: `functions/src/`
 
 3. Faca perguntas UMA DE CADA VEZ para entender:
    - Quem vai usar? (Usuarios finais, arquitetos, admins)

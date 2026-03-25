@@ -12,15 +12,19 @@ Execute a implementacao da feature: $ARGUMENTS
    - `.claude/sdd/features/DESIGN_{FEATURE}.md`
 
 2. Execute na ordem de dependencias:
-   - Database migrations primeiro
-   - Backend services e routes (registrar em `utils/api/main.py`)
-   - Frontend components, hooks e pages
-   - AI services (se aplicavel)
+   - Firestore rules/indexes (`firestore.rules`, `firestore.indexes.json`) se houver novos schemas
+   - Cloud Functions em `functions/src/` (se aplicavel)
+   - Contextos em `src/contexts/` (logica de negocio e orquestracao Firestore)
+   - Servicos em `src/lib/` (firestore-service, utilitarios)
+   - Componentes em `src/components/`
+   - Paginas em `src/app/(app)/`
 
 3. Para cada arquivo:
-   - Siga o pattern do DESIGN
-   - Verifique sintaxe (`python -m py_compile` para Python, `pnpm lint` para TS)
-   - Delegue para specialists se complexo
+   - Siga o pattern do DESIGN e as convencoes do CLAUDE.md
+   - Use `cleanDataForFirestore` antes de persistir no Firestore
+   - Use `buildStorageFilePath` / `sanitizeStoragePath` para Storage
+   - Verifique sintaxe com `npm run lint` e `npm run typecheck`
+   - Delegue para specialists se complexo (@firebase-specialist, @react-frontend-developer)
 
 4. Gere o relatorio em `.claude/sdd/reports/BUILD_REPORT_{FEATURE}.md`
 

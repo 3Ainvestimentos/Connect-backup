@@ -17,8 +17,8 @@ Defina os requisitos estruturados para a feature: $ARGUMENTS
    - Users (com pain points)
    - Goals (MoSCoW: MUST/SHOULD/COULD/WON'T)
    - Success Criteria (mensuraveis)
-   - Technical Scope (Backend/Frontend/AI/Database)
-   - Auth Requirements (JWT, user isolation)
+   - Technical Scope (Firestore/Cloud Functions/Frontend/Storage)
+   - Auth Requirements (Firebase Auth, Firestore rules, isolamento por usuario/empresa)
    - Out of Scope
 
 3. Calcule Clarity Score (minimo 12/15 para prosseguir)
