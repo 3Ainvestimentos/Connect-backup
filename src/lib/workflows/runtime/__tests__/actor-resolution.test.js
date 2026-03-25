@@ -69,6 +69,41 @@ describe('resolveRuntimeActor', () => {
     );
   });
 
+  it('falha quando existe mais de um colaborador para o mesmo authUid', async () => {
+    getMock.mockResolvedValue({
+      empty: false,
+      size: 2,
+      docs: [
+        {
+          id: 'collab-doc-1',
+          data: () => ({
+            id3a: 'SMO2',
+            name: 'Stefania Otoni',
+            authUid: 'firebase-uid-1',
+          }),
+        },
+        {
+          id: 'collab-doc-2',
+          data: () => ({
+            id3a: 'DLE',
+            name: 'Diego Leite',
+            authUid: 'firebase-uid-1',
+          }),
+        },
+      ],
+    });
+
+    await expect(
+      resolveRuntimeActor({
+        uid: 'firebase-uid-1',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.FORBIDDEN,
+      }),
+    );
+  });
+
   it('falha quando o colaborador nao possui id3a', async () => {
     getMock.mockResolvedValue({
       empty: false,
@@ -94,5 +129,33 @@ describe('resolveRuntimeActor', () => {
         code: RuntimeErrorCode.FORBIDDEN,
       }),
     );
+  });
+
+  it('usa fallback de actorName quando o colaborador nao possui nome', async () => {
+    getMock.mockResolvedValue({
+      empty: false,
+      size: 1,
+      docs: [
+        {
+          id: 'collab-doc-3',
+          data: () => ({
+            id3a: 'SMO2',
+            email: 'Stefania.Otoni@3ARiva.com.br',
+            authUid: 'firebase-uid-3',
+          }),
+        },
+      ],
+    });
+
+    await expect(
+      resolveRuntimeActor({
+        uid: 'firebase-uid-3',
+      }),
+    ).resolves.toEqual({
+      actorUserId: 'SMO2',
+      actorName: 'stefania.otoni@3ainvestimentos.com.br',
+      actorEmail: 'stefania.otoni@3ainvestimentos.com.br',
+      collaboratorDocId: 'collab-doc-3',
+    });
   });
 });

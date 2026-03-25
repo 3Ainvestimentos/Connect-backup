@@ -143,6 +143,36 @@ describe('workflow runtime repository counter v2', () => {
     expect(transactionSetMock).not.toHaveBeenCalled();
   });
 
+  it('falha quando o contador existe sem lastRequestNumber', async () => {
+    transactionGetMock.mockResolvedValue({
+      exists: true,
+      data: () => ({}),
+    });
+
+    await expect(createRequestTransactionally(buildRequestPayload())).rejects.toMatchObject({
+      code: 'INVALID_REQUEST_COUNTER',
+      httpStatus: 500,
+    });
+
+    expect(transactionSetMock).not.toHaveBeenCalled();
+  });
+
+  it('falha quando lastRequestNumber e null', async () => {
+    transactionGetMock.mockResolvedValue({
+      exists: true,
+      data: () => ({
+        lastRequestNumber: null,
+      }),
+    });
+
+    await expect(createRequestTransactionally(buildRequestPayload())).rejects.toMatchObject({
+      code: 'INVALID_REQUEST_COUNTER',
+      httpStatus: 500,
+    });
+
+    expect(transactionSetMock).not.toHaveBeenCalled();
+  });
+
   it('materializa o seed do contador v2 apenas quando o documento nao existe', async () => {
     directCounterGetMock.mockResolvedValue({
       exists: false,
@@ -176,6 +206,20 @@ describe('workflow runtime repository counter v2', () => {
       data: () => ({
         lastRequestNumber: '812',
       }),
+    });
+
+    await expect(seedWorkflowCounterV2(799)).rejects.toMatchObject({
+      code: 'INVALID_REQUEST_COUNTER',
+      httpStatus: 500,
+    });
+
+    expect(directCounterSetMock).not.toHaveBeenCalled();
+  });
+
+  it('falha no seed quando o documento existe sem lastRequestNumber', async () => {
+    directCounterGetMock.mockResolvedValue({
+      exists: true,
+      data: () => ({}),
     });
 
     await expect(seedWorkflowCounterV2(799)).rejects.toMatchObject({

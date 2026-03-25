@@ -32,4 +32,18 @@ describe('normalizeFormData', () => {
       );
     }
   });
+
+  it('mantem payload sem centrodecusto intacto', () => {
+    expect(
+      normalizeFormData({
+        nome_sobrenome: 'Alice',
+        centro_custo: '3ARI-São Paulo',
+        prioridade: 'alta',
+      }),
+    ).toEqual({
+      nome_sobrenome: 'Alice',
+      centro_custo: '3ARI-São Paulo',
+      prioridade: 'alta',
+    });
+  });
 });
