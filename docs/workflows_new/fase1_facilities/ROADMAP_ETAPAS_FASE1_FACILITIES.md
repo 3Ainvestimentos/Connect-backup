@@ -6,8 +6,17 @@ Este documento resume apenas a sequencia de etapas da Fase 1 do piloto de **Faci
 
 Ele deve ser lido em conjunto com:
 
-- [ROADMAP_FASE1_FACILITIES.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/ROADMAP_FASE1_FACILITIES.md)
+- [ROADMAP_FASE1_FACILITIES.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/fase1_facilities/ROADMAP_FASE1_FACILITIES.md)
 - [WORKFLOWS_PRE_BUILD_OFICIAL.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/WORKFLOWS_PRE_BUILD_OFICIAL.md)
+
+### Nota de armazenamento da Fase 1
+
+Na execucao do piloto, as etapas abaixo devem considerar as colecoes fisicas:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
 
 ---
 

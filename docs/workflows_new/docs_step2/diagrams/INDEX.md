@@ -31,6 +31,7 @@ Para esta pasta, a precedencia usada foi a definida na task:
 
 ## Notas
 
+- os diagramas `01-firestore-collections-erd.mmd` e `02-workflows-document-map.mmd` continuam conceituais; na Fase 1, as superficies fisicas equivalentes sao `workflowTypes_v2`, `workflowTypes_v2/{workflowTypeId}/versions/{version}`, `workflows_v2` e `counters/workflowCounter_v2`.
 - `versions` foi modelada como subcolecao de `workflowTypes/{workflowTypeId}` em todos os diagramas aplicaveis.
 - `closedAt` foi tratado como data de finalizacao, nunca como data de arquivamento.
 - `closedMonthKey` e `submittedMonthKey` foram fixados em formato `YYYY-MM`.

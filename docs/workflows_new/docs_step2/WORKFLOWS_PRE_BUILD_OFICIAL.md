@@ -8,6 +8,19 @@ Este artefato deve ser tratado como a base oficial para o inicio da implementaca
 
 Se houver conflito entre este documento e artefatos individuais anteriores, este documento prevalece.
 
+### Nota de convivio com o legado no mesmo banco
+
+Como a Fase 1 sera executada no mesmo banco de dados ja usado em producao, o piloto do motor novo deve operar em colecoes paralelas para nao misturar schemas e queries com o legado.
+
+Convencao fechada para a Fase 1:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
+Nos artefatos de build da Fase 1, toda referencia operacional a `workflowTypes`, `versions`, `workflows` e `workflowCounter` deve ser lida com essa variante `_v2`, sem alterar o modelo conceitual do motor.
+
 ### Artefatos de referencia
 
 - [ARQUITETURA_WORKFLOWS_VERSIONADOS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs/ARQUITETURA_WORKFLOWS_VERSIONADOS.md)
@@ -21,6 +34,7 @@ Se houver conflito entre este documento e artefatos individuais anteriores, este
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | normalizacao das referencias operacionais da Fase 1 para colecoes `_v2` no banco compartilhado com o legado |
 | `2026-03-23` | `High` | correcoes de build: transacao atomica na abertura, semantica de finalize, `ownerUserId` no schema, remocao de `pendingActionCount`, label `Atribuido` e nota de provisionamento de indices |
 | `2026-03-23` | `High` | incorporacao de governanca, contratos de API, regras de atualizacao do read model, requisitos de UX e pendencias residuais |
 | `2026-03-23` | `High` | consolidacao oficial pre-build dos artefatos de workflows |
@@ -54,7 +68,7 @@ Pode reaproveitar:
 
 - modelo de dados versionado;
 - runtime server-side;
-- read model de `workflows`;
+- read model do documento operacional do chamado;
 - tela unificada `Gestao de chamados`;
 - modal unificado de detalhes.
 
@@ -130,6 +144,12 @@ retornam ao responsavel do chamado. O responsavel continua conduzindo o fluxo.
 
 ## 5.1. `workflowTypes/{workflowTypeId}`
 
+### Nota de execucao da Fase 1
+
+Para o piloto no mesmo banco de producao, ler esta colecao fisica como:
+
+- `workflowTypes_v2/{workflowTypeId}`
+
 Representa a identidade estavel do tipo de workflow.
 
 Campos oficiais:
@@ -158,6 +178,12 @@ Campos oficiais:
 - novos chamados sempre resolvem `latestPublishedVersion`.
 
 ## 5.2. `workflowTypes/{workflowTypeId}/versions/{version}`
+
+### Nota de execucao da Fase 1
+
+Para o piloto no mesmo banco de producao, ler esta subcolecao fisica como:
+
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
 
 Representa a definicao versionada do workflow.
 
@@ -193,6 +219,12 @@ Cada etapa deve conter:
 `ownerEmailAtPublish` existe para auditoria da publicacao. O owner vigente do runtime continua vindo de `workflowTypes.ownerEmail` e `workflowTypes.ownerUserId`.
 
 ## 5.3. `workflows/{docId}`
+
+### Nota de execucao da Fase 1
+
+Para o piloto no mesmo banco de producao, ler esta colecao fisica como:
+
+- `workflows_v2/{docId}`
 
 Representa o chamado concreto em execucao.
 
@@ -244,7 +276,7 @@ Riscos que devem ser tratados como guardrails do build:
 Direcao oficial da transicao:
 
 - `workflowDefinitions` deixa de ser fonte final do runtime;
-- documentos atuais devem ser convertidos em `workflowTypes` + `versions`;
+- documentos atuais do piloto devem ser convertidos em `workflowTypes_v2` + `workflowTypes_v2/{workflowTypeId}/versions/{version}`;
 - chamados antigos precisam de backfill minimo de:
   - `workflowTypeId`
   - `workflowVersion`
@@ -357,24 +389,24 @@ type RuntimeErrorResponse = {
 Passos oficiais:
 
 1. autenticar usuario;
-2. carregar `workflowType`;
+2. carregar `workflowType` em `workflowTypes_v2/{workflowTypeId}`;
 3. validar `active`;
 4. validar `allowedUserIds`;
 5. resolver `latestPublishedVersion`;
-6. carregar `version`;
+6. carregar `version` em `workflowTypes_v2/{workflowTypeId}/versions/{version}`;
 7. resolver etapa inicial em `version.stepsById[version.initialStepId]`;
 8. gerar `requestId` sequencial;
-9. copiar `ownerEmail` vigente de `workflowTypes`;
-10. copiar `ownerUserId` vigente de `workflowTypes`;
+9. copiar `ownerEmail` vigente de `workflowTypes_v2`;
+10. copiar `ownerUserId` vigente de `workflowTypes_v2`;
 11. inicializar `stepStates`;
-12. criar documento em `workflows`;
+12. criar documento em `workflows_v2`;
 13. preencher `currentStepName` e `currentStatusKey` a partir da etapa inicial resolvida;
 14. registrar eventos iniciais;
 15. disparar notificacoes.
 
 ### Regra transacional critica
 
-`counter` + geracao de `requestId` + criacao do documento em `workflows` devem acontecer dentro da mesma `runTransaction` do Firestore.
+`counter` + geracao de `requestId` + criacao do documento em `workflows_v2` devem acontecer dentro da mesma `runTransaction` do Firestore.
 
 Notificacoes devem rodar apenas apos commit bem sucedido da transacao.
 
@@ -518,11 +550,17 @@ Se o runtime novo falhar durante o piloto:
 
 ---
 
-## 8. Read Model Oficial de `workflows`
+## 8. Read Model Oficial do Documento Operacional do Chamado
+
+### Nota de execucao da Fase 1
+
+No piloto, o backbone deste read model deve ser persistido em:
+
+- `workflows_v2`
 
 ## 8.1. Principio
 
-O documento `workflows` deve ser consultavel sem joins complexos e sem leitura profunda de arrays para montar as filas principais.
+O documento operacional do chamado deve ser consultavel sem joins complexos e sem leitura profunda de arrays para montar as filas principais.
 
 ### Consequencia tecnica
 
@@ -530,7 +568,7 @@ Campos desnormalizados nao sao otimizacao opcional. Eles sao requisito tecnico p
 
 ## 8.2. Campos oficiais do read model
 
-Campos minimos que devem existir no documento `workflows`:
+Campos minimos que devem existir no documento operacional do chamado:
 
 - `requestId`
 - `workflowTypeId`
@@ -1120,6 +1158,6 @@ O entendimento oficial consolidado e:
 - motor novo, nao remendo no legado;
 - workflow versionado por tipo;
 - runtime server-side;
-- read model desnormalizado em `workflows`;
+- read model desnormalizado no documento operacional do chamado, fisicamente em `workflows_v2` na Fase 1;
 - UI unificada para operacao;
 - transicao progressiva com piloto em paralelo ao legado.

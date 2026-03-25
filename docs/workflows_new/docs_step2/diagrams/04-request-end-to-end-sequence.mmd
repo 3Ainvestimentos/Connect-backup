@@ -3,10 +3,11 @@ sequenceDiagram
     participant UI
     participant BE as API + Runtime
     participant FS as Firestore
+    Note over FS: Fase 1 fisica -> workflowTypes_v2, versions em workflowTypes_v2 e workflows_v2
     User->>UI: Abrir chamado
     UI->>BE: POST /runtime/requests
     BE->>FS: tx read workflowType + version + counter
-    BE->>FS: tx create workflows/{docId}
+    BE->>FS: tx create workflows_v2/{docId}
     BE-->>UI: requestId, status=open
     UI->>BE: POST /requests/{id}/assign
     BE->>FS: update responsible + status=in_progress

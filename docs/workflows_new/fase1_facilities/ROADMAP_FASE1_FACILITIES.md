@@ -15,6 +15,21 @@ Ao mesmo tempo, a implementacao desta fase **nao pode achatar a arquitetura**. M
 - regras futuras de ownership
 - tela unificada completa
 
+### 1.1. Convivencia com o banco legado
+
+Como o piloto usara o mesmo banco ja utilizado em producao, a Fase 1 deve operar em colecoes paralelas do motor novo:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
+Essa decisao evita mistura de documentos e queries com:
+
+- `workflowDefinitions`
+- `workflows`
+- telas e filtros legados
+
 ---
 
 ## 2. Escopo da Area Piloto

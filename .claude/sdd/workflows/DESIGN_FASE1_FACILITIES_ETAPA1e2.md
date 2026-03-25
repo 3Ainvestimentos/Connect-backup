@@ -10,13 +10,24 @@
 
 Materialize the technical foundation of the new workflow engine for the Facilities pilot, already using:
 
-- `workflowTypes`
+- `workflowTypes_v2`
 - immutable `versions`
 - `stepsById + stepOrder`
 - server-side runtime use cases
 - minimum read model required by the pilot
 
 This stage does **not** implement `requestAction` or `respondAction`, but the schema, read model and runtime layering must remain structurally compatible with them so etapa 5.3+ can reuse the same foundation without structural rework.
+
+### Production coexistence rule
+
+Because the Facilities pilot will run in the same Firestore database already used by production, the new engine must use parallel collections during Fase 1:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
+This isolates the pilot from legacy `workflowDefinitions` and `workflows` without changing the conceptual model described in this document.
 
 ---
 
@@ -25,7 +36,7 @@ This stage does **not** implement `requestAction` or `respondAction`, but the sc
 ### Included in 5.2
 
 - central engine types;
-- pilot materialization in `workflowTypes/{workflowTypeId}` and `workflowTypes/{workflowTypeId}/versions/1`;
+- pilot materialization in `workflowTypes_v2/{workflowTypeId}` and `workflowTypes_v2/{workflowTypeId}/versions/1`;
 - step identity generation;
 - runtime base:
   - `resolvePublishedVersion`
@@ -35,7 +46,7 @@ This stage does **not** implement `requestAction` or `respondAction`, but the sc
   - `advance-step`
   - `finalize-request`
   - `archive-request`
-- minimum denormalized read model inside `workflows`;
+- minimum denormalized read model inside `workflows_v2`;
 - Firestore composite indexes required by the pilot baseline;
 - file manifest ready to drive build work.
 
@@ -118,10 +129,10 @@ Next.js Route Handlers
 Workflow Runtime Service
   |
   +--> repository
-  |     |- workflowTypes
-  |     |- workflowTypes/{workflowTypeId}/versions
-  |     |- workflows
-  |     |- counters/workflowCounter
+  |     |- workflowTypes_v2
+  |     |- workflowTypes_v2/{workflowTypeId}/versions
+  |     |- workflows_v2
+  |     |- counters/workflowCounter_v2
   |
   +--> engine
   |     |- resolvePublishedVersion
@@ -140,10 +151,10 @@ Workflow Runtime Service
   +--> notifications (after commit only)
   v
 Firestore
-  |- workflowTypes/{workflowTypeId}
-  |- workflowTypes/{workflowTypeId}/versions/{version}
-  |- workflows/{requestDocId}
-  |- counters/workflowCounter
+  |- workflowTypes_v2/{workflowTypeId}
+  |- workflowTypes_v2/{workflowTypeId}/versions/{version}
+  |- workflows_v2/{requestDocId}
+  |- counters/workflowCounter_v2
 ```
 
 ### Architectural direction for 5.2
@@ -271,10 +282,10 @@ type WorkflowRequestRecord = {
 
 - `waiting_action` stays in the type union even though no 5.2 use case emits it yet.
 - `action` stays optional in `stepsById` for future etapa 5.3+, but the three Facilities pilot versions use only `start`, `work`, `final`.
-- `ownerUserId` is required in `workflowTypes` because the read model queries are owner-centric.
-- `WorkflowRequestRecord` makes explicit the operational data that the runtime writes in `workflows`, beyond the denormalized read-model helpers listed later.
+- `ownerUserId` is required in `workflowTypes_v2` because the read model queries are owner-centric.
+- `WorkflowRequestRecord` makes explicit the operational data that the runtime writes in `workflows_v2`, beyond the denormalized read-model helpers listed later.
 
-## 5.2. `workflowTypes/{workflowTypeId}` shape for the pilot
+## 5.2. `workflowTypes_v2/{workflowTypeId}` shape for the pilot
 
 Each pilot workflow gets one stable type document with these rules:
 
@@ -296,11 +307,11 @@ Build rule:
 - if the collaborator record for `stefania.otoni@3ainvestimentos.com.br` is not found, materialization fails fast;
 - no synthetic fallback owner ID is introduced in this stage.
 
-## 5.3. `workflowTypes/{workflowTypeId}/versions/1` shape
+## 5.3. `workflowTypes_v2/{workflowTypeId}/versions/1` shape
 
 All three pilot workflows publish exactly one version document at path:
 
-- `workflowTypes/{workflowTypeId}/versions/1`
+- `workflowTypes_v2/{workflowTypeId}/versions/1`
 
 Common rules:
 
@@ -384,7 +395,7 @@ Because part of the current client surface still comes from the legacy model, 5.
 
 - if the published version expects `centro_custo` and the incoming payload contains only `centrodecusto`, normalize it to `centro_custo` before validation and persistence;
 - if both `centrodecusto` and `centro_custo` arrive together, fail fast with validation error instead of guessing precedence;
-- persistence in `workflows.formData` must always use the canonical key expected by the published version;
+- persistence in `workflows_v2.formData` must always use the canonical key expected by the published version;
 - this compatibility layer protects the backend transition only and does not reopen the field contract closed in DEFINE.
 
 ### Pilot matrix
@@ -399,19 +410,19 @@ Because part of the current client surface still comes from the legacy model, 5.
 
 For each workflow type:
 
-- 1 `workflowTypes/{workflowTypeId}` document;
-- 1 `workflowTypes/{workflowTypeId}/versions/1` document;
+- 1 `workflowTypes_v2/{workflowTypeId}` document;
+- 1 `workflowTypes_v2/{workflowTypeId}/versions/1` document;
 - no draft version;
 - no action-enabled step in the pilot baseline.
 
-## 5.7. `workflows/{docId}` operational contract for 5.2
+## 5.7. `workflows_v2/{docId}` operational contract for 5.2
 
 The runtime instance document must persist both:
 
 - the operational source of truth used by mutations;
 - the denormalized read-model fields used later by 5.3 queries.
 
-Minimum operational fields that must exist in `workflows/{docId}`:
+Minimum operational fields that must exist in `workflows_v2/{docId}`:
 
 - `formData`
 - `stepStates`
@@ -421,7 +432,7 @@ Minimum operational fields that must exist in `workflows/{docId}`:
 ### Required shape
 
 ```ts
-workflows/{docId} = {
+workflows_v2/{docId} = {
   requestId: string,
   workflowTypeId: string,
   workflowVersion: number,
@@ -449,7 +460,7 @@ workflows/{docId} = {
 The 5.2 runtime should be split into:
 
 - repository:
-  - Firestore reads/writes for `workflowTypes`, `versions`, `workflows`, `counters`
+  - Firestore reads/writes for `workflowTypes_v2`, `versions`, `workflows_v2`, `counters`
 - engine:
   - step navigation and flow guards
 - authz:
@@ -457,7 +468,7 @@ The 5.2 runtime should be split into:
 - history:
   - event creation
 - read-model projector:
-  - denormalized field updates in `workflows`
+  - denormalized field updates in `workflows_v2`
 - use cases:
   - one module per runtime operation
 
@@ -473,10 +484,10 @@ Resolve the pair `{ workflowType, version }` used by runtime operations that dep
 
 ### Required behavior
 
-- load `workflowTypes/{workflowTypeId}`;
+- load `workflowTypes_v2/{workflowTypeId}`;
 - assert `active === true`;
 - assert `latestPublishedVersion` exists and is numeric;
-- load `workflowTypes/{workflowTypeId}/versions/{latestPublishedVersion}`;
+- load `workflowTypes_v2/{workflowTypeId}/versions/{latestPublishedVersion}`;
 - assert `state === 'published'`;
 - return both documents together.
 
@@ -509,9 +520,9 @@ type OpenRequestInput = {
 4. validate `allowedUserIds`;
 5. resolve initial step from `version.initialStepId`;
 5. open a single Firestore transaction that:
-   - reads/increments `counters/workflowCounter`;
+   - reads/increments `counters/workflowCounter_v2`;
    - derives `requestId`;
-   - creates the `workflows/{docId}` document already with read-model fields populated;
+   - creates the `workflows_v2/{docId}` document already with read-model fields populated;
 6. commit;
 7. only after successful commit, dispatch notifications.
 
@@ -532,7 +543,7 @@ This prevents orphan counters and partially-open requests.
 - `currentStepName` from the initial step
 - `currentStatusKey` from the initial step
 - `statusCategory = 'open'`
-- `ownerEmail` and `ownerUserId` from `workflowTypes`
+- `ownerEmail` and `ownerUserId` from `workflowTypes_v2`
 - `slaDays = 5`
 - `expectedCompletionAt = submittedAt + 5 days`
 - `submittedMonthKey`
@@ -789,7 +800,7 @@ The following rules are mandatory in code and tests:
 
 ## 8. Minimum Read Model Required in 5.2
 
-The `workflows/{docId}` document must already include the minimum denormalized fields needed by the pilot baseline.
+The `workflows_v2/{docId}` document must already include the minimum denormalized fields needed by the pilot baseline.
 
 ## 8.1. Required fields
 
@@ -799,8 +810,8 @@ The `workflows/{docId}` document must already include the minimum denormalized f
 | `workflowTypeId` | yes | stable runtime identity |
 | `workflowVersion` | yes | fixed published version |
 | `submittedAt` | yes | persisted at open time; source for SLA and requester history |
-| `workflowName` | yes | denormalized from `workflowTypes.name` |
-| `areaId` | yes | denormalized from `workflowTypes.areaId` |
+| `workflowName` | yes | denormalized from `workflowTypes_v2.name` |
+| `areaId` | yes | denormalized from `workflowTypes_v2.areaId` |
 | `ownerEmail` | yes | current owner snapshot for query |
 | `ownerUserId` | yes | current owner snapshot for query |
 | `requesterUserId` | yes | authenticated opener |
@@ -1022,7 +1033,7 @@ The engine types and read-model fields reserve the future shape for `requestActi
 | --- | --- | --- |
 | `src/lib/workflows/runtime/types.ts` | central domain types | create |
 | `src/lib/workflows/runtime/errors.ts` | runtime error catalog | create |
-| `src/lib/workflows/runtime/repository.ts` | Firestore Admin access to types, versions, workflows, counters | create |
+| `src/lib/workflows/runtime/repository.ts` | Firestore Admin access to `workflowTypes_v2`, versions, `workflows_v2` and counters | create |
 | `src/lib/workflows/runtime/engine.ts` | step navigation, final-step guards, step-state helpers | create |
 | `src/lib/workflows/runtime/authz.ts` | requester / owner / responsible checks | create |
 | `src/lib/workflows/runtime/history.ts` | event builders | create |
@@ -1056,7 +1067,7 @@ The engine types and read-model fields reserve the future shape for `requestActi
 
 | File | Responsibility | 5.2 status |
 | --- | --- | --- |
-| `src/lib/workflows/bootstrap/fase1-facilities-v1.ts` | build the three pilot `workflowTypes` + `versions/1` payloads | create |
+| `src/lib/workflows/bootstrap/fase1-facilities-v1.ts` | build the three pilot `workflowTypes_v2` + `versions/1` payloads | create |
 | `src/lib/workflows/bootstrap/step-id.ts` | stable `stepId` generator for publish/materialization | create |
 | `src/scripts/results/workflowDefinitions.json` | legacy source used only as input | read-only reference |
 
@@ -1161,7 +1172,7 @@ If the 5.2 runtime rollout fails:
 1. keep legacy `workflowDefinitions` and current client-side request flows available behind a feature flag or isolated entry path;
 2. disable new `app/api/workflows/runtime/*` routes;
 3. stop frontend adapters from calling the new runtime;
-4. preserve newly-written `workflows` documents for analysis instead of deleting them;
+4. preserve newly-written `workflows_v2` documents for analysis instead of deleting them;
 5. keep the pilot versioned definitions in Firestore as non-destructive seed data.
 
 ---
@@ -1171,7 +1182,7 @@ If the 5.2 runtime rollout fails:
 - the three pilot workflow types are seeded with `latestPublishedVersion = 1`;
 - each version document has generated `stepId`s, `initialStepId`, `stepOrder` and `stepsById`;
 - server-side runtime modules exist for the five baseline mutations plus version resolution;
-- the `workflows` document already carries the minimum denormalized read model;
+- the `workflows_v2` document already carries the minimum denormalized read model;
 - `firestore.indexes.json` includes the required composite indexes;
 - no 5.2 code depends on resolving workflow behavior by legacy `name` or legacy status order;
 - no 5.2 code implements `requestAction/respondAction`;

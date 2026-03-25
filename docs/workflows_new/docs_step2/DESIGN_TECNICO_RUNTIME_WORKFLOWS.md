@@ -15,6 +15,17 @@ Definir o design tecnico do runtime do novo motor de workflows, cobrindo os caso
 
 Este documento traduz a arquitetura versionada em operacoes concretas de runtime, alinhadas com a stack atual do projeto: Next.js + Firestore + Firebase Admin.
 
+### Nota de convivio com producao
+
+Para a Fase 1 executada no mesmo banco do legado, a implementacao do runtime deve usar colecoes paralelas:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
+Essa decisao isola o piloto do schema legado e evita colisao com queries antigas.
+
 Documentos base:
 
 - [ARQUITETURA_WORKFLOWS_VERSIONADOS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs/ARQUITETURA_WORKFLOWS_VERSIONADOS.md)
@@ -24,6 +35,7 @@ Documentos base:
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | normalizacao das referencias operacionais da Fase 1 para `workflowTypes_v2`, `workflows_v2` e `counters/workflowCounter_v2` |
 | `2026-03-23` | `High` | criacao do design tecnico do runtime do novo motor de workflows |
 
 ---
@@ -34,8 +46,8 @@ Documentos base:
 
 - operacoes de escrita do runtime;
 - validacoes de permissao e consistencia;
-- leitura de `workflowTypes` e `versions`;
-- regras de mutacao do documento em `workflows`;
+- leitura de `workflowTypes_v2` e `versions` na Fase 1;
+- regras de mutacao do documento em `workflows_v2` na Fase 1;
 - contratos de API para os casos de uso centrais;
 - estrategia de testes e rollback.
 
@@ -70,7 +82,9 @@ Problemas principais:
 
 O novo runtime deve sair do frontend e passar para uma camada server-side explicita, acionada via rotas `app/api`.
 
-O frontend deixa de escrever diretamente em `workflows` para operacoes criticas e passa a chamar casos de uso de runtime.
+O frontend deixa de escrever diretamente na colecao operacional do chamado para operacoes criticas e passa a chamar casos de uso de runtime.
+
+Na Fase 1, essa superficie fisica e `workflows_v2`.
 
 ### Motivacao
 
@@ -92,17 +106,17 @@ Next.js Route Handlers
   |
   v
 Workflow Runtime Service
-  |-- repository: workflowTypes / versions / workflows / counters
+  |-- repository: workflowTypes_v2 / versions / workflows_v2 / counters
   |-- engine: regras de etapa e transicao
   |-- authz: owner / responsavel / destinatario de acao
   |-- history builder
   |-- notification dispatcher
   v
 Firestore
-  |-- workflowTypes/{workflowTypeId}
-  |-- workflowTypes/{workflowTypeId}/versions/{version}
-  |-- workflows/{docId}
-  |-- counters/workflowCounter
+  |-- workflowTypes_v2/{workflowTypeId}
+  |-- workflowTypes_v2/{workflowTypeId}/versions/{version}
+  |-- workflows_v2/{docId}
+  |-- counters/workflowCounter_v2
 ```
 
 ---
@@ -119,11 +133,13 @@ Casos de uso do motor devem ser executados em `app/api`, usando Firebase Admin n
 
 Evitar que a regra fique duplicada em context e modal do frontend.
 
-### ADR-RT-002: Documento `workflows` e a fonte de verdade do estado operacional
+### ADR-RT-002: Documento operacional do chamado e a fonte de verdade do estado operacional
 
 **Decisao**
 
-O documento em `workflows` guarda o estado vivo do chamado:
+O documento operacional do chamado guarda o estado vivo do workflow.
+
+Na execucao da Fase 1, essa superficie fisica e `workflows_v2`.
 
 - etapa atual;
 - status operacional;
@@ -140,7 +156,9 @@ Permitir consultas simples e runtime consistente sem depender da definicao atual
 
 **Decisao**
 
-Ao abrir chamado, o runtime consulta `workflowTypes.latestPublishedVersion` e fixa esse valor no chamado.
+Ao abrir chamado, o runtime consulta `workflowTypes_v2.latestPublishedVersion` e fixa esse valor no chamado.
+
+Na Fase 1, essa leitura acontece fisicamente em `workflowTypes_v2/{workflowTypeId}`.
 
 **Motivo**
 
@@ -203,7 +221,13 @@ Arquivos a adaptar depois:
 
 ---
 
-## 8. Modelo Operacional do Documento `workflows`
+## 8. Modelo Operacional do Documento do Chamado
+
+### Nota de execucao da Fase 1
+
+No piloto, este documento operacional deve ser persistido em:
+
+- `workflows_v2/{docId}`
 
 Campos centrais usados pelo runtime:
 
@@ -308,16 +332,16 @@ type OpenWorkflowRequestInput = {
 ### Passos
 
 1. autenticar usuario via Firebase ID token;
-2. carregar `workflowTypes/{workflowTypeId}`;
+2. carregar `workflowTypes_v2/{workflowTypeId}`;
 3. validar `active === true`;
 4. validar `allowedUserIds`;
 5. resolver `latestPublishedVersion`;
-6. carregar `workflowTypes/{workflowTypeId}/versions/{version}`;
-7. gerar `requestId` sequencial em `counters/workflowCounter`;
-8. copiar `ownerEmail` vigente de `workflowTypes`;
+6. carregar `workflowTypes_v2/{workflowTypeId}/versions/{version}`;
+7. gerar `requestId` sequencial em `counters/workflowCounter_v2`;
+8. copiar `ownerEmail` vigente de `workflowTypes_v2`;
 9. inicializar `stepStates` com base em `stepOrder`;
 10. marcar `initialStepId` como etapa atual;
-11. criar documento em `workflows`;
+11. criar documento em `workflows_v2`;
 12. registrar historico inicial;
 13. disparar notificacoes de abertura.
 
@@ -353,7 +377,7 @@ type OpenWorkflowRequestInput = {
 
 - se `latestPublishedVersion` estiver ausente, retornar erro de configuracao;
 - `ownerEmailAtPublish` da versao nao governa a abertura;
-- o `ownerEmail` do chamado e copiado de `workflowTypes` no momento da abertura.
+- o `ownerEmail` do chamado e copiado de `workflowTypes_v2` no momento da abertura.
 
 ### Notificacoes
 
@@ -366,7 +390,7 @@ type OpenWorkflowRequestInput = {
 
 ### Fonte autoritativa
 
-`workflowTypes/{workflowTypeId}.latestPublishedVersion`
+`workflowTypes_v2/{workflowTypeId}.latestPublishedVersion`
 
 ### Regras
 
@@ -803,7 +827,7 @@ function buildInitialStepStates(version: WorkflowDefinitionVersion, now: string)
 
 ### Integracao
 
-- abrir chamado cria documento correto em `workflows`;
+- abrir chamado cria documento correto em `workflows_v2`;
 - atribuicao grava `responsible` e `history`;
 - solicitacao de acao cria pendencias e muda `statusCategory`;
 - resposta de acao atualiza apenas a acao correta;
@@ -834,7 +858,7 @@ Se a migracao do runtime falhar:
 2. manter telas antigas operando em paralelo por feature flag;
 3. desligar as rotas novas de runtime;
 4. reverter frontend para mutacoes antigas apenas no escopo piloto;
-5. preservar dados novos gravados em `workflows` para analise, sem apagar historico.
+5. preservar dados novos gravados em `workflows_v2` para analise, sem apagar historico.
 
 ---
 

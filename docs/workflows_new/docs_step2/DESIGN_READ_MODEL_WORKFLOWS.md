@@ -18,6 +18,18 @@ Este documento fecha:
 - indices necessarios;
 - regra de atualizacao desses campos ao longo do runtime.
 
+### Nota de convivio com producao
+
+Para a Fase 1 no mesmo banco de producao, o read model do piloto deve ser persistido em `workflows_v2`, nao em `workflows`.
+
+Da mesma forma:
+
+- os tipos vivem em `workflowTypes_v2`
+- as versoes vivem em `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- o contador do piloto vive em `counters/workflowCounter_v2`
+
+O contrato de read model continua o mesmo; muda apenas a superficie fisica de armazenamento da Fase 1.
+
 Documentos base:
 
 - [ARQUITETURA_WORKFLOWS_VERSIONADOS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs/ARQUITETURA_WORKFLOWS_VERSIONADOS.md)
@@ -29,6 +41,7 @@ Documentos base:
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | normalizacao das referencias operacionais da Fase 1 para `workflows_v2` e `workflowTypes_v2`, preservando o modelo conceitual |
 | `2026-03-23` | `High` | criacao do design do read model de `workflows` com campos desnormalizados, queries, ordenacao e indices |
 
 ---
@@ -76,8 +89,8 @@ Mas a tela principal nao deve depender deles para filtrar listas.
 | `requestId` | `string` | runtime | id sequencial visivel |
 | `workflowTypeId` | `string` | runtime | tipo do workflow |
 | `workflowVersion` | `number` | runtime | versao fixa do chamado |
-| `workflowName` | `string` | runtime | denormalizado de `workflowTypes.name` |
-| `areaId` | `string` | runtime | denormalizado de `workflowTypes.areaId` |
+| `workflowName` | `string` | runtime | denormalizado de `workflowTypes.name`; na Fase 1, fonte fisica `workflowTypes_v2.name` |
+| `areaId` | `string` | runtime | denormalizado de `workflowTypes.areaId`; na Fase 1, fonte fisica `workflowTypes_v2.areaId` |
 | `submittedAt` | `string` | runtime | data de abertura |
 | `lastUpdatedAt` | `string` | runtime | ultima mutacao relevante |
 | `finalizedAt` | `string?` | runtime | preenchido ao finalizar |
@@ -122,8 +135,8 @@ Mas a tela principal nao deve depender deles para filtrar listas.
 
 | campo | tipo | origem | observacao |
 | --- | --- | --- | --- |
-| `submittedMonthKey` | `string` | runtime | `yyyy-MM` de `submittedAt` |
-| `closedMonthKey` | `string?` | runtime | `yyyy-MM` de `closedAt` |
+| `submittedMonthKey` | `string` | runtime | `YYYY-MM` de `submittedAt` |
+| `closedMonthKey` | `string?` | runtime | `YYYY-MM` de `closedAt` |
 
 ---
 
@@ -324,6 +337,8 @@ Mesmo que o usuario apareca nas duas queries, o frontend pode:
 
 Os indices abaixo devem ser previstos para Firestore.
 
+Na Fase 1, todos os indices desta secao devem ser provisionados sobre `workflows_v2`.
+
 ### 8.1. `Chamados atuais`
 
 1. `ownerUserId asc, isArchived asc, statusCategory asc, lastUpdatedAt desc`
@@ -463,6 +478,8 @@ Deve atualizar:
 ## 9.8. Troca de owner do tipo
 
 Quando `workflowTypes.ownerUserId` / `ownerEmail` mudar:
+
+Na Fase 1, essa origem fisica e `workflowTypes_v2`.
 
 - atualizar chamados ativos daquele `workflowTypeId`;
 - atualizar `ownerUserId`;

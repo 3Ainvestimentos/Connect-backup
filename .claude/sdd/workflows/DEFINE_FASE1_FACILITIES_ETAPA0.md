@@ -54,6 +54,17 @@ Canonizar os 3 workflows piloto de Facilities no modelo do motor novo, preservan
 
 ## 4. Decisões Canônicas Fechadas
 
+### 4.0. Convivencia com o banco legado
+
+Para a Fase 1 no mesmo banco de producao, a materializacao do piloto deve usar:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
+Essa decisao isola o piloto do legado sem alterar o contrato funcional definido nesta etapa.
+
 ### 4.1. Contrato comum do piloto
 
 | Item | Valor canônico |

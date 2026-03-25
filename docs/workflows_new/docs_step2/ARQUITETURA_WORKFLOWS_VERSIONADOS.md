@@ -16,6 +16,7 @@ Este documento cobre principalmente a estrutura de dados e o versionamento de de
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | adicionada nota de execucao da Fase 1 para explicitar o uso de colecoes `_v2` no banco compartilhado com o legado |
 | `2026-03-19` | `Medium` | inclusao de `createdBy` e `updatedBy` em `workflowTypes`, `workflowTypeId` e `ownerEmailAtPublish` em `versions`, e `statusKey` em `stepsById` |
 | `2026-03-19` | `High` | `versions` passa a ser subcolecao de `workflowTypes`, `active` vira boolean e `ownerEmail` passa a ser tratado em `workflowTypes` |
 | `2026-03-16` | `High` | decisao consolidada de `stepId` auto-gerado e nao editavel, remocao de `clientLabel` e obrigatoriedade de nova versao para qualquer alteracao em `stepName` ou no fluxo |
@@ -257,6 +258,17 @@ Esse desenho deixa claro que:
 
 ## 6. Diagrama da arquitetura proposta
 
+### Nota de execucao da Fase 1
+
+O diagrama abaixo representa o modelo conceitual.
+
+Para o piloto de Facilities no mesmo banco de producao, a superficie fisica correspondente deve ser:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
 ```text
                            +----------------------+
                            |   workflowAreas      |
@@ -292,6 +304,17 @@ Esse desenho deixa claro que:
 ---
 
 ## 7. Colecoes propostas
+
+### Nota de execucao da Fase 1
+
+As secoes abaixo descrevem o modelo canonico.
+
+Para a Fase 1, as colecoes fisicas equivalentes sao:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
 
 ## 7.1. `workflowTypes`
 

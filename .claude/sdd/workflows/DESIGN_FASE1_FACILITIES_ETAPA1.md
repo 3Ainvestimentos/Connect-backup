@@ -12,15 +12,26 @@ Operacionalizar a fundacao tecnica do novo motor de workflows para o piloto de F
 Esta etapa cobre:
 
 - tipos centrais do motor;
-- `workflowTypes` e `versions`;
+- `workflowTypes_v2` e `versions`;
 - geracao de `stepId`;
-- contrato operacional do documento `workflows`;
+- contrato operacional do documento `workflows_v2`;
 - runtime write-side;
 - bootstrap inicial do piloto;
 - contratos de API write-side;
 - estrategia de testes do runtime.
 
 Esta etapa nao cobre a consolidacao do read layer como superficie de produto. Isso fica para a Etapa 2.
+
+### Convivência com producao
+
+Na Etapa 1, a implementacao deve usar colecoes paralelas do piloto:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
+Isso significa que todo manifesto de arquivos, seed e runtime write-side desta etapa deve apontar para essas colecoes, e nao para as colecoes legadas.
 
 ---
 
@@ -75,10 +86,10 @@ Em caso de divergencia:
 
 Ao final desta etapa devem existir:
 
-- modelagem tecnica de `workflowTypes/{workflowTypeId}`;
-- modelagem tecnica de `workflowTypes/{workflowTypeId}/versions/1`;
+- modelagem tecnica de `workflowTypes_v2/{workflowTypeId}`;
+- modelagem tecnica de `workflowTypes_v2/{workflowTypeId}/versions/1`;
 - estrategia de geracao de `stepId`;
-- contrato operacional de `workflows/{docId}`;
+- contrato operacional de `workflows_v2/{docId}`;
 - runtime write-side server-side;
 - bootstrap/manual seed dos 3 workflows do piloto;
 - testes do runtime write-side;
@@ -88,7 +99,11 @@ Ao final desta etapa devem existir:
 
 ## 5. Modelo Tecnico Obrigatorio
 
-### 5.1. `workflowTypes/{workflowTypeId}`
+### 5.1. `workflowTypes_v2/{workflowTypeId}`
+
+Na execucao da Fase 1, ler como:
+
+- `workflowTypes_v2/{workflowTypeId}`
 
 Campos obrigatorios da Etapa 1:
 
@@ -113,7 +128,11 @@ Regras:
 - se o colaborador correspondente nao existir ou divergir desse ID na base real, a materializacao falha;
 - `latestPublishedVersion = 1` no piloto.
 
-### 5.2. `workflowTypes/{workflowTypeId}/versions/1`
+### 5.2. `workflowTypes_v2/{workflowTypeId}/versions/1`
+
+Na execucao da Fase 1, ler como:
+
+- `workflowTypes_v2/{workflowTypeId}/versions/1`
 
 Campos obrigatorios:
 
@@ -147,7 +166,11 @@ Regras:
 - formato recomendado:
   - `stp_${shortId}`
 
-### 5.5. `workflows/{docId}` como documento operacional
+### 5.5. `workflows_v2/{docId}` como documento operacional
+
+Na execucao da Fase 1, ler como:
+
+- `workflows_v2/{docId}`
 
 Campos operacionais minimos exigidos na Etapa 1:
 
@@ -168,7 +191,7 @@ Regras:
 
 ### Nota importante sobre o read model
 
-Embora a Etapa 2 seja a etapa de validacao e consolidacao do read layer, a Etapa 1 ja deve persistir no documento `workflows` o backbone desnormalizado necessario para leitura.
+Embora a Etapa 2 seja a etapa de validacao e consolidacao do read layer, a Etapa 1 ja deve persistir no documento `workflows_v2` o backbone desnormalizado necessario para leitura.
 
 Isso inclui os campos de read model definidos em [DESIGN_FASE1_FACILITIES_ETAPA2.md](/Users/lucasnogueira/Documents/3A/Connect-backup/.claude/sdd/workflows/DESIGN_FASE1_FACILITIES_ETAPA2.md), especialmente:
 
@@ -222,7 +245,7 @@ Regra de fronteira entre as etapas:
 - `open-request` deve ser transacional:
   - leitura/atualizacao do contador
   - geracao de `requestId`
-  - criacao do documento `workflows`
+  - criacao do documento `workflows_v2`
 - `currentStepName` e `currentStatusKey` vem da etapa inicial publicada;
 - primeira atribuicao materializa a entrada em `Em andamento`;
 - `advance-step` nao pode mover para a etapa final;
@@ -332,6 +355,8 @@ Regra de bootstrap:
 - `fase1-facilities-v1.ts` e um builder de payload;
 - a gravacao em Firestore deve acontecer via script manual de seed;
 - a Etapa 1 nao deve expor isso por rota publica.
+- o seed deve gravar em `workflowTypes_v2`, `workflowTypes_v2/{workflowTypeId}/versions/{version}` e `workflows_v2`;
+- o contador do piloto deve usar `counters/workflowCounter_v2`.
 
 ---
 
@@ -377,7 +402,7 @@ A Etapa 1 fica pronta para build quando:
 
 - o runtime write-side estiver completamente delimitado;
 - o bootstrap dos 3 workflows estiver definido;
-- o contrato operacional de `workflows` estiver fechado;
+- o contrato operacional de `workflows_v2` estiver fechado;
 - os testes write-side estiverem definidos;
 - nenhuma regra do piloto depender mais da ordem ou semantica do legado.
 

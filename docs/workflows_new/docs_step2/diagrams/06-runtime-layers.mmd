@@ -1,11 +1,13 @@
 flowchart TB
     U["Frontend<br/>abertura, listas, modal"] --> RH["Next.js Route Handlers<br/>/api/workflows/runtime/..."]
+    NOTE["Fase 1 fisica<br/>workflowTypes_v2 / workflowTypes_v2/{workflowTypeId}/versions/{version}<br/>workflows_v2 / counters/workflowCounter_v2"]
 
     RH --> AUTH["Auth<br/>Firebase ID token"]
     RH --> UC["Runtime use cases<br/>open, assign, request-action,<br/>respond-action, advance, finalize, archive"]
+    NOTE -.-> RH
 
     subgraph SRV["Workflow runtime service"]
-        UC --> REPO["Repository<br/>workflowTypes / versions / workflows / counters"]
+        UC --> REPO["Repository<br/>workflowTypes_v2 / versions / workflows_v2 / counters"]
         UC --> ENG["Engine<br/>stepOrder, currentStepId, next-step rules"]
         UC --> AUTHZ["Authz<br/>owner, responsible, action recipient"]
         UC --> HIST["History builder<br/>audit events"]
@@ -14,10 +16,10 @@ flowchart TB
     end
 
     subgraph DB["Firestore"]
-        REPO --> WT["workflowTypes/{workflowTypeId}"]
-        REPO --> WV["workflowTypes/{workflowTypeId}/versions/{version}"]
-        REPO --> WF["workflows/{docId}"]
-        REPO --> CTR["counters/workflowCounter"]
+        REPO --> WT["workflowTypes_v2/{workflowTypeId}"]
+        REPO --> WV["workflowTypes_v2/{workflowTypeId}/versions/{version}"]
+        REPO --> WF["workflows_v2/{docId}"]
+        REPO --> CTR["counters/workflowCounter_v2"]
     end
 
     NOTIF --> OUT["Side effects only after successful write"]

@@ -1,5 +1,7 @@
 erDiagram
-    WORKFLOW_TYPES {
+    %% Fase 1 fisica: colecoes paralelas no mesmo banco de producao
+    %% workflowTypes_v2 / workflowTypes_v2/{workflowTypeId}/versions/{version} / workflows_v2 / counters/workflowCounter_v2
+    WORKFLOW_TYPES_V2 {
         string workflowTypeId PK
         string name
         string description
@@ -31,7 +33,7 @@ erDiagram
         string publishedBy
     }
 
-    WORKFLOWS {
+    WORKFLOWS_V2 {
         string firestoreDocId PK
         string requestId
         string workflowTypeId FK
@@ -71,12 +73,12 @@ erDiagram
         boolean isArchived
     }
 
-    WORKFLOW_COUNTER {
+    WORKFLOW_COUNTER_V2 {
         string docPath PK
         number lastRequestNumber
     }
 
-    WORKFLOW_TYPES ||--o{ WORKFLOW_TYPE_VERSIONS : "subcollection versions"
-    WORKFLOW_TYPES ||--o{ WORKFLOWS : "type snapshot on open"
-    WORKFLOW_TYPE_VERSIONS ||--o{ WORKFLOWS : "governs workflowVersion"
-    WORKFLOW_COUNTER ||--o{ WORKFLOWS : "allocates requestId"
+    WORKFLOW_TYPES_V2 ||--o{ WORKFLOW_TYPE_VERSIONS : "subcollection versions"
+    WORKFLOW_TYPES_V2 ||--o{ WORKFLOWS_V2 : "type snapshot on open"
+    WORKFLOW_TYPE_VERSIONS ||--o{ WORKFLOWS_V2 : "governs workflowVersion"
+    WORKFLOW_COUNTER_V2 ||--o{ WORKFLOWS_V2 : "allocates requestId"

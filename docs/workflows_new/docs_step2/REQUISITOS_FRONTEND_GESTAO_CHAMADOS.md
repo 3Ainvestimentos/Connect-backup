@@ -21,6 +21,7 @@ Documento base relacionado:
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | normalizacao das referencias operacionais da Fase 1 para colecoes `_v2` do piloto |
 | `2026-03-23` | `Medium` | mantida a tela de abertura de chamado com estrutura atual, adicionando agrupamento mensal em `Minhas solicitacoes` do mais recente para o mais antigo |
 | `2026-03-23` | `High` | criacao do documento de requisitos do frontend da tela unificada de gestao de chamados |
 
@@ -144,6 +145,14 @@ Motivo:
 ### Database
 
 - depende do modelo versionado documentado em `workflowTypes`, `workflowTypes/{workflowTypeId}/versions/{version}` e `workflows`.
+
+### Nota de execucao da Fase 1
+
+No piloto de Facilities, a integracao deve ler do armazenamento fisico:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
 
 ### AI
 

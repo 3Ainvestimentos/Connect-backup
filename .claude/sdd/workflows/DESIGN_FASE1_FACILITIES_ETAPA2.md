@@ -11,7 +11,7 @@ Validar e operacionalizar o backbone de read model da Fase 1 para os workflows r
 
 Esta etapa cobre:
 
-- shape desnormalizada do documento `workflows`;
+- shape desnormalizada do documento `workflows_v2`;
 - regras de atualizacao do read model por caso de uso;
 - queries basicas do piloto;
 - indices compostos;
@@ -19,6 +19,15 @@ Esta etapa cobre:
 - testes de leitura e de coerencia do documento persistido.
 
 Esta etapa parte da premissa de que a Etapa 1 ja definiu e implementou a base write-side do motor.
+
+### Convivência com producao
+
+Na Etapa 2, todo o read model e as queries do piloto devem considerar:
+
+- `workflows_v2`
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `counters/workflowCounter_v2` quando houver dependencia indireta de numeracao
 
 ---
 
@@ -55,7 +64,7 @@ Em caso de divergencia:
 
 Ao final desta etapa devem existir:
 
-- shape oficial do documento `workflows` para consulta;
+- shape oficial do documento `workflows_v2` para consulta;
 - regras de projeção/read-model por caso de uso;
 - queries basicas do piloto delimitadas;
 - indices compostos definidos e provisionados;
@@ -64,7 +73,11 @@ Ao final desta etapa devem existir:
 
 ---
 
-## 5. Shape do Read Model em `workflows`
+## 5. Shape do Read Model em `workflows_v2`
+
+Na execucao da Fase 1, ler como shape do documento:
+
+- `workflows_v2/{docId}`
 
 Campos obrigatorios:
 
@@ -191,7 +204,8 @@ Nesta etapa, isso ainda e tratado como contrato estrutural e base de indices. A 
 Regra:
 
 - esses indices precisam ser provisionados manualmente;
-- a Etapa 2 deve atualizar `firestore.indexes.json`.
+- a Etapa 2 deve atualizar `firestore.indexes.json`;
+- os indices devem ser provisionados para as queries sobre `workflows_v2`.
 
 ---
 
@@ -217,7 +231,7 @@ Escopo:
 
 Deve haver cobertura para:
 
-- shape persistida do documento `workflows`;
+- shape persistida do documento `workflows_v2`;
 - coerencia entre write-side e read-model helpers;
 - `submittedMonthKey` e `closedMonthKey`;
 - `closedAt = finalizedAt`;
@@ -248,7 +262,7 @@ Abordagem:
 
 A Etapa 2 fica pronta para build quando:
 
-- o shape do documento `workflows` estiver fechado;
+- o shape do documento `workflows_v2` estiver fechado;
 - as regras de projeção por caso de uso estiverem explicitas;
 - os indices compostos estiverem definidos;
 - `firestore.indexes.json` tiver sido incorporado ao plano de build;

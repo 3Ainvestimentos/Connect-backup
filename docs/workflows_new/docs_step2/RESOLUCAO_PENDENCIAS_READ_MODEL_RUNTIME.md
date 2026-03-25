@@ -10,10 +10,20 @@ Este documento serve como complemento aos artefatos principais:
 - [REQUISITOS_FRONTEND_GESTAO_CHAMADOS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs/REQUISITOS_FRONTEND_GESTAO_CHAMADOS.md)
 - [DESIGN_TECNICO_RUNTIME_WORKFLOWS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs/DESIGN_TECNICO_RUNTIME_WORKFLOWS.md)
 
+### Nota de execucao da Fase 1
+
+No piloto executado no mesmo banco do legado, ler as superficies fisicas operacionais como:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
 ### Revision history
 
 | data | impacto | resumo |
 | --- | --- | --- |
+| `2026-03-25` | `Medium` | normalizacao das referencias operacionais da Fase 1 para colecoes `_v2` |
 | `2026-03-23` | `High` | consolidacao das decisoes pendentes sobre owner, `closedAt`, SLA e `operationalParticipantIds` |
 
 ---
@@ -39,10 +49,14 @@ As decisoes abaixo passam a ser o entendimento oficial para a primeira iteracao 
 
 `ownerUserId` e `ownerEmail` gravados em `workflows` podem mudar se o owner do tipo de workflow mudar.
 
+Na Fase 1, a superficie fisica desse documento e `workflows_v2`.
+
 **Fonte de verdade**
 
 - `workflowTypes.ownerEmail`
 - `workflowTypes.ownerUserId`
+
+Na Fase 1, essa origem fisica e `workflowTypes_v2`.
 
 **Regra operacional**
 
@@ -56,12 +70,14 @@ Garantir que a fila atual do owner reflita a configuracao vigente do tipo de wor
 
 **Impacto no read model**
 
-Campos mantidos em `workflows`:
+Campos mantidos em `workflows_v2` na Fase 1:
 
 - `ownerEmail`
 - `ownerUserId`
 
 Esses campos existem para consulta eficiente no frontend, mas sua fonte continua sendo `workflowTypes`.
+
+Na Fase 1, essa fonte fisica e `workflowTypes_v2`.
 
 **Observacao**
 
@@ -190,7 +206,7 @@ Ou seja:
 
 ## 4. Implicacoes no Read Model
 
-Com as decisoes acima, o read model recomendado de `workflows` passa a considerar como campos importantes:
+Com as decisoes acima, o read model recomendado do documento operacional do chamado passa a considerar como campos importantes:
 
 - `ownerEmail`
 - `ownerUserId`

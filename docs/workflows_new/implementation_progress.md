@@ -38,3 +38,28 @@ Foi concluida a canonizacao funcional do piloto de Facilities no artefato [DEFIN
 ### Saida para a proxima etapa
 
 O piloto ficou pronto para a `5.2`, com contrato funcional suficiente para materializar `workflowTypes`, `versions` e a base tecnica do runtime sem depender de regras implicitas do legado.
+
+## 2026-03-25 - Decisao de convivio com producao
+
+### Decisao
+
+Como o piloto da Fase 1 usara o mesmo banco do legado em producao, ficou decidido isolar o motor novo em colecoes paralelas:
+
+- `workflowTypes_v2`
+- `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- `workflows_v2`
+- `counters/workflowCounter_v2`
+
+### Objetivo
+
+Evitar mistura de schema e queries com:
+
+- `workflowDefinitions`
+- `workflows`
+- filtros e telas legadas
+
+### Impacto
+
+- seed/bootstrap da Fase 1 deve escrever apenas nas colecoes `_v2`
+- runtime novo da Fase 1 deve ler e gravar apenas nas colecoes `_v2`
+- indices do piloto devem ser provisionados para `workflows_v2`
