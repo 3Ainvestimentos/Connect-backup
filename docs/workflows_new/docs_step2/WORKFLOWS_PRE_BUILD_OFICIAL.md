@@ -449,6 +449,11 @@ Regras:
 Regras:
 
 - so responsavel atual ou owner que esteja conduzindo o chamado pode solicitar;
+- input previsto:
+  - `recipients: string[]`
+  - `actionType: 'approval' | 'acknowledgement' | 'execution'`
+  - `comment?: string`
+- a acao e sempre solicitada para um ou mais destinatarios explicitamente informados;
 - nao muda `currentStepId`;
 - cria itens pendentes em `actionRequests`;
 - atualiza:
@@ -456,15 +461,109 @@ Regras:
   - `pendingActionRecipientIds`
   - `pendingActionTypes`
   - `statusCategory = waiting_action`
+- registra evento `action_requested` em `history`;
+- atualiza `lastUpdatedAt`;
+- deve bloquear criacao duplicada de acao pendente para o mesmo usuario, na mesma etapa e no mesmo tipo;
+- notificacoes sao disparadas para cada destinatario da acao;
+- o chamado entra em espera operacional, mas `responsible` nao muda.
 
 ## 7.4. Responder acao
 
 Regras:
 
 - apenas o destinatario da acao responde;
+- input previsto:
+  - `actionRequestId: string`
+  - `response: 'approved' | 'rejected' | 'acknowledged' | 'executed'`
+  - `comment?: string`
+  - `attachmentUrl?: string`
+- precondicoes:
+  - a acao deve existir;
+  - a acao deve estar `pending`;
+  - o usuario autenticado deve ser o destinatario;
+  - se o tipo for `execution` e a configuracao exigir comentario, o comentario deve existir;
 - resposta nao avanca etapa;
+- atualiza status e timestamps da acao respondida;
+- registra `action_responded` em `history`;
 - recalcula campos de pending action;
 - se nao houver mais pendencia, volta para `in_progress`.
+
+### Estrutura recomendada de `actionRequests`
+
+Para o runtime inicial, `actionRequests` pode ficar como array de objetos no proprio documento do chamado:
+
+```ts
+type WorkflowActionRequest = {
+  actionRequestId: string;
+  stepId: string;
+  type: 'approval' | 'acknowledgement' | 'execution';
+  label: string;
+  requestedBy: {
+    userId: string;
+    userName: string;
+    userEmail: string;
+  };
+  recipient: {
+    userId: string;
+    userName: string;
+    userEmail?: string;
+  };
+  status: 'pending' | 'approved' | 'rejected' | 'acknowledged' | 'executed';
+  requestedAt: string;
+  respondedAt?: string;
+  responseComment?: string;
+  responseAttachmentUrl?: string;
+};
+```
+
+Observacoes:
+
+- o array no documento principal simplifica a primeira iteracao;
+- se o volume de acoes por chamado crescer muito, a migracao futura recomendada e para subcolecao dedicada.
+
+### Semantica por tipo de acao
+
+#### `acknowledgement`
+
+- representa uma acao de ciencia;
+- a resposta esperada do destinatario e `acknowledged`;
+- nao exige comentario por padrao;
+- nao exige anexo por padrao;
+- pode ser solicitada para um ou mais destinatarios ao mesmo tempo;
+- cada destinatario responde o proprio item pendente;
+- enquanto houver ao menos uma ciencia pendente na etapa atual, o chamado permanece em `waiting_action`;
+- responder ciencia nao avanca etapa automaticamente e apenas devolve o controle ao responsavel quando todas as pendencias da etapa tiverem sido resolvidas.
+
+#### `approval`
+
+- representa uma acao formal de aprovacao;
+- a resposta esperada do destinatario e `approved` ou `rejected`;
+- nao exige comentario por padrao;
+- nao exige anexo por padrao;
+- pode ser solicitada para um ou mais destinatarios ao mesmo tempo;
+- cada destinatario responde o proprio item pendente;
+- enquanto houver aprovacao pendente na etapa atual, o chamado permanece em `waiting_action`;
+- responder aprovacao nao avanca etapa automaticamente e apenas devolve o controle ao responsavel quando todas as pendencias da etapa tiverem sido resolvidas.
+
+#### `execution`
+
+- representa uma acao operacional de execucao por terceiro;
+- a resposta esperada do destinatario e `executed`;
+- pode carregar `comment` e `attachmentUrl` na resposta;
+- se a configuracao da acao exigir comentario, a resposta deve falhar sem `comment`;
+- o modelo atual permite placeholder de anexo, mas nao fecha obrigatoriedade de anexo por si so;
+- pode ser solicitada para um ou mais destinatarios ao mesmo tempo;
+- cada destinatario responde o proprio item pendente;
+- enquanto houver execucao pendente na etapa atual, o chamado permanece em `waiting_action`;
+- responder execucao nao avanca etapa automaticamente e apenas devolve o controle ao responsavel quando todas as pendencias da etapa tiverem sido resolvidas.
+
+### Regras transversais das acoes
+
+- `request-action` nao muda `currentStepId`;
+- `request-action` nao muda `responsible`;
+- `respond-action` nunca avanca etapa por conta propria;
+- `advance-step` deve falhar se ainda houver `actionRequests` pendentes para a etapa atual;
+- o retorno de `waiting_action` para `in_progress` acontece apenas quando nao houver mais pendencias abertas na etapa atual.
 
 ## 7.5. Avancar etapa
 
