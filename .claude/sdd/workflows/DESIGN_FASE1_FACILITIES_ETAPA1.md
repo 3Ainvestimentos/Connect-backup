@@ -187,6 +187,8 @@ Regras:
 - `formData` e persistido apenas com chaves canonicas;
 - `stepStates` e a fonte de verdade para `pending / active / completed / skipped`;
 - `history` e append-only;
+- na Etapa 1, a persistencia de `history` pode regravar o array inteiro dentro da transacao para manter integridade entre mutacao e historico;
+- essa estrategia e aceita para o piloto, mas deve migrar para append mais leve ou subcolecao dedicada em hardening/evolucao futura se o volume crescer;
 - `submittedAt` nasce na abertura.
 
 ### Nota importante sobre o read model

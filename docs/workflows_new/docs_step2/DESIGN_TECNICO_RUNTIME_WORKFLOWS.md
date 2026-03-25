@@ -275,6 +275,8 @@ type WorkflowActionRequest = {
 
 Se o volume de acoes por chamado crescer muito, esse bloco pode migrar para subcolecao no futuro. Para a primeira iteracao, o array no documento principal simplifica implementacao e leitura.
 
+Para o piloto de Facilities, a mesma aceitacao vale para `history`: o runtime pode manter o array no documento principal e regrava-lo dentro da transacao para garantir consistencia da mutacao. Essa escolha deve ser tratada como limitacao consciente da Etapa 1, com migracao futura recomendada para append mais leve ou subcolecao dedicada se o volume de eventos crescer.
+
 ---
 
 ## 9. Regras Gerais de Runtime

@@ -422,6 +422,12 @@ Regras:
 - `799` existe apenas como bootstrap controlado em ambiente virgem, nunca como fallback silencioso de runtime;
 - o seed manual do piloto deve criar o contador apenas quando ausente e preservar qualquer documento existente.
 
+### Nota de limitacao aceita do piloto
+
+Na Fase 1, o runtime pode manter o `history` como array no documento principal e regrava-lo dentro da transacao quando precisar anexar novos eventos.
+
+Essa estrategia e aceitavel para o piloto porque prioriza integridade entre mutacao e historico, mas nao e a forma final mais escalavel. Em hardening/evolucao futura, o caminho recomendado e migrar para append mais leve ou subcolecao dedicada de historico por request.
+
 ### Resultado esperado
 
 - chamado nasce preso a uma versao;
