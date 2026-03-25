@@ -48,6 +48,8 @@ Em caso de divergencia:
   - `facilities_solicitacao_compras`
 - owner:
   - `stefania.otoni@3ainvestimentos.com.br`
+- `ownerUserId` fechado para o piloto:
+  - `3gEXjlKgxJFl0q6udVMu`
 - SLA padrao:
   - `5`
 - fluxo canonico:
@@ -106,7 +108,9 @@ Campos obrigatorios da Etapa 1:
 Regras:
 
 - `ownerUserId` deve ser resolvido a partir do email do owner;
-- se o colaborador correspondente nao existir, a materializacao falha;
+- para o piloto de Facilities, o `ownerUserId` ja esta fechado como `3gEXjlKgxJFl0q6udVMu`;
+- o seed/bootstrap pode usar esse valor diretamente sem nova inferencia em tempo de execucao;
+- se o colaborador correspondente nao existir ou divergir desse ID na base real, a materializacao falha;
 - `latestPublishedVersion = 1` no piloto.
 
 ### 5.2. `workflowTypes/{workflowTypeId}/versions/1`
@@ -162,6 +166,44 @@ Regras:
 - `history` e append-only;
 - `submittedAt` nasce na abertura.
 
+### Nota importante sobre o read model
+
+Embora a Etapa 2 seja a etapa de validacao e consolidacao do read layer, a Etapa 1 ja deve persistir no documento `workflows` o backbone desnormalizado necessario para leitura.
+
+Isso inclui os campos de read model definidos em [DESIGN_FASE1_FACILITIES_ETAPA2.md](/Users/lucasnogueira/Documents/3A/Connect-backup/.claude/sdd/workflows/DESIGN_FASE1_FACILITIES_ETAPA2.md), especialmente:
+
+- `workflowName`
+- `areaId`
+- `ownerEmail`
+- `ownerUserId`
+- `requesterUserId`
+- `requesterName`
+- `responsibleUserId`
+- `responsibleName`
+- `currentStepId`
+- `currentStepName`
+- `currentStatusKey`
+- `statusCategory`
+- `hasResponsible`
+- `hasPendingActions`
+- `pendingActionRecipientIds`
+- `pendingActionTypes`
+- `operationalParticipantIds`
+- `slaDays`
+- `expectedCompletionAt`
+- `lastUpdatedAt`
+- `finalizedAt`
+- `closedAt`
+- `archivedAt`
+- `submittedMonthKey`
+- `closedMonthKey`
+- `isArchived`
+
+Regra de fronteira entre as etapas:
+
+- a Etapa 1 escreve esses campos desde a abertura e nas mutacoes do runtime;
+- a Etapa 2 confirma, testa e organiza o read layer de consumo sobre esse backbone ja persistido.
+
 ---
 
 ## 6. Runtime Write-Side da Etapa 1
@@ -193,6 +235,7 @@ Regras:
 - `archivedAt` e separado;
 - `assign-responsible` deve rejeitar `waiting_action` defensivamente na Etapa 1;
 - notificacoes so apos persistencia bem-sucedida.
+- `open-request`, `assign-responsible`, `finalize-request` e `archive-request` ja devem manter sincronizados os campos desnormalizados do backbone de read model.
 
 ### 6.3. Normalizacao de input
 
