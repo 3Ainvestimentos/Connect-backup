@@ -56,6 +56,13 @@ function buildRequest(overrides = {}) {
     currentStepId: 'stp_open',
     currentStepName: 'Solicitação Aberta',
     currentStatusKey: 'solicitacao_aberta',
+    hasResponsible: false,
+    hasPendingActions: false,
+    pendingActionRecipientIds: [],
+    pendingActionTypes: [],
+    closedAt: null,
+    finalizedAt: null,
+    archivedAt: null,
     stepStates: {
       stp_open: 'active',
       stp_work: 'pending',
@@ -270,6 +277,95 @@ describe('workflow runtime use cases', () => {
     );
   });
 
+  it('avanca etapa intermediaria usando o helper canonico do read model', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-advance-success',
+      data: buildRequest({
+        requestId: 19,
+        ownerUserId: 'owner-1',
+        responsibleUserId: 'resp-1',
+        responsibleName: 'Responsável',
+        operationalParticipantIds: ['owner-1', 'resp-1'],
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        hasResponsible: true,
+        stepStates: {
+          stp_open: 'completed',
+          stp_work: 'active',
+          stp_review: 'pending',
+          stp_final: 'pending',
+        },
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        stepOrder: ['stp_open', 'stp_work', 'stp_review', 'stp_final'],
+        stepsById: {
+          stp_open: {
+            stepId: 'stp_open',
+            stepName: 'Solicitação Aberta',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          },
+          stp_work: {
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          },
+          stp_review: {
+            stepId: 'stp_review',
+            stepName: 'Triagem',
+            statusKey: 'triagem',
+            kind: 'work',
+          },
+          stp_final: {
+            stepId: 'stp_final',
+            stepName: 'Finalizado',
+            statusKey: 'finalizado',
+            kind: 'final',
+          },
+        },
+      }),
+    );
+
+    await expect(
+      advanceStep({
+        requestId: 19,
+        actorUserId: 'resp-1',
+        actorName: 'Responsável',
+      }),
+    ).resolves.toEqual({
+      docId: 'doc-advance-success',
+      requestId: 19,
+      newStepId: 'stp_review',
+      newStepName: 'Triagem',
+    });
+
+    expect(repo.updateWorkflowRequestWithHistory).toHaveBeenCalledWith(
+      'doc-advance-success',
+      expect.objectContaining({
+        stepStates: {
+          stp_open: 'completed',
+          stp_work: 'completed',
+          stp_review: 'active',
+          stp_final: 'pending',
+        },
+        currentStepId: 'stp_review',
+        currentStepName: 'Triagem',
+        currentStatusKey: 'triagem',
+        statusCategory: 'in_progress',
+        lastUpdatedAt: expect.anything(),
+      }),
+      [
+        expect.objectContaining({ action: 'step_completed' }),
+        expect.objectContaining({ action: 'entered_step' }),
+      ],
+    );
+  });
+
   it('bloqueia advance-step quando o próximo passo é final', async () => {
     repo.getWorkflowRequestByRequestId.mockResolvedValue({
       docId: 'doc-2',
@@ -409,6 +505,94 @@ describe('workflow runtime use cases', () => {
     );
 
     expect(repo.getWorkflowVersion).not.toHaveBeenCalled();
+  });
+
+  it('avanca a etapa intermediaria preservando a coerencia do read model', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-advance-success',
+      data: buildRequest({
+        requestId: 24,
+        ownerUserId: 'owner-1',
+        responsibleUserId: 'resp-1',
+        responsibleName: 'Responsavel',
+        hasResponsible: true,
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        stepStates: {
+          stp_open: 'completed',
+          stp_work: 'active',
+          stp_review: 'pending',
+          stp_final: 'pending',
+        },
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        stepOrder: ['stp_open', 'stp_work', 'stp_review', 'stp_final'],
+        stepsById: {
+          stp_open: {
+            stepId: 'stp_open',
+            stepName: 'Solicitação Aberta',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          },
+          stp_work: {
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          },
+          stp_review: {
+            stepId: 'stp_review',
+            stepName: 'Aguardando validacao',
+            statusKey: 'aguardando_validacao',
+            kind: 'work',
+          },
+          stp_final: {
+            stepId: 'stp_final',
+            stepName: 'Finalizado',
+            statusKey: 'finalizado',
+            kind: 'final',
+          },
+        },
+      }),
+    );
+
+    await expect(
+      advanceStep({
+        requestId: 24,
+        actorUserId: 'resp-1',
+        actorName: 'Responsavel',
+      }),
+    ).resolves.toEqual({
+      docId: 'doc-advance-success',
+      requestId: 24,
+      newStepId: 'stp_review',
+      newStepName: 'Aguardando validacao',
+    });
+
+    expect(repo.updateWorkflowRequestWithHistory).toHaveBeenCalledWith(
+      'doc-advance-success',
+      expect.objectContaining({
+        stepStates: {
+          stp_open: 'completed',
+          stp_work: 'completed',
+          stp_review: 'active',
+          stp_final: 'pending',
+        },
+        currentStepId: 'stp_review',
+        currentStepName: 'Aguardando validacao',
+        currentStatusKey: 'aguardando_validacao',
+        statusCategory: 'in_progress',
+        lastUpdatedAt: expect.anything(),
+      }),
+      [
+        expect.objectContaining({ action: 'step_completed' }),
+        expect.objectContaining({ action: 'entered_step' }),
+      ],
+    );
   });
 
   it('usa finalize-request como único caminho para a etapa final', async () => {

@@ -10,6 +10,35 @@
 import { Timestamp } from 'firebase-admin/firestore';
 import type { StatusCategory } from './types';
 
+export const WORKFLOW_READ_MODEL_REQUIRED_FIELDS = [
+  'workflowName',
+  'areaId',
+  'ownerEmail',
+  'ownerUserId',
+  'requesterUserId',
+  'requesterName',
+  'responsibleUserId',
+  'responsibleName',
+  'currentStepId',
+  'currentStepName',
+  'currentStatusKey',
+  'statusCategory',
+  'hasResponsible',
+  'hasPendingActions',
+  'pendingActionRecipientIds',
+  'pendingActionTypes',
+  'operationalParticipantIds',
+  'slaDays',
+  'expectedCompletionAt',
+  'lastUpdatedAt',
+  'finalizedAt',
+  'closedAt',
+  'archivedAt',
+  'submittedMonthKey',
+  'closedMonthKey',
+  'isArchived',
+] as const;
+
 /**
  * Computes a YYYY-MM month key from a Timestamp.
  *
@@ -118,6 +147,24 @@ export function buildAssignReadModelUpdate(params: {
   }
 
   return update;
+}
+
+/**
+ * Returns the read-model field updates after advancing to the next step.
+ */
+export function buildAdvanceReadModelUpdate(params: {
+  nextStepId: string;
+  nextStepName: string;
+  nextStatusKey: string;
+  now: Timestamp;
+}): Record<string, unknown> {
+  return {
+    currentStepId: params.nextStepId,
+    currentStepName: params.nextStepName,
+    currentStatusKey: params.nextStatusKey,
+    statusCategory: 'in_progress' as StatusCategory,
+    lastUpdatedAt: params.now,
+  };
 }
 
 /**

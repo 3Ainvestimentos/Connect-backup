@@ -6,9 +6,8 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getAuth } from 'firebase-admin/auth';
-import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
+import { verifyBearerToken } from '@/lib/workflows/runtime/auth-helpers';
 import { advanceStep } from '@/lib/workflows/runtime/use-cases/advance-step';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
@@ -26,18 +25,7 @@ export async function POST(
       );
     }
 
-    // --- Authentication ---
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { ok: false, code: 'UNAUTHORIZED', message: 'Token nao fornecido.' },
-        { status: 401 },
-      );
-    }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    const app = getFirebaseAdminApp();
-    const decodedToken = await getAuth(app).verifyIdToken(idToken);
+    const decodedToken = await verifyBearerToken(request);
 
     // --- Parse body ---
     const body = await request.json();

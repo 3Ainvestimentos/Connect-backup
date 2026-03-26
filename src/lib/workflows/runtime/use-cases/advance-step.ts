@@ -11,6 +11,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { assertCanAdvance, advanceStepStates } from '../engine';
 import { RuntimeError, RuntimeErrorCode } from '../errors';
 import { buildHistoryEntry } from '../history';
+import { buildAdvanceReadModelUpdate } from '../read-model';
 import * as repo from '../repository';
 import type { StatusCategory } from '../types';
 
@@ -108,15 +109,18 @@ export async function advanceStep(input: AdvanceStepInput): Promise<AdvanceStepR
     ),
   ];
 
+  const readModelUpdate = buildAdvanceReadModelUpdate({
+    nextStepId: nextStep.stepId,
+    nextStepName: nextStep.stepName,
+    nextStatusKey: nextStep.statusKey,
+    now,
+  });
+
   await repo.updateWorkflowRequestWithHistory(
     docId,
     {
       stepStates: newStepStates,
-      currentStepId: nextStep.stepId,
-      currentStepName: nextStep.stepName,
-      currentStatusKey: nextStep.statusKey,
-      statusCategory: 'in_progress',
-      lastUpdatedAt: now,
+      ...readModelUpdate,
     },
     historyEntries,
   );
