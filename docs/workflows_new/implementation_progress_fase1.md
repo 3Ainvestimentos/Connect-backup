@@ -152,3 +152,99 @@ A Etapa 1 ficou concluida com:
 Fica recomendado como proximo passo da fase:
 
 - executar um smoke test real de `open-request` em `workflows_v2` para validar ponta a ponta a primeira abertura operacional do piloto
+
+## 2026-03-26 - Etapa 2 / Fase 1 Facilities
+
+### Entrega
+
+Foi implementada a Etapa 2 do piloto de Facilities, consolidando o read-side do motor v2 sobre `workflows_v2` e deixando o backend pronto para consultas canonicas por fila, atribuicoes, historico concluido e minhas solicitacoes.
+
+### O que foi implementado
+
+- camada de leitura separada em `src/lib/workflows/read` com:
+  - `types.ts`
+  - `queries.ts`
+- rotas read-side em `src/app/api/workflows/read` para:
+  - `GET /api/workflows/read/current`
+  - `GET /api/workflows/read/assignments`
+  - `GET /api/workflows/read/completed`
+  - `GET /api/workflows/read/mine`
+- DTOs e envelopes canonicos de sucesso/erro para leitura
+- query builders para:
+  - fila atual do owner
+  - aguardando atribuicao
+  - em andamento
+  - aguardando acao
+  - atribuido a mim
+  - acao pendente para mim
+  - concluidas por participante operacional
+  - minhas solicitacoes por requester
+- agrupamento por mes para:
+  - `closedMonthKey` em concluidas
+  - `submittedMonthKey` em minhas solicitacoes
+- validacao explicita de coerencia do read model ja persistido em `workflows_v2`
+- fechamento da simetria do read model com o helper:
+  - `buildAdvanceReadModelUpdate`
+
+### Ajustes de consistencia aplicados na Etapa 2
+
+- fixtures de testes da Etapa 1 foram alinhados ao shape real persistido em `workflows_v2`
+- `operationalParticipantIds` na abertura ficou coerente com o contrato:
+  - apenas ownership operacional inicial
+  - sem incluir requester na abertura
+- residuos de shape futuro, como `actionRequests` em mocks atuais, foram removidos do escopo de testes da Etapa 2
+- o read-side passou a consumir o mesmo modelo de identidade operacional do write-side:
+  - autentica com Firebase Admin
+  - resolve `authUid -> id3a`
+
+### Correcoes pos-analise incorporadas na Etapa 2
+
+Depois da primeira implementacao do read-side, a etapa recebeu um hardening adicional para reduzir risco operacional antes do uso por usuarios reais.
+
+- autenticacao centralizada no helper composto:
+  - `authenticateRuntimeActor`
+- todas as 9 rotas do escopo passaram a usar esse helper:
+  - 5 write-side
+  - 4 read-side
+- `verifyBearerToken` foi endurecido para distinguir:
+  - erros reais de autenticacao (`auth/*`) retornando `401`
+  - erros de infraestrutura sendo propagados para `500`
+- as queries de abas do owner deixaram de depender de flags derivadas como eixo principal
+- `statusCategory` passou a ser o discriminador canonico para:
+  - `waiting_assignment` -> `open`
+  - `in_progress` -> `in_progress`
+  - `waiting_action` -> `waiting_action`
+- a estrategia de indices foi consolidada:
+  - mantendo o indice principal de owner por `statusCategory`
+  - removendo os indices auxiliares antigos baseados em `hasResponsible` e `hasPendingActions`
+
+### Validacao executada
+
+- testes do read-side criados em:
+  - `queries.test.js`
+  - `read-model-consistency.test.js`
+  - `read-api-contract.test.js`
+- testes especificos de auth helper criados em:
+  - `auth-helpers.test.js`
+- validacao executada para o bloco de correcoes pos-analise:
+  - `3` suites aprovadas
+  - `16` testes aprovados
+  - `0` falhas
+
+### Resultado da etapa
+
+A Etapa 2 ficou concluida com:
+
+- read-side separado e tipado
+- rotas `read/*` prontas para consumo futuro da UI
+- queries canonicas sobre `workflows_v2`
+- contrato HTTP de leitura coberto por testes
+- autenticacao unificada entre write-side e read-side
+- semantica de erro HTTP endurecida para auth vs infraestrutura
+- estrategia de indices simplificada para as consultas do piloto
+
+### Dependencia operacional remanescente
+
+Fica pendente apenas o provisionamento operacional dos indices em ambiente real, caso ainda nao tenha sido feito:
+
+- aplicar os indices atualizados de `workflows_v2` via script, `firestore.indexes.json` ou interface do Firestore
