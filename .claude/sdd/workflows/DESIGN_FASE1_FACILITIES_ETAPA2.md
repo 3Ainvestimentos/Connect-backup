@@ -71,6 +71,60 @@ Ao final desta etapa devem existir:
 - read DTOs e query builders iniciais;
 - testes de coerencia do read model.
 
+### 4.1. Diagrama arquitetural
+
+```text
+Authenticated Frontend
+  |
+  | GET /api/workflows/read/*
+  v
+Next.js Route Handlers
+  |
+  +--> Auth guard (Firebase Admin ID token)
+  +--> Runtime actor resolution (authUid -> id3a)
+  |
+  v
+Read Layer
+  |
+  +--> src/lib/workflows/read/types.ts
+  +--> src/lib/workflows/read/queries.ts
+  |
+  v
+Firestore
+  |- workflows_v2
+  |- workflowTypes_v2
+  |- workflowTypes_v2/{workflowTypeId}/versions/{version}
+  |- counters/workflowCounter_v2 (indireto, quando necessario)
+```
+
+### 4.2. Fronteira com a Etapa 1
+
+A Etapa 1 ja entregou:
+
+- runtime write-side;
+- persistencia do backbone desnormalizado em `workflows_v2`;
+- seed dos `workflowTypes_v2` e `versions/1`;
+- testes do write-side.
+
+A Etapa 2 nao reimplementa o runtime. Ela:
+
+- valida a shape persistida;
+- organiza o contrato de leitura;
+- expoe queries e rotas read-side;
+- garante indices e testes de coerencia.
+
+### 4.3. Ajustes explicitos para o build da Etapa 2
+
+O build da Etapa 2 deve considerar os seguintes refinamentos ja fechados:
+
+- corrigir fixtures de teste que ainda divergem da shape real persistida pela Etapa 1;
+- reaproveitar um helper unico de autenticacao Bearer nas rotas read-side;
+- criar `buildAdvanceReadModelUpdate` para manter simetria entre os helpers de projecao;
+- substituir testes genericos de `types` por testes objetivos de contrato e coerencia;
+- remover `actionRequests` dos mocks atuais da Etapa 1 quando o shape sob teste nao persistir esse campo;
+- manter documentado que fluxos futuros com `requestAction/respondAction` voltarao a usar `actionRequests`;
+- documentar os indices da Etapa 2 sem assumir que o provisionamento sera feito automaticamente pelo build.
+
 ---
 
 ## 5. Shape do Read Model em `workflows_v2`
@@ -154,6 +208,15 @@ Nota de produto:
 
 No piloto simples de Facilities, essa regra existe como capacidade estrutural, mas nao possui happy path positivo.
 
+Implementacao recomendada:
+
+- criar `buildAdvanceReadModelUpdate` em `src/lib/workflows/runtime/read-model.ts`;
+- usar esse helper mesmo sem happy path real no piloto simples, para manter simetria com:
+  - `buildOpenReadModel`
+  - `buildAssignReadModelUpdate`
+  - `buildFinalizeReadModelUpdate`
+  - `buildArchiveReadModelUpdate`
+
 ### 6.4. `finalize-request`
 
 - atualiza current step fields para a etapa final;
@@ -204,8 +267,12 @@ Nesta etapa, isso ainda e tratado como contrato estrutural e base de indices. A 
 Regra:
 
 - esses indices precisam ser provisionados manualmente;
-- a Etapa 2 deve atualizar `firestore.indexes.json`;
-- os indices devem ser provisionados para as queries sobre `workflows_v2`.
+- a Etapa 2 deve documentar os indices da forma necessaria para provisionamento posterior;
+- o provisionamento pode ser feito por:
+  - script
+  - `firestore.indexes.json`
+  - interface do Firestore
+- os indices devem existir para as queries sobre `workflows_v2` antes dos smoke tests read-side.
 
 ---
 
@@ -215,6 +282,9 @@ Arquivos recomendados:
 
 - `src/lib/workflows/read/types.ts`
 - `src/lib/workflows/read/queries.ts`
+- `src/lib/workflows/read/__tests__/queries.test.js`
+- `src/lib/workflows/read/__tests__/read-model-consistency.test.js`
+- `src/lib/workflows/read/__tests__/read-api-contract.test.js`
 - `src/app/api/workflows/read/current/route.ts`
 - `src/app/api/workflows/read/assignments/route.ts`
 - `src/app/api/workflows/read/completed/route.ts`
@@ -224,6 +294,147 @@ Escopo:
 
 - `types.ts` e `queries.ts` entram como base concreta da Etapa 2;
 - read APIs podem entrar minimamente nesta etapa ou ficar prontas para a etapa de frontend consolidado, desde que o contrato de leitura ja esteja fechado.
+
+### 9.1. Estruturacao nas pastas
+
+Estado atual:
+
+- write-side em `src/lib/workflows/runtime`
+- rotas write-side em `src/app/api/workflows/runtime`
+- ainda nao existe pasta concreta de read-side
+
+Estrutura alvo da Etapa 2:
+
+```text
+src/
+  lib/
+    workflows/
+      runtime/
+        read-model.ts
+      read/
+        types.ts
+        queries.ts
+        __tests__/
+          queries.test.js
+          types.test.js
+  app/
+    api/
+      workflows/
+        runtime/
+        read/
+          current/route.ts
+          assignments/route.ts
+          completed/route.ts
+          mine/route.ts
+firestore.indexes.json
+```
+
+### 9.2. File Manifest
+
+Arquivos para criar:
+
+- `src/lib/workflows/read/types.ts`
+- `src/lib/workflows/read/queries.ts`
+- `src/lib/workflows/read/__tests__/queries.test.js`
+- `src/lib/workflows/read/__tests__/read-model-consistency.test.js`
+- `src/lib/workflows/read/__tests__/read-api-contract.test.js`
+- `src/lib/workflows/runtime/auth-helpers.ts`
+- `src/app/api/workflows/read/current/route.ts`
+- `src/app/api/workflows/read/assignments/route.ts`
+- `src/app/api/workflows/read/completed/route.ts`
+- `src/app/api/workflows/read/mine/route.ts`
+
+Arquivos para atualizar:
+
+- `src/lib/workflows/runtime/read-model.ts`
+- `src/lib/workflows/runtime/__tests__/repository.test.js`
+- `src/lib/workflows/runtime/__tests__/runtime-use-cases.test.js`
+- `src/lib/workflows/runtime/__tests__/authz.test.js`
+
+### 9.3. Contrato inicial das read APIs
+
+Formato comum de sucesso:
+
+```ts
+type ReadSuccess<T> = {
+  ok: true;
+  data: T;
+};
+```
+
+Formato comum de erro:
+
+```ts
+type ReadError = {
+  ok: false;
+  code: string;
+  message: string;
+};
+```
+
+Endpoints iniciais:
+
+- `GET /api/workflows/read/current`
+- `GET /api/workflows/read/assignments`
+- `GET /api/workflows/read/completed`
+- `GET /api/workflows/read/mine`
+
+### 9.4. Code Patterns
+
+Builder de query para owner current queue:
+
+```ts
+export function buildOwnerCurrentQueueQuery(db: Firestore, ownerUserId: string) {
+  return db
+    .collection('workflows_v2')
+    .where('ownerUserId', '==', ownerUserId)
+    .where('isArchived', '==', false)
+    .orderBy('statusCategory')
+    .orderBy('lastUpdatedAt', 'desc');
+}
+```
+
+Pattern de rota read-side:
+
+```ts
+export async function GET(request: Request) {
+  const decodedToken = await verifyBearerToken(request);
+  const actor = await resolveRuntimeActor(decodedToken);
+  const items = await queryAssignments(actor.actorUserId);
+  return NextResponse.json({ ok: true, data: items });
+}
+```
+
+### 9.5. Reaproveitamento de helper de autenticacao
+
+Para evitar duplicacao nas rotas `read/*`, a Etapa 2 deve extrair e reaproveitar um helper de autenticacao Bearer, por exemplo:
+
+- `src/lib/workflows/runtime/auth-helpers.ts`
+
+Responsabilidade desse helper:
+
+- ler `Authorization: Bearer <idToken>`;
+- validar presenca do header;
+- chamar `verifyIdToken` via Firebase Admin;
+- lancar erro consistente para uso nas rotas read-side.
+
+As rotas read-side devem reutilizar esse helper em vez de copiar a validacao inline em cada arquivo.
+
+### 9.6. Limpeza de fixtures e forward-compatibility
+
+Ao revisar os testes existentes da Etapa 1:
+
+- `operationalParticipantIds` deve refletir a shape real do runtime:
+  - na abertura, apenas `ownerUserId`;
+- `actionRequests` deve ser removido dos mocks atuais se o documento efetivamente testado nao persiste esse campo no runtime atual.
+
+Essa limpeza nao remove o suporte conceitual a action flow.
+
+Deve permanecer documentado que:
+
+- workflows futuros com `requestAction/respondAction` voltarao a usar `actionRequests`;
+- `waiting_action` continua parte do modelo;
+- `pendingActionRecipientIds` e `pendingActionTypes` continuam parte do backbone do read model.
 
 ---
 
@@ -246,6 +457,32 @@ Abordagem:
 - validar query builders e projeções;
 - nao depender do frontend para provar o contrato de leitura.
 
+Casos minimos obrigatorios:
+
+- `open-request` projeta todos os campos obrigatorios do read model;
+- `assign-responsible` atualiza ownership e etapa atual corretamente;
+- `advance-step` usa `buildAdvanceReadModelUpdate` ou prova equivalente de coerencia do update;
+- `finalize-request` persiste `closedAt = finalizedAt`;
+- `archive-request` nao sobrescreve `closedAt`;
+- query de `completed` respeita `operationalParticipantIds`;
+- query de `mine` respeita `requesterUserId`;
+- query de `assignments` respeita `responsibleUserId`;
+- shape do documento continua compativel com `waiting_action`, mesmo sem emissao no piloto simples.
+
+Artefatos de teste objetivos:
+
+- `queries.test.js`
+  - valida builders de query, filtros e ordenacoes
+- `read-model-consistency.test.js`
+  - valida coerencia entre os helpers do runtime e a shape persistida
+- `read-api-contract.test.js`
+  - valida envelope de resposta, filtros minimos e mapeamento basico de erro nas rotas `read/*`
+
+Regra:
+
+- nao criar teste trivial apenas para cobrir `types.ts`;
+- todo arquivo de teste novo deve validar comportamento real, shape real ou contrato real.
+
 ---
 
 ## 11. Fora de Escopo da Etapa 2
@@ -258,14 +495,53 @@ Abordagem:
 
 ---
 
-## 12. Pronto para Build
+## 12. ADRs da Etapa 2
+
+### ADR-ET2-001: A Etapa 2 nao cria um segundo modelo persistido
+
+O read model do piloto continua sendo o proprio documento `workflows_v2`, com campos desnormalizados gravados pelo write-side da Etapa 1.
+
+### ADR-ET2-002: O read-side nasce como camada separada
+
+As regras de consulta e DTOs ficam em `src/lib/workflows/read`, separadas de `src/lib/workflows/runtime`, mesmo reaproveitando o mesmo documento persistido.
+
+### ADR-ET2-003: Read APIs minimas podem entrar antes da UI consolidada
+
+As rotas `read/*` entram como contrato do backend e base de validacao, mesmo que o frontend consolidado do piloto fique para a etapa seguinte.
+
+### ADR-ET2-004: A autenticacao das rotas read-side deve ser reutilizavel
+
+A Etapa 2 extrai um helper de autenticacao Bearer para evitar duplicacao do mesmo bloco de verificacao de token em todas as rotas `read/*`.
+
+### ADR-ET2-005: Fixtures devem refletir a shape real, nao a shape futura
+
+Os testes da Etapa 2 devem usar mocks coerentes com o que a Etapa 1 realmente persiste hoje, preservando a compatibilidade futura por documentacao e nao por campos residuais em fixtures.
+
+---
+
+## 13. Rollback Plan
+
+Se a Etapa 2 falhar:
+
+1. manter o runtime write-side da Etapa 1 intacto;
+2. desabilitar o consumo das rotas `read/*` novas;
+3. preservar `workflows_v2` como fonte de verdade do piloto;
+4. reverter apenas:
+   - query builders novos
+   - rotas read-side novas
+   - documentacao de indices ou `firestore.indexes.json`, se necessario
+5. nao tocar nas colecoes legadas nem no seed da Etapa 1.
+
+---
+
+## 14. Pronto para Build
 
 A Etapa 2 fica pronta para build quando:
 
 - o shape do documento `workflows_v2` estiver fechado;
 - as regras de projeção por caso de uso estiverem explicitas;
 - os indices compostos estiverem definidos;
-- `firestore.indexes.json` tiver sido incorporado ao plano de build;
+- a estrategia de provisionamento dos indices estiver documentada;
 - o read layer minimo nao depender mais de interpretacao adicional.
 
 ---
