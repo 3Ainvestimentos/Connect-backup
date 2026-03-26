@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { groupWorkflowsByMonth, queryCompletedHistory } from '@/lib/workflows/read/queries';
 import type { ReadError, ReadSuccess, WorkflowGroupedReadData } from '@/lib/workflows/read/types';
-import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
+import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
-import { verifyBearerToken } from '@/lib/workflows/runtime/auth-helpers';
 
 export async function GET(request: Request) {
   try {
-    const decodedToken = await verifyBearerToken(request);
-    const actor = await resolveRuntimeActor(decodedToken);
+    const { actor } = await authenticateRuntimeActor(request);
     const items = await queryCompletedHistory(actor.actorUserId);
 
     const response: ReadSuccess<WorkflowGroupedReadData> = {

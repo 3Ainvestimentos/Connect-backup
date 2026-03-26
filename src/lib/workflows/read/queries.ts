@@ -86,21 +86,29 @@ export function buildOwnerCurrentQueueQuery(db: Firestore, ownerUserId: string):
 }
 
 export function buildOwnerWaitingAssignmentQuery(db: Firestore, ownerUserId: string): Query {
-  return buildOwnerActiveBaseQuery(db, ownerUserId)
-    .where('hasResponsible', '==', false)
+  return db
+    .collection(WORKFLOWS_COLLECTION)
+    .where('ownerUserId', '==', ownerUserId)
+    .where('isArchived', '==', false)
+    .where('statusCategory', '==', 'open')
     .orderBy('lastUpdatedAt', 'desc');
 }
 
 export function buildOwnerInProgressQueueQuery(db: Firestore, ownerUserId: string): Query {
-  return buildOwnerActiveBaseQuery(db, ownerUserId)
-    .where('hasResponsible', '==', true)
-    .where('hasPendingActions', '==', false)
+  return db
+    .collection(WORKFLOWS_COLLECTION)
+    .where('ownerUserId', '==', ownerUserId)
+    .where('isArchived', '==', false)
+    .where('statusCategory', '==', 'in_progress')
     .orderBy('lastUpdatedAt', 'desc');
 }
 
 export function buildOwnerWaitingActionQuery(db: Firestore, ownerUserId: string): Query {
-  return buildOwnerActiveBaseQuery(db, ownerUserId)
-    .where('hasPendingActions', '==', true)
+  return db
+    .collection(WORKFLOWS_COLLECTION)
+    .where('ownerUserId', '==', ownerUserId)
+    .where('isArchived', '==', false)
+    .where('statusCategory', '==', 'waiting_action')
     .orderBy('lastUpdatedAt', 'desc');
 }
 

@@ -7,9 +7,8 @@ import {
   type ReadSuccess,
   type WorkflowCurrentReadData,
 } from '@/lib/workflows/read/types';
-import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
+import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
-import { verifyBearerToken } from '@/lib/workflows/runtime/auth-helpers';
 
 function isCurrentQueueFilter(value: string): value is CurrentQueueFilter {
   return CURRENT_QUEUE_FILTERS.includes(value as CurrentQueueFilter);
@@ -29,8 +28,7 @@ export async function GET(request: Request) {
       return NextResponse.json(error, { status: 400 });
     }
 
-    const decodedToken = await verifyBearerToken(request);
-    const actor = await resolveRuntimeActor(decodedToken);
+    const { actor } = await authenticateRuntimeActor(request);
     const items = await queryOwnerCurrentQueue(actor.actorUserId, rawFilter);
 
     const response: ReadSuccess<WorkflowCurrentReadData> = {

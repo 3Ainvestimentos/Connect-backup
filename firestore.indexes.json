@@ -27,58 +27,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "ownerUserId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "isArchived",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "statusCategory",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "hasResponsible",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "lastUpdatedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "workflows_v2",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "ownerUserId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "isArchived",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "statusCategory",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "hasPendingActions",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "lastUpdatedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "workflows_v2",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
           "fieldPath": "responsibleUserId",
           "order": "ASCENDING"
         },

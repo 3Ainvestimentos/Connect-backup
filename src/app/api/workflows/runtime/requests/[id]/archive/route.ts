@@ -6,8 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
-import { verifyBearerToken } from '@/lib/workflows/runtime/auth-helpers';
+import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
 import { archiveRequest } from '@/lib/workflows/runtime/use-cases/archive-request';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
@@ -25,13 +24,11 @@ export async function POST(
       );
     }
 
-    const decodedToken = await verifyBearerToken(request);
+    const { actor } = await authenticateRuntimeActor(request);
 
     // --- Parse body ---
     const body = await request.json();
     const { actorName } = body;
-
-    const actor = await resolveRuntimeActor(decodedToken);
 
     // --- Execute use case ---
     const result = await archiveRequest({

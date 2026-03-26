@@ -115,40 +115,30 @@ describe('workflow read queries', () => {
   it('materializa os filtros internos de Chamados atuais para atribuicao, andamento e waiting_action', () => {
     const waitingAssignment = createDb();
     buildOwnerWaitingAssignmentQuery(waitingAssignment.db, 'SMO2');
-    expect(waitingAssignment.queries[0].operations).toContainEqual({
-      type: 'where',
-      field: 'hasResponsible',
-      operator: '==',
-      value: false,
-    });
+    expect(waitingAssignment.queries[0].operations).toEqual([
+      { type: 'where', field: 'ownerUserId', operator: '==', value: 'SMO2' },
+      { type: 'where', field: 'isArchived', operator: '==', value: false },
+      { type: 'where', field: 'statusCategory', operator: '==', value: 'open' },
+      { type: 'orderBy', field: 'lastUpdatedAt', direction: 'desc' },
+    ]);
 
     const inProgress = createDb();
     buildOwnerInProgressQueueQuery(inProgress.db, 'SMO2');
-    expect(inProgress.queries[0].operations).toEqual(
-      expect.arrayContaining([
-        {
-          type: 'where',
-          field: 'hasResponsible',
-          operator: '==',
-          value: true,
-        },
-        {
-          type: 'where',
-          field: 'hasPendingActions',
-          operator: '==',
-          value: false,
-        },
-      ]),
-    );
+    expect(inProgress.queries[0].operations).toEqual([
+      { type: 'where', field: 'ownerUserId', operator: '==', value: 'SMO2' },
+      { type: 'where', field: 'isArchived', operator: '==', value: false },
+      { type: 'where', field: 'statusCategory', operator: '==', value: 'in_progress' },
+      { type: 'orderBy', field: 'lastUpdatedAt', direction: 'desc' },
+    ]);
 
     const waitingAction = createDb();
     buildOwnerWaitingActionQuery(waitingAction.db, 'SMO2');
-    expect(waitingAction.queries[0].operations).toContainEqual({
-      type: 'where',
-      field: 'hasPendingActions',
-      operator: '==',
-      value: true,
-    });
+    expect(waitingAction.queries[0].operations).toEqual([
+      { type: 'where', field: 'ownerUserId', operator: '==', value: 'SMO2' },
+      { type: 'where', field: 'isArchived', operator: '==', value: false },
+      { type: 'where', field: 'statusCategory', operator: '==', value: 'waiting_action' },
+      { type: 'orderBy', field: 'lastUpdatedAt', direction: 'desc' },
+    ]);
   });
 
   it('materializa queries de atribuicoes, acoes pendentes, concluidas e minhas solicitacoes', () => {

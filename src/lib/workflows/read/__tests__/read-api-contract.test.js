@@ -1,11 +1,7 @@
 /** @jest-environment node */
 
 jest.mock('@/lib/workflows/runtime/auth-helpers', () => ({
-  verifyBearerToken: jest.fn(),
-}));
-
-jest.mock('@/lib/workflows/runtime/actor-resolution', () => ({
-  resolveRuntimeActor: jest.fn(),
+  authenticateRuntimeActor: jest.fn(),
 }));
 
 jest.mock('@/lib/workflows/read/queries', () => ({
@@ -17,8 +13,7 @@ jest.mock('@/lib/workflows/read/queries', () => ({
 }));
 
 const { RuntimeError, RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
-const { verifyBearerToken } = require('@/lib/workflows/runtime/auth-helpers');
-const { resolveRuntimeActor } = require('@/lib/workflows/runtime/actor-resolution');
+const { authenticateRuntimeActor } = require('@/lib/workflows/runtime/auth-helpers');
 const {
   groupWorkflowsByMonth,
   queryAssignmentsForActor,
@@ -78,10 +73,19 @@ function buildSummary(overrides = {}) {
 }
 
 describe('workflow read API contract', () => {
+  let consoleErrorSpy;
+
   beforeEach(() => {
     jest.clearAllMocks();
-    verifyBearerToken.mockResolvedValue({ uid: 'firebase-uid-1' });
-    resolveRuntimeActor.mockResolvedValue(buildActor());
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    authenticateRuntimeActor.mockResolvedValue({
+      decodedToken: { uid: 'firebase-uid-1' },
+      actor: buildActor(),
+    });
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   it('retorna envelope canonico em /read/current e repassa o filtro minimo', async () => {
@@ -117,7 +121,7 @@ describe('workflow read API contract', () => {
       code: 'INVALID_FILTER',
       message: 'Filtro invalido: invalid.',
     });
-    expect(verifyBearerToken).not.toHaveBeenCalled();
+    expect(authenticateRuntimeActor).not.toHaveBeenCalled();
   });
 
   it('retorna secoes separadas para atribuicoes e acoes pendentes', async () => {
@@ -167,7 +171,7 @@ describe('workflow read API contract', () => {
   });
 
   it('mapeia erro de autenticacao nas rotas read-side com envelope consistente', async () => {
-    verifyBearerToken.mockRejectedValue(
+    authenticateRuntimeActor.mockRejectedValue(
       new RuntimeError(RuntimeErrorCode.UNAUTHORIZED, 'Token nao fornecido.', 401),
     );
 
@@ -182,5 +186,22 @@ describe('workflow read API contract', () => {
       message: 'Token nao fornecido.',
     });
     expect(queryRequesterHistory).not.toHaveBeenCalled();
+  });
+
+  it('retorna 500 quando authenticateRuntimeActor lanca erro de infraestrutura', async () => {
+    authenticateRuntimeActor.mockRejectedValue(new Error('ECONNREFUSED'));
+
+    const response = await getAssignments(
+      new Request('http://localhost/api/workflows/read/assignments', {
+        headers: { Authorization: 'Bearer token' },
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      code: 'INTERNAL_ERROR',
+      message: 'Erro interno do servidor.',
+    });
   });
 });

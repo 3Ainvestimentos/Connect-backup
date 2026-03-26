@@ -23,8 +23,17 @@ export async function verifyBearerToken(request: Request): Promise<DecodedIdToke
 
   try {
     return await getAuth(getFirebaseAdminApp()).verifyIdToken(idToken);
-  } catch {
-    throw new RuntimeError(RuntimeErrorCode.UNAUTHORIZED, 'Token invalido.', 401);
+  } catch (error: unknown) {
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? (error as { code?: unknown }).code
+        : undefined;
+
+    if (typeof code === 'string' && code.startsWith('auth/')) {
+      throw new RuntimeError(RuntimeErrorCode.UNAUTHORIZED, 'Token invalido.', 401);
+    }
+
+    throw error;
   }
 }
 

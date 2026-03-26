@@ -6,8 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { resolveRuntimeActor } from '@/lib/workflows/runtime/actor-resolution';
-import { verifyBearerToken } from '@/lib/workflows/runtime/auth-helpers';
+import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
 import { assignResponsible } from '@/lib/workflows/runtime/use-cases/assign-responsible';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
@@ -25,7 +24,7 @@ export async function POST(
       );
     }
 
-    const decodedToken = await verifyBearerToken(request);
+    const { actor } = await authenticateRuntimeActor(request);
 
     // --- Parse body ---
     const body = await request.json();
@@ -41,8 +40,6 @@ export async function POST(
         { status: 400 },
       );
     }
-
-    const actor = await resolveRuntimeActor(decodedToken);
 
     // --- Execute use case ---
     const result = await assignResponsible({
