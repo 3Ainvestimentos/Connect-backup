@@ -346,3 +346,132 @@ Nao ha dependencia operacional nova de Firestore nesta etapa.
 O proximo passo natural da fase passa a ser:
 
 - construir a Etapa 4, consumindo `GET /api/workflows/catalog/[workflowTypeId]` para renderizar a UI minima do workflow `facilities_manutencao_solicitacoes_gerais`
+
+## 2026-03-27 - Etapa 4 / Fase 1 Facilities
+
+### Entrega
+
+Foi implementada a Etapa 4 da Fase 1 de Facilities, materializando a primeira UI real do piloto em uma rota nova e autenticada, consumindo apenas as APIs do motor v2 e o catalogo publicado da Etapa 3.
+
+### O que foi implementado
+
+- nova rota do piloto em:
+  - `src/app/(app)/pilot/facilities/page.tsx`
+- shell principal do frontend do piloto em:
+  - `src/components/pilot/facilities/FacilitiesPilotPage.tsx`
+- formulario dinamico de abertura via catalogo publicado em:
+  - `OpenWorkflowCard.tsx`
+  - `DynamicFieldRenderer.tsx`
+- tabs operacionais para:
+  - `Chamados atuais`
+  - `Atribuicoes e acoes`
+  - `Minhas solicitacoes`
+- dialog operacional de detalhe do chamado em:
+  - `RequestDetailsDialog.tsx`
+- camada client-safe da feature em:
+  - `src/lib/workflows/pilot/api-client.ts`
+  - `src/lib/workflows/pilot/query-keys.ts`
+  - `src/lib/workflows/pilot/types.ts`
+  - `src/lib/workflows/pilot/timestamps.ts`
+  - `src/lib/workflows/pilot/presentation.ts`
+- hook de orquestracao com React Query em:
+  - `src/hooks/use-facilities-pilot.ts`
+
+### Contrato funcional entregue
+
+- abertura dinamica do workflow:
+  - `facilities_manutencao_solicitacoes_gerais`
+- consumo do catalogo publicado via:
+  - `GET /api/workflows/catalog/[workflowTypeId]`
+- abertura de chamado via:
+  - `POST /api/workflows/runtime/requests`
+- atribuicao, finalizacao e arquivamento via:
+  - `POST /api/workflows/runtime/requests/{id}/assign`
+  - `POST /api/workflows/runtime/requests/{id}/finalize`
+  - `POST /api/workflows/runtime/requests/{id}/archive`
+- leitura operacional via:
+  - `GET /api/workflows/read/current`
+  - `GET /api/workflows/read/assignments`
+  - `GET /api/workflows/read/mine`
+
+### Decisoes tecnicas materializadas na Etapa 4
+
+- nenhum arquivo novo depende de:
+  - `WorkflowsContext`
+  - `RequestsContext`
+  - `firestore-service`
+- a camada cliente preserva erro tipado com:
+  - `code`
+  - `message`
+  - `httpStatus`
+- as query keys da feature passaram a incluir:
+  - `user.uid`
+- o catalogo publicado ficou fora da invalidacao operacional e passou a usar cache mais estavel
+- `actorName` foi centralizado no hook do piloto
+- `Minhas solicitacoes` ficou incorporado como tab da pagina principal
+- o renderer dinamico da etapa ficou funcional para os tipos usados pelo workflow 1:
+  - `text`
+  - `textarea`
+  - `select`
+
+### Correcao pontual aplicada apos o build inicial
+
+Depois da primeira implementacao da Etapa 4, foi aplicada uma correcao localizada na camada de apresentacao do piloto:
+
+- `waiting_action` deixou de bloquear `Finalizar` para:
+  - owner
+  - responsavel
+- a funcao `derivePilotRequestPresentation` passou a alinhar essa regra com a permissao real do backend
+- a suite de `presentation.test.ts` recebeu cobertura dedicada para:
+  - owner em `waiting_action`
+  - responsavel em `waiting_action`
+  - terceiro sem permissao em `waiting_action`
+
+### Validacao executada
+
+- suites direcionadas do piloto criadas e aprovadas em:
+  - `api-client.test.ts`
+  - `timestamps.test.ts`
+  - `presentation.test.ts`
+  - `OpenWorkflowCard.test.tsx`
+  - `RequestDetailsDialog.test.tsx`
+- validacao do bloco principal da etapa:
+  - `5` suites aprovadas
+  - `12` testes aprovados
+  - `0` falhas
+- validacao especifica da correcao de `waiting_action`:
+  - `1` suite aprovada
+  - `6` testes aprovados
+  - `0` falhas
+- `npm run build` executado com sucesso para o app com a nova rota `/pilot/facilities`
+
+### Validacao manual da UI
+
+- a rota `/pilot/facilities` foi carregada no navegador com autenticacao real
+- o formulario dinamico passou a carregar a definicao publicada do workflow 1
+- a lista de `Chamados atuais` passou a renderizar itens reais
+- a aba `Minhas solicitacoes` passou a exibir agrupamento mensal com dados reais do piloto
+
+### Resultado da etapa
+
+A Etapa 4 ficou concluida com:
+
+- primeira UI real do piloto implementada
+- abertura dinamica do workflow 1 via catalogo publicado
+- operacao minima de owner e responsavel em rota nova
+- camada cliente isolada do legado
+- base pronta para reutilizacao nos workflows 2 e 3
+
+### Consideracoes operacionais e refinamentos futuros
+
+Ficaram registrados como refinamentos futuros da experiencia:
+
+- apos a primeira atribuicao, o seletor de responsavel deve deixar de aparecer
+- o detalhe do chamado deve mostrar apenas o responsavel atual em modo leitura
+- eventual reatribuicao futura deve ser modelada como acao explicita e deliberada
+
+Tambem foi adicionado suporte operacional local para desenvolvimento com Firebase Admin via:
+
+- script `npm run dev:firebase`
+
+Esse script facilita subir o ambiente local com as credenciais necessarias para as rotas autenticadas do motor novo.
