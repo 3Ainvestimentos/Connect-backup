@@ -114,6 +114,8 @@ Verification: `5/5` suites e `12/12` testes passando.
 ### Pending
 - [ ] Teste manual autenticado com perfis owner e responsavel
 - [ ] Validar dados reais de colaboradores no seletor de responsavel
+- [ ] Refinar o dialog para que, apos a primeira atribuicao, o seletor de responsavel deixe de aparecer e o responsavel atual fique apenas em modo leitura
+- [ ] Se reatribuicao vier a existir no futuro, modelar como acao explicita e deliberada, e nao como permanencia silenciosa do seletor original
 
 ## 9. Next Steps
 
@@ -121,6 +123,11 @@ Verification: `5/5` suites e `12/12` testes passando.
 2. **Documentacao:** decidir se o design deve ser atualizado com a restricao atual de `waiting_action`.
 3. **Commit:** manter na branch `refactor/workflows` e revisar junto com as etapas anteriores.
 4. **Deploy:** sem etapa extra de infraestrutura; usar o fluxo normal do app apos revisao.
+
+### Future UX Considerations
+
+- Apos a primeira atribuicao do responsavel, o dialog deve deixar de exibir o seletor editavel e passar a mostrar apenas o responsavel atual em modo leitura.
+- Se o produto precisar suportar troca de responsavel no futuro, isso deve aparecer como uma acao explicita de `Reatribuir responsavel`, e nao como continuacao automatica do mesmo seletor usado na atribuicao inicial.
 
 ## 10. Implementation Notes
 

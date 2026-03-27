@@ -552,6 +552,8 @@ Ao final da Fase 1, deve ser reavaliado se a camada cliente criada no piloto ja 
 - promocao de `PilotApiError` para `WorkflowApiError`;
 - estabilizacao de `src/lib/workflows/client/*` como fronteira comum do frontend de workflows;
 - consolidacao das query keys e adapters client-safe como base para expansao alem de Facilities.
+- refinamento da UX de atribuicao para que, apos a primeira atribuicao, o responsavel passe a aparecer apenas em modo leitura no detalhe do chamado;
+- eventual suporte futuro a troca de responsavel modelado como acao explicita de `Reatribuir responsavel`, e nao como permanencia silenciosa do seletor inicial.
 
 ---
 

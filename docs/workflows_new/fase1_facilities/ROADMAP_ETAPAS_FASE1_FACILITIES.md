@@ -177,6 +177,8 @@ Expandir o frontend minimo para a experiencia consolidada da area piloto.
 - `Minhas solicitacoes` agrupada por mes
 - uso do runtime novo sem dependencia do frontend legado
 - base suficiente para avaliar a promocao da camada cliente do piloto para um modulo compartilhado de workflows
+- refinamento da UX de atribuicao para que, apos a primeira atribuicao, o responsavel apareca apenas em modo leitura
+- eventual reatribuicao futura modelada como acao explicita, e nao como permanencia automatica do seletor inicial
 
 ---
 
