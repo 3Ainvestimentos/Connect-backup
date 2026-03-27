@@ -311,9 +311,9 @@ A Etapa 3 foi implementada sem redesenhar o motor ja entregue nas etapas anterio
 
 - o payload passou a ser orientado a frontend, e nao um espelho cru do Firestore
 - `initialStepName` passou a ser derivado explicitamente da versao publicada
-- `INVALID_PUBLISHED_VERSION` ficou coberto em dois cenarios:
-  - `400` quando `latestPublishedVersion` aponta para documento fora de `state=published`
-  - `500` quando a versao publicada esta estruturalmente inconsistente para montar o DTO
+- a semantica de erro da versao publicada foi desambiguada em dois cenarios:
+  - `VERSION_NOT_PUBLISHED` (`400`) quando `latestPublishedVersion` aponta para documento fora de `state=published`
+  - `INVALID_PUBLISHED_VERSION` (`500`) quando a versao publicada esta estruturalmente inconsistente para montar o DTO
 - a rota dinamica foi alinhada ao padrao real do codebase:
   - `params: Promise<{ workflowTypeId: string }>`
   - `await params`

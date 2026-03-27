@@ -174,7 +174,7 @@ describe('workflow catalog API contract', () => {
   it('retorna 400 quando latestPublishedVersion aponta para documento fora de state=published', async () => {
     getPublishedWorkflowMetadata.mockRejectedValue(
       new RuntimeError(
-        RuntimeErrorCode.INVALID_PUBLISHED_VERSION,
+        RuntimeErrorCode.VERSION_NOT_PUBLISHED,
         'Versao 1 do tipo "facilities_manutencao_solicitacoes_gerais" nao esta publicada (state=draft).',
         400,
       ),
@@ -190,7 +190,7 @@ describe('workflow catalog API contract', () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
       ok: false,
-      code: RuntimeErrorCode.INVALID_PUBLISHED_VERSION,
+      code: RuntimeErrorCode.VERSION_NOT_PUBLISHED,
       message:
         'Versao 1 do tipo "facilities_manutencao_solicitacoes_gerais" nao esta publicada (state=draft).',
     });

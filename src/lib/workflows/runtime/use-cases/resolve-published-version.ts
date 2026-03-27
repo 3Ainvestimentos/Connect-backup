@@ -55,7 +55,7 @@ export async function resolvePublishedVersion(
 
   if (version.state !== 'published') {
     throw new RuntimeError(
-      RuntimeErrorCode.INVALID_PUBLISHED_VERSION,
+      RuntimeErrorCode.VERSION_NOT_PUBLISHED,
       `Versao ${versionNumber} do tipo "${workflowTypeId}" nao esta publicada (state=${version.state}).`,
     );
   }

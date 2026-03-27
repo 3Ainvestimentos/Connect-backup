@@ -214,10 +214,10 @@ describe('published workflow metadata', () => {
     );
   });
 
-  it('propaga INVALID_PUBLISHED_VERSION com status 400 quando a versao resolvida nao esta publicada', async () => {
+  it('propaga VERSION_NOT_PUBLISHED com status 400 quando a versao resolvida nao esta publicada', async () => {
     resolvePublishedVersion.mockRejectedValue(
       new RuntimeError(
-        RuntimeErrorCode.INVALID_PUBLISHED_VERSION,
+        RuntimeErrorCode.VERSION_NOT_PUBLISHED,
         'Versao 1 do tipo "facilities_manutencao_solicitacoes_gerais" nao esta publicada (state=draft).',
         400,
       ),
@@ -230,7 +230,7 @@ describe('published workflow metadata', () => {
       }),
     ).rejects.toEqual(
       expect.objectContaining({
-        code: RuntimeErrorCode.INVALID_PUBLISHED_VERSION,
+        code: RuntimeErrorCode.VERSION_NOT_PUBLISHED,
         httpStatus: 400,
       }),
     );

@@ -302,7 +302,7 @@ type WorkflowCatalogError = {
   - ator autenticado, mas sem permissao para abrir esse workflow;
 - `404 PUBLISHED_VERSION_NOT_FOUND`
   - tipo ausente, sem `latestPublishedVersion` valida, ou subdocumento da versao nao encontrado;
-- `400 INVALID_PUBLISHED_VERSION`
+- `400 VERSION_NOT_PUBLISHED`
   - `resolvePublishedVersion` encontrou uma versao apontada por `latestPublishedVersion`, mas o documento nao esta em `state = 'published'`;
 - `500 INVALID_PUBLISHED_VERSION`
   - `initialStepId` ausente em `stepsById`, `stepOrder` inconsistente, ou shape publicada sem integridade suficiente para montar o DTO;
@@ -347,7 +347,7 @@ src/
 | 3 | `src/lib/workflows/catalog/__tests__/published-metadata.test.js` | Create | Cobrir ordenacao, mapeamento e validacoes do payload | `build` |
 | 4 | `src/lib/workflows/catalog/__tests__/api-contract.test.js` | Create | Validar envelope HTTP, auth e erros da rota nova | `build` |
 | 5 | `src/app/api/workflows/catalog/[workflowTypeId]/route.ts` | Create | Surface HTTP para consumo do frontend | `build` |
-| 6 | `src/lib/workflows/runtime/errors.ts` | Modify if needed | Apenas se for necessario explicitar helpers de status ou novos comentarios para o duplo uso de `INVALID_PUBLISHED_VERSION` (`400` no resolver, `500` no mapper) | `build` |
+| 6 | `src/lib/workflows/runtime/errors.ts` | Modify | Introduzir `VERSION_NOT_PUBLISHED` para separar versao existente mas fora de `state=published` de inconsistencias estruturais da versao publicada | `build` |
 
 ### 6.3. Reaproveitamento obrigatorio
 
@@ -497,7 +497,7 @@ Deve haver cobertura para:
 - falha com `400 WORKFLOW_TYPE_INACTIVE` quando o tipo existe mas esta desativado;
 - falha com `403` quando `allowedUserIds` nao contem `actorUserId` nem `all`;
 - falha com `404` quando `latestPublishedVersion` nao existe ou aponta para versao ausente;
-- falha com `400 INVALID_PUBLISHED_VERSION` quando `latestPublishedVersion` aponta para documento em estado diferente de `published`;
+- falha com `400 VERSION_NOT_PUBLISHED` quando `latestPublishedVersion` aponta para documento em estado diferente de `published`;
 - falha com `500 INVALID_PUBLISHED_VERSION` quando `initialStepId` nao existe em `stepsById`;
 - rota retorna envelope canonico `{ ok: true, data }` no sucesso;
 - rota retorna envelope canonico `{ ok: false, code, message }` nos erros.
