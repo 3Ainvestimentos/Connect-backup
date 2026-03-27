@@ -499,6 +499,15 @@ Usuario consegue:
 - responsavel acompanhar e operar chamados
 - consultar concluidos e detalhes no modal novo
 
+### Consideracao de evolucao da camada cliente
+
+Se as Etapas 5, 6 e 7 confirmarem reuso estavel da mesma camada cliente de workflows, a abstracao local de erro do piloto deve ser promovida para o dominio de workflows, por exemplo:
+
+- `WorkflowApiError`
+- em `src/lib/workflows/client/errors.ts`
+
+Essa promocao nao e requisito da Etapa 4, mas passa a ser candidata natural quando o frontend do piloto deixar de ser uma superficie isolada e se tornar base compartilhada entre os workflows da Fase 1.
+
 ---
 
 ## 5.9. Etapa 8 - Hardening e readiness para expansao
@@ -535,6 +544,14 @@ A base fica pronta para:
 - adicionar fluxos mais complexos
 - suportar troca futura de owner
 - migrar a proxima area sem retrabalho estrutural
+
+### Consideracoes de hardening da camada cliente
+
+Ao final da Fase 1, deve ser reavaliado se a camada cliente criada no piloto ja merece consolidacao como modulo compartilhado do dominio de workflows, incluindo:
+
+- promocao de `PilotApiError` para `WorkflowApiError`;
+- estabilizacao de `src/lib/workflows/client/*` como fronteira comum do frontend de workflows;
+- consolidacao das query keys e adapters client-safe como base para expansao alem de Facilities.
 
 ---
 

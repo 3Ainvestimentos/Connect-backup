@@ -176,6 +176,7 @@ Expandir o frontend minimo para a experiencia consolidada da area piloto.
 - modal unificado
 - `Minhas solicitacoes` agrupada por mes
 - uso do runtime novo sem dependencia do frontend legado
+- base suficiente para avaliar a promocao da camada cliente do piloto para um modulo compartilhado de workflows
 
 ---
 
@@ -200,6 +201,7 @@ Fechar a Fase 1 com seguranca tecnica suficiente para expandir para fluxos mais 
 - verificacao de indices
 - verificacao de logs e historico
 - readiness para introduzir `requestAction` depois
+- decisao sobre promocao de `PilotApiError` para uma abstracao compartilhada, como `WorkflowApiError`, se a camada cliente das Etapas 4 a 7 tiver sido reutilizada com estabilidade
 
 ---
 
