@@ -248,3 +248,101 @@ A Etapa 2 ficou concluida com:
 Fica pendente apenas o provisionamento operacional dos indices em ambiente real, caso ainda nao tenha sido feito:
 
 - aplicar os indices atualizados de `workflows_v2` via script, `firestore.indexes.json` ou interface do Firestore
+
+## 2026-03-27 - Etapa 3 / Fase 1 Facilities
+
+### Entrega
+
+Foi implementada a Etapa 3 da Fase 1 de Facilities, criando a rota backend de catalogo de metadados publicados do workflow para sustentar o frontend dinamico do piloto sem hardcode de campos e sem Firestore direto no cliente.
+
+### O que foi implementado
+
+- novo namespace autenticado em `src/app/api/workflows/catalog` com a rota:
+  - `GET /api/workflows/catalog/[workflowTypeId]`
+- camada server-side de catalogo em `src/lib/workflows/catalog` com:
+  - `types.ts`
+  - `published-metadata.ts`
+- DTO publico de metadados publicados com:
+  - `workflowTypeId`
+  - `workflowName`
+  - `description`
+  - `icon`
+  - `areaId`
+  - `version`
+  - `publishedAt`
+  - `defaultSlaDays`
+  - `initialStepId`
+  - `initialStepName`
+  - `fields[]`
+  - `steps[]`
+- ordenacao de `fields` por `order asc`
+- derivacao de `steps[]` a partir de:
+  - `stepOrder`
+  - `stepsById`
+- adaptacao da shape publicada para frontend, sem expor bruto:
+  - `allowedUserIds`
+  - `ownerEmail`
+  - `ownerUserId`
+  - `stepsById`
+
+### Reaproveitamento de contratos existentes
+
+A Etapa 3 foi implementada sem redesenhar o motor ja entregue nas etapas anteriores.
+
+- autenticacao reaproveitada via:
+  - `authenticateRuntimeActor`
+- resolucao da versao publicada reaproveitada via:
+  - `resolvePublishedVersion`
+- autorizacao reaproveitada via:
+  - `assertCanOpen`
+- envelope de erro consistente reaproveitado via:
+  - `RuntimeError`
+
+### Semantica fechada da etapa
+
+- a rota recebe `workflowTypeId`
+- le o documento em `workflowTypes_v2/{workflowTypeId}`
+- resolve `latestPublishedVersion`
+- le `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- valida se o ator pode abrir o workflow
+- devolve um payload pronto para o frontend renderizar dinamicamente o formulario de abertura
+
+### Ajustes e endurecimentos aplicados
+
+- o payload passou a ser orientado a frontend, e nao um espelho cru do Firestore
+- `initialStepName` passou a ser derivado explicitamente da versao publicada
+- `INVALID_PUBLISHED_VERSION` ficou coberto em dois cenarios:
+  - `400` quando `latestPublishedVersion` aponta para documento fora de `state=published`
+  - `500` quando a versao publicada esta estruturalmente inconsistente para montar o DTO
+- a rota dinamica foi alinhada ao padrao real do codebase:
+  - `params: Promise<{ workflowTypeId: string }>`
+  - `await params`
+
+### Validacao executada
+
+- testes unitarios criados em:
+  - `published-metadata.test.js`
+- testes de contrato HTTP criados em:
+  - `api-contract.test.js`
+- validacao executada para o bloco novo:
+  - `2` suites aprovadas
+  - `14` testes aprovados
+  - `0` falhas
+
+### Resultado da etapa
+
+A Etapa 3 ficou concluida com:
+
+- rota oficial de catalogo de workflow publicada
+- contrato backend para frontend dinamico fechado
+- versionamento real do motor exposto ate a UI
+- zero necessidade de Firestore direto no cliente para montar o workflow 1
+- base pronta para a Etapa 4 construir o frontend minimo do piloto sobre metadados publicados
+
+### Dependencia operacional remanescente
+
+Nao ha dependencia operacional nova de Firestore nesta etapa.
+
+O proximo passo natural da fase passa a ser:
+
+- construir a Etapa 4, consumindo `GET /api/workflows/catalog/[workflowTypeId]` para renderizar a UI minima do workflow `facilities_manutencao_solicitacoes_gerais`
