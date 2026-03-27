@@ -84,7 +84,23 @@ Confirmar e operacionalizar o read-model backbone da Fase 1 para os workflows re
 
 ---
 
-### 5.4. Etapa 3 - Workflow 1 + frontend minimo
+### 5.4. Etapa 3 - Metadados dinamicos do workflow publicado
+
+**Objetivo**
+
+Construir a rota de consulta da definicao publicada do workflow para permitir que o frontend do piloto consuma campos, labels e `options` da versao oficial sem hardcode e sem ler Firestore diretamente.
+
+**Saidas esperadas**
+
+- rota backend para consultar metadados publicados do workflow
+- leitura da `latestPublishedVersion` e da `versions/{version}` correspondente
+- payload pronto para o frontend renderizar formulario de abertura
+- contrato alinhado ao versionamento real do motor
+- zero dependencia de Firestore direto no frontend para montar campos do workflow 1
+
+---
+
+### 5.5. Etapa 4 - Workflow 1 + frontend minimo
 
 **Workflow**
 
@@ -110,7 +126,7 @@ Validar o primeiro fluxo ponta a ponta no motor novo, ja com frontend minimo fun
 
 ---
 
-### 5.5. Etapa 4 - Workflow 2 sobre a mesma base
+### 5.6. Etapa 5 - Workflow 2 sobre a mesma base
 
 **Workflow**
 
@@ -128,7 +144,7 @@ Validar reuso do motor e do frontend minimo em um segundo workflow da mesma area
 
 ---
 
-### 5.6. Etapa 5 - Workflow 3 sobre a mesma base
+### 5.7. Etapa 6 - Workflow 3 sobre a mesma base
 
 **Workflow**
 
@@ -147,7 +163,7 @@ Validar o terceiro workflow no mesmo modelo simplificado adotado para o piloto.
 
 ---
 
-### 5.7. Etapa 6 - Frontend consolidado do piloto
+### 5.8. Etapa 7 - Frontend consolidado do piloto
 
 **Objetivo**
 
@@ -163,7 +179,7 @@ Expandir o frontend minimo para a experiencia consolidada da area piloto.
 
 ---
 
-### 5.8. Etapa 7 - Hardening e readiness para expansao
+### 5.9. Etapa 8 - Hardening e readiness para expansao
 
 **Objetivo**
 
@@ -192,11 +208,12 @@ Fechar a Fase 1 com seguranca tecnica suficiente para expandir para fluxos mais 
 1. `5.1` Canonizacao do piloto
 2. `5.2` Validacao e gap-fill da fundacao tecnica
 3. `5.3` Validacao e gap-fill do read model
-4. `5.4` Workflow 1 + frontend minimo
-5. `5.5` Workflow 2
-6. `5.6` Workflow 3
-7. `5.7` Frontend consolidado do piloto
-8. `5.8` Hardening e readiness para expansao
+4. `5.4` Metadados dinamicos do workflow publicado
+5. `5.5` Workflow 1 + frontend minimo
+6. `5.6` Workflow 2
+7. `5.7` Workflow 3
+8. `5.8` Frontend consolidado do piloto
+9. `5.9` Hardening e readiness para expansao
 
 ---
 

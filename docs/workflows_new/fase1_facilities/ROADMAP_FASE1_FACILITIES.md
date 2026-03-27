@@ -299,11 +299,53 @@ As filas do piloto devem poder ser consultadas sem joins profundos e sem depende
 
 ---
 
-## 5.4. Etapa 3 - Workflow 1: Manutencao / Solicitacoes Gerais
+## 5.4. Etapa 3 - Metadados dinamicos do workflow publicado
 
 ### Objetivo
 
-Validar o primeiro fluxo linear ponta a ponta.
+Construir a camada backend que expoe a definicao publicada do workflow para o frontend do piloto, preservando o versionamento real do motor e eliminando a necessidade de hardcode de campos/opcoes na UI.
+
+### Escopo funcional da etapa
+
+- consultar `workflowTypes_v2/{workflowTypeId}`
+- resolver `latestPublishedVersion`
+- consultar `workflowTypes_v2/{workflowTypeId}/versions/{version}`
+- retornar payload de metadados publicado para o frontend
+- permitir que a UI do workflow 1 renderize formulario a partir da definicao oficial
+
+### Agente principal
+
+- `define` -> fechar o contrato da rota de metadados
+- `design` -> apontar arquivos/modulos tocados
+- `build` -> implementar a rota e o contrato de payload
+- `iterate` -> atualizar artefatos se houver ajuste de regra
+
+### Referencias obrigatorias
+
+- [03-status-category-state-machine.mmd](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagrams/03-status-category-state-machine.mmd)
+- [04-request-end-to-end-sequence.mmd](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagrams/04-request-end-to-end-sequence.mmd)
+- [MAPEAMENTO_ESTADOS_UI_WORKFLOWS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/MAPEAMENTO_ESTADOS_UI_WORKFLOWS.md)
+- [REQUISITOS_FRONTEND_GESTAO_CHAMADOS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/REQUISITOS_FRONTEND_GESTAO_CHAMADOS.md)
+- [01-manutencao-solicitacoes-gerais.svg](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/diagramas_workflow/facilities-e-suprimentos/01-manutencao-solicitacoes-gerais.svg)
+
+### O que deve ser validado nesta etapa
+
+- o frontend consegue obter metadados do workflow 1 sem ler Firestore diretamente
+- o payload devolve os campos, tipos, labels e `options` corretos da versao publicada
+- o contrato respeita `latestPublishedVersion`
+- a definicao servida pelo backend e suficiente para montar a abertura dinamica do workflow 1
+
+### Criterio de aceite
+
+Rota de metadados publicada funcionando e pronta para sustentar o frontend dinamico do workflow 1.
+
+---
+
+## 5.5. Etapa 4 - Workflow 1: Manutencao / Solicitacoes Gerais
+
+### Objetivo
+
+Validar o primeiro fluxo linear ponta a ponta, agora com frontend minimo alimentado pela rota de metadados publicada.
 
 ### Etapas do workflow a implementar
 
@@ -341,7 +383,7 @@ Primeiro workflow de Facilities rodando ponta a ponta no motor novo.
 
 ---
 
-## 5.5. Etapa 4 - Workflow 2: Solicitacao de Suprimentos
+## 5.6. Etapa 5 - Workflow 2: Solicitacao de Suprimentos
 
 ### Objetivo
 
@@ -379,7 +421,7 @@ Segundo workflow linear implantado sem introduzir excecao estrutural no runtime.
 
 ---
 
-## 5.6. Etapa 5 - Workflow 3: Solicitacao de Compras
+## 5.7. Etapa 6 - Workflow 3: Solicitacao de Compras
 
 ### Objetivo
 
@@ -418,7 +460,7 @@ Workflow de Compras implementado no mesmo modelo simplificado do piloto, sem int
 
 ---
 
-## 5.7. Etapa 6 - Frontend do piloto
+## 5.8. Etapa 7 - Frontend do piloto
 
 ### Objetivo
 
@@ -459,7 +501,7 @@ Usuario consegue:
 
 ---
 
-## 5.8. Etapa 7 - Hardening e readiness para expansao
+## 5.9. Etapa 8 - Hardening e readiness para expansao
 
 ### Objetivo
 
