@@ -81,4 +81,64 @@ describe('derivePilotRequestPresentation', () => {
       canFinalize: false,
     });
   });
+
+  it('allows finalize for owners when item is waiting action', () => {
+    expect(
+      derivePilotRequestPresentation(
+        {
+          ...baseRequest,
+          responsibleUserId: 'resp-1',
+          responsibleName: 'Responsavel',
+          hasResponsible: true,
+          statusCategory: 'waiting_action',
+        },
+        'owner-1',
+      ),
+    ).toMatchObject({
+      situationKey: 'waiting_action',
+      label: 'Aguardando acao',
+      canFinalize: true,
+      canArchive: false,
+    });
+  });
+
+  it('allows finalize for responsible users when item is waiting action', () => {
+    expect(
+      derivePilotRequestPresentation(
+        {
+          ...baseRequest,
+          responsibleUserId: 'resp-1',
+          responsibleName: 'Responsavel',
+          hasResponsible: true,
+          statusCategory: 'waiting_action',
+        },
+        'resp-1',
+      ),
+    ).toMatchObject({
+      situationKey: 'waiting_action',
+      label: 'Aguardando acao',
+      canFinalize: true,
+      canArchive: false,
+    });
+  });
+
+  it('keeps finalize disabled for unrelated actors when item is waiting action', () => {
+    expect(
+      derivePilotRequestPresentation(
+        {
+          ...baseRequest,
+          responsibleUserId: 'resp-1',
+          responsibleName: 'Responsavel',
+          hasResponsible: true,
+          statusCategory: 'waiting_action',
+        },
+        'other-user',
+      ),
+    ).toMatchObject({
+      situationKey: 'waiting_action',
+      label: 'Aguardando acao',
+      canFinalize: false,
+      canArchive: false,
+    });
+  });
 });

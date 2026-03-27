@@ -11,6 +11,7 @@ export function derivePilotRequestPresentation(
   actorUserId: string,
 ): PilotRequestPresentation {
   const isOwner = item.ownerUserId === actorUserId;
+  const isResponsible = item.responsibleUserId === actorUserId;
 
   if (item.statusCategory === 'archived') {
     return {
@@ -40,7 +41,7 @@ export function derivePilotRequestPresentation(
       label: 'Aguardando acao',
       badgeVariant: 'outline',
       canAssign: false,
-      canFinalize: false,
+      canFinalize: isOwner || isResponsible,
       canArchive: false,
     };
   }
@@ -61,9 +62,7 @@ export function derivePilotRequestPresentation(
     label: 'Em andamento',
     badgeVariant: 'default',
     canAssign: isOwner,
-    canFinalize:
-      item.statusCategory === 'in_progress' &&
-      (isOwner || item.responsibleUserId === actorUserId),
+    canFinalize: item.statusCategory === 'in_progress' && (isOwner || isResponsible),
     canArchive: false,
   };
 }
