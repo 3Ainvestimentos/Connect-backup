@@ -475,3 +475,126 @@ Tambem foi adicionado suporte operacional local para desenvolvimento com Firebas
 - script `npm run dev:firebase`
 
 Esse script facilita subir o ambiente local com as credenciais necessarias para as rotas autenticadas do motor novo.
+
+## 2026-03-30 - Etapa 5 / Fase 1 Facilities
+
+### Entrega
+
+Foi implementada a Etapa 5 da Fase 1 de Facilities, criando a infraestrutura de upload com signed URL no backend para campos `file` do motor v2, sem alterar o contrato do `open-request` e sem reintroduzir o mecanismo legado de upload.
+
+### O que foi implementado
+
+- nova rota autenticada de upload em:
+  - `src/app/api/workflows/runtime/uploads/route.ts`
+- use case server-side para iniciar upload em:
+  - `src/lib/workflows/runtime/use-cases/init-file-upload.ts`
+- modulo de assinatura e composicao do objeto de Storage em:
+  - `src/lib/workflows/runtime/upload-storage.ts`
+- extensao dos erros do runtime para codigos de upload em:
+  - `src/lib/workflows/runtime/errors.ts`
+- helper client-safe do piloto para:
+  - pedir assinatura
+  - fazer `PUT` do blob
+  - devolver `fileUrl`
+  em:
+  - `src/lib/workflows/pilot/api-client.ts`
+- DTOs e erro tipado de transferencia em:
+  - `src/lib/workflows/pilot/types.ts`
+
+### Contrato funcional entregue
+
+- nova rota:
+  - `POST /api/workflows/runtime/uploads`
+- request de assinatura com:
+  - `workflowTypeId`
+  - `fieldId`
+  - `fileName`
+  - `contentType`
+- response canonica com:
+  - `uploadUrl`
+  - `uploadMethod`
+  - `uploadHeaders`
+  - `fileUrl`
+  - `storagePath`
+  - `uploadId`
+  - `expiresAt`
+- helper cliente separado para:
+  - `requestPilotUpload`
+  - `putFileToSignedUrl`
+  - `uploadPilotFile`
+
+### Decisoes tecnicas materializadas na Etapa 5
+
+- a solucao adotou a abordagem A:
+  - backend gera a signed URL
+  - cliente faz upload direto para o Storage
+- o backend permaneceu como fonte de verdade para:
+  - authz
+  - `uploadId`
+  - path do objeto
+  - metadata do upload
+  - `fileUrl` final
+- o path dos uploads pre-open ficou padronizado em:
+  - `Workflows/Facilities e Suprimentos/workflows_v2/preopen/{workflowTypeId}/{fieldId}/{yyyy-mm}/{uploadId}-{sanitizedFileName}`
+- metadata minima do objeto fechada em:
+  - `uploadId`
+  - `workflowTypeId`
+  - `fieldId`
+  - `actorUserId`
+  - `firebaseStorageDownloadTokens`
+- o contrato de:
+  - `POST /api/workflows/runtime/requests`
+  permaneceu inalterado, continuando a receber apenas `formData` JSON com URL string para o campo `file`
+- a etapa foi mantida backend-first:
+  - sem alterar `OpenWorkflowCard`
+  - sem alterar `DynamicFieldRenderer`
+  - sem habilitar ainda o workflow 2 visualmente na UI do piloto
+
+### Validacao executada
+
+- suites novas/criadas para upload aprovadas em:
+  - `upload-storage.test.ts`
+  - `init-file-upload.test.ts`
+  - `upload-route-contract.test.ts`
+- suite do client helper atualizada e aprovada em:
+  - `api-client.test.ts`
+- validacao direcionada do bloco novo:
+  - `4` suites aprovadas
+  - `20` testes aprovados
+  - `0` falhas
+
+### Validacao manual executada
+
+Foi realizado smoke manual completo da infraestrutura de upload:
+
+- `POST /api/workflows/runtime/uploads` respondeu `200` com:
+  - `uploadUrl`
+  - `fileUrl`
+  - `storagePath`
+  - `uploadId`
+- `PUT` real do arquivo no Storage respondeu `200`
+- a `fileUrl` retornada respondeu `200` e serviu o conteudo do arquivo
+- `POST /api/workflows/runtime/requests` aceitou a `fileUrl` em:
+  - `formData.anexo_planilha`
+- o request foi criado com:
+  - `requestId = 806`
+  - `docId = 134Sf1oSIQ9yA6xr2XB4`
+- validacao em Firestore confirmou persistencia correta de:
+  - `formData.anexo_planilha`
+  no documento criado em `workflows_v2`
+
+### Resultado da etapa
+
+A Etapa 5 ficou concluida com:
+
+- infraestrutura de upload com signed URL implementada
+- helper cliente pronto para consumo futuro da UI
+- persistencia de URL de anexo validada no runtime v2
+- service account local validada com capacidade de assinar URLs
+- base pronta para a Etapa 6 integrar `anexo_planilha` na mesma UI do piloto ao habilitar `Solicitacao de Suprimentos`
+
+### Consideracoes operacionais
+
+- o smoke manual confirmou que o ambiente local do piloto consegue assinar URLs de Storage com a service account atual
+- o path do objeto ficou mais verboso do que o ideal para operacao manual no bucket, mas foi mantido por clareza e rastreabilidade nesta fase
+- a integracao visual do campo `file` permanece deliberadamente adiada para a Etapa 6, evitando regressao desnecessaria sobre a UI consolidada da Etapa 4
