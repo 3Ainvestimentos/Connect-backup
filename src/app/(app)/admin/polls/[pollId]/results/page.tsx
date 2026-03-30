@@ -164,7 +164,7 @@ export default function PollResultsPage() {
                 <ScrollArea className="h-[400px]">
                     {isIframe && (
                         <p className="text-sm text-muted-foreground mb-3 px-1">
-                            Lista de quem confirmou &quot;Já preenchi&quot; no Connect. O conteúdo das respostas fica no provedor do formulário (ex.: Google Forms).
+                            Lista de quem confirmou &quot;Pesquisa preenchida&quot; no Connect. O conteúdo das respostas fica no provedor do formulário (ex.: Google Forms).
                         </p>
                     )}
                     <Table>

@@ -251,7 +251,7 @@ export function ManagePolls() {
                                 <>
                                     <div>
                                         <Label htmlFor="question">Pergunta / Título</Label>
-                                        <Input id="question" {...form.register('question')} />
+                                        <Input id="question" className="focus-visible:ring-0 focus-visible:ring-offset-0" {...form.register('question')} />
                                         {form.formState.errors.question && <p className="text-sm text-destructive mt-1">{form.formState.errors.question.message}</p>}
                                     </div>
 
@@ -298,14 +298,14 @@ export function ManagePolls() {
                                 <>
                                     <div>
                                         <Label htmlFor="questionIframe">Título</Label>
-                                        <Input id="questionIframe" {...form.register('question')} />
+                                        <Input id="questionIframe" className="focus-visible:ring-0 focus-visible:ring-offset-0" {...form.register('question')} />
                                         {form.formState.errors.question && <p className="text-sm text-destructive mt-1">{form.formState.errors.question.message}</p>}
                                     </div>
                                     <div>
                                         <Label htmlFor="iframeSrc">Código do iframe ou URL (HTTPS)</Label>
-                                        <Textarea id="iframeSrc" rows={2} className="mt-1 max-h-24 min-h-[2.75rem] resize-y font-mono text-sm overflow-y-auto" placeholder="Cole o embed ou a URL..." {...form.register('iframeSrc')} />
+                                        <Textarea id="iframeSrc" rows={2} className="mt-1 max-h-24 min-h-[2.75rem] resize-y font-mono text-sm overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0" placeholder="Cole o embed ou a URL..." {...form.register('iframeSrc')} />
                                         {form.formState.errors.iframeSrc && <p className="text-sm text-destructive mt-1">{form.formState.errors.iframeSrc.message}</p>}
-                                        <p className="text-xs text-muted-foreground mt-1">O utilizador confirma com &quot;Já preenchi&quot; no modal. O Connect não verifica o envio no site externo.</p>
+                                        <p className="text-xs text-muted-foreground mt-1">O utilizador confirma com &quot;Pesquisa preenchida&quot; no modal. O Connect não verifica o envio no site externo.</p>
                                     </div>
                                 </>
                             )}

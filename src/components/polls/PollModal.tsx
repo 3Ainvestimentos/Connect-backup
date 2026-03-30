@@ -128,7 +128,7 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Título da pesquisa</p>
             <DialogTitle className="text-base sm:text-lg">{poll.question}</DialogTitle>
             <DialogDescription>
-              Responda no formulário abaixo e clique em &quot;Já preenchi&quot; quando terminar.
+              Responda no formulário abaixo e clique em &quot;Pesquisa preenchida&quot; quando terminar.
             </DialogDescription>
           </DialogHeader>
           {iframeSrc ? (
@@ -150,7 +150,7 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
               className="bg-success hover:bg-success/90 w-full sm:w-auto"
             >
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Já preenchi
+              Pesquisa preenchida
             </Button>
           </DialogFooter>
         </DialogContent>

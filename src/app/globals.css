@@ -147,6 +147,14 @@
   }
 }
 
+/* Radix ScrollArea coloca o conteúdo num div com display:table (medida de scroll).
+   Isso quebra o fluxo normal de formulários e pode “cortar” bordas de inputs junto aos labels. */
+@layer components {
+  [data-radix-scroll-area-viewport] > div {
+    display: block !important;
+  }
+}
+
 @layer utilities {
   .no-day-hover .rdp-day:not([aria-disabled="true"]) {
     cursor: default !important;
