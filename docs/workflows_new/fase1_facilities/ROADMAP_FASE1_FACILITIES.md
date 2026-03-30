@@ -383,11 +383,11 @@ Primeiro workflow de Facilities rodando ponta a ponta no motor novo.
 
 ---
 
-## 5.6. Etapa 5 - Workflow 2: Solicitacao de Suprimentos
+## 5.6. Etapa 5 - Expansao multiworkflow na mesma base de frontend
 
 ### Objetivo
 
-Validar reutilizacao da mesma base tecnica em um segundo fluxo linear da mesma area.
+Evoluir a mesma base de frontend criada na Etapa 4 para suportar multiplos workflows piloto, validando `Solicitacao de Suprimentos` sem abrir uma segunda interface paralela.
 
 ### Etapas do workflow a implementar
 
@@ -413,19 +413,21 @@ Validar reutilizacao da mesma base tecnica em um segundo fluxo linear da mesma a
 
 - reuso do mesmo motor sem hardcode por workflow
 - consistencia de versionamento entre tipos diferentes
-- leitura correta na tela unificada e em `Minhas solicitacoes`
+- leitura correta na mesma superficie do piloto e em `Minhas solicitacoes`
+- capacidade da UI atual de trocar de workflow sem bifurcar o frontend
+- `Solicitacao de Suprimentos` operando na mesma base do workflow 1
 
 ### Criterio de aceite
 
-Segundo workflow linear implantado sem introduzir excecao estrutural no runtime.
+Segundo workflow linear implantado na mesma base de frontend, sem introduzir excecao estrutural no runtime nem criar uma nova interface dedicada.
 
 ---
 
-## 5.7. Etapa 6 - Workflow 3: Solicitacao de Compras
+## 5.7. Etapa 6 - Workflow 3 na mesma superficie multiworkflow
 
 ### Objetivo
 
-Validar o terceiro workflow de Facilities no mesmo modelo simplificado adotado para o piloto.
+Validar `Solicitacao de Compras` na mesma superficie multiworkflow aberta na Etapa 5, confirmando que os tres pilotos convivem na mesma experiencia operacional.
 
 ### Etapas do workflow a implementar
 
@@ -453,18 +455,19 @@ Validar o terceiro workflow de Facilities no mesmo modelo simplificado adotado p
 - reuso do mesmo motor em um terceiro tipo da area
 - ausencia de dependencia estrutural de labels herdados como `Em aprovacao - FIN` ou `Em execucao`
 - consistencia do handoff owner -> responsavel -> finalizacao no workflow de Compras
+- convivencia dos tres workflows na mesma base de frontend, sem duplicacao de experiencia
 
 ### Criterio de aceite
 
-Workflow de Compras implementado no mesmo modelo simplificado do piloto, sem introduzir excecoes ad hoc no core.
+Workflow de Compras implementado no mesmo modelo simplificado do piloto e validado na mesma base de frontend dos outros dois workflows, sem introduzir excecoes ad hoc no core.
 
 ---
 
-## 5.8. Etapa 7 - Frontend do piloto
+## 5.8. Etapa 7 - Consolidacao e polish do frontend do piloto
 
 ### Objetivo
 
-Conectar o runtime novo a experiencia inicial do piloto.
+Consolidar como experiencia oficial do piloto a mesma superficie multiworkflow validada nas etapas anteriores, agora com navegacao, polish e fechamento de gaps de UX.
 
 ### Escopo tecnico
 
@@ -475,6 +478,8 @@ Conectar o runtime novo a experiencia inicial do piloto.
   - `Concluidas`
 - modal unificado
 - `Minhas solicitacoes` agrupada por mes
+- consolidacao da mesma base de frontend usada para validar os tres workflows
+- refinamento de navegacao e acabamento da experiencia do piloto
 
 ### Agente principal
 
@@ -498,6 +503,7 @@ Usuario consegue:
 - owner ver e atribuir casos
 - responsavel acompanhar e operar chamados
 - consultar concluidos e detalhes no modal novo
+- operar os tres workflows piloto na mesma experiencia consolidada
 
 ### Consideracao de evolucao da camada cliente
 
@@ -625,9 +631,9 @@ Usar para:
 1. Canonizar os workflows de Facilities no schema novo no modelo simplificado de 3 etapas.
 2. Construir o core do runtime sem amarrar a um workflow especifico.
 3. Implementar `Manutencao / Solicitacoes Gerais`.
-4. Reusar a mesma base em `Solicitacao de Suprimentos`.
-5. Estender para `Solicitacao de Compras`.
-6. Conectar a tela unificada e o modal.
+4. Expandir a mesma base para `Solicitacao de Suprimentos`.
+5. Validar `Solicitacao de Compras` na mesma superficie multiworkflow.
+6. Consolidar navegacao, polish e modal da experiencia comum.
 7. Fechar testes, hardening e readiness para a proxima onda.
 
 ---

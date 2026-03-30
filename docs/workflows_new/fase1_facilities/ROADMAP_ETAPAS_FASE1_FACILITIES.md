@@ -126,48 +126,42 @@ Validar o primeiro fluxo ponta a ponta no motor novo, ja com frontend minimo fun
 
 ---
 
-### 5.6. Etapa 5 - Workflow 2 sobre a mesma base
-
-**Workflow**
-
-- `Solicitacao de Suprimentos`
+### 5.6. Etapa 5 - Expansao multiworkflow sobre a mesma base
 
 **Objetivo**
 
-Validar reuso do motor e do frontend minimo em um segundo workflow da mesma area.
+Evoluir a mesma base de frontend da Etapa 4 para suportar multiplos workflows piloto, validando `Solicitacao de Suprimentos` e preparando a superficie para receber o terceiro workflow sem bifurcar a UI.
 
 **Saidas esperadas**
 
-- segundo workflow rodando no mesmo modelo simplificado
+- `Solicitacao de Suprimentos` rodando na mesma superficie do piloto 1
+- selecao de workflow ou mecanismo equivalente na mesma rota do piloto
 - sem hardcode estrutural do workflow 1
 - frontend minimo reutilizado sem excecoes ad hoc
+- base pronta para receber o workflow 3 na mesma UX
 
 ---
 
-### 5.7. Etapa 6 - Workflow 3 sobre a mesma base
-
-**Workflow**
-
-- `Solicitacao de Compras`
+### 5.7. Etapa 6 - Validacao do terceiro workflow na mesma superficie
 
 **Objetivo**
 
-Validar o terceiro workflow no mesmo modelo simplificado adotado para o piloto.
+Validar `Solicitacao de Compras` na mesma base de frontend multiworkflow aberta na Etapa 5, confirmando que os tres pilotos convivem numa unica experiencia operacional.
 
 **Saidas esperadas**
 
-- terceiro workflow rodando ponta a ponta
+- `Solicitacao de Compras` rodando ponta a ponta na mesma superficie dos outros dois workflows
 - ausencia de dependencia de labels legados
 - mesmo handoff owner -> responsavel -> finalizacao
-- compatibilidade com a mesma base tecnica e com o frontend minimo
+- compatibilidade com a mesma base tecnica e com o mesmo frontend do piloto 1
 
 ---
 
-### 5.8. Etapa 7 - Frontend consolidado do piloto
+### 5.8. Etapa 7 - Consolidacao e polish do frontend do piloto
 
 **Objetivo**
 
-Expandir o frontend minimo para a experiencia consolidada da area piloto.
+Consolidar a mesma superficie multiworkflow validada nas etapas anteriores como experiencia oficial do piloto, com ajustes de navegacao, polish e fechamento das pendencias de UX.
 
 **Saidas esperadas**
 
@@ -179,6 +173,7 @@ Expandir o frontend minimo para a experiencia consolidada da area piloto.
 - base suficiente para avaliar a promocao da camada cliente do piloto para um modulo compartilhado de workflows
 - refinamento da UX de atribuicao para que, apos a primeira atribuicao, o responsavel apareca apenas em modo leitura
 - eventual reatribuicao futura modelada como acao explicita, e nao como permanencia automatica do seletor inicial
+- consolidacao da mesma base de frontend usada para validar os tres workflows, sem criar uma segunda interface paralela
 
 ---
 
@@ -214,9 +209,9 @@ Fechar a Fase 1 com seguranca tecnica suficiente para expandir para fluxos mais 
 3. `5.3` Validacao e gap-fill do read model
 4. `5.4` Metadados dinamicos do workflow publicado
 5. `5.5` Workflow 1 + frontend minimo
-6. `5.6` Workflow 2
-7. `5.7` Workflow 3
-8. `5.8` Frontend consolidado do piloto
+6. `5.6` Expansao multiworkflow
+7. `5.7` Validacao do terceiro workflow na mesma superficie
+8. `5.8` Consolidacao e polish do frontend do piloto
 9. `5.9` Hardening e readiness para expansao
 
 ---
