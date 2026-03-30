@@ -126,11 +126,27 @@ Validar o primeiro fluxo ponta a ponta no motor novo, ja com frontend minimo fun
 
 ---
 
-### 5.6. Etapa 5 - Expansao multiworkflow sobre a mesma base
+### 5.6. Etapa 5 - Backend de signed URL + fluxo client de upload
 
 **Objetivo**
 
-Evoluir a mesma base de frontend da Etapa 4 para suportar multiplos workflows piloto, validando `Solicitacao de Suprimentos` e preparando a superficie para receber o terceiro workflow sem bifurcar a UI.
+Adicionar a capacidade minima de anexos do piloto v2, com emissao backend de signed URL e fluxo client-side de upload, para viabilizar o `anexo_planilha` sem reintroduzir o legado como fonte de verdade.
+
+**Saidas esperadas**
+
+- endpoint backend autenticado para iniciar upload
+- validacao server-side do workflow e do campo de arquivo
+- definicao server-side do path e da assinatura do upload
+- fluxo client-side capaz de subir o arquivo e produzir URL persistivel
+- infraestrutura pronta para ser consumida pela mesma UI do piloto
+
+---
+
+### 5.7. Etapa 6 - Workflow 2 na mesma UI do piloto
+
+**Objetivo**
+
+Usar a infraestrutura de upload da Etapa 5 para habilitar `Solicitacao de Suprimentos` na mesma rota `/pilot/facilities`, reaproveitando a mesma base de frontend da Etapa 4.
 
 **Saidas esperadas**
 
@@ -138,15 +154,15 @@ Evoluir a mesma base de frontend da Etapa 4 para suportar multiplos workflows pi
 - selecao de workflow ou mecanismo equivalente na mesma rota do piloto
 - sem hardcode estrutural do workflow 1
 - frontend minimo reutilizado sem excecoes ad hoc
-- base pronta para receber o workflow 3 na mesma UX
+- coexistencia coerente de workflow 1 e workflow 2 na mesma UX
 
 ---
 
-### 5.7. Etapa 6 - Validacao do terceiro workflow na mesma superficie
+### 5.8. Etapa 7 - Workflow 3 e consolidacao da UX do piloto
 
 **Objetivo**
 
-Validar `Solicitacao de Compras` na mesma base de frontend multiworkflow aberta na Etapa 5, confirmando que os tres pilotos convivem numa unica experiencia operacional.
+Incluir `Solicitacao de Compras` na mesma superficie multiworkflow e consolidar a UX do piloto, encerrando a Fase 1 na mesma base de frontend.
 
 **Saidas esperadas**
 
@@ -154,17 +170,6 @@ Validar `Solicitacao de Compras` na mesma base de frontend multiworkflow aberta 
 - ausencia de dependencia de labels legados
 - mesmo handoff owner -> responsavel -> finalizacao
 - compatibilidade com a mesma base tecnica e com o mesmo frontend do piloto 1
-
----
-
-### 5.8. Etapa 7 - Consolidacao e polish do frontend do piloto
-
-**Objetivo**
-
-Consolidar a mesma superficie multiworkflow validada nas etapas anteriores como experiencia oficial do piloto, com ajustes de navegacao, polish e fechamento das pendencias de UX.
-
-**Saidas esperadas**
-
 - tela `Gestao de chamados`
 - abas principais operacionais
 - modal unificado
@@ -174,31 +179,7 @@ Consolidar a mesma superficie multiworkflow validada nas etapas anteriores como 
 - refinamento da UX de atribuicao para que, apos a primeira atribuicao, o responsavel apareca apenas em modo leitura
 - eventual reatribuicao futura modelada como acao explicita, e nao como permanencia automatica do seletor inicial
 - consolidacao da mesma base de frontend usada para validar os tres workflows, sem criar uma segunda interface paralela
-
----
-
-### 5.9. Etapa 8 - Hardening e readiness para expansao
-
-**Objetivo**
-
-Fechar a Fase 1 com seguranca tecnica suficiente para expandir para fluxos mais complexos e para a proxima area.
-
-**Criterio de entrada**
-
-- os 3 workflows piloto estao rodando ponta a ponta
-- frontend minimo e frontend consolidado ja estao integrados
-- fluxo basico de regressao esta verde
-- indices ja estao provisionados
-- nao ha bloqueios funcionais conhecidos no piloto
-
-**Saidas esperadas**
-
-- testes reforcados
-- verificacao de transacoes
-- verificacao de indices
-- verificacao de logs e historico
-- readiness para introduzir `requestAction` depois
-- decisao sobre promocao de `PilotApiError` para uma abstracao compartilhada, como `WorkflowApiError`, se a camada cliente das Etapas 4 a 7 tiver sido reutilizada com estabilidade
+- encerramento funcional da Fase 1, deixando a base pronta para iniciar o frontend definitivo e a expansao para os demais `workflowTypes`
 
 ---
 
@@ -209,10 +190,9 @@ Fechar a Fase 1 com seguranca tecnica suficiente para expandir para fluxos mais 
 3. `5.3` Validacao e gap-fill do read model
 4. `5.4` Metadados dinamicos do workflow publicado
 5. `5.5` Workflow 1 + frontend minimo
-6. `5.6` Expansao multiworkflow
-7. `5.7` Validacao do terceiro workflow na mesma superficie
-8. `5.8` Consolidacao e polish do frontend do piloto
-9. `5.9` Hardening e readiness para expansao
+6. `5.6` Backend de signed URL + fluxo client de upload
+7. `5.7` Workflow 2 na mesma UI do piloto
+8. `5.8` Workflow 3 e consolidacao da UX do piloto
 
 ---
 

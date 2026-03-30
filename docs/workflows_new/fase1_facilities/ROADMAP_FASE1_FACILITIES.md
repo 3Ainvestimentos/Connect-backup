@@ -172,6 +172,18 @@ Diagramas de apoio:
 
 ## 5. Roadmap Inicial de Implementacao
 
+### Nota de replanejamento da reta final da Fase 1
+
+Com a Etapa 4 concluida, a segunda metade da Fase 1 passa a seguir uma ordem diferente da versao anterior do roadmap.
+
+Fica fechado que:
+
+- a Etapa 5 passa a tratar a infraestrutura minima de anexos do piloto via signed URL emitida pelo backend;
+- a Etapa 6 usa essa capacidade para habilitar `Solicitacao de Suprimentos` na mesma superficie `/pilot/facilities`;
+- a Etapa 7 inclui `Solicitacao de Compras` e consolida a mesma UX multiworkflow;
+- ao final da Etapa 7, a Fase 1 pode ser considerada concluida para o recorte de piloto de Facilities e Suprimentos;
+- a partir desse ponto, o proximo trabalho deixa de ser Fase 1 e passa a ser expansao para frontend definitivo e demais `workflowTypes`, reaproveitando a base validada no piloto.
+
 ## 5.1. Etapa 0 - Canonizacao do piloto de Facilities
 
 ### Objetivo
@@ -383,17 +395,11 @@ Primeiro workflow de Facilities rodando ponta a ponta no motor novo.
 
 ---
 
-## 5.6. Etapa 5 - Expansao multiworkflow na mesma base de frontend
+## 5.6. Etapa 5 - Infraestrutura de upload com signed URL
 
 ### Objetivo
 
-Evoluir a mesma base de frontend criada na Etapa 4 para suportar multiplos workflows piloto, validando `Solicitacao de Suprimentos` sem abrir uma segunda interface paralela.
-
-### Etapas do workflow a implementar
-
-1. `Solicitacao Aberta`
-2. `Em andamento`
-3. `Finalizado`
+Adicionar a capacidade minima de anexos do piloto v2, com emissao backend de signed URL e fluxo client-side de upload, sem reintroduzir o legado como fonte de verdade do storage.
 
 ### Agente principal
 
@@ -411,23 +417,24 @@ Evoluir a mesma base de frontend criada na Etapa 4 para suportar multiplos workf
 
 ### O que deve ser validado nesta etapa
 
-- reuso do mesmo motor sem hardcode por workflow
-- consistencia de versionamento entre tipos diferentes
-- leitura correta na mesma superficie do piloto e em `Minhas solicitacoes`
-- capacidade da UI atual de trocar de workflow sem bifurcar o frontend
-- `Solicitacao de Suprimentos` operando na mesma base do workflow 1
+- endpoint backend autenticado para iniciar upload do piloto
+- validacao server-side do workflow e do campo de arquivo suportado
+- definicao server-side do path e do naming do upload
+- fluxo client-side capaz de enviar arquivo usando signed URL e obter a URL final persistivel
+- capacidade pronta para viabilizar `anexo_planilha` de `Solicitacao de Suprimentos`
+- zero dependencia de `WorkflowAreasContext` e `firestore-service.ts` nos arquivos novos do piloto
 
 ### Criterio de aceite
 
-Segundo workflow linear implantado na mesma base de frontend, sem introduzir excecao estrutural no runtime nem criar uma nova interface dedicada.
+Infraestrutura de upload do piloto pronta para uso pelo workflow 2, com o backend como fonte de verdade da logica de assinatura e do path do arquivo.
 
 ---
 
-## 5.7. Etapa 6 - Workflow 3 na mesma superficie multiworkflow
+## 5.7. Etapa 6 - Workflow 2 na mesma superficie do piloto
 
 ### Objetivo
 
-Validar `Solicitacao de Compras` na mesma superficie multiworkflow aberta na Etapa 5, confirmando que os tres pilotos convivem na mesma experiencia operacional.
+Usar a infraestrutura de upload da Etapa 5 para habilitar `Solicitacao de Suprimentos` na mesma rota `/pilot/facilities`, reaproveitando a base de frontend da Etapa 4 sem abrir interface paralela.
 
 ### Etapas do workflow a implementar
 
@@ -452,22 +459,23 @@ Validar `Solicitacao de Compras` na mesma superficie multiworkflow aberta na Eta
 
 ### O que deve ser validado nesta etapa
 
-- reuso do mesmo motor em um terceiro tipo da area
-- ausencia de dependencia estrutural de labels herdados como `Em aprovacao - FIN` ou `Em execucao`
-- consistencia do handoff owner -> responsavel -> finalizacao no workflow de Compras
-- convivencia dos tres workflows na mesma base de frontend, sem duplicacao de experiencia
+- reuso da mesma base de frontend do workflow 1
+- `Solicitacao de Suprimentos` abrindo com upload funcional de `anexo_planilha`
+- coexistencia correta do workflow 1 e workflow 2 na mesma superficie
+- leitura correta em `Chamados atuais`, `Atribuicoes e acoes` e `Minhas solicitacoes`
+- ausencia de hardcode estrutural do workflow 1 na UX multiworkflow
 
 ### Criterio de aceite
 
-Workflow de Compras implementado no mesmo modelo simplificado do piloto e validado na mesma base de frontend dos outros dois workflows, sem introduzir excecoes ad hoc no core.
+Workflow 2 implantado na mesma base de frontend do workflow 1, sem introduzir excecao estrutural no runtime nem criar uma segunda interface dedicada.
 
 ---
 
-## 5.8. Etapa 7 - Consolidacao e polish do frontend do piloto
+## 5.8. Etapa 7 - Workflow 3 e consolidacao da UX do piloto
 
 ### Objetivo
 
-Consolidar como experiencia oficial do piloto a mesma superficie multiworkflow validada nas etapas anteriores, agora com navegacao, polish e fechamento de gaps de UX.
+Validar `Solicitacao de Compras` na mesma superficie multiworkflow e fechar a consolidacao da UX do piloto, encerrando a Fase 1 com a mesma base de frontend usada para os tres workflows.
 
 ### Escopo tecnico
 
@@ -480,6 +488,8 @@ Consolidar como experiencia oficial do piloto a mesma superficie multiworkflow v
 - `Minhas solicitacoes` agrupada por mes
 - consolidacao da mesma base de frontend usada para validar os tres workflows
 - refinamento de navegacao e acabamento da experiencia do piloto
+- validacao de `Solicitacao de Compras` no mesmo modelo simplificado dos outros dois workflows
+- hardening final suficiente para encerrar a Fase 1 sem abrir uma Etapa 8 separada
 
 ### Agente principal
 
@@ -504,6 +514,7 @@ Usuario consegue:
 - responsavel acompanhar e operar chamados
 - consultar concluidos e detalhes no modal novo
 - operar os tres workflows piloto na mesma experiencia consolidada
+- encerrar a Fase 1 com base suficiente para iniciar o frontend definitivo e a expansao para os demais `workflowTypes`
 
 ### Consideracao de evolucao da camada cliente
 
@@ -514,50 +525,13 @@ Se as Etapas 5, 6 e 7 confirmarem reuso estavel da mesma camada cliente de workf
 
 Essa promocao nao e requisito da Etapa 4, mas passa a ser candidata natural quando o frontend do piloto deixar de ser uma superficie isolada e se tornar base compartilhada entre os workflows da Fase 1.
 
----
+### Consideracoes de fechamento da Fase 1
 
-## 5.9. Etapa 8 - Hardening e readiness para expansao
-
-### Objetivo
-
-Fechar a Fase 1 sem comprometer a Fase 2.
-
-### Escopo tecnico
-
-- testes unitarios e de integracao
-- verificacao de indices
-- verificacao de regras de transacao
-- validacao de logs e historico
-- checagem de pontos de extensao para `requestAction`
-
-### Agente principal
-
-- `build`
-- `iterate`
-
-### Referencias obrigatorias
-
-- [DESIGN_TECNICO_RUNTIME_WORKFLOWS.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/DESIGN_TECNICO_RUNTIME_WORKFLOWS.md)
-- [WORKFLOWS_PRE_BUILD_OFICIAL.md](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/WORKFLOWS_PRE_BUILD_OFICIAL.md)
-- [06-runtime-layers.mmd](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagrams/06-runtime-layers.mmd)
-- [07-queries-and-indexes.mmd](/Users/lucasnogueira/Documents/3A/Connect-backup/docs/workflows_new/docs_step2/diagrams/07-queries-and-indexes.mmd)
-
-### Criterio de aceite
-
-A base fica pronta para:
-
-- adicionar `requestAction`
-- adicionar fluxos mais complexos
-- suportar troca futura de owner
-- migrar a proxima area sem retrabalho estrutural
-
-### Consideracoes de hardening da camada cliente
-
-Ao final da Fase 1, deve ser reavaliado se a camada cliente criada no piloto ja merece consolidacao como modulo compartilhado do dominio de workflows, incluindo:
+Ao final da Etapa 7, deve ser reavaliado se a camada cliente criada no piloto ja merece consolidacao como modulo compartilhado do dominio de workflows, incluindo:
 
 - promocao de `PilotApiError` para `WorkflowApiError`;
 - estabilizacao de `src/lib/workflows/client/*` como fronteira comum do frontend de workflows;
-- consolidacao das query keys e adapters client-safe como base para expansao alem de Facilities.
+- consolidacao das query keys e adapters client-safe como base para expansao alem de Facilities;
 - refinamento da UX de atribuicao para que, apos a primeira atribuicao, o responsavel passe a aparecer apenas em modo leitura no detalhe do chamado;
 - eventual suporte futuro a troca de responsavel modelado como acao explicita de `Reatribuir responsavel`, e nao como permanencia silenciosa do seletor inicial.
 
