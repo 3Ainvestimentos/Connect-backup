@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Header } from './Header';
 import Link from 'next/link';
-import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, BarChart2, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, PanelsTopLeft, ListChecks, Award, MessageSquarePlus, NotebookPen, Rss, Video, Plane, ClipboardList } from 'lucide-react';
+import { Home, Newspaper, FolderOpen, LogOut, UserCircle, Bot, FlaskConical, ShoppingCart, LayoutGrid, Sun, Moon, Laptop, HelpCircle, Settings, Shield, BarChart, BarChart2, Mailbox, Workflow, FileText, ListTodo, Fingerprint, Edit, LayoutDashboard, TestTube2, Briefcase, Target, PanelsTopLeft, ListChecks, Award, MessageSquarePlus, NotebookPen, Rss, Video, Plane } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
@@ -51,7 +51,6 @@ import { TermsOfUseModal } from '../auth/TermsOfUseModal';
 import NotificationFAB from '../fab/NotificationFAB';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
 import { DailyRssModal } from '../rss/DailyRssModal';
-import { FormularioGoogleModal } from '../forms/FormularioGoogleModal';
 import { findCollaboratorByEmail } from '@/lib/email-utils';
 
 
@@ -67,7 +66,6 @@ export const navItems = [
   { href: 'https://www.store-3ariva.com.br/', label: 'Store', icon: ShoppingCart, external: true, permission: null },
   { href: '/chatbot', label: 'Bob', icon: Bot, external: false, permission: null },
   { href: '/meet-analyses', label: 'Bob Meet Análises', icon: Video, external: false, permission: 'canViewMeetAnalyses' },
-  { openModal: 'formulario-google', label: 'Formulário Google', icon: ClipboardList, external: false, permission: null },
 ];
 
 function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
@@ -242,7 +240,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldApplyContentZoom = !noZoomRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
-  const [isFormularioGoogleOpen, setIsFormularioGoogleOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
@@ -418,24 +415,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                   if (item.permission && !permissions[item.permission as keyof typeof permissions]) {
                     return null;
                   }
-                  if ('openModal' in item) {
-                    return (
-                      <SidebarMenuItem key={item.openModal}>
-                        <SidebarMenuButton
-                          isActive={false}
-                          tooltip={{ children: item.label, className: 'font-body' }}
-                          onClick={() => {
-                            handleLinkClick();
-                            setIsFormularioGoogleOpen(true);
-                          }}
-                          className="font-body"
-                        >
-                          <item.icon />
-                          <span>{item.label}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  }
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton
@@ -499,7 +478,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <PollTrigger />
       <DailyRssModal forceOpen={false} />
       <FAQModal open={isFaqModalOpen} onOpenChange={setIsFaqModalOpen} />
-      <FormularioGoogleModal open={isFormularioGoogleOpen} onOpenChange={setIsFormularioGoogleOpen} />
       <ProfileModal open={isProfileModalOpen} onOpenChange={setIsProfileModalOpen} />
       <TermsOfUseModal
         isOpen={showTermsModal}
