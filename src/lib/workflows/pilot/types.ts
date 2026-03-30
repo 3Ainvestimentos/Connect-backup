@@ -121,6 +121,51 @@ export type OpenPilotRequestInput = {
   formData: Record<string, unknown>;
 };
 
+export type PilotUploadInitInput = {
+  workflowTypeId: string;
+  fieldId: string;
+  fileName: string;
+  contentType: string;
+};
+
+export type PilotUploadInitResult = {
+  uploadUrl: string;
+  uploadMethod: 'PUT';
+  uploadHeaders: Record<string, string>;
+  fileUrl: string;
+  storagePath: string;
+  uploadId: string;
+  expiresAt: string;
+};
+
+export type PilotUploadFileInput = {
+  workflowTypeId: string;
+  fieldId: string;
+  file: File;
+};
+
+export type PilotUploadFileResult = {
+  fileUrl: string;
+};
+
+export type PilotFileTransferErrorCode = 'UPLOAD_TRANSFER_FAILED';
+
+export class PilotFileTransferError extends Error {
+  code: PilotFileTransferErrorCode;
+  httpStatus: number;
+
+  constructor(
+    code: PilotFileTransferErrorCode,
+    httpStatus: number,
+    message = 'Falha ao transferir arquivo para o Storage.',
+  ) {
+    super(message);
+    this.name = 'PilotFileTransferError';
+    this.code = code;
+    this.httpStatus = httpStatus;
+  }
+}
+
 export type AssignPilotResponsibleInput = {
   requestId: number;
   responsibleUserId: string;
