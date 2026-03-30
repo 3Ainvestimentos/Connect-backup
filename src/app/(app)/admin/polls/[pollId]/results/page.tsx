@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { usePolls } from '@/contexts/PollsContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileDown, PieChart as PieChartIcon, CheckSquare, MessageSquare } from 'lucide-react';
+import { ArrowLeft, FileDown, PieChart as PieChartIcon, CheckSquare, MessageSquare, Frame } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,6 +29,10 @@ export default function PollResultsPage() {
 
   const { resultsData, otherResponses } = React.useMemo(() => {
     if (!poll || responses.length === 0) return { resultsData: [], otherResponses: [] };
+
+    if (poll.type === 'iframe' || poll.type === 'open-text') {
+        return { resultsData: [], otherResponses: [] };
+    }
     
     if (poll.type === 'multiple-choice') {
         const counts: { [key: string]: number } = {};
@@ -101,6 +105,7 @@ export default function PollResultsPage() {
   }
   
   const isMultipleChoice = poll.type === 'multiple-choice';
+  const isIframe = poll.type === 'iframe';
 
   return (
     <div className="space-y-6 p-6 md:p-8">
@@ -137,8 +142,8 @@ export default function PollResultsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {isMultipleChoice ? <PieChartIcon className="h-5 w-5"/> : <MessageSquare className="h-5 w-5"/>}
-            {isMultipleChoice ? 'Distribuição das Respostas' : 'Respostas Abertas'}
+            {isMultipleChoice ? <PieChartIcon className="h-5 w-5"/> : isIframe ? <Frame className="h-5 w-5"/> : <MessageSquare className="h-5 w-5"/>}
+            {isMultipleChoice ? 'Distribuição das Respostas' : isIframe ? 'Participação (formulário externo)' : 'Respostas Abertas'}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -157,6 +162,11 @@ export default function PollResultsPage() {
               </ResponsiveContainer>
             ) : (
                 <ScrollArea className="h-[400px]">
+                    {isIframe && (
+                        <p className="text-sm text-muted-foreground mb-3 px-1">
+                            Lista de quem confirmou &quot;Já preenchi&quot; no Connect. O conteúdo das respostas fica no provedor do formulário (ex.: Google Forms).
+                        </p>
+                    )}
                     <Table>
                         <TableHeader>
                             <TableRow>
