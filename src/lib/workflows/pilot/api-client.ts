@@ -1,6 +1,5 @@
 import type { User } from 'firebase/auth';
 import { normalizePilotTimestamp } from './timestamps';
-import { PilotFileTransferError } from './types';
 import type {
   ArchivePilotRequestInput,
   AssignPilotResponsibleInput,
@@ -12,11 +11,7 @@ import type {
   PilotMineData,
   PilotMonthGroup,
   PilotMutationResult,
-  PilotUploadFileResult,
   PilotRequestSummary,
-  PilotUploadFileInput,
-  PilotUploadInitInput,
-  PilotUploadInitResult,
   PilotWorkflowCatalog,
   PilotWorkflowField,
   PilotWorkflowStep,
@@ -203,33 +198,6 @@ function normalizeMutationResult(input: unknown): PilotMutationResult {
   };
 }
 
-function normalizeHeaders(input: unknown): Record<string, string> {
-  if (!isObject(input)) {
-    return {};
-  }
-
-  return Object.entries(input).reduce<Record<string, string>>((accumulator, [key, value]) => {
-    if (typeof value === 'string') {
-      accumulator[key] = value;
-    }
-    return accumulator;
-  }, {});
-}
-
-function normalizeUploadInitResult(input: unknown): PilotUploadInitResult {
-  const result = isObject(input) ? input : {};
-
-  return {
-    uploadUrl: asString(result.uploadUrl),
-    uploadMethod: (asString(result.uploadMethod) || 'PUT') as PilotUploadInitResult['uploadMethod'],
-    uploadHeaders: normalizeHeaders(result.uploadHeaders),
-    fileUrl: asString(result.fileUrl),
-    storagePath: asString(result.storagePath),
-    uploadId: asString(result.uploadId),
-    expiresAt: asString(result.expiresAt),
-  };
-}
-
 export async function authenticatedWorkflowFetch<T>(
   user: User,
   input: string,
@@ -319,72 +287,6 @@ export async function openPilotRequest(
   });
 
   return normalizeMutationResult(data);
-}
-
-export async function requestPilotUpload(
-  user: User,
-  payload: PilotUploadInitInput,
-): Promise<PilotUploadInitResult> {
-  const data = await authenticatedWorkflowFetch<unknown>(user, '/api/workflows/runtime/uploads', {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  });
-
-  return normalizeUploadInitResult(data);
-}
-
-export async function putFileToSignedUrl(
-  uploadUrl: string,
-  uploadHeaders: Record<string, string>,
-  file: Blob,
-  uploadMethod: PilotUploadInitResult['uploadMethod'] = 'PUT',
-): Promise<void> {
-  try {
-    const response = await fetch(uploadUrl, {
-      method: uploadMethod,
-      headers: uploadHeaders,
-      body: file,
-    });
-
-    if (!response.ok) {
-      throw new PilotFileTransferError(
-        'UPLOAD_TRANSFER_FAILED',
-        response.status,
-        'Falha ao transferir arquivo para o Storage.',
-      );
-    }
-  } catch (error) {
-    if (error instanceof PilotFileTransferError) {
-      throw error;
-    }
-
-    throw new PilotFileTransferError(
-      'UPLOAD_TRANSFER_FAILED',
-      0,
-      'Falha ao transferir arquivo para o Storage.',
-    );
-  }
-}
-
-export async function uploadPilotFile(
-  user: User,
-  input: PilotUploadFileInput,
-): Promise<PilotUploadFileResult> {
-  const signed = await requestPilotUpload(user, {
-    workflowTypeId: input.workflowTypeId,
-    fieldId: input.fieldId,
-    fileName: input.file.name,
-    contentType: input.file.type || 'application/octet-stream',
-  });
-
-  await putFileToSignedUrl(
-    signed.uploadUrl,
-    signed.uploadHeaders,
-    input.file,
-    signed.uploadMethod,
-  );
-
-  return { fileUrl: signed.fileUrl };
 }
 
 export async function assignPilotResponsible(
