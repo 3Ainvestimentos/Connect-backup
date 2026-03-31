@@ -125,7 +125,6 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
           <DialogHeader className="shrink-0 space-y-1 border-b px-4 py-3 text-left">
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Título da pesquisa</p>
             <DialogTitle className="text-base sm:text-lg">{poll.question}</DialogTitle>
             <DialogDescription>
               Responda no formulário abaixo e clique em &quot;Pesquisa preenchida&quot; quando terminar.
@@ -162,7 +161,6 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader className="text-left">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Título da pesquisa</p>
           <DialogTitle className="pt-1">{poll.question}</DialogTitle>
           <DialogDescription>Sua opinião é importante para nós.</DialogDescription>
         </DialogHeader>
