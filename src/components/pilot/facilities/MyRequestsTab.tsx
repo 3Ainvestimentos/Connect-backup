@@ -11,6 +11,7 @@ type MyRequestsTabProps = {
   isLoading: boolean;
   errorMessage?: string;
   actorUserId: string;
+  scopeLabel: string;
   onOpenRequest: (item: PilotRequestSummary) => void;
 };
 
@@ -20,6 +21,7 @@ export function MyRequestsTab({
   isLoading,
   errorMessage,
   actorUserId,
+  scopeLabel,
   onOpenRequest,
 }: MyRequestsTabProps) {
   if (errorMessage) {
@@ -40,7 +42,8 @@ export function MyRequestsTab({
         </CardHeader>
         <CardContent>
           <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-            Suas solicitacoes abertas e historicas aparecerao aqui.
+            <p>Exibindo: {scopeLabel}.</p>
+            <p className="mt-2">Suas solicitacoes abertas e historicas aparecerao aqui.</p>
           </div>
         </CardContent>
       </Card>
@@ -53,6 +56,7 @@ export function MyRequestsTab({
         <Card key={group.monthKey}>
           <CardHeader>
             <CardTitle>{formatPilotMonthKey(group.monthKey)}</CardTitle>
+            <p className="text-sm text-muted-foreground">Exibindo: {scopeLabel}.</p>
           </CardHeader>
           <CardContent>
             <RequestSummaryList

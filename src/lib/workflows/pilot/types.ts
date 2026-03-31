@@ -9,6 +9,7 @@ export type PilotCurrentQueueFilter = (typeof PILOT_CURRENT_QUEUE_FILTERS)[numbe
 
 export type PilotFieldType = 'text' | 'textarea' | 'select' | 'date' | 'date-range' | 'file';
 export type PilotStepKind = 'start' | 'work' | 'final';
+export type PilotWorkflowScope = 'all' | 'active';
 export type PilotStatusCategory =
   | 'open'
   | 'in_progress'
@@ -55,6 +56,8 @@ export type PilotWorkflowCatalog = {
   fields: PilotWorkflowField[];
   steps: PilotWorkflowStep[];
 };
+
+export type DynamicFormValue = string | File | null;
 
 export type PilotRequestSummary = {
   docId: string;

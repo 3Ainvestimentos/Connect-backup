@@ -211,6 +211,9 @@ describe('RequestDetailsDialog', () => {
       />,
     );
 
+    expect(screen.getAllByText('Solicitacoes Gerais').length).toBeGreaterThan(0);
+    expect(screen.getByText('facilities_manutencao_solicitacoes_gerais')).not.toBeNull();
+
     await user.click(screen.getByRole('button', { name: 'Maria Silva' }));
     await user.click(screen.getByRole('button', { name: 'Atribuir responsavel' }));
 

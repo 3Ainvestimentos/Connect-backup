@@ -159,6 +159,7 @@ describe('OpenWorkflowCard', () => {
   it('renders fields from the published catalog and submits the workflow payload', async () => {
     const user = userEvent.setup();
     const onSubmit = jest.fn().mockResolvedValue({ requestId: 1001 });
+    const uploadFile = jest.fn();
 
     render(
       <OpenWorkflowCard
@@ -166,6 +167,7 @@ describe('OpenWorkflowCard', () => {
         isLoading={false}
         isSubmitting={false}
         requesterName="Lucas"
+        uploadFile={uploadFile}
         onSubmit={onSubmit}
       />,
     );
@@ -187,5 +189,124 @@ describe('OpenWorkflowCard', () => {
         },
       });
     });
+
+    expect(uploadFile).not.toHaveBeenCalled();
+  });
+
+  it('uploads file fields before calling the runtime mutation', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn().mockResolvedValue({ requestId: 1002 });
+    const uploadFile = jest.fn().mockResolvedValue({
+      fileUrl: 'https://storage.example.com/planilha.xlsx',
+    });
+    const fileCatalog: PilotWorkflowCatalog = {
+      ...catalog,
+      workflowTypeId: 'facilities_solicitacao_suprimentos',
+      workflowName: 'Solicitacao de suprimentos',
+      fields: [
+        {
+          id: 'descricao',
+          label: 'Descricao',
+          type: 'textarea',
+          required: true,
+          order: 1,
+        },
+        {
+          id: 'anexo_planilha',
+          label: 'Planilha',
+          type: 'file',
+          required: true,
+          order: 2,
+        },
+      ],
+    };
+    const file = new File(['conteudo'], 'planilha.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    render(
+      <OpenWorkflowCard
+        catalog={fileCatalog}
+        isLoading={false}
+        isSubmitting={false}
+        requesterName="Lucas"
+        uploadFile={uploadFile}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Descricao *'), 'Reposicao de insumos');
+    await user.upload(screen.getByLabelText('Planilha *'), file);
+    await user.click(screen.getByRole('button', { name: 'Enviar solicitacao' }));
+
+    await waitFor(() => {
+      expect(uploadFile).toHaveBeenCalledWith({
+        workflowTypeId: 'facilities_solicitacao_suprimentos',
+        fieldId: 'anexo_planilha',
+        file,
+      });
+    });
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        workflowTypeId: 'facilities_solicitacao_suprimentos',
+        requesterName: 'Lucas',
+        formData: {
+          descricao: 'Reposicao de insumos',
+          anexo_planilha: 'https://storage.example.com/planilha.xlsx',
+        },
+      });
+    });
+  });
+
+  it('resets the form when the active workflow changes', async () => {
+    const user = userEvent.setup();
+    const uploadFile = jest.fn().mockResolvedValue({
+      fileUrl: 'https://storage.example.com/planilha.xlsx',
+    });
+    const fileCatalog: PilotWorkflowCatalog = {
+      ...catalog,
+      workflowTypeId: 'facilities_solicitacao_suprimentos',
+      workflowName: 'Solicitacao de suprimentos',
+      fields: [
+        {
+          id: 'anexo_planilha',
+          label: 'Planilha',
+          type: 'file',
+          required: true,
+          order: 1,
+        },
+      ],
+    };
+    const { rerender } = render(
+      <OpenWorkflowCard
+        catalog={fileCatalog}
+        isLoading={false}
+        isSubmitting={false}
+        requesterName="Lucas"
+        uploadFile={uploadFile}
+        onSubmit={jest.fn().mockResolvedValue({ requestId: 1002 })}
+      />,
+    );
+    const file = new File(['conteudo'], 'planilha.xlsx', {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    await user.upload(screen.getByLabelText('Planilha *'), file);
+    expect(screen.getByText('Arquivo selecionado: planilha.xlsx')).not.toBeNull();
+
+    rerender(
+      <OpenWorkflowCard
+        catalog={catalog}
+        isLoading={false}
+        isSubmitting={false}
+        requesterName="Lucas"
+        uploadFile={uploadFile}
+        onSubmit={jest.fn().mockResolvedValue({ requestId: 1003 })}
+      />,
+    );
+
+    expect(screen.queryByText('Arquivo selecionado: planilha.xlsx')).toBeNull();
+    expect((screen.getByLabelText('Nome completo *') as HTMLInputElement).value).toBe('');
   });
 });

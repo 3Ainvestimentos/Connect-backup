@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -10,12 +11,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { PilotWorkflowField } from '@/lib/workflows/pilot/types';
+import type { DynamicFormValue, PilotWorkflowField } from '@/lib/workflows/pilot/types';
 
 type DynamicFieldRendererProps = {
   definition: PilotWorkflowField;
-  value: unknown;
-  onChange: (value: unknown) => void;
+  value: DynamicFormValue;
+  onChange: (value: DynamicFormValue) => void;
   disabled?: boolean;
   error?: string;
 };
@@ -28,6 +29,14 @@ export function DynamicFieldRenderer({
   error,
 }: DynamicFieldRendererProps) {
   const inputId = `pilot-field-${definition.id}`;
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const selectedFile = value instanceof File ? value : null;
+
+  React.useEffect(() => {
+    if (definition.type === 'file' && !selectedFile && fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [definition.type, selectedFile]);
 
   return (
     <div className="space-y-2">
@@ -77,9 +86,26 @@ export function DynamicFieldRenderer({
         </Select>
       ) : null}
 
+      {definition.type === 'file' ? (
+        <div className="space-y-2">
+          <Input
+            ref={fileInputRef}
+            id={inputId}
+            type="file"
+            onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+            disabled={disabled}
+            aria-invalid={Boolean(error)}
+          />
+          <p className="text-sm text-muted-foreground">
+            {selectedFile ? `Arquivo selecionado: ${selectedFile.name}` : 'Nenhum arquivo selecionado.'}
+          </p>
+        </div>
+      ) : null}
+
       {definition.type !== 'text' &&
-      definition.type !== 'textarea' &&
-      definition.type !== 'select' ? (
+        definition.type !== 'textarea' &&
+        definition.type !== 'select' &&
+        definition.type !== 'file' ? (
         <div className="rounded-md border border-dashed bg-muted/40 p-3 text-sm text-muted-foreground">
           Tipo de campo "{definition.type}" ainda nao suportado neste piloto.
         </div>

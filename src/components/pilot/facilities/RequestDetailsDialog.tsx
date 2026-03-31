@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { derivePilotRequestPresentation, formatPilotDate } from '@/lib/workflows/pilot/presentation';
+import { getFacilitiesPilotWorkflowConfig } from '@/lib/workflows/pilot/workflow-registry';
 import type {
   ArchivePilotRequestInput,
   AssignPilotResponsibleInput,
@@ -74,6 +75,8 @@ export function RequestDetailsDialog({
   }
 
   const presentation = derivePilotRequestPresentation(request, actorUserId);
+  const workflowLabel =
+    request.workflowName || getFacilitiesPilotWorkflowConfig(request.workflowTypeId).shortLabel;
   const selectedResponsible =
     sortedCollaborators.find((collaborator) => collaborator.id3a === selectedResponsibleId) ?? null;
 
@@ -103,13 +106,14 @@ export function RequestDetailsDialog({
         <DialogHeader>
           <DialogTitle>Chamado #{request.requestId}</DialogTitle>
           <DialogDescription>
-            {request.workflowName} - etapa atual {request.currentStepName}.
+            {workflowLabel} - etapa atual {request.currentStepName}.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={presentation.badgeVariant}>{presentation.label}</Badge>
+            <Badge variant="outline">{workflowLabel}</Badge>
             <Badge variant="outline">Workflow {request.workflowVersion}</Badge>
             {request.hasPendingActions ? <Badge variant="outline">Ha acoes pendentes</Badge> : null}
           </div>
@@ -122,6 +126,10 @@ export function RequestDetailsDialog({
             <div className="space-y-1 text-sm">
               <p className="font-medium text-foreground">Responsavel</p>
               <p className="text-muted-foreground">{request.responsibleName || 'Nao atribuido'}</p>
+            </div>
+            <div className="space-y-1 text-sm">
+              <p className="font-medium text-foreground">Tipo de workflow</p>
+              <p className="break-all text-muted-foreground">{request.workflowTypeId}</p>
             </div>
             <div className="space-y-1 text-sm">
               <p className="font-medium text-foreground">Aberto em</p>

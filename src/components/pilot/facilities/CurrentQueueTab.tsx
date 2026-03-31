@@ -16,6 +16,7 @@ type CurrentQueueTabProps = {
   isLoading: boolean;
   errorMessage?: string;
   actorUserId: string;
+  scopeLabel: string;
   onFilterChange: (value: PilotCurrentQueueFilter) => void;
   onOpenRequest: (item: PilotRequestSummary) => void;
 };
@@ -26,6 +27,7 @@ export function CurrentQueueTab({
   isLoading,
   errorMessage,
   actorUserId,
+  scopeLabel,
   onFilterChange,
   onOpenRequest,
 }: CurrentQueueTabProps) {
@@ -35,7 +37,7 @@ export function CurrentQueueTab({
         <div className="space-y-1">
           <CardTitle>Chamados atuais</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Fila operacional do owner com filtros canonicos do backend.
+            Fila operacional do owner com filtros canonicos do backend. Exibindo: {scopeLabel}.
           </p>
         </div>
 

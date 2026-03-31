@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { derivePilotRequestPresentation, formatPilotDate } from '@/lib/workflows/pilot/presentation';
+import { getFacilitiesPilotWorkflowConfig } from '@/lib/workflows/pilot/workflow-registry';
 import type { PilotRequestSummary } from '@/lib/workflows/pilot/types';
 
 type RequestSummaryListProps = {
@@ -53,6 +54,8 @@ export function RequestSummaryList({
     <div className="space-y-3">
       {items.map((item) => {
         const presentation = derivePilotRequestPresentation(item, actorUserId);
+        const workflowLabel =
+          item.workflowName || getFacilitiesPilotWorkflowConfig(item.workflowTypeId).shortLabel;
 
         return (
           <Card key={item.docId}>
@@ -61,6 +64,7 @@ export function RequestSummaryList({
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-foreground">Chamado #{item.requestId}</p>
                   <Badge variant={presentation.badgeVariant}>{presentation.label}</Badge>
+                  <Badge variant="outline">{workflowLabel}</Badge>
                 </div>
 
                 <div className="space-y-1 text-sm text-muted-foreground">

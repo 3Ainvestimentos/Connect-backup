@@ -10,6 +10,7 @@ type AssignmentsTabProps = {
   isLoading: boolean;
   errorMessage?: string;
   actorUserId: string;
+  scopeLabel: string;
   onOpenRequest: (item: PilotRequestSummary) => void;
 };
 
@@ -19,6 +20,7 @@ export function AssignmentsTab({
   isLoading,
   errorMessage,
   actorUserId,
+  scopeLabel,
   onOpenRequest,
 }: AssignmentsTabProps) {
   return (
@@ -28,6 +30,8 @@ export function AssignmentsTab({
           {errorMessage}
         </div>
       ) : null}
+
+      <p className="text-sm text-muted-foreground">Exibindo: {scopeLabel}.</p>
 
       <Card>
         <CardHeader>

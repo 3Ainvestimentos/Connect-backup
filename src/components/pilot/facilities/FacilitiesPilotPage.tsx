@@ -2,14 +2,24 @@
 
 import * as React from 'react';
 import { Building2 } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useFacilitiesPilot } from '@/hooks/use-facilities-pilot';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { PilotApiError } from '@/lib/workflows/pilot/api-client';
+import { filterMonthGroupsByWorkflow, filterRequestsByWorkflow } from '@/lib/workflows/pilot/workflow-filters';
+import {
+  DEFAULT_FACILITIES_PILOT_WORKFLOW_TYPE_ID,
+  FACILITIES_PILOT_WORKFLOWS,
+  getFacilitiesPilotWorkflowConfig,
+  type FacilitiesPilotWorkflowTypeId,
+} from '@/lib/workflows/pilot/workflow-registry';
 import type {
   ArchivePilotRequestInput,
   AssignPilotResponsibleInput,
@@ -17,16 +27,20 @@ import type {
   OpenPilotRequestInput,
   PilotCurrentQueueFilter,
   PilotRequestSummary,
+  PilotWorkflowScope,
 } from '@/lib/workflows/pilot/types';
+import { uploadWorkflowFile } from '@/lib/workflows/upload/client';
 import { AssignmentsTab } from './AssignmentsTab';
 import { CurrentQueueTab } from './CurrentQueueTab';
 import { MyRequestsTab } from './MyRequestsTab';
 import { OpenWorkflowCard } from './OpenWorkflowCard';
 import { RequestDetailsDialog } from './RequestDetailsDialog';
 
-const WORKFLOW_TYPE_ID = 'facilities_manutencao_solicitacoes_gerais';
-
 type TabValue = 'current' | 'assignments' | 'mine';
+
+type FacilitiesPilotPageProps = {
+  initialWorkflowTypeId?: FacilitiesPilotWorkflowTypeId;
+};
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof PilotApiError) {
@@ -40,14 +54,41 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export function FacilitiesPilotPage() {
+export function FacilitiesPilotPage({
+  initialWorkflowTypeId = DEFAULT_FACILITIES_PILOT_WORKFLOW_TYPE_ID,
+}: FacilitiesPilotPageProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const { user, currentUserCollab, loading, permissions, isAdmin } = useAuth();
   const { collaborators } = useCollaborators();
   const { toast } = useToast();
+  const [activeWorkflowTypeId, setActiveWorkflowTypeId] =
+    React.useState<FacilitiesPilotWorkflowTypeId>(initialWorkflowTypeId);
+  const [listScope, setListScope] = React.useState<PilotWorkflowScope>('all');
   const [currentFilter, setCurrentFilter] = React.useState<PilotCurrentQueueFilter>('all');
   const showCurrentTab = permissions.canManageRequests || isAdmin;
   const [activeTab, setActiveTab] = React.useState<TabValue>(showCurrentTab ? 'current' : 'assignments');
   const [selectedRequest, setSelectedRequest] = React.useState<PilotRequestSummary | null>(null);
+  const activeWorkflowConfig = getFacilitiesPilotWorkflowConfig(activeWorkflowTypeId);
+
+  React.useEffect(() => {
+    setActiveWorkflowTypeId(initialWorkflowTypeId);
+  }, [initialWorkflowTypeId]);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('workflow') === activeWorkflowTypeId) {
+      return;
+    }
+
+    params.set('workflow', activeWorkflowTypeId);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [activeWorkflowTypeId, pathname, router]);
 
   React.useEffect(() => {
     if (!showCurrentTab && activeTab === 'current') {
@@ -55,9 +96,58 @@ export function FacilitiesPilotPage() {
     }
   }, [activeTab, showCurrentTab]);
 
-  const pilot = useFacilitiesPilot(WORKFLOW_TYPE_ID, currentFilter, {
+  const pilot = useFacilitiesPilot(activeWorkflowTypeId, currentFilter, {
     includeCurrent: showCurrentTab,
   });
+
+  const filteredCurrentItems = React.useMemo(
+    () =>
+      filterRequestsByWorkflow(
+        pilot.currentQuery.data?.items ?? [],
+        listScope,
+        activeWorkflowTypeId,
+      ),
+    [activeWorkflowTypeId, listScope, pilot.currentQuery.data?.items],
+  );
+
+  const filteredAssignedItems = React.useMemo(
+    () =>
+      filterRequestsByWorkflow(
+        pilot.assignmentsQuery.data?.assignedItems ?? [],
+        listScope,
+        activeWorkflowTypeId,
+      ),
+    [activeWorkflowTypeId, listScope, pilot.assignmentsQuery.data?.assignedItems],
+  );
+
+  const filteredPendingActionItems = React.useMemo(
+    () =>
+      filterRequestsByWorkflow(
+        pilot.assignmentsQuery.data?.pendingActionItems ?? [],
+        listScope,
+        activeWorkflowTypeId,
+      ),
+    [activeWorkflowTypeId, listScope, pilot.assignmentsQuery.data?.pendingActionItems],
+  );
+
+  const filteredMineItems = React.useMemo(
+    () => filterRequestsByWorkflow(pilot.mineQuery.data?.items ?? [], listScope, activeWorkflowTypeId),
+    [activeWorkflowTypeId, listScope, pilot.mineQuery.data?.items],
+  );
+
+  const filteredMineGroups = React.useMemo(
+    () =>
+      filterMonthGroupsByWorkflow(
+        pilot.mineQuery.data?.groups ?? [],
+        listScope,
+        activeWorkflowTypeId,
+      ),
+    [activeWorkflowTypeId, listScope, pilot.mineQuery.data?.groups],
+  );
+
+  const activeWorkflowName = pilot.catalogQuery.data?.workflowName ?? activeWorkflowConfig.label;
+  const scopeLabel =
+    listScope === 'all' ? 'todos os workflows' : `somente ${activeWorkflowName.toLowerCase()}`;
 
   const handleOpenWorkflow = async (payload: OpenPilotRequestInput) => {
     try {
@@ -174,8 +264,37 @@ export function FacilitiesPilotPage() {
       <PageHeader
         title="Pilot de Facilities"
         icon={Building2}
-        description="Nova rota para operar o workflow de manutencao sem depender do frontend legado."
+        description="Rota unica para operar manutencao e suprimentos sem depender do frontend legado."
       />
+
+      <Card>
+        <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-medium text-foreground">Workflow ativo</p>
+              <Badge variant="outline">{activeWorkflowConfig.shortLabel}</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              A mesma rota opera dois workflows publicados. A URL espelha a selecao atual para
+              deep-link e refresh consistente.
+            </p>
+            <p className="text-sm text-muted-foreground">Catalogo ativo: {activeWorkflowName}.</p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {FACILITIES_PILOT_WORKFLOWS.map((workflow) => (
+              <Button
+                key={workflow.workflowTypeId}
+                type="button"
+                variant={workflow.workflowTypeId === activeWorkflowTypeId ? 'default' : 'outline'}
+                onClick={() => setActiveWorkflowTypeId(workflow.workflowTypeId)}
+              >
+                {workflow.shortLabel}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -216,21 +335,47 @@ export function FacilitiesPilotPage() {
             : undefined
         }
         requesterName={currentUserCollab.name ?? user.displayName ?? ''}
+        uploadFile={(input) => uploadWorkflowFile(user, input)}
         onSubmit={handleOpenWorkflow}
       />
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabValue)}>
-        <TabsList className="flex h-auto flex-wrap justify-start gap-2 bg-transparent p-0">
-          {showCurrentTab ? <TabsTrigger value="current">Chamados atuais</TabsTrigger> : null}
-          <TabsTrigger value="assignments">Atribuicoes e acoes</TabsTrigger>
-          <TabsTrigger value="mine">Minhas solicitacoes</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <TabsList className="flex h-auto flex-wrap justify-start gap-2 bg-transparent p-0">
+            {showCurrentTab ? <TabsTrigger value="current">Chamados atuais</TabsTrigger> : null}
+            <TabsTrigger value="assignments">Atribuicoes e acoes</TabsTrigger>
+            <TabsTrigger value="mine">Minhas solicitacoes</TabsTrigger>
+          </TabsList>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={listScope === 'all' ? 'secondary' : 'outline'}
+              onClick={() => setListScope('all')}
+            >
+              Todos os workflows
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={listScope === 'active' ? 'secondary' : 'outline'}
+              onClick={() => setListScope('active')}
+            >
+              Somente workflow ativo
+            </Button>
+          </div>
+        </div>
+
+        <p className="mt-4 text-sm text-muted-foreground">
+          As metricas do topo permanecem globais. As listas abaixo exibem {scopeLabel}.
+        </p>
 
         {showCurrentTab ? (
           <TabsContent value="current">
             <CurrentQueueTab
               filter={currentFilter}
-              items={pilot.currentQuery.data?.items ?? []}
+              items={filteredCurrentItems}
               isLoading={pilot.currentQuery.isLoading}
               errorMessage={
                 pilot.currentQuery.isError
@@ -241,6 +386,7 @@ export function FacilitiesPilotPage() {
                   : undefined
               }
               actorUserId={pilot.actorUserId}
+              scopeLabel={scopeLabel}
               onFilterChange={setCurrentFilter}
               onOpenRequest={setSelectedRequest}
             />
@@ -249,8 +395,8 @@ export function FacilitiesPilotPage() {
 
         <TabsContent value="assignments">
           <AssignmentsTab
-            assignedItems={pilot.assignmentsQuery.data?.assignedItems ?? []}
-            pendingActionItems={pilot.assignmentsQuery.data?.pendingActionItems ?? []}
+            assignedItems={filteredAssignedItems}
+            pendingActionItems={filteredPendingActionItems}
             isLoading={pilot.assignmentsQuery.isLoading}
             errorMessage={
               pilot.assignmentsQuery.isError
@@ -261,14 +407,15 @@ export function FacilitiesPilotPage() {
                 : undefined
             }
             actorUserId={pilot.actorUserId}
+            scopeLabel={scopeLabel}
             onOpenRequest={setSelectedRequest}
           />
         </TabsContent>
 
         <TabsContent value="mine">
           <MyRequestsTab
-            groups={pilot.mineQuery.data?.groups ?? []}
-            items={pilot.mineQuery.data?.items ?? []}
+            groups={filteredMineGroups}
+            items={filteredMineItems}
             isLoading={pilot.mineQuery.isLoading}
             errorMessage={
               pilot.mineQuery.isError
@@ -279,6 +426,7 @@ export function FacilitiesPilotPage() {
                 : undefined
             }
             actorUserId={pilot.actorUserId}
+            scopeLabel={scopeLabel}
             onOpenRequest={setSelectedRequest}
           />
         </TabsContent>
