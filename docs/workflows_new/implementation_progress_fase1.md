@@ -598,3 +598,126 @@ A Etapa 5 ficou concluida com:
 - o smoke manual confirmou que o ambiente local do piloto consegue assinar URLs de Storage com a service account atual
 - o path do objeto ficou mais verboso do que o ideal para operacao manual no bucket, mas foi mantido por clareza e rastreabilidade nesta fase
 - a integracao visual do campo `file` permanece deliberadamente adiada para a Etapa 6, evitando regressao desnecessaria sobre a UI consolidada da Etapa 4
+
+## 2026-03-31 - Etapa 6 / Fase 1 Facilities
+
+### Entrega
+
+Foi implementada a Etapa 6 da Fase 1 de Facilities, expandindo a mesma rota `/pilot/facilities` para operar `facilities_manutencao_solicitacoes_gerais` e `facilities_solicitacao_suprimentos` na mesma UI, com upload funcional de `anexo_planilha` integrado ao formulario dinamico.
+
+### O que foi implementado
+
+- bootstrap server-side da rota com suporte a:
+  - `?workflow=<workflowTypeId>`
+  em:
+  - `src/app/(app)/pilot/facilities/page.tsx`
+- pagina do piloto evoluida para:
+  - workflow ativo
+  - espelhamento da selecao na URL
+  - segmentacao local entre `all` e `active`
+  em:
+  - `src/components/pilot/facilities/FacilitiesPilotPage.tsx`
+- registry local do piloto para os dois workflows em:
+  - `src/lib/workflows/pilot/workflow-registry.ts`
+- filtros puros por workflow para listas e agrupamentos em:
+  - `src/lib/workflows/pilot/workflow-filters.ts`
+- formulario dinamico atualizado para:
+  - suportar `type: 'file'`
+  - converter `File -> fileUrl` via `src/lib/workflows/upload/client`
+  - enviar `formData` pronto ao runtime
+  em:
+  - `src/components/pilot/facilities/OpenWorkflowCard.tsx`
+  - `src/components/pilot/facilities/DynamicFieldRenderer.tsx`
+- abas operacionais e dialog ajustados para conviver com dois workflows na mesma superficie em:
+  - `src/components/pilot/facilities/CurrentQueueTab.tsx`
+  - `src/components/pilot/facilities/AssignmentsTab.tsx`
+  - `src/components/pilot/facilities/MyRequestsTab.tsx`
+  - `src/components/pilot/facilities/RequestSummaryList.tsx`
+  - `src/components/pilot/facilities/RequestDetailsDialog.tsx`
+- tipos do piloto refinados para estado local multiworkflow e valores dinamicos do formulario em:
+  - `src/lib/workflows/pilot/types.ts`
+
+### Decisoes tecnicas materializadas na Etapa 6
+
+- a mesma UI do piloto passou a operar exatamente dois workflows:
+  - `facilities_manutencao_solicitacoes_gerais`
+  - `facilities_solicitacao_suprimentos`
+- o read-side permaneceu global, sem novos endpoints backend por workflow
+- a filtragem por `workflowTypeId` ficou concentrada no frontend, sobre:
+  - `Chamados atuais`
+  - `Atribuicoes e acoes`
+  - `Minhas solicitacoes`
+- o upload do campo `anexo_planilha` passou a acontecer no submit do formulario:
+  - a UI pede signed URL
+  - faz `PUT` do blob
+  - recebe `fileUrl`
+  - persiste essa URL no `formData` do `open-request`
+- o helper de upload consumido pela UI permaneceu na camada generica:
+  - `src/lib/workflows/upload/client.ts`
+- nenhum arquivo novo ou alterado da etapa voltou a depender do frontend legado
+
+### Correcao pontual aplicada apos o build inicial
+
+Depois da primeira implementacao da Etapa 6, foi aplicada uma correcao localizada para fechar a micro-etapa 6.1:
+
+- `getFacilitiesPilotWorkflowConfig()` deixou de usar fallback silencioso para manutencao
+- `RequestSummaryList` e `RequestDetailsDialog` passaram a resolver labels com a ordem:
+  - `workflowName`
+  - `config?.shortLabel`
+  - `workflowTypeId`
+- `FacilitiesPilotPage` foi ajustada para tratar o workflow ativo como lookup conhecido
+- `OpenWorkflowCard.test.tsx` ganhou cobertura do caso:
+  - workflow 2 com `file` obrigatorio
+  - submit sem arquivo
+  - sem chamada de upload nem submit final
+- `RequestDetailsDialog.test.tsx` e `RequestSummaryList.test.tsx` passaram a cobrir workflow desconhecido sem rotulo incorreto
+
+### Validacao executada
+
+- suites direcionadas da Etapa 6 aprovadas em:
+  - `workflow-registry.test.ts`
+  - `workflow-filters.test.ts`
+  - `OpenWorkflowCard.test.tsx`
+  - `RequestDetailsDialog.test.tsx`
+  - `api-client.test.ts`
+  - `src/lib/workflows/upload/__tests__/client.test.ts`
+- typecheck do recorte alterado executado sem erros nas areas:
+  - `src/lib/workflows/upload`
+  - `src/lib/workflows/pilot`
+  - `src/components/pilot/facilities`
+  - `src/hooks/use-facilities-pilot`
+  - `src/app/(app)/pilot/facilities`
+- validacao especifica da correcao pos-build aprovada em:
+  - `RequestSummaryList.test.tsx`
+  - `OpenWorkflowCard.test.tsx`
+  - `RequestDetailsDialog.test.tsx`
+
+### Validacao manual da UI
+
+- a rota `/pilot/facilities` passou a alternar corretamente entre:
+  - `Manutencao geral`
+  - `Suprimentos`
+- foi possivel abrir chamado dos dois workflows na mesma superficie
+- foi possivel atribuir responsavel pela UI nova
+- foi possivel anexar arquivo real no workflow de suprimentos
+- a URL final do anexo foi persistida corretamente em:
+  - `formData.anexo_planilha`
+- o arquivo ficou acessivel pela `fileUrl` e pela inspecao em Firestore
+- as listas operacionais continuaram funcionais durante a convivencia dos dois workflows
+
+### Resultado da etapa
+
+A Etapa 6 ficou concluida com:
+
+- base multiworkflow real na mesma rota do piloto
+- workflow 2 habilitado na mesma UX do workflow 1
+- upload funcional integrado ao formulario dinamico
+- identidade de workflow reforcada nas listas e no dialog operacional
+- correcoes pos-build incorporadas sem reabrir backend nem read-side
+
+### Consideracoes operacionais e transicao para a proxima fase
+
+- o dialog operacional continua limitado aos metadados do read-side atual e, por isso, ainda nao exibe o anexo diretamente pela UI
+- a persistencia do anexo no request foi validada e o arquivo esta acessivel pela `fileUrl`, entao o gap restante e de exposicao/experiencia, nao de infraestrutura
+- refinamentos esteticos e visualizacao mais rica de anexos ficam mais bem enderecados na construcao do frontend oficial
+- a duplicacao pontual do registry local fica registrada como hardening futuro para a Etapa 7, quando o terceiro workflow entrar na mesma base
