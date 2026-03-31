@@ -120,7 +120,7 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
         }}
       >
         <DialogContent
-          className="flex max-h-[90vh] w-[min(96vw,42rem)] max-w-[42rem] flex-col gap-0 overflow-hidden p-0 sm:max-w-[42rem]"
+          className="flex h-[90vh] w-[80vw] max-h-[90vh] max-w-[80vw] flex-col gap-0 overflow-hidden p-0"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
@@ -131,7 +131,7 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
             </DialogDescription>
           </DialogHeader>
           {iframeSrc ? (
-            <div className="relative min-h-[50vh] min-w-0 flex-1 overflow-hidden bg-muted/20">
+            <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden bg-muted/20">
               <iframe
                 src={iframeSrc}
                 className="absolute inset-0 h-full w-full border-0 bg-background"
@@ -159,7 +159,7 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="h-[90vh] w-[80vw] max-h-[90vh] max-w-[80vw] overflow-auto">
         <DialogHeader className="text-left">
           <DialogTitle className="pt-1">{poll.question}</DialogTitle>
           <DialogDescription>Sua opinião é importante para nós.</DialogDescription>
