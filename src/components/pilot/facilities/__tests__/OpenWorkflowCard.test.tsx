@@ -5,7 +5,7 @@ import { OpenWorkflowCard } from '../OpenWorkflowCard';
 import type { PilotWorkflowCatalog } from '@/lib/workflows/pilot/types';
 
 jest.mock('lucide-react', () => {
-  const ReactModule = require('react');
+  const ReactModule = jest.requireActual<typeof import('react')>('react');
   const Icon = ReactModule.forwardRef((props: Record<string, unknown>, ref: unknown) =>
     ReactModule.createElement('svg', { ...props, ref }),
   );
@@ -38,7 +38,7 @@ beforeAll(() => {
 });
 
 jest.mock('@/components/ui/select', () => {
-  const ReactModule = require('react');
+  const ReactModule = jest.requireActual<typeof import('react')>('react');
   const SelectContext = ReactModule.createContext({
     value: '',
     onValueChange: (_value: string) => {},
@@ -304,6 +304,125 @@ describe('OpenWorkflowCard', () => {
     expect(await screen.findByText('Campo obrigatorio.')).not.toBeNull();
     expect(uploadFile).not.toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('omits optional file fields for workflow 3 when no file is selected', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn().mockResolvedValue({ requestId: 1003 });
+    const uploadFile = jest.fn();
+    const purchasesCatalog: PilotWorkflowCatalog = {
+      ...catalog,
+      workflowTypeId: 'facilities_solicitacao_compras',
+      workflowName: 'Solicitacao de compras',
+      fields: [
+        {
+          id: 'item_compra',
+          label: 'Item',
+          type: 'textarea',
+          required: true,
+          order: 1,
+        },
+        {
+          id: 'anexos',
+          label: 'Anexos',
+          type: 'file',
+          required: false,
+          order: 2,
+        },
+      ],
+    };
+
+    render(
+      <OpenWorkflowCard
+        catalog={purchasesCatalog}
+        isLoading={false}
+        isSubmitting={false}
+        requesterName="Lucas"
+        uploadFile={uploadFile}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Item *'), 'Notebook para sala de reuniao');
+    await user.click(screen.getByRole('button', { name: 'Enviar solicitacao' }));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        workflowTypeId: 'facilities_solicitacao_compras',
+        requesterName: 'Lucas',
+        formData: {
+          item_compra: 'Notebook para sala de reuniao',
+        },
+      });
+    });
+
+    expect(uploadFile).not.toHaveBeenCalled();
+  });
+
+  it('uploads optional file fields for workflow 3 when a file is selected', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn().mockResolvedValue({ requestId: 1004 });
+    const uploadFile = jest.fn().mockResolvedValue({
+      fileUrl: 'https://storage.example.com/anexo-compra.pdf',
+    });
+    const purchasesCatalog: PilotWorkflowCatalog = {
+      ...catalog,
+      workflowTypeId: 'facilities_solicitacao_compras',
+      workflowName: 'Solicitacao de compras',
+      fields: [
+        {
+          id: 'item_compra',
+          label: 'Item',
+          type: 'textarea',
+          required: true,
+          order: 1,
+        },
+        {
+          id: 'anexos',
+          label: 'Anexos',
+          type: 'file',
+          required: false,
+          order: 2,
+        },
+      ],
+    };
+    const file = new File(['conteudo'], 'anexo.pdf', {
+      type: 'application/pdf',
+    });
+
+    render(
+      <OpenWorkflowCard
+        catalog={purchasesCatalog}
+        isLoading={false}
+        isSubmitting={false}
+        requesterName="Lucas"
+        uploadFile={uploadFile}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Item *'), 'Projetor para auditorio');
+    await user.upload(screen.getByLabelText('Anexos'), file);
+    await user.click(screen.getByRole('button', { name: 'Enviar solicitacao' }));
+
+    await waitFor(() => {
+      expect(uploadFile).toHaveBeenCalledWith({
+        workflowTypeId: 'facilities_solicitacao_compras',
+        fieldId: 'anexos',
+        file,
+      });
+    });
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledWith({
+        workflowTypeId: 'facilities_solicitacao_compras',
+        requesterName: 'Lucas',
+        formData: {
+          item_compra: 'Projetor para auditorio',
+          anexos: 'https://storage.example.com/anexo-compra.pdf',
+        },
+      });
+    });
   });
 
   it('resets the form when the active workflow changes', async () => {

@@ -6,6 +6,7 @@ import type {
   FinalizePilotRequestInput,
   OpenPilotRequestInput,
   PilotAssignmentsData,
+  PilotCompletedData,
   PilotCurrentQueueData,
   PilotCurrentQueueFilter,
   PilotMineData,
@@ -189,6 +190,15 @@ function normalizeMineData(input: unknown): PilotMineData {
   };
 }
 
+function normalizeCompletedData(input: unknown): PilotCompletedData {
+  const data = isObject(input) ? input : {};
+
+  return {
+    items: Array.isArray(data.items) ? data.items.map(normalizeRequestSummary) : [],
+    groups: Array.isArray(data.groups) ? data.groups.map(normalizeMonthGroup) : [],
+  };
+}
+
 function normalizeMutationResult(input: unknown): PilotMutationResult {
   const result = isObject(input) ? input : {};
 
@@ -275,6 +285,11 @@ export async function getPilotAssignments(user: User): Promise<PilotAssignmentsD
 export async function getPilotMine(user: User): Promise<PilotMineData> {
   const data = await authenticatedWorkflowFetch<unknown>(user, '/api/workflows/read/mine');
   return normalizeMineData(data);
+}
+
+export async function getPilotCompleted(user: User): Promise<PilotCompletedData> {
+  const data = await authenticatedWorkflowFetch<unknown>(user, '/api/workflows/read/completed');
+  return normalizeCompletedData(data);
 }
 
 export async function openPilotRequest(

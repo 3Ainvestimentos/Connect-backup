@@ -44,6 +44,18 @@ const suppliesRequest: PilotRequestSummary = {
   submittedMonthKey: '2026-04',
 };
 
+const purchasesRequest: PilotRequestSummary = {
+  ...maintenanceRequest,
+  docId: 'doc-3',
+  requestId: 303,
+  workflowTypeId: 'facilities_solicitacao_compras',
+  workflowName: 'Compras',
+  statusCategory: 'finalized',
+  finalizedAt: new Date('2026-04-02T10:00:00.000Z'),
+  closedAt: new Date('2026-04-02T10:00:00.000Z'),
+  closedMonthKey: '2026-04',
+};
+
 describe('workflow-filters', () => {
   it('preserves the original array when the scope is all', () => {
     const items = [maintenanceRequest, suppliesRequest];
@@ -94,5 +106,22 @@ describe('workflow-filters', () => {
     expect(filtered).not.toBe(groups);
     expect(groups[0].items).toEqual([maintenanceRequest]);
     expect(groups[1].items).toEqual([suppliesRequest]);
+  });
+
+  it('filters completed month groups by the active workflow', () => {
+    const groups: PilotMonthGroup[] = [
+      {
+        monthKey: '2026-04',
+        items: [suppliesRequest, purchasesRequest],
+      },
+    ];
+
+    expect(filterMonthGroupsByWorkflow(groups, 'active', 'facilities_solicitacao_compras')).toEqual([
+      {
+        monthKey: '2026-04',
+        items: [purchasesRequest],
+      },
+    ]);
+    expect(groups[0].items).toEqual([suppliesRequest, purchasesRequest]);
   });
 });

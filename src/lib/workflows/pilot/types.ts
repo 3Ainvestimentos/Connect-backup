@@ -113,6 +113,11 @@ export type PilotMineData = {
   groups: PilotMonthGroup[];
 };
 
+export type PilotCompletedData = {
+  items: PilotRequestSummary[];
+  groups: PilotMonthGroup[];
+};
+
 export type PilotMutationResult = {
   docId: string;
   requestId: number;

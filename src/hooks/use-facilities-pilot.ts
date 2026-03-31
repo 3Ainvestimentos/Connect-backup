@@ -8,6 +8,7 @@ import {
   finalizePilotRequest,
   getPilotAssignments,
   getPilotCatalog,
+  getPilotCompleted,
   getPilotCurrentQueue,
   getPilotMine,
   openPilotRequest,
@@ -57,6 +58,12 @@ export function useFacilitiesPilot(
     enabled,
   });
 
+  const completedQuery = useQuery({
+    queryKey: pilotKeys.completed(uid),
+    queryFn: () => getPilotCompleted(user!),
+    enabled,
+  });
+
   const mineQuery = useQuery({
     queryKey: pilotKeys.mine(uid),
     queryFn: () => getPilotMine(user!),
@@ -67,6 +74,7 @@ export function useFacilitiesPilot(
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: pilotKeys.currentRoot(uid) }),
       queryClient.invalidateQueries({ queryKey: pilotKeys.assignments(uid) }),
+      queryClient.invalidateQueries({ queryKey: pilotKeys.completed(uid) }),
       queryClient.invalidateQueries({ queryKey: pilotKeys.mine(uid) }),
     ]);
   };
@@ -109,6 +117,7 @@ export function useFacilitiesPilot(
     catalogQuery,
     currentQuery,
     assignmentsQuery,
+    completedQuery,
     mineQuery,
     openMutation,
     assignMutation,

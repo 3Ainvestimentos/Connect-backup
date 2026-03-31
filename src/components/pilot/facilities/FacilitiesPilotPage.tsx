@@ -31,12 +31,13 @@ import type {
 } from '@/lib/workflows/pilot/types';
 import { uploadWorkflowFile } from '@/lib/workflows/upload/client';
 import { AssignmentsTab } from './AssignmentsTab';
+import { CompletedTab } from './CompletedTab';
 import { CurrentQueueTab } from './CurrentQueueTab';
 import { MyRequestsTab } from './MyRequestsTab';
 import { OpenWorkflowCard } from './OpenWorkflowCard';
 import { RequestDetailsDialog } from './RequestDetailsDialog';
 
-type TabValue = 'current' | 'assignments' | 'mine';
+type TabValue = 'current' | 'assignments' | 'completed' | 'mine';
 
 type FacilitiesPilotPageProps = {
   initialWorkflowTypeId?: FacilitiesPilotWorkflowTypeId;
@@ -143,6 +144,26 @@ export function FacilitiesPilotPage({
         activeWorkflowTypeId,
       ),
     [activeWorkflowTypeId, listScope, pilot.mineQuery.data?.groups],
+  );
+
+  const filteredCompletedItems = React.useMemo(
+    () =>
+      filterRequestsByWorkflow(
+        pilot.completedQuery.data?.items ?? [],
+        listScope,
+        activeWorkflowTypeId,
+      ),
+    [activeWorkflowTypeId, listScope, pilot.completedQuery.data?.items],
+  );
+
+  const filteredCompletedGroups = React.useMemo(
+    () =>
+      filterMonthGroupsByWorkflow(
+        pilot.completedQuery.data?.groups ?? [],
+        listScope,
+        activeWorkflowTypeId,
+      ),
+    [activeWorkflowTypeId, listScope, pilot.completedQuery.data?.groups],
   );
 
   const activeWorkflowName = pilot.catalogQuery.data?.workflowName ?? activeWorkflowConfig.label;
@@ -264,7 +285,7 @@ export function FacilitiesPilotPage({
       <PageHeader
         title="Pilot de Facilities"
         icon={Building2}
-        description="Rota unica para operar manutencao e suprimentos sem depender do frontend legado."
+        description="Rota unica para operar manutencao, suprimentos e compras sem depender do frontend legado."
       />
 
       <Card>
@@ -275,7 +296,7 @@ export function FacilitiesPilotPage({
               <Badge variant="outline">{activeWorkflowConfig.shortLabel}</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              A mesma rota opera dois workflows publicados. A URL espelha a selecao atual para
+              A mesma rota opera os tres workflows publicados. A URL espelha a selecao atual para
               deep-link e refresh consistente.
             </p>
             <p className="text-sm text-muted-foreground">Catalogo ativo: {activeWorkflowName}.</p>
@@ -296,7 +317,7 @@ export function FacilitiesPilotPage({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Chamados atuais</p>
@@ -312,6 +333,12 @@ export function FacilitiesPilotPage({
               {(pilot.assignmentsQuery.data?.assignedItems.length ?? 0) +
                 (pilot.assignmentsQuery.data?.pendingActionItems.length ?? 0)}
             </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Concluidas</p>
+            <p className="mt-2 text-2xl font-semibold">{pilot.completedQuery.data?.items.length ?? 0}</p>
           </CardContent>
         </Card>
         <Card>
@@ -344,6 +371,7 @@ export function FacilitiesPilotPage({
           <TabsList className="flex h-auto flex-wrap justify-start gap-2 bg-transparent p-0">
             {showCurrentTab ? <TabsTrigger value="current">Chamados atuais</TabsTrigger> : null}
             <TabsTrigger value="assignments">Atribuicoes e acoes</TabsTrigger>
+            <TabsTrigger value="completed">Concluidas</TabsTrigger>
             <TabsTrigger value="mine">Minhas solicitacoes</TabsTrigger>
           </TabsList>
 
@@ -403,6 +431,25 @@ export function FacilitiesPilotPage({
                 ? getErrorMessage(
                     pilot.assignmentsQuery.error,
                     'Nao foi possivel carregar as atribuicoes do usuario.',
+                  )
+                : undefined
+            }
+            actorUserId={pilot.actorUserId}
+            scopeLabel={scopeLabel}
+            onOpenRequest={setSelectedRequest}
+          />
+        </TabsContent>
+
+        <TabsContent value="completed">
+          <CompletedTab
+            groups={filteredCompletedGroups}
+            items={filteredCompletedItems}
+            isLoading={pilot.completedQuery.isLoading}
+            errorMessage={
+              pilot.completedQuery.isError
+                ? getErrorMessage(
+                    pilot.completedQuery.error,
+                    'Nao foi possivel carregar o historico de concluidos.',
                   )
                 : undefined
             }

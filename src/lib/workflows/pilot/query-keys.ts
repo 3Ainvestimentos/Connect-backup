@@ -8,5 +8,6 @@ export const pilotKeys = {
   current: (uid: string, filter: PilotCurrentQueueFilter) =>
     [...pilotKeys.currentRoot(uid), filter] as const,
   assignments: (uid: string) => [...pilotKeys.root(uid), 'assignments'] as const,
+  completed: (uid: string) => [...pilotKeys.root(uid), 'completed'] as const,
   mine: (uid: string) => [...pilotKeys.root(uid), 'mine'] as const,
 };

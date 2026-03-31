@@ -6,7 +6,7 @@ import type { Collaborator } from '@/contexts/CollaboratorsContext';
 import type { PilotRequestSummary } from '@/lib/workflows/pilot/types';
 
 jest.mock('lucide-react', () => {
-  const ReactModule = require('react');
+  const ReactModule = jest.requireActual<typeof import('react')>('react');
   const Icon = ReactModule.forwardRef((props: Record<string, unknown>, ref: unknown) =>
     ReactModule.createElement('svg', { ...props, ref }),
   );
@@ -39,7 +39,7 @@ beforeAll(() => {
 });
 
 jest.mock('@/components/ui/select', () => {
-  const ReactModule = require('react');
+  const ReactModule = jest.requireActual<typeof import('react')>('react');
   const SelectContext = ReactModule.createContext({
     value: '',
     onValueChange: (_value: string) => {},
@@ -249,6 +249,9 @@ describe('RequestDetailsDialog', () => {
         onArchive={jest.fn().mockResolvedValue(undefined)}
       />,
     );
+
+    expect(screen.queryByRole('button', { name: 'Atribuir responsavel' })).toBeNull();
+    expect(screen.getByText('Maria Silva')).not.toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Finalizar' }));
 

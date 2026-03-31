@@ -1,13 +1,15 @@
+import type { User } from 'firebase/auth';
 import {
   PilotApiError,
   authenticatedWorkflowFetch,
   getPilotCatalog,
+  getPilotCompleted,
 } from '../api-client';
 
 describe('workflow pilot api client', () => {
   const user = {
     getIdToken: jest.fn().mockResolvedValue('token-123'),
-  } as any;
+  } as unknown as User;
 
   afterEach(() => {
     jest.restoreAllMocks();
@@ -65,5 +67,113 @@ describe('workflow pilot api client', () => {
         message: 'Acesso negado.',
       }),
     );
+  });
+
+  it('normalizes completed history into items and monthly groups', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        ok: true,
+        data: {
+          items: [
+            {
+              docId: 'doc-1',
+              requestId: 701,
+              workflowTypeId: 'facilities_solicitacao_compras',
+              workflowVersion: 1,
+              workflowName: 'Solicitacao de compras',
+              areaId: 'facilities',
+              ownerEmail: 'owner@example.com',
+              ownerUserId: 'owner-1',
+              requesterUserId: 'requester-1',
+              requesterName: 'Lucas',
+              responsibleUserId: 'resp-1',
+              responsibleName: 'Maria',
+              currentStepId: 'step-5',
+              currentStepName: 'Finalizado',
+              currentStatusKey: 'finalizado',
+              statusCategory: 'finalized',
+              hasResponsible: true,
+              hasPendingActions: false,
+              pendingActionRecipientIds: [],
+              pendingActionTypes: [],
+              operationalParticipantIds: ['owner-1', 'resp-1'],
+              slaDays: 5,
+              expectedCompletionAt: null,
+              lastUpdatedAt: { seconds: 1_775_040_000, nanoseconds: 0 },
+              finalizedAt: { seconds: 1_775_040_000, nanoseconds: 0 },
+              closedAt: { seconds: 1_775_040_000, nanoseconds: 0 },
+              archivedAt: null,
+              submittedAt: { seconds: 1_774_606_800, nanoseconds: 0 },
+              submittedMonthKey: '2026-03',
+              closedMonthKey: '2026-04',
+              isArchived: false,
+            },
+          ],
+          groups: [
+            {
+              monthKey: '2026-04',
+              items: [
+                {
+                  docId: 'doc-1',
+                  requestId: 701,
+                  workflowTypeId: 'facilities_solicitacao_compras',
+                  workflowVersion: 1,
+                  workflowName: 'Solicitacao de compras',
+                  areaId: 'facilities',
+                  ownerEmail: 'owner@example.com',
+                  ownerUserId: 'owner-1',
+                  requesterUserId: 'requester-1',
+                  requesterName: 'Lucas',
+                  responsibleUserId: 'resp-1',
+                  responsibleName: 'Maria',
+                  currentStepId: 'step-5',
+                  currentStepName: 'Finalizado',
+                  currentStatusKey: 'finalizado',
+                  statusCategory: 'finalized',
+                  hasResponsible: true,
+                  hasPendingActions: false,
+                  pendingActionRecipientIds: [],
+                  pendingActionTypes: [],
+                  operationalParticipantIds: ['owner-1', 'resp-1'],
+                  slaDays: 5,
+                  expectedCompletionAt: null,
+                  lastUpdatedAt: { seconds: 1_775_040_000, nanoseconds: 0 },
+                  finalizedAt: { seconds: 1_775_040_000, nanoseconds: 0 },
+                  closedAt: { seconds: 1_775_040_000, nanoseconds: 0 },
+                  archivedAt: null,
+                  submittedAt: { seconds: 1_774_606_800, nanoseconds: 0 },
+                  submittedMonthKey: '2026-03',
+                  closedMonthKey: '2026-04',
+                  isArchived: false,
+                },
+              ],
+            },
+          ],
+        },
+      }),
+    } as Response) as typeof fetch;
+
+    await expect(getPilotCompleted(user)).resolves.toMatchObject({
+      items: [
+        expect.objectContaining({
+          requestId: 701,
+          workflowTypeId: 'facilities_solicitacao_compras',
+          closedMonthKey: '2026-04',
+          finalizedAt: new Date('2026-04-01T10:40:00.000Z'),
+        }),
+      ],
+      groups: [
+        expect.objectContaining({
+          monthKey: '2026-04',
+          items: [
+            expect.objectContaining({
+              requestId: 701,
+            }),
+          ],
+        }),
+      ],
+    });
   });
 });

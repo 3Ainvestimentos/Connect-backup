@@ -13,6 +13,13 @@ export const FACILITIES_PILOT_WORKFLOWS = [
     description: 'Pedidos de suprimentos com anexo de planilha.',
     isDefault: false,
   },
+  {
+    workflowTypeId: 'facilities_solicitacao_compras',
+    label: 'Solicitacao de compras',
+    shortLabel: 'Compras',
+    description: 'Pedidos de compras com anexo complementar opcional.',
+    isDefault: false,
+  },
 ] as const;
 
 export type FacilitiesPilotWorkflowTypeId =
@@ -21,14 +28,18 @@ export type FacilitiesPilotWorkflowTypeId =
 export const DEFAULT_FACILITIES_PILOT_WORKFLOW_TYPE_ID: FacilitiesPilotWorkflowTypeId =
   'facilities_manutencao_solicitacoes_gerais';
 
+const FACILITIES_PILOT_WORKFLOW_IDS = FACILITIES_PILOT_WORKFLOWS.map(
+  (workflow) => workflow.workflowTypeId,
+);
+
 export function resolveFacilitiesPilotWorkflowTypeId(
   input?: string | null,
 ): FacilitiesPilotWorkflowTypeId {
   if (
-    input === 'facilities_manutencao_solicitacoes_gerais' ||
-    input === 'facilities_solicitacao_suprimentos'
+    input &&
+    FACILITIES_PILOT_WORKFLOW_IDS.includes(input as FacilitiesPilotWorkflowTypeId)
   ) {
-    return input;
+    return input as FacilitiesPilotWorkflowTypeId;
   }
 
   return DEFAULT_FACILITIES_PILOT_WORKFLOW_TYPE_ID;

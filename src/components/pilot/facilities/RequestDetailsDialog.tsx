@@ -79,6 +79,7 @@ export function RequestDetailsDialog({
     request.workflowName ||
     getFacilitiesPilotWorkflowConfig(request.workflowTypeId)?.shortLabel ||
     request.workflowTypeId;
+  const canShowAssignForm = presentation.canAssign && !request.hasResponsible;
   const selectedResponsible =
     sortedCollaborators.find((collaborator) => collaborator.id3a === selectedResponsibleId) ?? null;
 
@@ -151,7 +152,7 @@ export function RequestDetailsDialog({
             </div>
           </div>
 
-          {presentation.canAssign ? (
+          {canShowAssignForm ? (
             <div className="space-y-3 rounded-md border p-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-foreground">Atribuir responsavel</p>
@@ -186,7 +187,7 @@ export function RequestDetailsDialog({
             </div>
           ) : null}
 
-          {(presentation.canFinalize || presentation.canArchive) === false ? (
+          {(canShowAssignForm || presentation.canFinalize || presentation.canArchive) === false ? (
             <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
               Nenhuma acao operacional disponivel para o estado atual.
             </div>
