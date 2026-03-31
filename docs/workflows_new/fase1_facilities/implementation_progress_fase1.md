@@ -721,3 +721,149 @@ A Etapa 6 ficou concluida com:
 - a persistencia do anexo no request foi validada e o arquivo esta acessivel pela `fileUrl`, entao o gap restante e de exposicao/experiencia, nao de infraestrutura
 - refinamentos esteticos e visualizacao mais rica de anexos ficam mais bem enderecados na construcao do frontend oficial
 - a duplicacao pontual do registry local fica registrada como hardening futuro para a Etapa 7, quando o terceiro workflow entrar na mesma base
+
+## 2026-03-31 - Etapa 7 / Fase 1 Facilities
+
+### Entrega
+
+Foi implementada a Etapa 7 da Fase 1 de Facilities, incluindo `facilities_solicitacao_compras` na mesma rota `/pilot/facilities`, conectando a aba `Concluidas` ao read-side ja existente e consolidando a UX final do piloto para os 3 workflows.
+
+### O que foi implementado
+
+- expansao do registry local do piloto para:
+  - `facilities_manutencao_solicitacoes_gerais`
+  - `facilities_solicitacao_suprimentos`
+  - `facilities_solicitacao_compras`
+  em:
+  - `src/lib/workflows/pilot/workflow-registry.ts`
+- derivacao do workflow ativo a partir da fonte unica do registry, sem nova duplicacao estrutural no resolver
+- nova leitura client-safe de concluidos em:
+  - `src/lib/workflows/pilot/api-client.ts`
+- nova query key para concluidos em:
+  - `src/lib/workflows/pilot/query-keys.ts`
+- extensao do hook do piloto para consumir:
+  - `completedQuery`
+  em:
+  - `src/hooks/use-facilities-pilot.ts`
+- nova aba `Concluidas` em:
+  - `src/components/pilot/facilities/CompletedTab.tsx`
+- consolidacao da pagina do piloto para:
+  - 3 workflows no selector
+  - 4 cards de topo
+  - 4 abas operacionais
+  - mesma superficie multiworkflow
+  em:
+  - `src/components/pilot/facilities/FacilitiesPilotPage.tsx`
+- ajuste do formulario dinamico para o workflow 3:
+  - `anexos` como `file` opcional
+  - upload somente quando houver `File`
+  - omissao do campo no `formData` quando vazio
+  em:
+  - `src/components/pilot/facilities/OpenWorkflowCard.tsx`
+- refinamento do dialog operacional para:
+  - mostrar o responsavel atual em leitura
+  - ocultar o seletor apos a primeira atribuicao
+  em:
+  - `src/components/pilot/facilities/RequestDetailsDialog.tsx`
+
+### Decisoes tecnicas materializadas na Etapa 7
+
+- a mesma rota `/pilot/facilities` passou a operar os 3 workflows piloto
+- o backend nao precisou de endpoint novo:
+  - a etapa reaproveitou `GET /api/workflows/read/completed`
+- o agrupamento de `Concluidas` passou a seguir:
+  - `closedMonthKey`
+- o workflow 3 reutilizou apenas os tipos de campo ja provados no piloto:
+  - `text`
+  - `textarea`
+  - `select`
+  - `file`
+- o campo `anexos` foi tratado como:
+  - opcional
+  - sem placeholder vazio no `formData`
+  - com upload sob demanda
+- a UX de atribuicao foi consolidada para:
+  - atribuicao inicial explicita
+  - responsavel em modo leitura depois disso
+  - sem modelar ainda reatribuicao formal
+
+### Validacao executada
+
+- suites direcionadas da Etapa 7 aprovadas em:
+  - `workflow-registry.test.ts`
+  - `workflow-filters.test.ts`
+  - `api-client.test.ts`
+  - `OpenWorkflowCard.test.tsx`
+  - `RequestDetailsDialog.test.tsx`
+  - `CompletedTab.test.tsx`
+- resultado do bloco novo:
+  - `6` suites aprovadas
+  - `22` testes aprovados
+  - `0` falhas
+- typecheck do recorte alterado executado sem erros nas areas:
+  - `src/lib/workflows/pilot`
+  - `src/components/pilot/facilities`
+  - `src/hooks/use-facilities-pilot`
+  - `src/app/(app)/pilot/facilities`
+
+### Validacao manual da UI
+
+Foi executado o roteiro completo de smoke da Fase 1 cobrindo os 3 workflows e toda a superficie consolidada:
+
+- alternancia correta entre:
+  - `Manutencao geral`
+  - `Suprimentos`
+  - `Compras`
+- abertura de chamados dos 3 workflows na mesma rota
+- trilha completa validada para:
+  - abrir
+  - atribuir
+  - finalizar
+  - arquivar
+- `Solicitacao de Suprimentos` validada com:
+  - upload obrigatorio de `anexo_planilha`
+- `Solicitacao de Compras` validada com:
+  - submit sem anexo opcional
+  - submit com anexo opcional real
+- aba `Concluidas` validada com:
+  - agrupamento mensal
+  - abertura de item no dialog
+  - convivencia dos 3 workflows
+- filtros:
+  - `Todos os workflows`
+  - `Somente workflow ativo`
+  validados nas listas da rota
+- persistencia dos anexos confirmada no Firestore
+
+### Resultado da etapa
+
+A Etapa 7 ficou concluida com:
+
+- workflow 3 rodando ponta a ponta na mesma UI
+- aba `Concluidas` consumindo o read-side existente
+- base de frontend consolidada para os 3 workflows piloto
+- refinamento final suficiente da UX do piloto para encerrar a Fase 1
+- nenhuma dependencia reintroduzida do frontend legado
+
+### Fechamento da Fase 1
+
+Com a validacao manual completa da Etapa 7, a Fase 1 pode ser considerada concluida para o recorte de Facilities.
+
+O que ficou comprovado ao final da fase:
+
+- runtime write-side v2 funcional
+- read-side v2 funcional
+- catalogo publicado consumido pela UI
+- infraestrutura de upload com signed URL validada
+- mesma rota do piloto operando os 3 workflows definidos
+- owner, responsavel e solicitante operando a trilha fim a fim
+- base pronta para iniciar o frontend oficial e a expansao para os demais `workflowTypes`
+
+### Consideracoes para a proxima frente
+
+- o dialog operacional continua sem exibir anexos diretamente, porque o read-side atual nao expoe `formData`
+- isso nao bloqueia o encerramento da Fase 1, mas vira requisito natural da proxima frente de frontend oficial
+- a partir deste ponto, o proximo trabalho deixa de ser Fase 1 e passa a ser:
+  - definicao do frontend oficial
+  - enriquecimento da experiencia de detalhes
+  - expansao da base validada para os demais dominios de workflows
