@@ -55,7 +55,9 @@ export function RequestSummaryList({
       {items.map((item) => {
         const presentation = derivePilotRequestPresentation(item, actorUserId);
         const workflowLabel =
-          item.workflowName || getFacilitiesPilotWorkflowConfig(item.workflowTypeId).shortLabel;
+          item.workflowName ||
+          getFacilitiesPilotWorkflowConfig(item.workflowTypeId)?.shortLabel ||
+          item.workflowTypeId;
 
         return (
           <Card key={item.docId}>

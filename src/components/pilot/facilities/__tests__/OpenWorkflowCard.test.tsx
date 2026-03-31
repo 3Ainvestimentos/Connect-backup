@@ -259,6 +259,53 @@ describe('OpenWorkflowCard', () => {
     });
   });
 
+  it('shows required error for workflow 2 file field and blocks side effects', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn().mockResolvedValue({ requestId: 1002 });
+    const uploadFile = jest.fn().mockResolvedValue({
+      fileUrl: 'https://storage.example.com/planilha.xlsx',
+    });
+    const fileCatalog: PilotWorkflowCatalog = {
+      ...catalog,
+      workflowTypeId: 'facilities_solicitacao_suprimentos',
+      workflowName: 'Solicitacao de suprimentos',
+      fields: [
+        {
+          id: 'descricao',
+          label: 'Descricao',
+          type: 'textarea',
+          required: true,
+          order: 1,
+        },
+        {
+          id: 'anexo_planilha',
+          label: 'Planilha',
+          type: 'file',
+          required: true,
+          order: 2,
+        },
+      ],
+    };
+
+    render(
+      <OpenWorkflowCard
+        catalog={fileCatalog}
+        isLoading={false}
+        isSubmitting={false}
+        requesterName="Lucas"
+        uploadFile={uploadFile}
+        onSubmit={onSubmit}
+      />,
+    );
+
+    await user.type(screen.getByLabelText('Descricao *'), 'Reposicao de insumos');
+    await user.click(screen.getByRole('button', { name: 'Enviar solicitacao' }));
+
+    expect(await screen.findByText('Campo obrigatorio.')).not.toBeNull();
+    expect(uploadFile).not.toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it('resets the form when the active workflow changes', async () => {
     const user = userEvent.setup();
     const uploadFile = jest.fn().mockResolvedValue({

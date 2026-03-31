@@ -35,8 +35,5 @@ export function resolveFacilitiesPilotWorkflowTypeId(
 }
 
 export function getFacilitiesPilotWorkflowConfig(workflowTypeId: string) {
-  return (
-    FACILITIES_PILOT_WORKFLOWS.find((workflow) => workflow.workflowTypeId === workflowTypeId) ??
-    FACILITIES_PILOT_WORKFLOWS[0]
-  );
+  return FACILITIES_PILOT_WORKFLOWS.find((workflow) => workflow.workflowTypeId === workflowTypeId);
 }

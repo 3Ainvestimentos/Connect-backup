@@ -284,4 +284,26 @@ describe('RequestDetailsDialog', () => {
       expect(onArchive).toHaveBeenCalledWith({ requestId: 501 });
     });
   });
+
+  it('falls back to the raw workflowTypeId when the workflow is unknown', () => {
+    render(
+      <RequestDetailsDialog
+        open
+        request={{
+          ...baseRequest,
+          workflowTypeId: 'facilities_fluxo_inesperado',
+          workflowName: '',
+        }}
+        actorUserId="owner-1"
+        collaborators={collaborators}
+        onOpenChange={jest.fn()}
+        onAssign={jest.fn().mockResolvedValue(undefined)}
+        onFinalize={jest.fn().mockResolvedValue(undefined)}
+        onArchive={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    expect(screen.getAllByText('facilities_fluxo_inesperado').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Manutencao geral')).toBeNull();
+  });
 });

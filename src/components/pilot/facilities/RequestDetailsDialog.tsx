@@ -76,7 +76,9 @@ export function RequestDetailsDialog({
 
   const presentation = derivePilotRequestPresentation(request, actorUserId);
   const workflowLabel =
-    request.workflowName || getFacilitiesPilotWorkflowConfig(request.workflowTypeId).shortLabel;
+    request.workflowName ||
+    getFacilitiesPilotWorkflowConfig(request.workflowTypeId)?.shortLabel ||
+    request.workflowTypeId;
   const selectedResponsible =
     sortedCollaborators.find((collaborator) => collaborator.id3a === selectedResponsibleId) ?? null;
 

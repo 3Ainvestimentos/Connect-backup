@@ -69,7 +69,7 @@ export function FacilitiesPilotPage({
   const showCurrentTab = permissions.canManageRequests || isAdmin;
   const [activeTab, setActiveTab] = React.useState<TabValue>(showCurrentTab ? 'current' : 'assignments');
   const [selectedRequest, setSelectedRequest] = React.useState<PilotRequestSummary | null>(null);
-  const activeWorkflowConfig = getFacilitiesPilotWorkflowConfig(activeWorkflowTypeId);
+  const activeWorkflowConfig = getFacilitiesPilotWorkflowConfig(activeWorkflowTypeId)!;
 
   React.useEffect(() => {
     setActiveWorkflowTypeId(initialWorkflowTypeId);
