@@ -52,6 +52,8 @@ import NotificationFAB from '../fab/NotificationFAB';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
 import { DailyRssModal } from '../rss/DailyRssModal';
 import { findCollaboratorByEmail } from '@/lib/email-utils';
+import { WORKFLOW_MANAGEMENT_ROUTE } from '@/lib/workflows/management/constants';
+import { canAccessWorkflowManagementEntry } from '@/lib/workflows/management/navigation';
 
 
 export const navItems = [
@@ -84,6 +86,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   const displayName = currentUserCollaborator?.name || user.displayName;
   const displayEmail = currentUserCollaborator?.email || user.email;
   const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
+  const canSeeWorkflowManagement = canAccessWorkflowManagementEntry(permissions);
 
   const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
   const hasAdminPanels =
@@ -148,6 +151,14 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
         {hasTools && (
             <DropdownMenuGroup>
             <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Ferramentas</DropdownMenuLabel>
+              {canSeeWorkflowManagement && (
+                <DropdownMenuItem asChild>
+                  <Link href={WORKFLOW_MANAGEMENT_ROUTE} className="cursor-pointer font-body">
+                    <ListChecks className="mr-2 h-4 w-4" />
+                    <span>Gestao de chamados</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
               {permissions.canManageRequests && (
                 <DropdownMenuItem asChild>
                 <Link href="/requests" className={cn(
