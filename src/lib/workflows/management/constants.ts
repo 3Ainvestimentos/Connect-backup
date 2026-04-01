@@ -10,10 +10,7 @@ import type {
 export const WORKFLOW_MANAGEMENT_ROUTE = '/gestao-de-chamados';
 export const WORKFLOW_MANAGEMENT_TITLE = 'Gestao de chamados';
 export const WORKFLOW_MANAGEMENT_DESCRIPTION =
-  'Superficie oficial da operacao com bootstrap real, filtros compartilhaveis por URL, listas separadas por contexto e detalhe rico sob demanda.';
-export const WORKFLOW_MANAGEMENT_TRANSITION_TITLE = 'Convivio controlado com superficies legadas';
-export const WORKFLOW_MANAGEMENT_TRANSITION_DESCRIPTION =
-  'A rota oficial agora opera bootstrap, listas resumidas e modal de detalhe rico sem quebrar /pilot/facilities nem os atalhos legados.';
+  'Painel oficial da operacao para acompanhar chamados atuais, atribuicoes em andamento e historico concluido no mesmo fluxo.';
 
 export const MANAGEMENT_DEFAULT_TAB: ManagementTabId = 'assignments';
 export const MANAGEMENT_DEFAULT_ASSIGNMENTS_SUBTAB: ManagementAssignmentsSubtab = 'assigned';

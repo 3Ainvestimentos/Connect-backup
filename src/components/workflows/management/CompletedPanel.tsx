@@ -1,9 +1,15 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   formatManagementMonthKey,
   getManagementEmptyStateCopy,
+  sortManagementMonthGroups,
 } from '@/lib/workflows/management/presentation';
 import type { WorkflowManagementCompletedData } from '@/lib/workflows/management/types';
 import { ManagementAsyncState } from './ManagementAsyncState';
@@ -28,7 +34,10 @@ export function CompletedPanel({
 }: CompletedPanelProps) {
   const items = data?.items ?? [];
   const groups = data?.groups ?? [];
-  const groupsToRender = groups.length > 0 ? groups : [{ monthKey: 'unknown', items }];
+  const groupsToRender = sortManagementMonthGroups(
+    groups.length > 0 ? groups : [{ monthKey: 'unknown', items }],
+  );
+  const defaultOpenGroup = groupsToRender[0]?.monthKey;
   const emptyState = getManagementEmptyStateCopy({
     activeTab: 'completed',
     hasActiveFilters,
@@ -45,18 +54,35 @@ export function CompletedPanel({
       emptyDescription={emptyState.description}
       onRetry={onRetry}
     >
-      <div className="space-y-6">
+      <Accordion
+        type="single"
+        collapsible
+        defaultValue={defaultOpenGroup}
+        className="rounded-2xl border border-border/70 bg-background/95 px-4"
+      >
         {groupsToRender.map((group) => (
-          <Card key={group.monthKey} className="border-border/70">
-            <CardHeader>
-              <CardTitle>{formatManagementMonthKey(group.monthKey)}</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <AccordionItem
+            key={group.monthKey}
+            value={group.monthKey}
+            className="border-border/70 last:border-b-0"
+          >
+            <AccordionTrigger className="gap-4 py-5 text-left hover:no-underline">
+              <div className="space-y-1">
+                <p className="text-base font-semibold text-foreground">
+                  {formatManagementMonthKey(group.monthKey)}
+                </p>
+                <p className="text-sm font-normal text-muted-foreground">
+                  {group.items.length} chamado{group.items.length === 1 ? '' : 's'}
+                </p>
+              </div>
+            </AccordionTrigger>
+
+            <AccordionContent className="pb-5">
               <ManagementRequestList items={group.items} onOpenRequest={onOpenRequest} />
-            </CardContent>
-          </Card>
+            </AccordionContent>
+          </AccordionItem>
         ))}
-      </div>
+      </Accordion>
     </ManagementAsyncState>
   );
 }

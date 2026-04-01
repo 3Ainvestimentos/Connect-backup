@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -13,8 +14,6 @@ import {
   MANAGEMENT_TAB_DEFINITIONS,
   WORKFLOW_MANAGEMENT_DESCRIPTION,
   WORKFLOW_MANAGEMENT_TITLE,
-  WORKFLOW_MANAGEMENT_TRANSITION_DESCRIPTION,
-  WORKFLOW_MANAGEMENT_TRANSITION_TITLE,
 } from '@/lib/workflows/management/constants';
 import {
   buildManagementViewState,
@@ -22,6 +21,7 @@ import {
   serializeManagementSearchParams,
 } from '@/lib/workflows/management/search-params';
 import {
+  getManagementActiveFilterChips,
   getManagementTabErrorMessage,
   hasManagementActiveFilters,
 } from '@/lib/workflows/management/presentation';
@@ -130,6 +130,14 @@ export function WorkflowManagementPage() {
     () => hasManagementActiveFilters(viewState.filters),
     [viewState.filters],
   );
+  const activeFilterChips = React.useMemo(
+    () =>
+      getManagementActiveFilterChips(
+        viewState.filters,
+        bootstrapQuery.data?.filterOptions,
+      ),
+    [bootstrapQuery.data?.filterOptions, viewState.filters],
+  );
   const handleRetryActiveTab = React.useCallback(() => {
     void refetchActiveTab();
   }, [refetchActiveTab]);
@@ -142,45 +150,7 @@ export function WorkflowManagementPage() {
       <PageHeader
         title={WORKFLOW_MANAGEMENT_TITLE}
         description={WORKFLOW_MANAGEMENT_DESCRIPTION}
-        actions={
-          bootstrapQuery.data ? (
-            <div className="flex flex-wrap justify-end gap-2">
-              <Badge variant="secondary">Ator: {bootstrapQuery.data.actor.actorName}</Badge>
-              <Badge variant={hasActiveFilters ? 'default' : 'outline'}>
-                {hasActiveFilters ? 'Filtros ativos' : 'Sem filtros ativos'}
-              </Badge>
-              <Badge variant={canViewCurrentQueue ? 'default' : 'outline'}>
-                {canViewCurrentQueue ? 'Ownership operacional ativo' : 'Fila atual sob gate'}
-              </Badge>
-            </div>
-          ) : undefined
-        }
       />
-
-      <Card className="border-border/70 bg-muted/30">
-        <CardHeader className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">Fase 2A.4</Badge>
-            <Badge variant="outline">
-              {isNavigating ? 'Sincronizando URL' : 'URL state oficial ativo'}
-            </Badge>
-            <Badge variant="outline">
-              {selectedRequestId ? `Detalhe aberto #${selectedRequestId}` : 'Sem modal aberto'}
-            </Badge>
-          </div>
-          <div className="space-y-1">
-            <CardTitle className="font-headline text-lg">
-              {WORKFLOW_MANAGEMENT_TRANSITION_TITLE}
-            </CardTitle>
-            <CardDescription className="max-w-3xl font-body text-sm">
-              {WORKFLOW_MANAGEMENT_TRANSITION_DESCRIPTION}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0 text-sm text-muted-foreground">
-          /requests e /me/tasks seguem disponiveis como atalhos legados durante a transicao. /pilot/facilities permanece como fallback operacional fora do CTA principal.
-        </CardContent>
-      </Card>
 
       {bootstrapQuery.isLoading && !bootstrapQuery.data ? (
         <Card className="border-border/70">
@@ -209,35 +179,63 @@ export function WorkflowManagementPage() {
 
       {bootstrapQuery.data ? (
         <>
-          <ManagementToolbar
-            bootstrap={bootstrapQuery.data}
-            filters={viewState.filters}
-            onApplyFilters={(filters) => updateViewState({ filters })}
-            onResetFilters={() => updateViewState({ filters: {} })}
-          />
+          <section className="space-y-4 rounded-2xl border border-border/70 bg-background/95 p-4 shadow-sm">
+            <Tabs
+              value={viewState.activeTab}
+              onValueChange={(value) => updateViewState({ activeTab: value as ManagementTabId })}
+              className="space-y-4"
+            >
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-xl bg-muted/70 p-1 lg:w-auto">
+                  {visibleTabs.map((tab) => (
+                    <TabsTrigger key={tab.tab} value={tab.tab} className="px-4 py-2">
+                      {tab.title}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
 
-          {!canViewCurrentQueue ? (
-            <Card className="border-dashed">
-              <CardContent className="p-4 text-sm text-muted-foreground">
+                <div className="flex w-full justify-end lg:w-auto">
+                  <ManagementToolbar
+                    bootstrap={bootstrapQuery.data}
+                    filters={viewState.filters}
+                    onApplyFilters={(filters) => updateViewState({ filters })}
+                    onResetFilters={() => updateViewState({ filters: {} })}
+                  />
+                </div>
+              </div>
+            </Tabs>
+
+            {activeFilterChips.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {activeFilterChips.map((chip) => (
+                  <Badge
+                    key={chip.key}
+                    variant="outline"
+                    className="border-admin-primary/20 bg-admin-primary/5 text-admin-primary"
+                  >
+                    {chip.label}
+                  </Badge>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => updateViewState({ filters: {} })}
+                  className="h-8 px-2 text-admin-primary hover:bg-admin-primary/10 hover:text-admin-primary"
+                >
+                  Limpar filtros
+                </Button>
+              </div>
+            ) : null}
+
+            {!canViewCurrentQueue ? (
+              <div className="rounded-xl border border-dashed border-border/70 bg-muted/30 p-4 text-sm text-muted-foreground">
                 A aba `Chamados atuais` exige ownership explicito. Seu perfil continua com acesso
                 operacional a `Atribuicoes e acoes` e `Concluidas`.
-              </CardContent>
-            </Card>
-          ) : null}
-
-          <Tabs
-            value={viewState.activeTab}
-            onValueChange={(value) => updateViewState({ activeTab: value as ManagementTabId })}
-            className="space-y-4"
-          >
-            <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-lg bg-muted/60 p-1">
-              {visibleTabs.map((tab) => (
-                <TabsTrigger key={tab.tab} value={tab.tab} className="px-4 py-2">
-                  {tab.title}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+              </div>
+            ) : null}
+          </section>
 
           {viewState.activeTab === 'current' && canViewCurrentQueue ? (
             <CurrentQueuePanel

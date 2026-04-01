@@ -171,6 +171,12 @@ describe('WorkflowManagementPage', () => {
 
     const completedTab = screen.getByRole('tab', { name: 'Concluidas' });
     expect(completedTab.getAttribute('data-state')).toBe('active');
+    expect(screen.getByText('Chamado: #801')).toBeTruthy();
+    expect(screen.getByText('Solicitante: Alice')).toBeTruthy();
+    expect(screen.queryByText('Convivio controlado com superficies legadas')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Abrir filtros' }));
+
     expect((screen.getByLabelText('Numero do chamado') as HTMLInputElement).value).toBe('801');
     expect((screen.getByLabelText('Solicitante') as HTMLInputElement).value).toBe('Alice');
 

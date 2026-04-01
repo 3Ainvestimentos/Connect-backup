@@ -3,8 +3,12 @@
 import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -12,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import { MANAGEMENT_SLA_LABELS } from '@/lib/workflows/management/constants';
 import { hasManagementActiveFilters } from '@/lib/workflows/management/presentation';
 import type {
@@ -50,7 +55,8 @@ function toDraftFilters(filters: WorkflowManagementFilters): DraftFilters {
 
 function toWorkflowManagementFilters(draft: DraftFilters): WorkflowManagementFilters {
   const requestId = draft.requestId.trim();
-  const parsedRequestId = /^\d+$/.test(requestId) && Number(requestId) > 0 ? Number(requestId) : undefined;
+  const parsedRequestId =
+    /^\d+$/.test(requestId) && Number(requestId) > 0 ? Number(requestId) : undefined;
 
   return {
     requestId: parsedRequestId,
@@ -73,50 +79,69 @@ export function ManagementToolbar({
   onResetFilters,
 }: ManagementToolbarProps) {
   const [draft, setDraft] = React.useState<DraftFilters>(() => toDraftFilters(filters));
+  const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
     setDraft(toDraftFilters(filters));
   }, [filters]);
 
   const hasActiveFilters = hasManagementActiveFilters(filters);
+  const hasDraftFilters = hasManagementActiveFilters(toWorkflowManagementFilters(draft));
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const canReset = hasActiveFilters || hasDraftFilters;
+
+  const handleApply = () => {
+    onApplyFilters(toWorkflowManagementFilters(draft));
+    setOpen(false);
+  };
+
   const handleReset = () => {
     setDraft(toDraftFilters({}));
-    onResetFilters();
+
+    if (hasActiveFilters) {
+      onResetFilters();
+    }
   };
 
   return (
-    <Card className="border-border/70 bg-background/95">
-      <CardHeader className="gap-3">
-        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-          <div className="space-y-1">
-            <CardTitle className="font-headline text-lg">Busca e filtros oficiais</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Busca, ownership e URL compartilham o mesmo contrato para deep-link, refresh e
-              rollback seguro.
-            </p>
-          </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          aria-label="Abrir filtros"
+          className={cn(
+            'w-full justify-between gap-3 border-border/70 bg-background/95 md:w-auto',
+            hasActiveFilters &&
+              'border-admin-primary/30 bg-admin-primary/10 text-admin-primary hover:bg-admin-primary/15 hover:text-admin-primary',
+          )}
+        >
+          <span>Filtros</span>
+          {activeFilterCount > 0 ? (
+            <Badge className="bg-admin-primary text-primary-foreground hover:bg-admin-primary">
+              {activeFilterCount}
+            </Badge>
+          ) : null}
+        </Button>
+      </PopoverTrigger>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <Badge variant="secondary">Ator: {bootstrap.actor.actorName || bootstrap.actor.actorUserId}</Badge>
-            <Badge variant={bootstrap.ownership.hasOwnedScopes ? 'default' : 'outline'}>
-              Ownership {bootstrap.ownership.hasOwnedScopes ? 'ativo' : 'nao identificado'}
-            </Badge>
-            <Badge variant={hasActiveFilters ? 'default' : 'outline'}>
-              {hasActiveFilters ? `${activeFilterCount} filtro(s) ativo(s)` : 'Sem filtros ativos'}
-            </Badge>
-          </div>
+      <PopoverContent align="end" className="w-[min(92vw,28rem)] space-y-4 p-4">
+        <div className="space-y-1">
+          <h2 className="text-sm font-semibold text-foreground">Filtros da lista</h2>
+          <p className="text-xs text-muted-foreground">
+            Ajuste o recorte da busca e confirme para sincronizar a URL da pagina.
+          </p>
         </div>
-      </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2">
           <Input
             type="number"
             min={1}
             step={1}
             value={draft.requestId}
-            onChange={(event) => setDraft((current) => ({ ...current, requestId: event.target.value }))}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, requestId: event.target.value }))
+            }
             placeholder="Numero do chamado"
             aria-label="Numero do chamado"
           />
@@ -199,32 +224,40 @@ export function ManagementToolbar({
           <Input
             type="date"
             value={draft.periodFrom}
-            onChange={(event) => setDraft((current) => ({ ...current, periodFrom: event.target.value }))}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, periodFrom: event.target.value }))
+            }
             aria-label="Periodo inicial"
           />
 
           <Input
             type="date"
             value={draft.periodTo}
-            onChange={(event) => setDraft((current) => ({ ...current, periodTo: event.target.value }))}
+            onChange={(event) =>
+              setDraft((current) => ({ ...current, periodTo: event.target.value }))
+            }
             aria-label="Periodo final"
           />
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" onClick={() => onApplyFilters(toWorkflowManagementFilters(draft))}>
-            Aplicar filtros
-          </Button>
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
             variant="outline"
-            disabled={!hasActiveFilters}
+            disabled={!canReset}
             onClick={handleReset}
           >
             Limpar
           </Button>
+          <Button
+            type="button"
+            onClick={handleApply}
+            className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
+          >
+            Aplicar filtros
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      </PopoverContent>
+    </Popover>
   );
 }

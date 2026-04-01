@@ -6,6 +6,8 @@ import type {
   ManagementCurrentQueueFilter,
   ManagementSlaState,
   ManagementTabId,
+  WorkflowManagementFilterOptions,
+  WorkflowManagementMonthGroup,
   WorkflowManagementFilters,
   WorkflowManagementRequestDetailField,
   WorkflowManagementRequestProgressItem,
@@ -26,6 +28,11 @@ type ManagementEmptyStateCopyInput = {
 type ManagementEmptyStateCopy = {
   title: string;
   description: string;
+};
+
+export type ManagementActiveFilterChip = {
+  key: keyof WorkflowManagementFilters;
+  label: string;
 };
 
 export function formatManagementDate(date: Date | null, fallback = '-'): string {
@@ -57,6 +64,24 @@ export function formatManagementMonthKey(monthKey: string): string {
   return format(parsed, "MMMM 'de' yyyy", { locale: ptBR });
 }
 
+function parseManagementDateOnly(value: string): Date | null {
+  const parsed = parse(value, 'yyyy-MM-dd', new Date());
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function getManagementMonthSortValue(monthKey: string): number | null {
+  if (!monthKey || monthKey === 'unknown') {
+    return null;
+  }
+
+  const parsed = parse(monthKey, 'yyyy-MM', new Date());
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return parsed.getTime();
+}
+
 export function hasManagementActiveFilters(
   filters: WorkflowManagementFilters,
 ): boolean {
@@ -69,6 +94,76 @@ export function hasManagementActiveFilters(
       filters.periodFrom ||
       filters.periodTo,
   );
+}
+
+export function getManagementActiveFilterChips(
+  filters: WorkflowManagementFilters,
+  filterOptions?: WorkflowManagementFilterOptions,
+): ManagementActiveFilterChip[] {
+  const workflowLabel = filters.workflowTypeId
+    ? filterOptions?.workflows.find(
+        (workflow) => workflow.workflowTypeId === filters.workflowTypeId,
+      )?.workflowName ?? filters.workflowTypeId
+    : null;
+  const areaLabel = filters.areaId
+    ? filterOptions?.areas.find((area) => area.areaId === filters.areaId)?.label ?? filters.areaId
+    : null;
+  const periodFrom = filters.periodFrom
+    ? formatManagementShortDate(
+        parseManagementDateOnly(filters.periodFrom),
+        filters.periodFrom,
+      )
+    : null;
+  const periodTo = filters.periodTo
+    ? formatManagementShortDate(parseManagementDateOnly(filters.periodTo), filters.periodTo)
+    : null;
+
+  return [
+    filters.requestId
+      ? { key: 'requestId', label: `Chamado: #${filters.requestId}` }
+      : null,
+    filters.requesterQuery
+      ? { key: 'requesterQuery', label: `Solicitante: ${filters.requesterQuery}` }
+      : null,
+    workflowLabel ? { key: 'workflowTypeId', label: `Workflow: ${workflowLabel}` } : null,
+    areaLabel ? { key: 'areaId', label: `Area: ${areaLabel}` } : null,
+    filters.slaState
+      ? { key: 'slaState', label: `SLA: ${getManagementSlaLabel(filters.slaState)}` }
+      : null,
+    periodFrom ? { key: 'periodFrom', label: `De: ${periodFrom}` } : null,
+    periodTo ? { key: 'periodTo', label: `Ate: ${periodTo}` } : null,
+  ].filter((chip): chip is ManagementActiveFilterChip => chip !== null);
+}
+
+export function sortManagementMonthGroups(
+  groups: WorkflowManagementMonthGroup[],
+): WorkflowManagementMonthGroup[] {
+  return [...groups].sort((left, right) => {
+    const leftValue = getManagementMonthSortValue(left.monthKey);
+    const rightValue = getManagementMonthSortValue(right.monthKey);
+
+    if (leftValue !== null && rightValue !== null) {
+      return rightValue - leftValue;
+    }
+
+    if (leftValue !== null) {
+      return -1;
+    }
+
+    if (rightValue !== null) {
+      return 1;
+    }
+
+    if (left.monthKey === 'unknown') {
+      return 1;
+    }
+
+    if (right.monthKey === 'unknown') {
+      return -1;
+    }
+
+    return left.monthKey.localeCompare(right.monthKey);
+  });
 }
 
 export function getManagementEmptyStateCopy({
