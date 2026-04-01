@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCollaborators } from "@/contexts/CollaboratorsContext";
 import { toast } from "@/hooks/use-toast";
 import { findCollaboratorByEmail } from "@/lib/email-utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Textarea } from "../ui/textarea";
 import { POLL_IFRAME_PARTICIPATION_ANSWER } from "@/lib/poll-constants";
 
@@ -26,7 +26,6 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
   const [selectedValue, setSelectedValue] = useState<string>("");
   const [otherValue, setOtherValue] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const dismissAllowedRef = useRef(false);
   const { submitResponse } = usePolls();
   const { user } = useAuth();
   const { collaborators } = useCollaborators();
@@ -36,7 +35,6 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
 
   useEffect(() => {
     if (open) {
-      dismissAllowedRef.current = false;
       setSelectedValue("");
       setOtherValue("");
     }
@@ -62,7 +60,6 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
         answer: POLL_IFRAME_PARTICIPATION_ANSWER,
         answeredAt: new Date().toISOString(),
       });
-      dismissAllowedRef.current = true;
       toast({ title: "Obrigado!", description: "Participação registrada.", variant: "success" });
       onOpenChange(false);
     } catch (error) {
@@ -115,8 +112,8 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
       <Dialog
         open={open}
         onOpenChange={(next) => {
-          if (!next && !dismissAllowedRef.current) return;
-          onOpenChange(next);
+          if (!next) return;
+          onOpenChange(true);
         }}
       >
         <DialogContent
@@ -124,10 +121,21 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => e.preventDefault()}
         >
-          <DialogHeader className="shrink-0 space-y-1 border-b px-4 py-3 text-left">
+          <DialogHeader className="relative shrink-0 space-y-1 border-b px-4 py-3 pr-14 text-left">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handleIframeComplete}
+              disabled={isSubmitting || !iframeSrc}
+              className="absolute right-3 top-3 h-8 w-8 text-muted-foreground hover:text-foreground"
+              aria-label="Fechar pesquisa"
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+            </Button>
             <DialogTitle className="text-base sm:text-lg">{poll.question}</DialogTitle>
             <DialogDescription>
-              Responda no formulário abaixo e clique em &quot;Pesquisa preenchida&quot; quando terminar.
+              Responda no formulário abaixo e após a mensagem &quot;Sua resposta foi registrada&quot; ser exibida, feche a janela.
             </DialogDescription>
           </DialogHeader>
           {iframeSrc ? (
@@ -141,17 +149,6 @@ export default function PollModal({ poll, open, onOpenChange }: PollModalProps) 
           ) : (
             <div className="p-6 text-sm text-destructive">Esta pesquisa não tem URL de iframe configurada.</div>
           )}
-          <DialogFooter className="shrink-0 border-t px-4 py-3">
-            <Button
-              type="button"
-              onClick={handleIframeComplete}
-              disabled={isSubmitting || !iframeSrc}
-              className="bg-success hover:bg-success/90 w-full sm:w-auto"
-            >
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Pesquisa preenchida
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     );
