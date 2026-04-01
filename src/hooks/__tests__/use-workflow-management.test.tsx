@@ -52,6 +52,7 @@ describe('useWorkflowManagement', () => {
       data: undefined,
       isLoading: false,
       error: null,
+      refetch: jest.fn(),
     });
 
     mockUseMutation.mockImplementation((options: { onSuccess?: (data: unknown, variables: { requestId: number }) => Promise<void> }) => ({
@@ -96,5 +97,60 @@ describe('useWorkflowManagement', () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({
       queryKey: managementKeys.detail('firebase-uid-1', 812),
     });
+  });
+
+  it('refetches only the active tab and the selected detail when asked', async () => {
+    const currentRefetch = jest.fn();
+    const assignmentsRefetch = jest.fn();
+    const completedRefetch = jest.fn();
+    const detailRefetch = jest.fn();
+
+    mockUseQuery.mockImplementation((options: { queryKey: readonly unknown[] }) => {
+      const queryKey = options.queryKey;
+
+      if (queryKey.includes('current')) {
+        return { data: undefined, isLoading: false, error: null, refetch: currentRefetch };
+      }
+
+      if (queryKey.includes('assignments')) {
+        return { data: undefined, isLoading: false, error: null, refetch: assignmentsRefetch };
+      }
+
+      if (queryKey.includes('completed')) {
+        return { data: undefined, isLoading: false, error: null, refetch: completedRefetch };
+      }
+
+      if (queryKey.includes('detail')) {
+        return { data: undefined, isLoading: false, error: null, refetch: detailRefetch };
+      }
+
+      return {
+        data: {
+          capabilities: {
+            canViewCurrentQueue: true,
+          },
+        },
+        isLoading: false,
+        error: null,
+        refetch: jest.fn(),
+      };
+    });
+
+    const state = {
+      activeTab: 'assignments' as const,
+      assignmentsSubtab: 'assigned' as const,
+      currentFilter: 'all' as const,
+      filters: {},
+    };
+
+    const { result } = renderHook(() => useWorkflowManagement(state, 812));
+
+    await result.current.refetchActiveTab();
+    await result.current.refetchDetail();
+
+    expect(assignmentsRefetch).toHaveBeenCalledTimes(1);
+    expect(currentRefetch).not.toHaveBeenCalled();
+    expect(completedRefetch).not.toHaveBeenCalled();
+    expect(detailRefetch).toHaveBeenCalledTimes(1);
   });
 });

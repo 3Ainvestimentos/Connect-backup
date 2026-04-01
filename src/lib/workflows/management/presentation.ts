@@ -5,6 +5,8 @@ import { MANAGEMENT_CURRENT_FILTER_LABELS, MANAGEMENT_SLA_LABELS } from './const
 import type {
   ManagementCurrentQueueFilter,
   ManagementSlaState,
+  ManagementTabId,
+  WorkflowManagementFilters,
   WorkflowManagementRequestDetailField,
   WorkflowManagementRequestProgressItem,
   WorkflowManagementRequestSummary,
@@ -13,6 +15,17 @@ import type {
 type RequestPresentation = {
   label: string;
   badgeVariant: BadgeProps['variant'];
+};
+
+type ManagementEmptyStateCopyInput = {
+  activeTab: ManagementTabId;
+  hasActiveFilters: boolean;
+  canViewTab: boolean;
+};
+
+type ManagementEmptyStateCopy = {
+  title: string;
+  description: string;
 };
 
 export function formatManagementDate(date: Date | null, fallback = '-'): string {
@@ -42,6 +55,75 @@ export function formatManagementMonthKey(monthKey: string): string {
   }
 
   return format(parsed, "MMMM 'de' yyyy", { locale: ptBR });
+}
+
+export function hasManagementActiveFilters(
+  filters: WorkflowManagementFilters,
+): boolean {
+  return Boolean(
+    filters.requestId ||
+      filters.workflowTypeId ||
+      filters.areaId ||
+      filters.requesterQuery ||
+      filters.slaState ||
+      filters.periodFrom ||
+      filters.periodTo,
+  );
+}
+
+export function getManagementEmptyStateCopy({
+  activeTab,
+  hasActiveFilters,
+  canViewTab,
+}: ManagementEmptyStateCopyInput): ManagementEmptyStateCopy {
+  if (!canViewTab) {
+    return {
+      title: 'Aba indisponivel para este perfil',
+      description:
+        'Esta visao depende de ownership ou capability operacional que nao esta ativa para voce.',
+    };
+  }
+
+  if (hasActiveFilters) {
+    return {
+      title: 'Nenhum resultado para os filtros aplicados',
+      description: 'Ajuste ou limpe os filtros para ampliar a busca nesta visao.',
+    };
+  }
+
+  if (activeTab === 'current') {
+    return {
+      title: 'Nenhum chamado na fila atual',
+      description:
+        'Quando surgirem itens neste escopo operacional, eles aparecerao aqui.',
+    };
+  }
+
+  if (activeTab === 'completed') {
+    return {
+      title: 'Nenhum chamado concluido neste escopo',
+      description:
+        'Concluidos e arquivados aparecem aqui assim que houver historico dentro do seu recorte operacional.',
+    };
+  }
+
+  return {
+    title: 'Nenhuma atribuicao ou acao pendente',
+    description:
+      'Quando algum fluxo depender de voce ou for atribuido ao seu usuario, ele aparecera aqui.',
+  };
+}
+
+export function getManagementTabErrorMessage(activeTab: ManagementTabId): string {
+  if (activeTab === 'current') {
+    return 'Falha ao carregar a fila atual.';
+  }
+
+  if (activeTab === 'completed') {
+    return 'Falha ao carregar a lista de concluidas.';
+  }
+
+  return 'Falha ao carregar atribuicoes e acoes.';
 }
 
 export function getManagementCurrentFilterLabel(filter: ManagementCurrentQueueFilter): string {

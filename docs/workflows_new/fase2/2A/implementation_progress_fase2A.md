@@ -141,4 +141,31 @@ Para cada sub-build concluido:
 
 **Status**
 
-- `planned`
+- `completed`
+
+**Entregas**
+
+- primitives compartilhadas de `loading`, `error`, `empty` e `retry` consolidadas em `src/components/workflows/management/ManagementAsyncState.tsx`, removendo estados ad hoc entre tabs e modal
+- helpers oficiais de copy e empty state adicionados em `src/lib/workflows/management/presentation.ts`, distinguindo falta de permissao/capability, filtros ativos e ausencia real de dados
+- tela oficial `WorkflowManagementPage` refinada com badges de contexto, bootstrap/error state reutilizavel, retry local por aba, fechamento seguro do modal em mudanca de tab/filtro e feedback de mutacao por toast
+- paineis `CurrentQueuePanel`, `AssignmentsPanel` e `CompletedPanel` padronizados no contrato `loading -> error -> empty -> data`, com `ManagementRequestList` reduzida ao papel de lista render-only
+- `RequestDetailDialog` endurecido com fallback interno, retry de detalhe, erro nao bloqueante durante refresh e preservacao da tela principal em falha parcial
+- dropdown do usuario em `AppLayout.tsx` reorganizado para promover `Gestao de chamados` como CTA primario, com destaque herdado de pendencias operacionais e bloco explicito `Atalhos legados durante transicao`
+- cobertura automatizada ampliada para rollout do dropdown, helpers de empty state, retry local do hook, skeleton/error state da pagina oficial e retry do dialog
+
+**Validacao**
+
+- `npm test -- --runInBand src/components/workflows/management/__tests__/WorkflowManagementPage.test.tsx src/components/workflows/management/__tests__/RequestDetailDialog.test.tsx src/lib/workflows/management/__tests__/presentation.test.ts src/hooks/__tests__/use-workflow-management.test.tsx src/components/layout/__tests__/AppLayout.test.tsx src/lib/workflows/management/__tests__/navigation.test.ts src/lib/workflows/management/__tests__/search-params.test.ts src/lib/workflows/management/__tests__/constants.test.ts`
+- `npm test -- --runInBand src/components/workflows/management/__tests__/WorkflowManagementPage.test.tsx src/components/workflows/management/__tests__/RequestDetailDialog.test.tsx src/components/layout/__tests__/AppLayout.test.tsx src/lib/workflows/management/__tests__/constants.test.ts src/lib/workflows/management/__tests__/navigation.test.ts src/lib/workflows/management/__tests__/presentation.test.ts src/lib/workflows/management/__tests__/search-params.test.ts src/lib/workflows/read/__tests__/detail.test.js src/lib/workflows/read/__tests__/read-api-contract.test.js src/lib/workflows/runtime/__tests__/authz.test.js src/hooks/__tests__/use-workflow-management.test.tsx`
+- `npm run typecheck`
+- `zsh -lc "npm run typecheck 2>&1 | rg 'src/components/workflows/management/(ManagementAsyncState|WorkflowManagementPage|ManagementToolbar|ManagementRequestList|CurrentQueuePanel|AssignmentsPanel|CompletedPanel|RequestDetailDialog)\\.tsx|src/components/workflows/management/__tests__/(WorkflowManagementPage|RequestDetailDialog)\\.test\\.tsx|src/components/layout/AppLayout\\.tsx|src/components/layout/__tests__/AppLayout\\.test\\.tsx|src/lib/workflows/management/(presentation)\\.ts|src/lib/workflows/management/__tests__/(presentation|navigation|constants|search-params)\\.test\\.ts|src/hooks/use-workflow-management\\.ts|src/hooks/__tests__/use-workflow-management\\.test\\.tsx'"` sem matches para os arquivos alterados nesta build
+
+**Riscos / pendencias**
+
+- o `typecheck` global do repositório continua falhando por passivos antigos fora do escopo da 2A.4, em módulos administrativos, dashboard e outras áreas legadas
+- o smoke desta build ficou forte no eixo automatizado de dropdown, tabs, filtros, detalhe, retry e mutacoes; ainda vale um smoke manual curto de responsividade desktop/mobile antes da promocao operacional definitiva do CTA
+- `/requests`, `/me/tasks` e `/pilot/facilities` seguem coexistindo por design; a remocao dos legados continua fora do escopo e depende de decisao posterior de rollout
+
+**Proximo passo**
+
+- a macroetapa 2A fica pronta para rollout controlado da rota oficial, condicionada apenas ao smoke manual final de responsividade e validacao operacional curta antes de rebaixar o protagonismo dos fluxos legados

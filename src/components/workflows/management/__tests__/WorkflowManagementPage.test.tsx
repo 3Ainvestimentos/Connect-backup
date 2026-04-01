@@ -73,6 +73,7 @@ function buildHookResult(canViewCurrentQueue = true) {
       data: buildBootstrap(canViewCurrentQueue),
       isLoading: false,
       error: null,
+      refetch: jest.fn(),
     },
     currentQuery: {
       data: {
@@ -103,6 +104,8 @@ function buildHookResult(canViewCurrentQueue = true) {
       isLoading: false,
       error: null,
     },
+    refetchActiveTab: jest.fn(),
+    refetchDetail: jest.fn(),
     assignMutation: {
       mutateAsync: jest.fn(),
       isPending: false,
@@ -179,5 +182,43 @@ describe('WorkflowManagementPage', () => {
       '/gestao-de-chamados?tab=completed&subtab=pending&requestId=801&requester=Bob',
       { scroll: false },
     );
+  });
+
+  it('renders the official bootstrap skeleton while the surface initializes', () => {
+    mockUseWorkflowManagement.mockReturnValue({
+      ...buildHookResult(),
+      bootstrapQuery: {
+        data: undefined,
+        isLoading: true,
+        error: null,
+        refetch: jest.fn(),
+      },
+    } as unknown as ReturnType<typeof useWorkflowManagement>);
+
+    render(<WorkflowManagementPage />);
+
+    expect(screen.getByText('Carregando superficie oficial')).toBeTruthy();
+    expect(screen.getByTestId('management-panel-skeleton')).toBeTruthy();
+  });
+
+  it('retries the active tab locally without resetting the whole page', async () => {
+    const user = userEvent.setup();
+    const refetchActiveTab = jest.fn();
+
+    mockUseWorkflowManagement.mockReturnValue({
+      ...buildHookResult(),
+      assignmentsQuery: {
+        data: undefined,
+        isLoading: false,
+        error: new Error('Falha de rede'),
+      },
+      refetchActiveTab,
+    } as unknown as ReturnType<typeof useWorkflowManagement>);
+
+    render(<WorkflowManagementPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    expect(refetchActiveTab).toHaveBeenCalledTimes(1);
   });
 });

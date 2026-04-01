@@ -2,19 +2,25 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getManagementCurrentFilterLabel } from '@/lib/workflows/management/presentation';
+import {
+  getManagementCurrentFilterLabel,
+  getManagementEmptyStateCopy,
+} from '@/lib/workflows/management/presentation';
 import type {
   ManagementCurrentQueueFilter,
   WorkflowManagementCurrentData,
 } from '@/lib/workflows/management/types';
+import { ManagementAsyncState } from './ManagementAsyncState';
 import { ManagementRequestList } from './ManagementRequestList';
 
 type CurrentQueuePanelProps = {
   data?: WorkflowManagementCurrentData;
   filter: ManagementCurrentQueueFilter;
+  hasActiveFilters: boolean;
   isLoading: boolean;
   errorMessage?: string;
   onFilterChange: (filter: ManagementCurrentQueueFilter) => void;
+  onRetry?: () => void;
   onOpenRequest: (requestId: number) => void;
 };
 
@@ -28,18 +34,27 @@ const FILTER_OPTIONS: ManagementCurrentQueueFilter[] = [
 export function CurrentQueuePanel({
   data,
   filter,
+  hasActiveFilters,
   isLoading,
   errorMessage,
   onFilterChange,
+  onRetry,
   onOpenRequest,
 }: CurrentQueuePanelProps) {
+  const emptyState = getManagementEmptyStateCopy({
+    activeTab: 'current',
+    hasActiveFilters: hasActiveFilters || filter !== 'all',
+    canViewTab: true,
+  });
+
   return (
-    <Card>
+    <Card className="border-border/70">
       <CardHeader className="gap-4">
         <div className="space-y-1">
           <CardTitle>Chamados atuais</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Fila operacional do owner com filtro canonico do backend e refinamentos oficiais.
+            Fila operacional do owner com filtro canonico do backend e refinamentos oficiais de
+            estado.
           </p>
         </div>
 
@@ -59,19 +74,20 @@ export function CurrentQueuePanel({
       </CardHeader>
 
       <CardContent>
-        {errorMessage ? (
-          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-            {errorMessage}
-          </div>
-        ) : (
+        <ManagementAsyncState
+          isLoading={isLoading}
+          errorMessage={errorMessage}
+          errorTitle="Falha na fila atual"
+          isEmpty={(data?.items ?? []).length === 0}
+          emptyTitle={emptyState.title}
+          emptyDescription={emptyState.description}
+          onRetry={onRetry}
+        >
           <ManagementRequestList
             items={data?.items ?? []}
-            isLoading={isLoading}
-            emptyTitle={`Nenhum item em ${getManagementCurrentFilterLabel(filter).toLowerCase()}.`}
-            emptyDescription="A capability existe, mas nao ha itens operacionais visiveis com os filtros atuais."
             onOpenRequest={onOpenRequest}
           />
-        )}
+        </ManagementAsyncState>
       </CardContent>
     </Card>
   );

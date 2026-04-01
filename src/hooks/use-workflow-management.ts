@@ -64,6 +64,26 @@ export function useWorkflowManagement(
     enabled: enabled && Boolean(selectedRequestId),
   });
 
+  const refetchActiveTab = async () => {
+    if (state.activeTab === 'current') {
+      return currentQuery.refetch();
+    }
+
+    if (state.activeTab === 'completed') {
+      return completedQuery.refetch();
+    }
+
+    return assignmentsQuery.refetch();
+  };
+
+  const refetchDetail = async () => {
+    if (!selectedRequestId) {
+      return Promise.resolve();
+    }
+
+    return detailQuery.refetch();
+  };
+
   const invalidateOperationalQueries = async (requestId: number) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: managementKeys.currentRoot(uid) }),
@@ -106,6 +126,8 @@ export function useWorkflowManagement(
     assignmentsQuery,
     completedQuery,
     detailQuery,
+    refetchActiveTab,
+    refetchDetail,
     assignMutation,
     finalizeMutation,
     archiveMutation,

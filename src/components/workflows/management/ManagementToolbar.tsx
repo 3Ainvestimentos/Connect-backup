@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { MANAGEMENT_SLA_LABELS } from '@/lib/workflows/management/constants';
+import { hasManagementActiveFilters } from '@/lib/workflows/management/presentation';
 import type {
   WorkflowManagementBootstrapData,
   WorkflowManagementFilters,
@@ -77,24 +78,22 @@ export function ManagementToolbar({
     setDraft(toDraftFilters(filters));
   }, [filters]);
 
-  const hasActiveFilters = Boolean(
-    filters.requestId ||
-      filters.workflowTypeId ||
-      filters.areaId ||
-      filters.requesterQuery ||
-      filters.slaState ||
-      filters.periodFrom ||
-      filters.periodTo,
-  );
+  const hasActiveFilters = hasManagementActiveFilters(filters);
+  const activeFilterCount = Object.values(filters).filter(Boolean).length;
+  const handleReset = () => {
+    setDraft(toDraftFilters({}));
+    onResetFilters();
+  };
 
   return (
-    <Card className="border-border/70">
+    <Card className="border-border/70 bg-background/95">
       <CardHeader className="gap-3">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div className="space-y-1">
             <CardTitle className="font-headline text-lg">Busca e filtros oficiais</CardTitle>
             <p className="text-sm text-muted-foreground">
-              URL, backend e UI compartilham o mesmo contrato de filtros estruturantes.
+              Busca, ownership e URL compartilham o mesmo contrato para deep-link, refresh e
+              rollback seguro.
             </p>
           </div>
 
@@ -102,6 +101,9 @@ export function ManagementToolbar({
             <Badge variant="secondary">Ator: {bootstrap.actor.actorName || bootstrap.actor.actorUserId}</Badge>
             <Badge variant={bootstrap.ownership.hasOwnedScopes ? 'default' : 'outline'}>
               Ownership {bootstrap.ownership.hasOwnedScopes ? 'ativo' : 'nao identificado'}
+            </Badge>
+            <Badge variant={hasActiveFilters ? 'default' : 'outline'}>
+              {hasActiveFilters ? `${activeFilterCount} filtro(s) ativo(s)` : 'Sem filtros ativos'}
             </Badge>
           </div>
         </div>
@@ -217,7 +219,7 @@ export function ManagementToolbar({
             type="button"
             variant="outline"
             disabled={!hasActiveFilters}
-            onClick={onResetFilters}
+            onClick={handleReset}
           >
             Limpar
           </Button>

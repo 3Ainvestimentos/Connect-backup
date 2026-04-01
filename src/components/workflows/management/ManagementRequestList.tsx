@@ -3,7 +3,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   deriveManagementRequestPresentation,
   formatManagementDate,
@@ -14,44 +13,13 @@ import type { WorkflowManagementRequestSummary } from '@/lib/workflows/managemen
 
 type ManagementRequestListProps = {
   items: WorkflowManagementRequestSummary[];
-  isLoading?: boolean;
-  emptyTitle: string;
-  emptyDescription: string;
   onOpenRequest?: (requestId: number) => void;
 };
 
 export function ManagementRequestList({
   items,
-  isLoading = false,
-  emptyTitle,
-  emptyDescription,
   onOpenRequest,
 }: ManagementRequestListProps) {
-  if (isLoading) {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <Card key={index}>
-            <CardContent className="space-y-3 p-4">
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="rounded-md border border-dashed p-6 text-sm">
-        <p className="font-medium text-foreground">{emptyTitle}</p>
-        <p className="mt-1 text-muted-foreground">{emptyDescription}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-3">
       {items.map((item) => {
@@ -59,13 +27,16 @@ export function ManagementRequestList({
         const slaLabel = getManagementSlaLabel(item.slaState);
 
         return (
-          <Card key={item.docId}>
+          <Card key={item.docId} className="border-border/70 transition-colors hover:border-border">
             <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-start md:justify-between">
-              <div className="space-y-3">
+              <div className="min-w-0 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-sm font-semibold text-foreground">Chamado #{item.requestId}</p>
                   <Badge variant={presentation.badgeVariant}>{presentation.label}</Badge>
                   <Badge variant="outline">{item.workflowName || item.workflowTypeId}</Badge>
+                  {item.hasPendingActions ? (
+                    <Badge variant="outline">Acao pendente</Badge>
+                  ) : null}
                   {slaLabel ? (
                     <Badge variant={getManagementSlaBadgeVariant(item.slaState)}>
                       SLA: {slaLabel}
@@ -73,13 +44,13 @@ export function ManagementRequestList({
                   ) : null}
                 </div>
 
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p className="font-medium text-foreground">{item.workflowName || item.workflowTypeId}</p>
+                <div className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-3">
                   <p>Solicitante: {item.requesterName || '-'}</p>
                   <p>Responsavel: {item.responsibleName || 'Nao atribuido'}</p>
                   <p>Etapa atual: {item.currentStepName || '-'}</p>
                   <p>Aberto em: {formatManagementDate(item.submittedAt)}</p>
                   <p>Ultima atualizacao: {formatManagementDate(item.lastUpdatedAt)}</p>
+                  <p>Owner: {item.ownerEmail || '-'}</p>
                 </div>
               </div>
 
@@ -88,6 +59,7 @@ export function ManagementRequestList({
                 type="button"
                 onClick={() => onOpenRequest?.(item.requestId)}
                 disabled={!onOpenRequest}
+                className="self-start"
               >
                 Abrir
               </Button>

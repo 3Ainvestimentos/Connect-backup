@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { RequestDetailDialog } from '../RequestDetailDialog';
 
 jest.mock('lucide-react', () => ({
@@ -7,6 +8,20 @@ jest.mock('lucide-react', () => ({
   Check: () => null,
   X: () => null,
 }));
+
+beforeAll(() => {
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  Object.defineProperty(global, 'ResizeObserver', {
+    configurable: true,
+    writable: true,
+    value: ResizeObserverMock,
+  });
+});
 
 function buildDetail(overrides: Partial<Parameters<typeof RequestDetailDialog>[0]['detail']> = {}) {
   return {
@@ -126,12 +141,15 @@ describe('RequestDetailDialog', () => {
   });
 
   it('renders error fallback inside the official dialog', () => {
+    const onRetry = jest.fn();
+
     render(
       <RequestDetailDialog
         open
         requestId={812}
         errorMessage="Falha de rede"
         collaborators={[]}
+        onRetry={onRetry}
         onOpenChange={() => {}}
         onAssign={async () => {}}
         onFinalize={async () => {}}
@@ -141,6 +159,29 @@ describe('RequestDetailDialog', () => {
 
     expect(screen.getByText('Falha ao carregar o detalhe')).toBeTruthy();
     expect(screen.getByText('Falha de rede')).toBeTruthy();
+  });
+
+  it('retries the detail query from the dialog fallback', async () => {
+    const user = userEvent.setup();
+    const onRetry = jest.fn();
+
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        errorMessage="Falha de rede"
+        collaborators={[]}
+        onRetry={onRetry}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+
+    expect(onRetry).toHaveBeenCalledTimes(1);
   });
 
   it('renders detail blocks and shows only the actions allowed by permissions', () => {

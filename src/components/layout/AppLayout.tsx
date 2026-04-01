@@ -70,7 +70,7 @@ export const navItems = [
   { href: '/meet-analyses', label: 'Bob Meet Análises', icon: Video, external: false, permission: 'canViewMeetAnalyses' },
 ];
 
-function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
+export function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
   const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
   const { collaborators } = useCollaborators();
@@ -87,6 +87,8 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   const displayEmail = currentUserCollaborator?.email || user.email;
   const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
   const canSeeWorkflowManagement = canAccessWorkflowManagementEntry(permissions);
+  const hasPendingWorkflowWork = hasPendingRequests || hasPendingTasks;
+  const showLegacyWorkflowLinks = permissions.canManageRequests || permissions.canViewTasks;
 
   const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
   const hasAdminPanels =
@@ -153,34 +155,43 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
             <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Ferramentas</DropdownMenuLabel>
               {canSeeWorkflowManagement && (
                 <DropdownMenuItem asChild>
-                  <Link href={WORKFLOW_MANAGEMENT_ROUTE} className="cursor-pointer font-body">
+                  <Link
+                    href={WORKFLOW_MANAGEMENT_ROUTE}
+                    className={cn(
+                      "cursor-pointer font-body",
+                      hasPendingWorkflowWork &&
+                        "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20",
+                    )}
+                  >
                     <ListChecks className="mr-2 h-4 w-4" />
                     <span>Gestao de chamados</span>
                   </Link>
                 </DropdownMenuItem>
               )}
-              {permissions.canManageRequests && (
-                <DropdownMenuItem asChild>
-                <Link href="/requests" className={cn(
-                    "cursor-pointer font-body",
-                    hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-                    )}>
-                    <Mailbox className="mr-2 h-4 w-4" />
-                    <span>Gestão de Solicitações</span>
-                    </Link>
-                </DropdownMenuItem>
-              )}
-            {permissions.canViewTasks && (
-                <DropdownMenuItem asChild>
-                    <Link href="/me/tasks" className={cn(
-                        "cursor-pointer font-body",
-                        hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-                    )}>
-                        <ListTodo className="mr-2 h-4 w-4" />
-                        <span>Minhas Tarefas/Ações</span>
-                    </Link>
-                </DropdownMenuItem>
-            )}
+              {showLegacyWorkflowLinks ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Atalhos legados durante transicao
+                  </DropdownMenuLabel>
+                  {permissions.canManageRequests && (
+                    <DropdownMenuItem asChild>
+                    <Link href="/requests" className="cursor-pointer font-body">
+                        <Mailbox className="mr-2 h-4 w-4" />
+                        <span>Gestão de Solicitações</span>
+                        </Link>
+                    </DropdownMenuItem>
+                  )}
+                {permissions.canViewTasks && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/me/tasks" className="cursor-pointer font-body">
+                            <ListTodo className="mr-2 h-4 w-4" />
+                            <span>Minhas Tarefas/Ações</span>
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+                </>
+              ) : null}
             {permissions.canViewCRM && (
                 <DropdownMenuItem asChild><Link href="/admin/crm" className="cursor-pointer font-body"><NotebookPen className="mr-2 h-4 w-4" /><span>CRM Interno</span></Link></DropdownMenuItem>
             )}
@@ -250,7 +261,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasActiveCampaign = useMemo(() => {
     if (!currentUserCollab) return false;
     const messageForUser = fabMessages.find(msg => msg.userId === currentUserCollab.id3a);
-    return messageForUser && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up');
+    return messageForUser?.status === 'pending_cta';
   }, [fabMessages, currentUserCollab]);
 
 
