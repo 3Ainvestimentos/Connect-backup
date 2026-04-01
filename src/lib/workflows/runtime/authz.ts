@@ -3,7 +3,7 @@
  */
 
 import { RuntimeError, RuntimeErrorCode } from './errors';
-import type { WorkflowTypeV2 } from './types';
+import type { WorkflowRequestV2, WorkflowTypeV2 } from './types';
 
 /**
  * Validates that the user is allowed to open a request for the given workflow type.
@@ -83,6 +83,37 @@ export function assertCanArchive(ownerUserId: string, actorUserId: string): void
     throw new RuntimeError(
       RuntimeErrorCode.FORBIDDEN,
       'Apenas o owner do tipo de workflow pode arquivar um chamado.',
+      403,
+    );
+  }
+}
+
+/**
+ * Validates that the actor can read the request detail.
+ * Allowed actors: owner, requester, current responsible, pending-action recipient,
+ * or any tracked operational participant.
+ *
+ * @param request - The request document to be read.
+ * @param actorUserId - The operational `id3a` of the current actor.
+ */
+export function assertCanReadRequest(request: WorkflowRequestV2, actorUserId: string): void {
+  const isOwner = request.ownerUserId === actorUserId;
+  const isRequester = request.requesterUserId === actorUserId;
+  const isResponsible =
+    request.responsibleUserId != null && request.responsibleUserId === actorUserId;
+  const isPendingActionRecipient = request.pendingActionRecipientIds.includes(actorUserId);
+  const isOperationalParticipant = request.operationalParticipantIds.includes(actorUserId);
+
+  if (
+    !isOwner &&
+    !isRequester &&
+    !isResponsible &&
+    !isPendingActionRecipient &&
+    !isOperationalParticipant
+  ) {
+    throw new RuntimeError(
+      RuntimeErrorCode.FORBIDDEN,
+      'Usuario nao possui permissao para ler este chamado.',
       403,
     );
   }

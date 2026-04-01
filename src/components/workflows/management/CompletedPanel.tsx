@@ -9,9 +9,15 @@ type CompletedPanelProps = {
   data?: WorkflowManagementCompletedData;
   isLoading: boolean;
   errorMessage?: string;
+  onOpenRequest: (requestId: number) => void;
 };
 
-export function CompletedPanel({ data, isLoading, errorMessage }: CompletedPanelProps) {
+export function CompletedPanel({
+  data,
+  isLoading,
+  errorMessage,
+  onOpenRequest,
+}: CompletedPanelProps) {
   const items = data?.items ?? [];
   const groups = data?.groups ?? [];
   const groupsToRender = groups.length > 0 ? groups : [{ monthKey: 'unknown', items }];
@@ -52,6 +58,7 @@ export function CompletedPanel({ data, isLoading, errorMessage }: CompletedPanel
               isLoading={isLoading}
               emptyTitle="Nenhum item concluido neste periodo."
               emptyDescription="Os grupos seguem exatamente o agrupamento devolvido pelo endpoint oficial."
+              onOpenRequest={onOpenRequest}
             />
           </CardContent>
         </Card>

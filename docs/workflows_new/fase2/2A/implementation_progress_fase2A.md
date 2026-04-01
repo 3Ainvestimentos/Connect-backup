@@ -109,7 +109,33 @@ Para cada sub-build concluido:
 
 **Status**
 
-- `planned`
+- `completed`
+
+**Entregas**
+
+- endpoint oficial `GET /api/workflows/read/requests/[requestId]` criado com envelope canonico `ok/data`, validacao de `requestId` e authz server-side de leitura
+- composer `src/lib/workflows/read/detail.ts` implementado para montar `summary`, `permissions`, `formData`, `attachments`, `progress` e `timeline` a partir do request operacional e da versao publicada congelada
+- `assertCanReadRequest()` adicionado ao runtime para owner, requester, responsavel, destinatario de acao pendente e participante operacional
+- namespace `src/components/workflows/management/*` ampliado com modal oficial `RequestDetailDialog` e blocos dedicados de progresso, dados enviados, anexos e timeline
+- listas oficiais passaram a abrir o detalhe rico sob demanda via React Query, sem inflar os contratos de `current`, `assignments` e `completed`
+- mutacoes runtime de `assign`, `finalize` e `archive` foram reaproveitadas na tela oficial com invalidacao do cache de listas e do proprio detalhe
+- cobertura automatizada expandida para authz, composer de detalhe, contrato da nova rota, dialog oficial e invalidacao do hook
+
+**Validacao**
+
+- `npm test -- --runInBand src/components/workflows/management/__tests__/WorkflowManagementPage.test.tsx src/components/workflows/management/__tests__/RequestDetailDialog.test.tsx src/lib/workflows/management/__tests__/constants.test.ts src/lib/workflows/management/__tests__/navigation.test.ts src/lib/workflows/management/__tests__/search-params.test.ts src/lib/workflows/read/__tests__/detail.test.js src/lib/workflows/read/__tests__/read-api-contract.test.js src/lib/workflows/runtime/__tests__/authz.test.js src/hooks/__tests__/use-workflow-management.test.tsx`
+- `npm run typecheck`
+- `zsh -lc "npm run typecheck 2>&1 | rg 'src/lib/workflows/read/(detail|types)\\.ts|src/lib/workflows/runtime/authz\\.ts|src/app/api/workflows/read/requests/\\[requestId\\]/route\\.ts|src/lib/workflows/management/(types|api-client|query-keys|presentation|constants)\\.ts|src/hooks/use-workflow-management\\.ts|src/hooks/__tests__/use-workflow-management.test\\.tsx|src/components/workflows/management/(WorkflowManagementPage|CurrentQueuePanel|AssignmentsPanel|CompletedPanel|ManagementRequestList|RequestDetailDialog|RequestProgress|RequestFormData|RequestAttachments|RequestTimeline)\\.tsx|src/components/workflows/management/__tests__/(WorkflowManagementPage|RequestDetailDialog)\\.test\\.tsx'"`
+
+**Riscos / pendencias**
+
+- o `typecheck` global do repositório continua falhando por passivos antigos fora do escopo deste build, incluindo `src/components/layout/AppLayout.tsx(253,74)` e diversos módulos legados
+- o modal oficial ainda depende do conjunto de colaboradores já carregado pela sessão; não houve redesign da origem desses dados nesta etapa
+- o polimento visual final, ajustes finos de affordance e rollout controlado permanecem reservados para a 2A.4
+
+**Proximo passo**
+
+- 2A.4 pode focar em polimento visual, rollout e convivência final com as superfícies legadas sem reabrir os contratos de detalhe rico
 
 ### 2A.4 - Polimento e rollout controlado
 

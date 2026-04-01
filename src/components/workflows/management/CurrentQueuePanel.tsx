@@ -15,6 +15,7 @@ type CurrentQueuePanelProps = {
   isLoading: boolean;
   errorMessage?: string;
   onFilterChange: (filter: ManagementCurrentQueueFilter) => void;
+  onOpenRequest: (requestId: number) => void;
 };
 
 const FILTER_OPTIONS: ManagementCurrentQueueFilter[] = [
@@ -30,6 +31,7 @@ export function CurrentQueuePanel({
   isLoading,
   errorMessage,
   onFilterChange,
+  onOpenRequest,
 }: CurrentQueuePanelProps) {
   return (
     <Card>
@@ -67,6 +69,7 @@ export function CurrentQueuePanel({
             isLoading={isLoading}
             emptyTitle={`Nenhum item em ${getManagementCurrentFilterLabel(filter).toLowerCase()}.`}
             emptyDescription="A capability existe, mas nao ha itens operacionais visiveis com os filtros atuais."
+            onOpenRequest={onOpenRequest}
           />
         )}
       </CardContent>

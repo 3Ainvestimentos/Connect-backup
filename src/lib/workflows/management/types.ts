@@ -98,6 +98,95 @@ export type WorkflowManagementCompletedData = {
   groups: WorkflowManagementMonthGroup[];
 };
 
+export type WorkflowManagementRequestDetailPermissions = {
+  canAssign: boolean;
+  canFinalize: boolean;
+  canArchive: boolean;
+};
+
+export type WorkflowManagementRequestDetailField = {
+  fieldId: string;
+  label: string;
+  type: 'text' | 'textarea' | 'select' | 'date' | 'date-range' | 'file';
+  value: unknown;
+};
+
+export type WorkflowManagementRequestDetailExtraField = {
+  key: string;
+  value: unknown;
+};
+
+export type WorkflowManagementRequestAttachment = {
+  fieldId: string;
+  label: string;
+  url: string;
+};
+
+export type WorkflowManagementRequestProgressItem = {
+  stepId: string;
+  stepName: string;
+  statusKey: string;
+  kind: 'start' | 'work' | 'final';
+  order: number;
+  state: 'pending' | 'active' | 'completed' | 'skipped';
+  isCurrent: boolean;
+};
+
+export type WorkflowManagementRequestTimelineItem = {
+  action:
+    | 'request_opened'
+    | 'responsible_assigned'
+    | 'responsible_reassigned'
+    | 'step_completed'
+    | 'entered_step'
+    | 'request_finalized'
+    | 'request_archived';
+  label: string;
+  timestamp: Date | null;
+  userId: string;
+  userName: string;
+  details?: Record<string, unknown>;
+};
+
+export type WorkflowManagementRequestDetailData = {
+  summary: WorkflowManagementRequestSummary;
+  permissions: WorkflowManagementRequestDetailPermissions;
+  formData: {
+    fields: WorkflowManagementRequestDetailField[];
+    extraFields: WorkflowManagementRequestDetailExtraField[];
+  };
+  attachments: WorkflowManagementRequestAttachment[];
+  progress: {
+    currentStepId: string;
+    totalSteps: number;
+    completedSteps: number;
+    items: WorkflowManagementRequestProgressItem[];
+  };
+  timeline: WorkflowManagementRequestTimelineItem[];
+};
+
+export type WorkflowManagementMutationResult = {
+  docId: string;
+  requestId: number;
+};
+
+export type WorkflowManagementAssignResponsibleInput = {
+  requestId: number;
+  responsibleUserId: string;
+  responsibleName: string;
+  actorName?: string;
+};
+
+export type WorkflowManagementFinalizeInput = {
+  requestId: number;
+  actorName?: string;
+};
+
+export type WorkflowManagementArchiveInput = {
+  requestId: number;
+  actorName?: string;
+};
+
 export type WorkflowManagementActor = {
   actorUserId: string;
   actorName: string;

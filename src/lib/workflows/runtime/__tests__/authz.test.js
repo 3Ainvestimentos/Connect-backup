@@ -6,6 +6,7 @@ const {
   assertCanAssign,
   assertCanFinalize,
   assertCanArchive,
+  assertCanReadRequest,
 } = require('@/lib/workflows/runtime/authz');
 
 describe('workflow runtime authz', () => {
@@ -134,6 +135,45 @@ describe('workflow runtime authz', () => {
 
     try {
       assertCanArchive('SMO2', 'DLE');
+    } catch (error) {
+      expect(error).toEqual(
+        expect.objectContaining({
+          code: RuntimeErrorCode.FORBIDDEN,
+        }),
+      );
+    }
+  });
+
+  it('permite leitura do detalhe para owner, requester, responsavel, destinatario de acao e participante', () => {
+    const request = {
+      ownerUserId: 'SMO2',
+      requesterUserId: 'REQ1',
+      responsibleUserId: 'RESP1',
+      pendingActionRecipientIds: ['ACT1'],
+      operationalParticipantIds: ['PART1'],
+    };
+
+    expect(() => assertCanReadRequest(request, 'SMO2')).not.toThrow();
+    expect(() => assertCanReadRequest(request, 'REQ1')).not.toThrow();
+    expect(() => assertCanReadRequest(request, 'RESP1')).not.toThrow();
+    expect(() => assertCanReadRequest(request, 'ACT1')).not.toThrow();
+    expect(() => assertCanReadRequest(request, 'PART1')).not.toThrow();
+  });
+
+  it('rejeita leitura do detalhe para outsider', () => {
+    expect.assertions(1);
+
+    try {
+      assertCanReadRequest(
+        {
+          ownerUserId: 'SMO2',
+          requesterUserId: 'REQ1',
+          responsibleUserId: 'RESP1',
+          pendingActionRecipientIds: ['ACT1'],
+          operationalParticipantIds: ['PART1'],
+        },
+        'OUT1',
+      );
     } catch (error) {
       expect(error).toEqual(
         expect.objectContaining({

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +32,7 @@ import { AssignmentsPanel } from './AssignmentsPanel';
 import { CompletedPanel } from './CompletedPanel';
 import { CurrentQueuePanel } from './CurrentQueuePanel';
 import { ManagementToolbar } from './ManagementToolbar';
+import { RequestDetailDialog } from './RequestDetailDialog';
 
 function resolveErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;
@@ -52,18 +54,28 @@ function LoadingState() {
 }
 
 export function WorkflowManagementPage() {
+  const { collaborators } = useCollaborators();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isNavigating, startTransition] = React.useTransition();
+  const [selectedRequestId, setSelectedRequestId] = React.useState<number | null>(null);
 
   const rawState = React.useMemo(
     () => parseManagementSearchParams(searchParams),
     [searchParams],
   );
 
-  const { bootstrapQuery, currentQuery, assignmentsQuery, completedQuery } =
-    useWorkflowManagement(rawState);
+  const {
+    bootstrapQuery,
+    currentQuery,
+    assignmentsQuery,
+    completedQuery,
+    detailQuery,
+    assignMutation,
+    finalizeMutation,
+    archiveMutation,
+  } = useWorkflowManagement(rawState, selectedRequestId);
 
   const canViewCurrentQueue = bootstrapQuery.data?.capabilities.canViewCurrentQueue ?? false;
 
@@ -128,7 +140,7 @@ export function WorkflowManagementPage() {
       <Card className="border-border/70 bg-muted/30">
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">Fase 2A.2</Badge>
+            <Badge variant="secondary">Fase 2A.3</Badge>
             <Badge variant="outline">
               {isNavigating ? 'Sincronizando URL' : 'URL state oficial ativo'}
             </Badge>
@@ -204,6 +216,7 @@ export function WorkflowManagementPage() {
               onFilterChange={(filter: ManagementCurrentQueueFilter) =>
                 updateViewState({ activeTab: 'current', currentFilter: filter })
               }
+              onOpenRequest={setSelectedRequestId}
             />
           ) : null}
 
@@ -223,6 +236,7 @@ export function WorkflowManagementPage() {
               onSubtabChange={(subtab: ManagementAssignmentsSubtab) =>
                 updateViewState({ activeTab: 'assignments', assignmentsSubtab: subtab })
               }
+              onOpenRequest={setSelectedRequestId}
             />
           ) : null}
 
@@ -235,11 +249,50 @@ export function WorkflowManagementPage() {
                   ? resolveErrorMessage(
                       completedQuery.error,
                       'Falha ao carregar a lista de concluidas.',
-                    )
+                  )
                   : undefined
               }
+              onOpenRequest={setSelectedRequestId}
             />
           ) : null}
+
+          <RequestDetailDialog
+            open={selectedRequestId !== null}
+            requestId={selectedRequestId}
+            detail={detailQuery.data}
+            isLoading={detailQuery.isLoading}
+            errorMessage={
+              detailQuery.error
+                ? resolveErrorMessage(detailQuery.error, 'Falha ao carregar o detalhe do chamado.')
+                : undefined
+            }
+            collaborators={collaborators}
+            onOpenChange={(open) => {
+              if (!open) {
+                setSelectedRequestId(null);
+              }
+            }}
+            onAssign={async (summary, collaborator) => {
+              await assignMutation.mutateAsync({
+                requestId: summary.requestId,
+                responsibleUserId: collaborator.id3a,
+                responsibleName: collaborator.name,
+              });
+            }}
+            onFinalize={async (summary) => {
+              await finalizeMutation.mutateAsync({
+                requestId: summary.requestId,
+              });
+            }}
+            onArchive={async (summary) => {
+              await archiveMutation.mutateAsync({
+                requestId: summary.requestId,
+              });
+            }}
+            isAssigning={assignMutation.isPending}
+            isFinalizing={finalizeMutation.isPending}
+            isArchiving={archiveMutation.isPending}
+          />
         </>
       ) : null}
     </div>

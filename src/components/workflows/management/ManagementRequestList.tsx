@@ -17,6 +17,7 @@ type ManagementRequestListProps = {
   isLoading?: boolean;
   emptyTitle: string;
   emptyDescription: string;
+  onOpenRequest?: (requestId: number) => void;
 };
 
 export function ManagementRequestList({
@@ -24,6 +25,7 @@ export function ManagementRequestList({
   isLoading = false,
   emptyTitle,
   emptyDescription,
+  onOpenRequest,
 }: ManagementRequestListProps) {
   if (isLoading) {
     return (
@@ -81,7 +83,12 @@ export function ManagementRequestList({
                 </div>
               </div>
 
-              <Button variant="outline" disabled>
+              <Button
+                variant="outline"
+                type="button"
+                onClick={() => onOpenRequest?.(item.requestId)}
+                disabled={!onOpenRequest}
+              >
                 Abrir
               </Button>
             </CardContent>

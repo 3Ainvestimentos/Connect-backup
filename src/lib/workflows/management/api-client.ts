@@ -1,12 +1,23 @@
 import type { User } from 'firebase/auth';
 import type {
+  WorkflowManagementArchiveInput,
+  WorkflowManagementAssignResponsibleInput,
   WorkflowManagementAssignmentsData,
   WorkflowManagementBootstrapData,
   WorkflowManagementCompletedData,
   WorkflowManagementCurrentData,
   WorkflowManagementFilters,
+  WorkflowManagementMutationResult,
   WorkflowManagementMonthGroup,
+  WorkflowManagementRequestAttachment,
+  WorkflowManagementRequestDetailData,
+  WorkflowManagementRequestDetailExtraField,
+  WorkflowManagementRequestDetailField,
+  WorkflowManagementRequestDetailPermissions,
+  WorkflowManagementRequestProgressItem,
   WorkflowManagementRequestSummary,
+  WorkflowManagementRequestTimelineItem,
+  WorkflowManagementFinalizeInput,
 } from './types';
 
 type ApiSuccess<T> = {
@@ -60,6 +71,10 @@ function asNullableString(value: unknown): string | null {
 
 function asNumber(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function asBoolean(value: unknown): boolean {
+  return Boolean(value);
 }
 
 function buildDateFromParts(seconds: number, nanoseconds: number): Date | null {
@@ -194,12 +209,22 @@ function normalizeMonthGroup(input: unknown): WorkflowManagementMonthGroup {
 async function authenticatedManagementFetch<T>(
   user: User,
   input: string,
+  init?: RequestInit,
 ): Promise<T> {
   const token = await user.getIdToken();
+  const headers = new Headers(init?.headers);
+
+  if (!headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  if (init?.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const response = await fetch(input, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    ...init,
+    headers,
     cache: 'no-store',
   });
 
@@ -229,6 +254,106 @@ async function authenticatedManagementFetch<T>(
   }
 
   return payload.data;
+}
+
+function normalizePermissions(input: unknown): WorkflowManagementRequestDetailPermissions {
+  const permissions = isObject(input) ? input : {};
+
+  return {
+    canAssign: asBoolean(permissions.canAssign),
+    canFinalize: asBoolean(permissions.canFinalize),
+    canArchive: asBoolean(permissions.canArchive),
+  };
+}
+
+function normalizeDetailField(input: unknown): WorkflowManagementRequestDetailField {
+  const field = isObject(input) ? input : {};
+  const type = asString(field.type);
+
+  return {
+    fieldId: asString(field.fieldId),
+    label: asString(field.label),
+    type:
+      type === 'text' ||
+      type === 'textarea' ||
+      type === 'select' ||
+      type === 'date' ||
+      type === 'date-range' ||
+      type === 'file'
+        ? type
+        : 'text',
+    value: field.value,
+  };
+}
+
+function normalizeDetailExtraField(input: unknown): WorkflowManagementRequestDetailExtraField {
+  const field = isObject(input) ? input : {};
+
+  return {
+    key: asString(field.key),
+    value: field.value,
+  };
+}
+
+function normalizeAttachment(input: unknown): WorkflowManagementRequestAttachment {
+  const attachment = isObject(input) ? input : {};
+
+  return {
+    fieldId: asString(attachment.fieldId),
+    label: asString(attachment.label),
+    url: asString(attachment.url),
+  };
+}
+
+function normalizeProgressItem(input: unknown): WorkflowManagementRequestProgressItem {
+  const item = isObject(input) ? input : {};
+  const kind = asString(item.kind);
+  const state = asString(item.state);
+
+  return {
+    stepId: asString(item.stepId),
+    stepName: asString(item.stepName),
+    statusKey: asString(item.statusKey),
+    kind: kind === 'start' || kind === 'work' || kind === 'final' ? kind : 'work',
+    order: asNumber(item.order),
+    state:
+      state === 'pending' || state === 'active' || state === 'completed' || state === 'skipped'
+        ? state
+        : 'pending',
+    isCurrent: asBoolean(item.isCurrent),
+  };
+}
+
+function normalizeTimelineItem(input: unknown): WorkflowManagementRequestTimelineItem {
+  const item = isObject(input) ? input : {};
+  const action = asString(item.action);
+
+  return {
+    action:
+      action === 'request_opened' ||
+      action === 'responsible_assigned' ||
+      action === 'responsible_reassigned' ||
+      action === 'step_completed' ||
+      action === 'entered_step' ||
+      action === 'request_finalized' ||
+      action === 'request_archived'
+        ? action
+        : 'request_opened',
+    label: asString(item.label),
+    timestamp: normalizeTimestamp(item.timestamp),
+    userId: asString(item.userId),
+    userName: asString(item.userName),
+    details: isObject(item.details) ? item.details : {},
+  };
+}
+
+function normalizeMutationResult(input: unknown): WorkflowManagementMutationResult {
+  const result = isObject(input) ? input : {};
+
+  return {
+    docId: asString(result.docId),
+    requestId: asNumber(result.requestId),
+  };
 }
 
 function normalizeBootstrapData(input: unknown): WorkflowManagementBootstrapData {
@@ -308,6 +433,31 @@ function normalizeCompletedData(input: unknown): WorkflowManagementCompletedData
   };
 }
 
+function normalizeRequestDetailData(input: unknown): WorkflowManagementRequestDetailData {
+  const data = isObject(input) ? input : {};
+  const formData = isObject(data.formData) ? data.formData : {};
+  const progress = isObject(data.progress) ? data.progress : {};
+
+  return {
+    summary: normalizeRequestSummary(data.summary),
+    permissions: normalizePermissions(data.permissions),
+    formData: {
+      fields: Array.isArray(formData.fields) ? formData.fields.map(normalizeDetailField) : [],
+      extraFields: Array.isArray(formData.extraFields)
+        ? formData.extraFields.map(normalizeDetailExtraField)
+        : [],
+    },
+    attachments: Array.isArray(data.attachments) ? data.attachments.map(normalizeAttachment) : [],
+    progress: {
+      currentStepId: asString(progress.currentStepId),
+      totalSteps: asNumber(progress.totalSteps),
+      completedSteps: asNumber(progress.completedSteps),
+      items: Array.isArray(progress.items) ? progress.items.map(normalizeProgressItem) : [],
+    },
+    timeline: Array.isArray(data.timeline) ? data.timeline.map(normalizeTimelineItem) : [],
+  };
+}
+
 export async function getManagementBootstrap(
   user: User,
 ): Promise<WorkflowManagementBootstrapData> {
@@ -363,4 +513,72 @@ export async function getManagementCompleted(
   );
 
   return normalizeCompletedData(data);
+}
+
+export async function getManagementRequestDetail(
+  user: User,
+  requestId: number,
+): Promise<WorkflowManagementRequestDetailData> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/read/requests/${requestId}`,
+  );
+
+  return normalizeRequestDetailData(data);
+}
+
+export async function assignManagementResponsible(
+  user: User,
+  payload: WorkflowManagementAssignResponsibleInput,
+): Promise<WorkflowManagementMutationResult> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/runtime/requests/${payload.requestId}/assign`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        responsibleUserId: payload.responsibleUserId,
+        responsibleName: payload.responsibleName,
+        actorName: payload.actorName,
+      }),
+    },
+  );
+
+  return normalizeMutationResult(data);
+}
+
+export async function finalizeManagementRequest(
+  user: User,
+  payload: WorkflowManagementFinalizeInput,
+): Promise<WorkflowManagementMutationResult> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/runtime/requests/${payload.requestId}/finalize`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        actorName: payload.actorName,
+      }),
+    },
+  );
+
+  return normalizeMutationResult(data);
+}
+
+export async function archiveManagementRequest(
+  user: User,
+  payload: WorkflowManagementArchiveInput,
+): Promise<WorkflowManagementMutationResult> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/runtime/requests/${payload.requestId}/archive`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        actorName: payload.actorName,
+      }),
+    },
+  );
+
+  return normalizeMutationResult(data);
 }

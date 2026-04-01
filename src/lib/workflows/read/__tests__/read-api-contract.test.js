@@ -8,6 +8,10 @@ jest.mock('@/lib/workflows/read/bootstrap', () => ({
   buildWorkflowManagementBootstrap: jest.fn(),
 }));
 
+jest.mock('@/lib/workflows/read/detail', () => ({
+  getWorkflowRequestDetail: jest.fn(),
+}));
+
 jest.mock('@/lib/workflows/read/queries', () => ({
   queryScopedCurrentQueue: jest.fn(),
   queryScopedAssignments: jest.fn(),
@@ -19,6 +23,7 @@ jest.mock('@/lib/workflows/read/queries', () => ({
 const { RuntimeError, RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const { authenticateRuntimeActor } = require('@/lib/workflows/runtime/auth-helpers');
 const { buildWorkflowManagementBootstrap } = require('@/lib/workflows/read/bootstrap');
+const { getWorkflowRequestDetail } = require('@/lib/workflows/read/detail');
 const {
   groupWorkflowsByMonth,
   queryScopedAssignments,
@@ -31,6 +36,7 @@ const { GET: getAssignments } = require('@/app/api/workflows/read/assignments/ro
 const { GET: getCompleted } = require('@/app/api/workflows/read/completed/route');
 const { GET: getBootstrap } = require('@/app/api/workflows/read/management/bootstrap/route');
 const { GET: getMine } = require('@/app/api/workflows/read/mine/route');
+const { GET: getRequestDetail } = require('@/app/api/workflows/read/requests/[requestId]/route');
 
 function buildActor() {
   return {
@@ -74,6 +80,62 @@ function buildSummary(overrides = {}) {
     submittedMonthKey: '2026-03',
     closedMonthKey: null,
     isArchived: false,
+    ...overrides,
+  };
+}
+
+function buildDetail(overrides = {}) {
+  return {
+    summary: buildSummary(),
+    permissions: {
+      canAssign: false,
+      canFinalize: true,
+      canArchive: false,
+    },
+    formData: {
+      fields: [
+        {
+          fieldId: 'nome_sobrenome',
+          label: 'Nome e Sobrenome',
+          type: 'text',
+          value: 'Requester',
+        },
+      ],
+      extraFields: [],
+    },
+    attachments: [
+      {
+        fieldId: 'anexo',
+        label: 'Planilha',
+        url: 'https://example.com/planilha.pdf',
+      },
+    ],
+    progress: {
+      currentStepId: 'stp_work',
+      totalSteps: 3,
+      completedSteps: 1,
+      items: [
+        {
+          stepId: 'stp_open',
+          stepName: 'Aberto',
+          statusKey: 'aberto',
+          kind: 'start',
+          order: 1,
+          state: 'completed',
+          isCurrent: false,
+        },
+      ],
+    },
+    timeline: [
+      {
+        action: 'request_opened',
+        label: 'Solicitacao aberta',
+        timestamp: { seconds: 1, nanoseconds: 0 },
+        userId: 'REQ1',
+        userName: 'Requester',
+        details: {},
+      },
+    ],
     ...overrides,
   };
 }
@@ -186,6 +248,89 @@ describe('workflow read API contract', () => {
     expect(buildWorkflowManagementBootstrap).toHaveBeenCalledWith(
       expect.objectContaining({ actorUserId: 'SMO2' }),
     );
+  });
+
+  it('retorna detalhe rico canonico em /read/requests/[requestId] para ator autorizado', async () => {
+    getWorkflowRequestDetail.mockResolvedValue(buildDetail());
+
+    const response = await getRequestDetail(
+      new Request('http://localhost/api/workflows/read/requests/800', {
+        headers: { Authorization: 'Bearer token' },
+      }),
+      { params: Promise.resolve({ requestId: '800' }) },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        summary: expect.objectContaining({ requestId: 800 }),
+        permissions: {
+          canAssign: false,
+          canFinalize: true,
+          canArchive: false,
+        },
+        attachments: [expect.objectContaining({ fieldId: 'anexo' })],
+      }),
+    });
+    expect(getWorkflowRequestDetail).toHaveBeenCalledWith(800, 'SMO2');
+  });
+
+  it('rejeita requestId invalido em /read/requests/[requestId] antes da autenticacao', async () => {
+    const response = await getRequestDetail(
+      new Request('http://localhost/api/workflows/read/requests/abc', {
+        headers: { Authorization: 'Bearer token' },
+      }),
+      { params: Promise.resolve({ requestId: 'abc' }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      code: 'INVALID_REQUEST_ID',
+      message: 'RequestId invalido.',
+    });
+    expect(authenticateRuntimeActor).not.toHaveBeenCalled();
+  });
+
+  it('propaga 403 em /read/requests/[requestId] para outsider', async () => {
+    getWorkflowRequestDetail.mockRejectedValue(
+      new RuntimeError(RuntimeErrorCode.FORBIDDEN, 'Usuario nao possui permissao.', 403),
+    );
+
+    const response = await getRequestDetail(
+      new Request('http://localhost/api/workflows/read/requests/800', {
+        headers: { Authorization: 'Bearer token' },
+      }),
+      { params: Promise.resolve({ requestId: '800' }) },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      code: RuntimeErrorCode.FORBIDDEN,
+      message: 'Usuario nao possui permissao.',
+    });
+  });
+
+  it('propaga 404 em /read/requests/[requestId] quando o request nao existe', async () => {
+    getWorkflowRequestDetail.mockRejectedValue(
+      new RuntimeError(RuntimeErrorCode.REQUEST_NOT_FOUND, 'Request nao encontrado.', 404),
+    );
+
+    const response = await getRequestDetail(
+      new Request('http://localhost/api/workflows/read/requests/999', {
+        headers: { Authorization: 'Bearer token' },
+      }),
+      { params: Promise.resolve({ requestId: '999' }) },
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      code: RuntimeErrorCode.REQUEST_NOT_FOUND,
+      message: 'Request nao encontrado.',
+    });
   });
 
   it('rejeita requestId invalido em /read/current sem tentar autenticar', async () => {

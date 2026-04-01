@@ -17,6 +17,7 @@ type AssignmentsPanelProps = {
   isLoading: boolean;
   errorMessage?: string;
   onSubtabChange: (subtab: ManagementAssignmentsSubtab) => void;
+  onOpenRequest: (requestId: number) => void;
 };
 
 export function AssignmentsPanel({
@@ -25,6 +26,7 @@ export function AssignmentsPanel({
   isLoading,
   errorMessage,
   onSubtabChange,
+  onOpenRequest,
 }: AssignmentsPanelProps) {
   const items =
     activeSubtab === 'pending' ? data?.pendingActionItems ?? [] : data?.assignedItems ?? [];
@@ -72,6 +74,7 @@ export function AssignmentsPanel({
                 ? 'Quando algum fluxo depender da sua resposta, ele aparecera nesta subtab.'
                 : 'Quando um owner atribuir um item a voce, ele aparecera nesta subtab.'
             }
+            onOpenRequest={onOpenRequest}
           />
         )}
       </CardContent>

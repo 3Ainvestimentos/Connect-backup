@@ -10,10 +10,16 @@ let mockSearchParams = new URLSearchParams();
 jest.mock('@/hooks/use-workflow-management', () => ({
   useWorkflowManagement: jest.fn(),
 }));
+jest.mock('@/contexts/CollaboratorsContext', () => ({
+  useCollaborators: () => ({
+    collaborators: [],
+  }),
+}));
 jest.mock('lucide-react', () => ({
   Check: () => null,
   ChevronDown: () => null,
   ChevronUp: () => null,
+  X: () => null,
 }));
 jest.mock('next/navigation', () => ({
   usePathname: () => '/gestao-de-chamados',
@@ -91,6 +97,23 @@ function buildHookResult(canViewCurrentQueue = true) {
       },
       isLoading: false,
       error: null,
+    },
+    detailQuery: {
+      data: undefined,
+      isLoading: false,
+      error: null,
+    },
+    assignMutation: {
+      mutateAsync: jest.fn(),
+      isPending: false,
+    },
+    finalizeMutation: {
+      mutateAsync: jest.fn(),
+      isPending: false,
+    },
+    archiveMutation: {
+      mutateAsync: jest.fn(),
+      isPending: false,
     },
   };
 }
