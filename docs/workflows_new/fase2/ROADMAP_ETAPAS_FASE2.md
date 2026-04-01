@@ -37,7 +37,24 @@ Transformar a experiencia validada no piloto em uma experiencia oficial de produ
 
 ---
 
-### 2B. Cadastro e habilitacao dos workflows restantes
+### 2B. Nova tela oficial de abertura de chamado
+
+**Objetivo**
+
+Construir a nova experiencia oficial de abertura de chamados sobre o backend novo, sem usar a tela legada atual como base principal de evolucao.
+
+**Saidas esperadas**
+
+- nova superficie oficial de abertura;
+- componente novo e separado da implementacao legada;
+- equivalencia funcional com a tela atual no primeiro momento;
+- possibilidade de identidade visual inicialmente identica a tela legada, sem reaproveitar sua implementacao;
+- convivencia temporaria com a tela antiga durante rollout e testes;
+- limpeza dos artefatos antigos apenas depois de implementacao completa e validacao end-to-end.
+
+---
+
+### 2C. Cadastro e habilitacao dos workflows restantes
 
 **Objetivo**
 
@@ -53,7 +70,7 @@ Expandir o novo motor para os workflows ainda fora do modelo novo, em lotes cont
 
 ---
 
-### 2C. Tela de configuracao, novas versoes e publicacao
+### 2D. Tela de configuracao, novas versoes e publicacao
 
 **Objetivo**
 
@@ -72,8 +89,9 @@ Criar a superficie administrativa para configuracao e evolucao dos workflows.
 ## 3. Ordem Recomendada
 
 1. `2A` Front oficial da tela integrada
-2. `2B` Cadastro e habilitacao dos workflows restantes
-3. `2C` Tela de configuracao, novas versoes e publicacao
+2. `2B` Nova tela oficial de abertura de chamado
+3. `2C` Cadastro e habilitacao dos workflows restantes
+4. `2D` Tela de configuracao, novas versoes e publicacao
 
 ---
 

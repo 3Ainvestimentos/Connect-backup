@@ -4,9 +4,10 @@
 
 Este documento define o roadmap macro da **Fase 2** do novo motor de workflows, sucedendo a conclusao da Fase 1 em Facilities e Suprimentos.
 
-A Fase 2 tem tres objetivos complementares:
+A Fase 2 tem quatro objetivos complementares:
 
 - construir o **frontend oficial** da experiencia integrada de chamados;
+- construir a **nova superficie oficial de abertura de chamado** sobre o backend novo;
 - expandir o motor para os **demais workflows** ainda nao cadastrados no modelo novo;
 - criar a **superficie administrativa** para configuracao, versionamento e publicacao dos workflows.
 
@@ -21,15 +22,17 @@ Isso significa que as entregas desta fase devem:
 
 ### 1.1. Principio de planejamento da Fase 2
 
-Para manter o escopo executavel, a Fase 2 fica dividida em tres macroetapas:
+Para manter o escopo executavel, a Fase 2 fica dividida em quatro macroetapas:
 
 - **Fase 2A**: frontend oficial da tela integrada;
-- **Fase 2B**: cadastro e habilitacao dos workflows restantes;
-- **Fase 2C**: tela de configuracao dos chamados e versionamento.
+- **Fase 2B**: nova tela oficial de abertura de chamado;
+- **Fase 2C**: cadastro e habilitacao dos workflows restantes;
+- **Fase 2D**: tela de configuracao dos chamados e versionamento.
 
-Essa divisao separa tres naturezas distintas de trabalho:
+Essa divisao separa quatro naturezas distintas de trabalho:
 
 - experiencia final de uso;
+- experiencia oficial de abertura e solicitacao;
 - expansao de cobertura funcional;
 - operacao administrativa da plataforma.
 
@@ -100,7 +103,32 @@ Para manter a janela de contexto controlada e o build validavel por partes, a 2A
   - decisao de convivencia no dropdown
   - smoke final e readiness para substituir o fluxo principal
 
-### 2.2. Fase 2B - Cadastro e habilitacao dos workflows restantes
+### 2.2. Fase 2B - Nova tela oficial de abertura de chamado
+
+Esta macroetapa constroi a nova superficie oficial de abertura de chamados, conectada ao backend novo, sem reutilizar a pagina legada atual como base principal de evolucao.
+
+Objetivos principais:
+
+- criar a nova experiencia oficial de abertura de chamado sobre o modelo novo;
+- preservar a equivalencia funcional com a tela atual enquanto a nova superficie amadurece;
+- manter a transicao segura sem apagar artefatos legados prematuramente;
+- reaproveitar a estrutura visual atual quando isso reduzir friccao desnecessaria para o usuario.
+
+Escopo esperado:
+
+- nova rota ou nova superficie oficial de abertura conectada ao backend novo;
+- componente novo, separado da implementacao legada atual;
+- suporte aos mesmos casos de uso da abertura atual, agora sobre o modelo oficial;
+- convivencia temporaria com a tela existente durante rollout e rodada de testes;
+- limpeza dos artefatos antigos apenas depois da implementacao completa e da validacao end-to-end.
+
+Diretrizes fechadas:
+
+- a nova tela pode ser visualmente identica a tela atual no primeiro momento;
+- a implementacao deve ser nova e desacoplada da pagina legada;
+- remocao, merge ou limpeza dos artefatos antigos ficam para uma etapa posterior de hardening e rollout.
+
+### 2.3. Fase 2C - Cadastro e habilitacao dos workflows restantes
 
 Esta macroetapa expande o motor para os demais workflows previstos no rollout.
 
@@ -119,7 +147,7 @@ Escopo esperado:
 - validacao funcional por grupo/area;
 - ativacao progressiva no frontend oficial.
 
-### 2.3. Fase 2C - Configuracao, versionamento e administracao
+### 2.4. Fase 2D - Configuracao, versionamento e administracao
 
 Esta macroetapa entrega a superficie administrativa do sistema de workflows.
 
@@ -142,9 +170,9 @@ Escopo esperado:
 
 ## 3. Diretrizes da Fase 2
 
-### 3.1. Nao misturar as tres frentes no mesmo build
+### 3.1. Nao misturar as quatro frentes no mesmo build
 
-As macroetapas 2A, 2B e 2C devem poder avancar em paralelo no planejamento, mas nao devem ser tratadas como um unico build amorfo.
+As macroetapas 2A, 2B, 2C e 2D devem poder avancar em paralelo no planejamento, mas nao devem ser tratadas como um unico build amorfo.
 
 Cada macroetapa precisa ter:
 
@@ -177,20 +205,31 @@ Direcao esperada:
 - manter o piloto como referencia de aprendizado;
 - evitar que o frontend oficial apenas replique a superficie do piloto com novo styling.
 
-### 3.4. O cadastro dos workflows restantes deve ser feito por lotes
+### 3.4. A nova tela de abertura deve nascer separada da pagina legada
+
+A macroetapa 2B deve tratar a tela atual apenas como referencia funcional e visual.
+
+Direcao esperada:
+
+- construir uma nova superficie conectada ao backend novo;
+- evitar evolucao incremental diretamente em cima da pagina legada atual;
+- manter os artefatos legados durante a transicao;
+- postergar limpeza dos artefatos antigos ate depois da implementacao completa e de uma rodada dedicada de testes end-to-end.
+
+### 3.5. O cadastro dos workflows restantes deve ser feito por lotes
 
 Os workflows restantes nao devem entrar de uma vez em um unico pacote.
 
-A macroetapa 2B deve definir:
+A macroetapa 2C deve definir:
 
 - criterio de agrupamento;
 - ordem de migracao;
 - estrategia de smoke test por lote;
 - gates de publicacao por area.
 
-### 3.5. A tela de configuracao e uma superficie de produto, nao um utilitario tecnico
+### 3.6. A tela de configuracao e uma superficie de produto, nao um utilitario tecnico
 
-A macroetapa 2C nao deve nascer como editor improvisado de JSON.
+A macroetapa 2D nao deve nascer como editor improvisado de JSON.
 
 Ela deve ser pensada como superficie de administracao com:
 
@@ -245,7 +284,28 @@ Construir a experiencia oficial de gestao de chamados sobre a fundacao validada 
 - que dados adicionais o frontend oficial precisa do backend para renderizar request detail e anexos?
 - quais componentes ou contratos do piloto podem ser promovidos e quais devem ser substituidos?
 
-### 5.2. Fase 2B - Cadastro e habilitacao dos workflows restantes
+### 5.2. Fase 2B - Nova tela oficial de abertura de chamado
+
+**Objetivo**
+
+Construir a nova experiencia oficial de abertura de chamados sobre o backend novo, mantendo a tela atual intacta durante a transicao.
+
+**Saidas esperadas**
+
+- nova superficie oficial de abertura conectada ao modelo novo;
+- componente separado da implementacao legada;
+- equivalencia funcional com a experiencia atual de abertura;
+- possibilidade de identidade visual inicialmente identica a tela legada, sem reutilizar sua implementacao;
+- convivencia segura com a tela antiga durante rollout;
+- base pronta para substituicao controlada apos testes end-to-end.
+
+**Principais perguntas que esta etapa precisa responder**
+
+- qual a melhor forma de reproduzir a experiencia atual de abertura sem carregar o acoplamento tecnico da tela legada?
+- quais componentes podem ser reaproveitados apenas como referencia visual e quais precisam nascer novos?
+- como garantir equivalencia funcional antes de remover artefatos antigos?
+
+### 5.3. Fase 2C - Cadastro e habilitacao dos workflows restantes
 
 **Objetivo**
 
@@ -265,7 +325,7 @@ Expandir o novo motor para os demais workflows ainda nao materializados, usando 
 - quais grupos compartilham padroes e podem ser tratados juntos?
 - quais workflows exigem extensao de modelo, UX ou backend?
 
-### 5.3. Fase 2C - Tela de configuracao, versoes e publicacao
+### 5.4. Fase 2D - Tela de configuracao, versoes e publicacao
 
 **Objetivo**
 
@@ -292,15 +352,17 @@ Criar a superficie administrativa para evolucao do catalogo de workflows sem dep
 ### 6.1. Ordem macro
 
 1. **Fase 2A** - Front oficial da tela integrada
-2. **Fase 2B** - Cadastro e habilitacao dos workflows restantes
-3. **Fase 2C** - Tela de configuracao, versoes e publicacao
+2. **Fase 2B** - Nova tela oficial de abertura de chamado
+3. **Fase 2C** - Cadastro e habilitacao dos workflows restantes
+4. **Fase 2D** - Tela de configuracao, versoes e publicacao
 
 ### 6.2. Observacao de paralelismo
 
 A ordem acima e a mais segura para execucao principal, mas o planejamento pode ocorrer em paralelo:
 
-- `2A` e `2B` podem ter descoberta simultanea;
+- `2A` e `2B` podem ter discovery simultanea;
 - `2C` pode iniciar discovery e define antes do fechamento completo de `2B`;
+- `2D` pode iniciar discovery e define antes do fechamento completo de `2C`;
 - a implementacao, no entanto, deve respeitar dependencias reais de backend e frontend.
 
 Dentro da propria 2A, a recomendacao e executar `2A.1 -> 2A.2 -> 2A.3 -> 2A.4`, evitando concentrar toda a macroetapa em um unico build.
@@ -312,9 +374,11 @@ Dentro da propria 2A, a recomendacao e executar `2A.1 -> 2A.2 -> 2A.3 -> 2A.4`, 
 A Fase 2 so deve ser considerada concluida quando:
 
 - a experiencia oficial de gestao de chamados estiver operando fora do namespace piloto;
+- a nova experiencia oficial de abertura de chamado estiver operando sobre o backend novo;
 - os workflows remanescentes planejados para a onda estiverem cadastrados e habilitados;
 - a administracao de versoes e configuracao estiver operavel;
 - a operacao principal nao depender mais da superficie piloto para uso cotidiano;
+- a abertura principal nao depender mais da superficie legada atual para uso cotidiano;
 - a base estiver pronta para rollout ampliado e evolucao continua.
 
 ---
