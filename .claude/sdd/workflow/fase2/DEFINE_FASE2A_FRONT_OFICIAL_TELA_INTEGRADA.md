@@ -119,6 +119,7 @@ Motivo:
 
 - nova rota oficial de gestao de chamados em `/gestao-de-chamados`;
 - nova tela integrada oficial;
+- entrada da nova rota no menu do usuario, na secao de ferramentas;
 - tabs, filtros, busca, estados vazios, loading e erro;
 - modal oficial de detalhes;
 - visualizacao de anexos;
@@ -273,14 +274,18 @@ Fica fechado que a rota piloto **nao** sera removida imediatamente no inicio da 
 Decisao:
 
 - a nova superficie oficial nasce em `/gestao-de-chamados`;
+- a nova rota entra no dropdown do usuario, na secao de ferramentas;
+- a sidebar continua apontando apenas para a superficie de abertura de chamados;
 - `/pilot/facilities` permanece temporariamente disponivel durante a transicao;
-- a remocao definitiva da rota piloto sera tratada como passo posterior de rollout seguro, e nao como precondicao para concluir o primeiro build da 2A.
+- `Gestao de Solicitacoes` e `Minhas Tarefas/Acoes` permanecem disponiveis durante a transicao;
+- os arquivos, componentes e rotas legadas nao serao excluidos na 2A;
+- a substituicao definitiva das superfices legadas sera tratada como passo posterior de rollout seguro, apos testes end-to-end, e nao como precondicao para concluir o primeiro build da 2A.
 
 Motivo:
 
 - reduz risco operacional durante a migracao para a tela oficial;
 - preserva um fallback controlado enquanto a nova superficie estabiliza;
-- evita corte brusco para usuarios internos que ainda estejam habituados ao piloto.
+- evita corte brusco para usuarios internos que ainda estejam habituados ao piloto e as telas operacionais antigas.
 
 ---
 
@@ -329,6 +334,7 @@ Em especial, a 2A herda como base validada:
 - redesenho da experiencia administrativa;
 - onboarding dos workflows restantes;
 - consolidacao completa de todos os modulos `pilot/*` em uma unica camada compartilhada, salvo o que a 2A precisar promover explicitamente.
+- remocao de arquivos, componentes ou rotas legadas durante o primeiro rollout da 2A.
 
 ---
 
@@ -359,7 +365,8 @@ A 2A sera considerada pronta para design quando estiver claro que:
 - visibilidade de ownership nao depende de fila vazia;
 - separacao da fila operacional ficou decidida;
 - busca e filtros estruturantes ficaram decididos como responsabilidade de backend;
-- a estrategia de convivencia temporaria entre `/gestao-de-chamados` e `/pilot/facilities` ficou explicita.
+- a estrategia de convivencia temporaria entre `/gestao-de-chamados` e as superfices legadas ficou explicita;
+- a navegacao da nova superficie ficou posicionada no menu do usuario, sem substituir a sidebar de abertura de chamados.
 
 ---
 
