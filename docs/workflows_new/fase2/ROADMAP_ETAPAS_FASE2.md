@@ -28,6 +28,13 @@ Transformar a experiencia validada no piloto em uma experiencia oficial de produ
 - filtros e agrupamentos consolidados;
 - descolamento da superficie `pilot/*`.
 
+**Sub-builds recomendados**
+
+- `2A.1` Entrada oficial + shell da nova rota
+- `2A.2` Bootstrap + listas oficiais
+- `2A.3` Detalhe rico do request
+- `2A.4` Polimento e rollout controlado
+
 ---
 
 ### 2B. Cadastro e habilitacao dos workflows restantes

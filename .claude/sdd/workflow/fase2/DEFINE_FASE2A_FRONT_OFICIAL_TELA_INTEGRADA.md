@@ -9,6 +9,38 @@
 
 O piloto da Fase 1 validou o motor novo ponta a ponta, mas a experiencia ainda vive em uma superficie de piloto com limitacoes conhecidas de detalhe, anexos, filtros e governanca de visibilidade; a Fase 2A precisa transformar essa base em uma **tela oficial integrada de produto**.
 
+### 1.1. Estrategia de execucao da macroetapa
+
+A 2A continua sendo uma macroetapa unica, mas sua execucao deve ser dividida em sub-builds para manter a janela de contexto controlada e permitir validacao incremental sem inflar um unico rollout.
+
+Sub-builds fechados para a 2A:
+
+- **2A.1** Entrada oficial + shell da nova rota
+  - criar `/gestao-de-chamados`
+  - criar namespace `workflows/management/*`
+  - adicionar entrada no dropdown do usuario
+  - montar shell inicial da nova tela
+  - manter legado intacto
+- **2A.2** Bootstrap + listas oficiais
+  - `management/bootstrap`
+  - filtros oficiais nas listas
+  - `current`, `assignments`, `completed`
+  - subtabs de `Atribuicoes e acoes`
+  - URL state + toolbar
+- **2A.3** Detalhe rico do request
+  - `GET /read/requests/[requestId]`
+  - `formData`
+  - anexos
+  - progresso
+  - timeline
+  - modal oficial
+- **2A.4** Polimento e rollout controlado
+  - acabamento visual
+  - estados vazios/falha/loading refinados
+  - hardening
+  - decisao de convivencia no dropdown
+  - smoke final e readiness para substituir o fluxo principal
+
 ---
 
 ## 2. Users
@@ -53,6 +85,7 @@ Pain points herdados do piloto:
 ### MUST
 
 - substituir a experiencia piloto por uma **tela oficial integrada de gestao de chamados**;
+- executar a 2A em sub-builds incrementais sem perder coerencia da macroetapa;
 - manter a operacao centralizada em uma unica superficie;
 - exibir detalhe rico do request, incluindo:
   - metadados operacionais;
@@ -317,6 +350,20 @@ Em especial, a 2A herda como base validada:
 - atribuir, finalizar e arquivar funcionando;
 - contratos de catalogo e runtime estabilizados para o recorte piloto.
 
+## 9.1. Dependencias internas da 2A
+
+As subetapas da 2A devem respeitar a seguinte ordem:
+
+1. `2A.1` estabelece rota, namespace e entrada de navegacao
+2. `2A.2` estabelece bootstrap, filtros e listas oficiais
+3. `2A.3` adiciona detalhe rico ao modal oficial
+4. `2A.4` consolida acabamento, hardening e readiness de rollout
+
+Regra:
+
+- `2A.3` nao deve iniciar sem `2A.2` fechado;
+- `2A.4` nao deve ser usada para absorver backlog estrutural de `2A.1` a `2A.3`.
+
 ---
 
 ## 10. Frontend Scope Boundaries
@@ -367,6 +414,8 @@ A 2A sera considerada pronta para design quando estiver claro que:
 - busca e filtros estruturantes ficaram decididos como responsabilidade de backend;
 - a estrategia de convivencia temporaria entre `/gestao-de-chamados` e as superfices legadas ficou explicita;
 - a navegacao da nova superficie ficou posicionada no menu do usuario, sem substituir a sidebar de abertura de chamados.
+
+Para inicio de build, cada sub-build da 2A deve ser executado com define/design ou plano tecnico compativel com o seu recorte proprio.
 
 ---
 

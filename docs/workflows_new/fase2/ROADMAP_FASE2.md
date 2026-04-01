@@ -70,6 +70,36 @@ Escopo esperado:
 - tratamento oficial de anexos;
 - integracao com os workflows ja validados na Fase 1.
 
+### 2.1.1. Estrategia de execucao da 2A
+
+Para manter a janela de contexto controlada e o build validavel por partes, a 2A deve ser executada em sub-builds, sem perder sua identidade como macroetapa unica:
+
+- **2A.1** Entrada oficial + shell da nova rota
+  - criar `/gestao-de-chamados`
+  - criar namespace `workflows/management/*`
+  - adicionar entrada no dropdown do usuario
+  - montar shell inicial da nova tela
+  - manter legado intacto
+- **2A.2** Bootstrap + listas oficiais
+  - `management/bootstrap`
+  - filtros oficiais nas listas
+  - `current`, `assignments`, `completed`
+  - subtabs de `Atribuicoes e acoes`
+  - URL state + toolbar
+- **2A.3** Detalhe rico do request
+  - `GET /read/requests/[requestId]`
+  - `formData`
+  - anexos
+  - progresso
+  - timeline
+  - modal oficial
+- **2A.4** Polimento e rollout controlado
+  - acabamento visual
+  - estados vazios/falha/loading refinados
+  - hardening
+  - decisao de convivencia no dropdown
+  - smoke final e readiness para substituir o fluxo principal
+
 ### 2.2. Fase 2B - Cadastro e habilitacao dos workflows restantes
 
 Esta macroetapa expande o motor para os demais workflows previstos no rollout.
@@ -272,6 +302,8 @@ A ordem acima e a mais segura para execucao principal, mas o planejamento pode o
 - `2A` e `2B` podem ter descoberta simultanea;
 - `2C` pode iniciar discovery e define antes do fechamento completo de `2B`;
 - a implementacao, no entanto, deve respeitar dependencias reais de backend e frontend.
+
+Dentro da propria 2A, a recomendacao e executar `2A.1 -> 2A.2 -> 2A.3 -> 2A.4`, evitando concentrar toda a macroetapa em um unico build.
 
 ---
 
