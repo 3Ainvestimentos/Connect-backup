@@ -78,7 +78,32 @@ Para cada sub-build concluido:
 
 **Status**
 
-- `planned`
+- `completed`
+
+**Entregas**
+
+- endpoint oficial `GET /api/workflows/read/management/bootstrap` criado com `actor`, `capabilities`, `ownership` e `filterOptions`
+- rotas herdadas `current`, `assignments` e `completed` evoluidas com filtros opcionais oficiais, lookup exato por `requestId` e `slaState` additive
+- superficie oficial `/gestao-de-chamados` conectada a bootstrap real, URL state, toolbar oficial, tabs principais e subtabs explicitas de atribuicoes
+- namespace `src/lib/workflows/management/*` ampliado com cliente HTTP, query keys, parser/serializer de URL, presentation helpers e hook oficial
+- listas resumidas oficiais implementadas sem acoplamento ao namespace `pilot/*`, preservando a convivencia com o piloto
+- cobertura automatizada ampliada para contratos de rota, parser/refino do read-side, discoverability e comportamento da tela oficial
+
+**Validacao**
+
+- `npm test -- --runInBand src/components/workflows/management/__tests__/WorkflowManagementPage.test.tsx src/lib/workflows/read/__tests__/read-api-contract.test.js src/lib/workflows/read/__tests__/queries.test.js src/lib/workflows/management/__tests__/constants.test.ts src/lib/workflows/management/__tests__/navigation.test.ts src/lib/workflows/management/__tests__/search-params.test.ts`
+- `npm run typecheck`
+- `zsh -lc "npm run typecheck 2>&1 | rg 'src/lib/workflows/read/(filters|bootstrap|queries)\\.ts|src/lib/workflows/management|src/components/workflows/management|src/hooks/use-workflow-management\\.ts|src/app/api/workflows/read/management/bootstrap/route\\.ts|src/app/api/workflows/read/(current|assignments|completed)/route\\.ts|src/app/\\(app\\)/gestao-de-chamados/page\\.tsx'"`
+
+**Riscos / pendencias**
+
+- o detalhe rico do chamado, modal completo e anexos continuam reservados para a 2A.3
+- o `typecheck` global do repositório segue falhando por passivos antigos fora do escopo deste build; a checagem filtrada dos arquivos alterados ficou limpa
+- o limiar exato de `slaState = at_risk` continua inferido no read-side ate decisao de produto posterior
+
+**Proximo passo**
+
+- 2A.3 pode focar no endpoint de detalhe rico e no modal oficial sem reabrir bootstrap, URL state ou contratos basicos das listas
 
 ### 2A.3 - Detalhe rico do request
 

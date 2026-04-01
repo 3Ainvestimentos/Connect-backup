@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { queryOwnerCurrentQueue } from '@/lib/workflows/read/queries';
+import { parseWorkflowManagementFilters, ReadValidationError } from '@/lib/workflows/read/filters';
+import { queryScopedCurrentQueue } from '@/lib/workflows/read/queries';
 import {
   CURRENT_QUEUE_FILTERS,
   type CurrentQueueFilter,
@@ -28,8 +29,9 @@ export async function GET(request: Request) {
       return NextResponse.json(error, { status: 400 });
     }
 
+    const filters = parseWorkflowManagementFilters(searchParams);
     const { actor } = await authenticateRuntimeActor(request);
-    const items = await queryOwnerCurrentQueue(actor.actorUserId, rawFilter);
+    const items = await queryScopedCurrentQueue(actor.actorUserId, rawFilter, filters);
 
     const response: ReadSuccess<WorkflowCurrentReadData> = {
       ok: true,
@@ -41,6 +43,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
+    if (error instanceof ReadValidationError) {
+      const response: ReadError = {
+        ok: false,
+        code: error.code,
+        message: error.message,
+      };
+      return NextResponse.json(response, { status: error.httpStatus });
+    }
+
     if (error instanceof RuntimeError) {
       const response: ReadError = {
         ok: false,

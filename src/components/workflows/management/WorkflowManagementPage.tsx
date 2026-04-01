@@ -1,23 +1,122 @@
 'use client';
 
 import * as React from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useWorkflowManagement } from '@/hooks/use-workflow-management';
 import {
-  MANAGEMENT_DEFAULT_TAB,
-  MANAGEMENT_SHELL_TABS,
+  MANAGEMENT_TAB_DEFINITIONS,
   WORKFLOW_MANAGEMENT_DESCRIPTION,
   WORKFLOW_MANAGEMENT_TITLE,
   WORKFLOW_MANAGEMENT_TRANSITION_DESCRIPTION,
   WORKFLOW_MANAGEMENT_TRANSITION_TITLE,
 } from '@/lib/workflows/management/constants';
-import type { ManagementShellTabId } from '@/lib/workflows/management/types';
-import { ManagementShellPlaceholder } from './ManagementShellPlaceholder';
+import {
+  buildManagementViewState,
+  parseManagementSearchParams,
+  serializeManagementSearchParams,
+} from '@/lib/workflows/management/search-params';
+import type {
+  ManagementAssignmentsSubtab,
+  ManagementCurrentQueueFilter,
+  ManagementTabId,
+  WorkflowManagementFilters,
+  WorkflowManagementViewState,
+} from '@/lib/workflows/management/types';
+import { AssignmentsPanel } from './AssignmentsPanel';
+import { CompletedPanel } from './CompletedPanel';
+import { CurrentQueuePanel } from './CurrentQueuePanel';
+import { ManagementToolbar } from './ManagementToolbar';
+
+function resolveErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function LoadingState() {
+  return (
+    <Card>
+      <CardHeader className="space-y-3">
+        <Skeleton className="h-6 w-64" />
+        <Skeleton className="h-4 w-full max-w-2xl" />
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-28 w-full" />
+      </CardContent>
+    </Card>
+  );
+}
 
 export function WorkflowManagementPage() {
-  const [activeTab, setActiveTab] = React.useState<ManagementShellTabId>(MANAGEMENT_DEFAULT_TAB);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isNavigating, startTransition] = React.useTransition();
+
+  const rawState = React.useMemo(
+    () => parseManagementSearchParams(searchParams),
+    [searchParams],
+  );
+
+  const { bootstrapQuery, currentQuery, assignmentsQuery, completedQuery } =
+    useWorkflowManagement(rawState);
+
+  const canViewCurrentQueue = bootstrapQuery.data?.capabilities.canViewCurrentQueue ?? false;
+
+  const viewState = React.useMemo<WorkflowManagementViewState>(() => {
+    if (bootstrapQuery.data && rawState.activeTab === 'current' && !canViewCurrentQueue) {
+      return {
+        ...rawState,
+        activeTab: 'assignments',
+      };
+    }
+
+    return rawState;
+  }, [bootstrapQuery.data, canViewCurrentQueue, rawState]);
+
+  const updateUrlState = React.useCallback(
+    (nextState: WorkflowManagementViewState) => {
+      const nextParams = serializeManagementSearchParams(nextState);
+      const nextUrl = nextParams.toString() ? `${pathname}?${nextParams.toString()}` : pathname;
+
+      startTransition(() => {
+        router.replace(nextUrl, { scroll: false });
+      });
+    },
+    [pathname, router],
+  );
+
+  React.useEffect(() => {
+    if (bootstrapQuery.data && rawState.activeTab === 'current' && !canViewCurrentQueue) {
+      updateUrlState({
+        ...rawState,
+        activeTab: 'assignments',
+      });
+    }
+  }, [bootstrapQuery.data, canViewCurrentQueue, rawState, updateUrlState]);
+
+  const updateViewState = React.useCallback(
+    (
+      updates: Partial<WorkflowManagementViewState> & {
+        filters?: WorkflowManagementFilters;
+      },
+    ) => {
+      updateUrlState(buildManagementViewState(viewState, updates));
+    },
+    [updateUrlState, viewState],
+  );
+
+  const visibleTabs = React.useMemo(
+    () =>
+      MANAGEMENT_TAB_DEFINITIONS.filter(
+        (tab) => tab.tab !== 'current' || canViewCurrentQueue,
+      ),
+    [canViewCurrentQueue],
+  );
 
   return (
     <div className="space-y-6 p-6 md:p-8">
@@ -29,8 +128,10 @@ export function WorkflowManagementPage() {
       <Card className="border-border/70 bg-muted/30">
         <CardHeader className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">Fase 2A.1</Badge>
-            <Badge variant="outline">Convivio com legados ativo</Badge>
+            <Badge variant="secondary">Fase 2A.2</Badge>
+            <Badge variant="outline">
+              {isNavigating ? 'Sincronizando URL' : 'URL state oficial ativo'}
+            </Badge>
           </div>
           <div className="space-y-1">
             <CardTitle className="font-headline text-lg">
@@ -42,30 +143,105 @@ export function WorkflowManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="pt-0 text-sm text-muted-foreground">
-          /requests, /me/tasks, /applications e /pilot/facilities permanecem disponiveis
-          durante a transicao desta superficie oficial.
+          /requests, /me/tasks, /applications e /pilot/facilities permanecem disponiveis durante a
+          transicao desta superficie oficial.
         </CardContent>
       </Card>
 
-      <Tabs
-        value={activeTab}
-        onValueChange={(value) => setActiveTab(value as ManagementShellTabId)}
-        className="space-y-4"
-      >
-        <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-lg bg-muted/60 p-1">
-          {MANAGEMENT_SHELL_TABS.map((tab) => (
-            <TabsTrigger key={tab.tab} value={tab.tab} className="px-4 py-2">
-              {tab.title}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {bootstrapQuery.isLoading && !bootstrapQuery.data ? <LoadingState /> : null}
 
-        {MANAGEMENT_SHELL_TABS.map((tab) => (
-          <TabsContent key={tab.tab} value={tab.tab}>
-            <ManagementShellPlaceholder content={tab} />
-          </TabsContent>
-        ))}
-      </Tabs>
+      {bootstrapQuery.error ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {resolveErrorMessage(
+            bootstrapQuery.error,
+            'Nao foi possivel carregar o bootstrap oficial da tela.',
+          )}
+        </div>
+      ) : null}
+
+      {bootstrapQuery.data ? (
+        <>
+          <ManagementToolbar
+            bootstrap={bootstrapQuery.data}
+            filters={viewState.filters}
+            onApplyFilters={(filters) => updateViewState({ filters })}
+            onResetFilters={() => updateViewState({ filters: {} })}
+          />
+
+          {!canViewCurrentQueue ? (
+            <Card className="border-dashed">
+              <CardContent className="p-4 text-sm text-muted-foreground">
+                A aba `Chamados atuais` exige ownership explicito. Seu perfil continua com acesso
+                operacional a `Atribuicoes e acoes` e `Concluidas`.
+              </CardContent>
+            </Card>
+          ) : null}
+
+          <Tabs
+            value={viewState.activeTab}
+            onValueChange={(value) => updateViewState({ activeTab: value as ManagementTabId })}
+            className="space-y-4"
+          >
+            <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-lg bg-muted/60 p-1">
+              {visibleTabs.map((tab) => (
+                <TabsTrigger key={tab.tab} value={tab.tab} className="px-4 py-2">
+                  {tab.title}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+
+          {viewState.activeTab === 'current' && canViewCurrentQueue ? (
+            <CurrentQueuePanel
+              data={currentQuery.data}
+              filter={viewState.currentFilter}
+              isLoading={currentQuery.isLoading || isNavigating}
+              errorMessage={
+                currentQuery.error
+                  ? resolveErrorMessage(currentQuery.error, 'Falha ao carregar a fila atual.')
+                  : undefined
+              }
+              onFilterChange={(filter: ManagementCurrentQueueFilter) =>
+                updateViewState({ activeTab: 'current', currentFilter: filter })
+              }
+            />
+          ) : null}
+
+          {viewState.activeTab === 'assignments' ? (
+            <AssignmentsPanel
+              data={assignmentsQuery.data}
+              activeSubtab={viewState.assignmentsSubtab}
+              isLoading={assignmentsQuery.isLoading || isNavigating}
+              errorMessage={
+                assignmentsQuery.error
+                  ? resolveErrorMessage(
+                      assignmentsQuery.error,
+                      'Falha ao carregar atribuicoes e acoes.',
+                    )
+                  : undefined
+              }
+              onSubtabChange={(subtab: ManagementAssignmentsSubtab) =>
+                updateViewState({ activeTab: 'assignments', assignmentsSubtab: subtab })
+              }
+            />
+          ) : null}
+
+          {viewState.activeTab === 'completed' ? (
+            <CompletedPanel
+              data={completedQuery.data}
+              isLoading={completedQuery.isLoading || isNavigating}
+              errorMessage={
+                completedQuery.error
+                  ? resolveErrorMessage(
+                      completedQuery.error,
+                      'Falha ao carregar a lista de concluidas.',
+                    )
+                  : undefined
+              }
+            />
+          ) : null}
+        </>
+      ) : null}
     </div>
   );
 }

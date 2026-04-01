@@ -1,34 +1,63 @@
-import type { ManagementShellPlaceholderContent, ManagementShellTabId } from './types';
+import type {
+  ManagementAssignmentsSubtabDefinition,
+  ManagementAssignmentsSubtab,
+  ManagementCurrentQueueFilter,
+  ManagementSlaState,
+  ManagementTabDefinition,
+  ManagementTabId,
+} from './types';
 
 export const WORKFLOW_MANAGEMENT_ROUTE = '/gestao-de-chamados';
 export const WORKFLOW_MANAGEMENT_TITLE = 'Gestao de chamados';
 export const WORKFLOW_MANAGEMENT_DESCRIPTION =
-  'Nova central oficial da operacao, entregue de forma incremental a partir da Fase 2A.';
-export const WORKFLOW_MANAGEMENT_TRANSITION_TITLE = 'Transicao da superficie operacional';
+  'Superficie oficial da operacao com bootstrap real, filtros compartilhaveis por URL e listas separadas por contexto.';
+export const WORKFLOW_MANAGEMENT_TRANSITION_TITLE = 'Convivio controlado com superficies legadas';
 export const WORKFLOW_MANAGEMENT_TRANSITION_DESCRIPTION =
-  'A rota oficial ja esta disponivel. Os atalhos legados seguem operacionais enquanto bootstrap, listas oficiais e detalhe rico chegam nas proximas subetapas.';
-export const MANAGEMENT_PLACEHOLDER_DISCLAIMER =
-  'Sem dados reais nesta etapa: este shell nao simula lista vazia, contadores ou detalhe operacional.';
+  'A rota oficial ja opera bootstrap e listas resumidas. O detalhe rico segue reservado para a 2A.3, sem quebrar /pilot/facilities nem os atalhos legados.';
 
-export const MANAGEMENT_DEFAULT_TAB: ManagementShellTabId = 'current';
+export const MANAGEMENT_DEFAULT_TAB: ManagementTabId = 'assignments';
+export const MANAGEMENT_DEFAULT_ASSIGNMENTS_SUBTAB: ManagementAssignmentsSubtab = 'assigned';
+export const MANAGEMENT_DEFAULT_CURRENT_FILTER: ManagementCurrentQueueFilter = 'all';
 
-export const MANAGEMENT_SHELL_TABS: readonly ManagementShellPlaceholderContent[] = [
+export const MANAGEMENT_TAB_DEFINITIONS: readonly ManagementTabDefinition[] = [
   {
     tab: 'current',
     title: 'Chamados atuais',
-    description: 'Ownership explicito, bootstrap e fila oficial entram na 2A.2.',
-    nextStepLabel: 'Proxima entrega: bootstrap e lista do owner.',
+    description: 'Fila do owner governada por ownership explicito.',
   },
   {
     tab: 'assignments',
     title: 'Atribuicoes e acoes',
-    description: 'As listas oficiais e a separacao por subtabs chegam na 2A.2.',
-    nextStepLabel: 'Proxima entrega: atribuicoes e acoes pendentes oficiais.',
+    description: 'Separacao explicita entre atribuicoes e acoes pendentes.',
   },
   {
     tab: 'completed',
     title: 'Concluidas',
-    description: 'O historico oficial sera conectado na 2A.2.',
-    nextStepLabel: 'Proxima entrega: lista concluida oficial.',
+    description: 'Historico operacional agrupado por fechamento.',
   },
 ];
+
+export const MANAGEMENT_ASSIGNMENTS_SUBTAB_DEFINITIONS: readonly ManagementAssignmentsSubtabDefinition[] =
+  [
+    {
+      tab: 'assigned',
+      title: 'Atribuidos a mim',
+    },
+    {
+      tab: 'pending',
+      title: 'Acoes pendentes para mim',
+    },
+  ];
+
+export const MANAGEMENT_CURRENT_FILTER_LABELS: Record<ManagementCurrentQueueFilter, string> = {
+  all: 'Todos',
+  waiting_assignment: 'Aguardando atribuicao',
+  in_progress: 'Em andamento',
+  waiting_action: 'Aguardando acao',
+};
+
+export const MANAGEMENT_SLA_LABELS: Record<ManagementSlaState, string> = {
+  on_track: 'No prazo',
+  at_risk: 'Em risco',
+  overdue: 'Em atraso',
+};

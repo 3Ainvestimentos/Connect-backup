@@ -1,0 +1,366 @@
+import type { User } from 'firebase/auth';
+import type {
+  WorkflowManagementAssignmentsData,
+  WorkflowManagementBootstrapData,
+  WorkflowManagementCompletedData,
+  WorkflowManagementCurrentData,
+  WorkflowManagementFilters,
+  WorkflowManagementMonthGroup,
+  WorkflowManagementRequestSummary,
+} from './types';
+
+type ApiSuccess<T> = {
+  ok: true;
+  data: T;
+};
+
+type ApiError = {
+  ok: false;
+  code?: string;
+  message?: string;
+};
+
+type ApiEnvelope<T> = ApiSuccess<T> | ApiError;
+
+type TimestampObject = {
+  seconds?: unknown;
+  nanoseconds?: unknown;
+  _seconds?: unknown;
+  _nanoseconds?: unknown;
+  toDate?: () => Date;
+};
+
+export class WorkflowManagementApiError extends Error {
+  code: string;
+  httpStatus: number;
+
+  constructor(code: string, message: string, httpStatus: number) {
+    super(message);
+    this.name = 'WorkflowManagementApiError';
+    this.code = code;
+    this.httpStatus = httpStatus;
+  }
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string');
+}
+
+function asString(value: unknown, fallback = ''): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function asNullableString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value : null;
+}
+
+function asNumber(value: unknown, fallback = 0): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function buildDateFromParts(seconds: number, nanoseconds: number): Date | null {
+  if (!Number.isFinite(seconds) || !Number.isFinite(nanoseconds)) {
+    return null;
+  }
+
+  const value = new Date(seconds * 1000 + nanoseconds / 1_000_000);
+  return Number.isNaN(value.getTime()) ? null : value;
+}
+
+function normalizeTimestamp(input: unknown): Date | null {
+  if (!input) {
+    return null;
+  }
+
+  if (input instanceof Date) {
+    return Number.isNaN(input.getTime()) ? null : input;
+  }
+
+  if (typeof input === 'string' || typeof input === 'number') {
+    const value = new Date(input);
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+
+  if (typeof input === 'object') {
+    const timestamp = input as TimestampObject;
+
+    if (typeof timestamp.toDate === 'function') {
+      const value = timestamp.toDate();
+      return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    const seconds =
+      typeof timestamp.seconds === 'number'
+        ? timestamp.seconds
+        : typeof timestamp._seconds === 'number'
+          ? timestamp._seconds
+          : null;
+    const nanoseconds =
+      typeof timestamp.nanoseconds === 'number'
+        ? timestamp.nanoseconds
+        : typeof timestamp._nanoseconds === 'number'
+          ? timestamp._nanoseconds
+          : 0;
+
+    if (seconds !== null) {
+      return buildDateFromParts(seconds, nanoseconds);
+    }
+  }
+
+  return null;
+}
+
+function appendFilter(params: URLSearchParams, key: string, value: string | number | undefined) {
+  if (value === undefined || value === '') {
+    return;
+  }
+
+  params.set(key, String(value));
+}
+
+function buildManagementFilterParams(filters: WorkflowManagementFilters): URLSearchParams {
+  const params = new URLSearchParams();
+
+  appendFilter(params, 'requestId', filters.requestId);
+  appendFilter(params, 'workflowTypeId', filters.workflowTypeId);
+  appendFilter(params, 'areaId', filters.areaId);
+  appendFilter(params, 'requesterQuery', filters.requesterQuery);
+  appendFilter(params, 'slaState', filters.slaState);
+  appendFilter(params, 'periodFrom', filters.periodFrom);
+  appendFilter(params, 'periodTo', filters.periodTo);
+
+  return params;
+}
+
+function normalizeRequestSummary(input: unknown): WorkflowManagementRequestSummary {
+  const item = isObject(input) ? input : {};
+
+  return {
+    docId: asString(item.docId),
+    requestId: asNumber(item.requestId),
+    workflowTypeId: asString(item.workflowTypeId),
+    workflowVersion: asNumber(item.workflowVersion),
+    workflowName: asString(item.workflowName),
+    areaId: asString(item.areaId),
+    ownerEmail: asString(item.ownerEmail),
+    ownerUserId: asString(item.ownerUserId),
+    requesterUserId: asString(item.requesterUserId),
+    requesterName: asString(item.requesterName),
+    responsibleUserId: asNullableString(item.responsibleUserId),
+    responsibleName: asNullableString(item.responsibleName),
+    currentStepId: asString(item.currentStepId),
+    currentStepName: asString(item.currentStepName),
+    currentStatusKey: asString(item.currentStatusKey),
+    statusCategory: (asString(item.statusCategory) || 'open') as WorkflowManagementRequestSummary['statusCategory'],
+    hasResponsible: Boolean(item.hasResponsible),
+    hasPendingActions: Boolean(item.hasPendingActions),
+    pendingActionRecipientIds: isStringArray(item.pendingActionRecipientIds)
+      ? item.pendingActionRecipientIds
+      : [],
+    pendingActionTypes: isStringArray(item.pendingActionTypes) ? item.pendingActionTypes : [],
+    operationalParticipantIds: isStringArray(item.operationalParticipantIds)
+      ? item.operationalParticipantIds
+      : [],
+    slaDays: asNumber(item.slaDays),
+    slaState:
+      item.slaState === 'on_track' || item.slaState === 'at_risk' || item.slaState === 'overdue'
+        ? item.slaState
+        : undefined,
+    expectedCompletionAt: normalizeTimestamp(item.expectedCompletionAt),
+    lastUpdatedAt: normalizeTimestamp(item.lastUpdatedAt),
+    finalizedAt: normalizeTimestamp(item.finalizedAt),
+    closedAt: normalizeTimestamp(item.closedAt),
+    archivedAt: normalizeTimestamp(item.archivedAt),
+    submittedAt: normalizeTimestamp(item.submittedAt),
+    submittedMonthKey: asString(item.submittedMonthKey),
+    closedMonthKey: asNullableString(item.closedMonthKey),
+    isArchived: Boolean(item.isArchived),
+  };
+}
+
+function normalizeMonthGroup(input: unknown): WorkflowManagementMonthGroup {
+  const group = isObject(input) ? input : {};
+
+  return {
+    monthKey: asString(group.monthKey, 'unknown'),
+    items: Array.isArray(group.items) ? group.items.map(normalizeRequestSummary) : [],
+  };
+}
+
+async function authenticatedManagementFetch<T>(
+  user: User,
+  input: string,
+): Promise<T> {
+  const token = await user.getIdToken();
+  const response = await fetch(input, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: 'no-store',
+  });
+
+  let payload: ApiEnvelope<T> | null = null;
+
+  try {
+    payload = (await response.json()) as ApiEnvelope<T>;
+  } catch (error) {
+    if (!response.ok) {
+      throw new WorkflowManagementApiError(
+        'UNKNOWN_ERROR',
+        'Falha ao consumir API de gestao de chamados.',
+        response.status,
+      );
+    }
+
+    throw error;
+  }
+
+  if (!response.ok || !payload || payload.ok !== true) {
+    const errorPayload = (payload ?? {}) as ApiError;
+    throw new WorkflowManagementApiError(
+      errorPayload.code ?? 'UNKNOWN_ERROR',
+      errorPayload.message ?? 'Falha ao consumir API de gestao de chamados.',
+      response.status,
+    );
+  }
+
+  return payload.data;
+}
+
+function normalizeBootstrapData(input: unknown): WorkflowManagementBootstrapData {
+  const data = isObject(input) ? input : {};
+  const actor = isObject(data.actor) ? data.actor : {};
+  const capabilities = isObject(data.capabilities) ? data.capabilities : {};
+  const ownership = isObject(data.ownership) ? data.ownership : {};
+  const filterOptions = isObject(data.filterOptions) ? data.filterOptions : {};
+
+  return {
+    actor: {
+      actorUserId: asString(actor.actorUserId),
+      actorName: asString(actor.actorName),
+    },
+    capabilities: {
+      canViewCurrentQueue: Boolean(capabilities.canViewCurrentQueue),
+      canViewAssignments: Boolean(capabilities.canViewAssignments),
+      canViewCompleted: Boolean(capabilities.canViewCompleted),
+    },
+    ownership: {
+      hasOwnedScopes: Boolean(ownership.hasOwnedScopes),
+      workflowTypeIds: isStringArray(ownership.workflowTypeIds) ? ownership.workflowTypeIds : [],
+      areaIds: isStringArray(ownership.areaIds) ? ownership.areaIds : [],
+    },
+    filterOptions: {
+      workflows: Array.isArray(filterOptions.workflows)
+        ? filterOptions.workflows.map((workflow) => {
+            const item = isObject(workflow) ? workflow : {};
+            return {
+              workflowTypeId: asString(item.workflowTypeId),
+              workflowName: asString(item.workflowName),
+              areaId: asString(item.areaId),
+            };
+          })
+        : [],
+      areas: Array.isArray(filterOptions.areas)
+        ? filterOptions.areas.map((area) => {
+            const item = isObject(area) ? area : {};
+            return {
+              areaId: asString(item.areaId),
+              label: asString(item.label),
+            };
+          })
+        : [],
+    },
+  };
+}
+
+function normalizeCurrentData(input: unknown): WorkflowManagementCurrentData {
+  const data = isObject(input) ? input : {};
+
+  return {
+    filter: (asString(data.filter) || 'all') as WorkflowManagementCurrentData['filter'],
+    items: Array.isArray(data.items) ? data.items.map(normalizeRequestSummary) : [],
+  };
+}
+
+function normalizeAssignmentsData(input: unknown): WorkflowManagementAssignmentsData {
+  const data = isObject(input) ? input : {};
+
+  return {
+    assignedItems: Array.isArray(data.assignedItems)
+      ? data.assignedItems.map(normalizeRequestSummary)
+      : [],
+    pendingActionItems: Array.isArray(data.pendingActionItems)
+      ? data.pendingActionItems.map(normalizeRequestSummary)
+      : [],
+  };
+}
+
+function normalizeCompletedData(input: unknown): WorkflowManagementCompletedData {
+  const data = isObject(input) ? input : {};
+
+  return {
+    items: Array.isArray(data.items) ? data.items.map(normalizeRequestSummary) : [],
+    groups: Array.isArray(data.groups) ? data.groups.map(normalizeMonthGroup) : [],
+  };
+}
+
+export async function getManagementBootstrap(
+  user: User,
+): Promise<WorkflowManagementBootstrapData> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    '/api/workflows/read/management/bootstrap',
+  );
+
+  return normalizeBootstrapData(data);
+}
+
+export async function getManagementCurrent(
+  user: User,
+  filter: WorkflowManagementCurrentData['filter'],
+  filters: WorkflowManagementFilters,
+): Promise<WorkflowManagementCurrentData> {
+  const params = buildManagementFilterParams(filters);
+  params.set('filter', filter);
+
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/read/current?${params.toString()}`,
+  );
+
+  return normalizeCurrentData(data);
+}
+
+export async function getManagementAssignments(
+  user: User,
+  filters: WorkflowManagementFilters,
+): Promise<WorkflowManagementAssignmentsData> {
+  const params = buildManagementFilterParams(filters);
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/read/assignments${suffix}`,
+  );
+
+  return normalizeAssignmentsData(data);
+}
+
+export async function getManagementCompleted(
+  user: User,
+  filters: WorkflowManagementFilters,
+) : Promise<WorkflowManagementCompletedData> {
+  const params = buildManagementFilterParams(filters);
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/read/completed${suffix}`,
+  );
+
+  return normalizeCompletedData(data);
+}

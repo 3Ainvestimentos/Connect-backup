@@ -4,26 +4,32 @@ jest.mock('@/lib/workflows/runtime/auth-helpers', () => ({
   authenticateRuntimeActor: jest.fn(),
 }));
 
+jest.mock('@/lib/workflows/read/bootstrap', () => ({
+  buildWorkflowManagementBootstrap: jest.fn(),
+}));
+
 jest.mock('@/lib/workflows/read/queries', () => ({
-  queryOwnerCurrentQueue: jest.fn(),
-  queryAssignmentsForActor: jest.fn(),
-  queryCompletedHistory: jest.fn(),
+  queryScopedCurrentQueue: jest.fn(),
+  queryScopedAssignments: jest.fn(),
+  queryScopedCompletedHistory: jest.fn(),
   queryRequesterHistory: jest.fn(),
   groupWorkflowsByMonth: jest.fn(),
 }));
 
 const { RuntimeError, RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const { authenticateRuntimeActor } = require('@/lib/workflows/runtime/auth-helpers');
+const { buildWorkflowManagementBootstrap } = require('@/lib/workflows/read/bootstrap');
 const {
   groupWorkflowsByMonth,
-  queryAssignmentsForActor,
-  queryCompletedHistory,
-  queryOwnerCurrentQueue,
+  queryScopedAssignments,
+  queryScopedCompletedHistory,
+  queryScopedCurrentQueue,
   queryRequesterHistory,
 } = require('@/lib/workflows/read/queries');
 const { GET: getCurrent } = require('@/app/api/workflows/read/current/route');
 const { GET: getAssignments } = require('@/app/api/workflows/read/assignments/route');
 const { GET: getCompleted } = require('@/app/api/workflows/read/completed/route');
+const { GET: getBootstrap } = require('@/app/api/workflows/read/management/bootstrap/route');
 const { GET: getMine } = require('@/app/api/workflows/read/mine/route');
 
 function buildActor() {
@@ -89,12 +95,15 @@ describe('workflow read API contract', () => {
   });
 
   it('retorna envelope canonico em /read/current e repassa o filtro minimo', async () => {
-    queryOwnerCurrentQueue.mockResolvedValue([buildSummary()]);
+    queryScopedCurrentQueue.mockResolvedValue([buildSummary()]);
 
     const response = await getCurrent(
-      new Request('http://localhost/api/workflows/read/current?filter=waiting_assignment', {
-        headers: { Authorization: 'Bearer token' },
-      }),
+      new Request(
+        'http://localhost/api/workflows/read/current?filter=waiting_assignment&requestId=800&requesterQuery=Requester',
+        {
+          headers: { Authorization: 'Bearer token' },
+        },
+      ),
     );
 
     expect(response.status).toBe(200);
@@ -105,15 +114,100 @@ describe('workflow read API contract', () => {
         items: [expect.objectContaining({ requestId: 800 })],
       },
     });
-    expect(queryOwnerCurrentQueue).toHaveBeenCalledWith('SMO2', 'waiting_assignment');
+    expect(queryScopedCurrentQueue).toHaveBeenCalledWith('SMO2', 'waiting_assignment', {
+      requestId: 800,
+      workflowTypeId: undefined,
+      areaId: undefined,
+      requesterQuery: 'Requester',
+      slaState: undefined,
+      periodFrom: undefined,
+      periodTo: undefined,
+    });
   });
 
-  it('rejeita filtro invalido em /read/current sem tentar autenticar', async () => {
-    const response = await getCurrent(
-      new Request('http://localhost/api/workflows/read/current?filter=invalid', {
+  it('retorna bootstrap oficial com actor, capabilities, ownership e filterOptions', async () => {
+    buildWorkflowManagementBootstrap.mockResolvedValue({
+      actor: { actorUserId: 'SMO2', actorName: 'Owner' },
+      capabilities: {
+        canViewCurrentQueue: true,
+        canViewAssignments: true,
+        canViewCompleted: true,
+      },
+      ownership: {
+        hasOwnedScopes: true,
+        workflowTypeIds: ['facilities'],
+        areaIds: ['ops'],
+      },
+      filterOptions: {
+        workflows: [
+          {
+            workflowTypeId: 'facilities',
+            workflowName: 'Facilities',
+            areaId: 'ops',
+          },
+        ],
+        areas: [{ areaId: 'ops', label: 'Operacoes' }],
+      },
+    });
+
+    const response = await getBootstrap(
+      new Request('http://localhost/api/workflows/read/management/bootstrap', {
         headers: { Authorization: 'Bearer token' },
       }),
     );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      data: {
+        actor: { actorUserId: 'SMO2', actorName: 'Owner' },
+        capabilities: {
+          canViewCurrentQueue: true,
+          canViewAssignments: true,
+          canViewCompleted: true,
+        },
+        ownership: {
+          hasOwnedScopes: true,
+          workflowTypeIds: ['facilities'],
+          areaIds: ['ops'],
+        },
+        filterOptions: {
+          workflows: [
+            {
+              workflowTypeId: 'facilities',
+              workflowName: 'Facilities',
+              areaId: 'ops',
+            },
+          ],
+          areas: [{ areaId: 'ops', label: 'Operacoes' }],
+        },
+      },
+    });
+    expect(buildWorkflowManagementBootstrap).toHaveBeenCalledWith(
+      expect.objectContaining({ actorUserId: 'SMO2' }),
+    );
+  });
+
+  it('rejeita requestId invalido em /read/current sem tentar autenticar', async () => {
+    const response = await getCurrent(
+      new Request('http://localhost/api/workflows/read/current?requestId=abc', {
+        headers: { Authorization: 'Bearer token' },
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      code: 'INVALID_FILTER',
+      message: 'requestId deve ser um inteiro positivo.',
+    });
+    expect(authenticateRuntimeActor).not.toHaveBeenCalled();
+  });
+
+  it('rejeita filtro invalido em /read/current sem tentar autenticar', async () => {
+    const response = await getCurrent(new Request('http://localhost/api/workflows/read/current?filter=invalid', {
+      headers: { Authorization: 'Bearer token' },
+    }));
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
@@ -125,7 +219,7 @@ describe('workflow read API contract', () => {
   });
 
   it('retorna secoes separadas para atribuicoes e acoes pendentes', async () => {
-    queryAssignmentsForActor.mockResolvedValue({
+    queryScopedAssignments.mockResolvedValue({
       assignedItems: [buildSummary()],
       pendingActionItems: [buildSummary({ docId: 'doc-2', requestId: 801, statusCategory: 'waiting_action' })],
     });
@@ -150,7 +244,7 @@ describe('workflow read API contract', () => {
     const items = [
       buildSummary({ statusCategory: 'finalized', closedMonthKey: '2026-03', closedAt: { seconds: 3 } }),
     ];
-    queryCompletedHistory.mockResolvedValue(items);
+    queryScopedCompletedHistory.mockResolvedValue(items);
     groupWorkflowsByMonth.mockReturnValue([{ monthKey: '2026-03', items }]);
 
     const response = await getCompleted(

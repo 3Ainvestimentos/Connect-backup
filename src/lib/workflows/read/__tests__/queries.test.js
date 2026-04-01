@@ -1,5 +1,13 @@
 /** @jest-environment node */
 
+jest.mock('@/lib/workflows/runtime/repository', () => ({
+  getWorkflowRequestByRequestId: jest.fn(),
+}));
+
+const {
+  applyOfficialReadFilters,
+  parseWorkflowManagementFilters,
+} = require('@/lib/workflows/read/filters');
 const {
   buildAssignedToMeQuery,
   buildCompletedHistoryQuery,
@@ -11,7 +19,9 @@ const {
   buildRequesterHistoryQuery,
   groupWorkflowsByMonth,
   queryAssignmentsForActor,
+  queryScopedCurrentQueue,
 } = require('@/lib/workflows/read/queries');
+const { getWorkflowRequestByRequestId } = require('@/lib/workflows/runtime/repository');
 
 class FakeQuery {
   constructor(docs = []) {
@@ -93,6 +103,10 @@ function buildWorkflowData(overrides = {}) {
 }
 
 describe('workflow read queries', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('materializa a query base de Chamados atuais com filtros e ordenacao canonicos', () => {
     const { db, queries } = createDb();
 
@@ -256,5 +270,110 @@ describe('workflow read queries', () => {
         items: [{ requestId: 1, submittedMonthKey: '2026-02' }],
       },
     ]);
+  });
+
+  it('parseia filtros oficiais, aceita alias on_time e valida intervalo de periodo', () => {
+    expect(
+      parseWorkflowManagementFilters(
+        new URLSearchParams(
+          'requestId=801&workflowTypeId=facilities&areaId=ops&requesterQuery=alice&slaState=on_time&periodFrom=2026-03-01&periodTo=2026-03-31',
+        ),
+      ),
+    ).toEqual({
+      requestId: 801,
+      workflowTypeId: 'facilities',
+      areaId: 'ops',
+      requesterQuery: 'alice',
+      slaState: 'on_track',
+      periodFrom: '2026-03-01',
+      periodTo: '2026-03-31',
+    });
+
+    expect(() =>
+      parseWorkflowManagementFilters(
+        new URLSearchParams('periodFrom=2026-04-01&periodTo=2026-03-01'),
+      ),
+    ).toThrow('periodFrom nao pode ser maior que periodTo.');
+  });
+
+  it('aplica requesterQuery, slaState e periodo conforme o campo temporal da lista', () => {
+    const now = new Date('2026-03-28T12:00:00.000Z');
+    const items = [
+      {
+        ...buildWorkflowData({
+          requestId: 801,
+          requesterName: 'Alice',
+          submittedAt: { seconds: Date.parse('2026-03-20T00:00:00.000Z') / 1000 },
+          expectedCompletionAt: { seconds: Date.parse('2026-03-30T00:00:00.000Z') / 1000 },
+        }),
+        docId: 'doc-801',
+      },
+      {
+        ...buildWorkflowData({
+          requestId: 802,
+          requesterName: 'Bob',
+          submittedAt: { seconds: Date.parse('2026-03-05T00:00:00.000Z') / 1000 },
+          expectedCompletionAt: { seconds: Date.parse('2026-03-06T00:00:00.000Z') / 1000 },
+        }),
+        docId: 'doc-802',
+      },
+    ];
+
+    expect(
+      applyOfficialReadFilters(
+        items,
+        {
+          requesterQuery: 'ali',
+          slaState: 'at_risk',
+          periodFrom: '2026-03-01',
+          periodTo: '2026-03-31',
+        },
+        { periodField: 'submittedAt' },
+        now,
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        requestId: 801,
+        slaState: 'at_risk',
+      }),
+    ]);
+  });
+
+  it('faz lookup exato por requestId em Chamados atuais e respeita o predicate de escopo', async () => {
+    getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-803',
+      data: buildWorkflowData({
+        requestId: 803,
+        ownerUserId: 'SMO2',
+        statusCategory: 'waiting_action',
+      }),
+    });
+
+    await expect(
+      queryScopedCurrentQueue(
+        'SMO2',
+        'waiting_action',
+        {
+          requestId: 803,
+        },
+        {},
+      ),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        requestId: 803,
+        statusCategory: 'waiting_action',
+      }),
+    ]);
+
+    await expect(
+      queryScopedCurrentQueue(
+        'OTHER',
+        'waiting_action',
+        {
+          requestId: 803,
+        },
+        {},
+      ),
+    ).resolves.toEqual([]);
   });
 });

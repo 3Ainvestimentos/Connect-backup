@@ -9,13 +9,16 @@ export const CURRENT_QUEUE_FILTERS = [
   'in_progress',
   'waiting_action',
 ] as const;
+export const WORKFLOW_READ_SLA_STATES = ['on_track', 'at_risk', 'overdue'] as const;
 
 export type WorkflowReadStatusCategory = StatusCategory;
 export type CurrentQueueFilter = (typeof CURRENT_QUEUE_FILTERS)[number];
+export type WorkflowReadSlaState = (typeof WORKFLOW_READ_SLA_STATES)[number];
 export type WorkflowReadMonthField = 'closedMonthKey' | 'submittedMonthKey';
 
 export type WorkflowReadSummary = {
   docId: string;
+  slaState?: WorkflowReadSlaState;
 } & Pick<
   WorkflowRequestV2,
   | 'requestId'
@@ -68,6 +71,56 @@ export type WorkflowAssignmentsReadData = {
 export type WorkflowGroupedReadData = {
   items: WorkflowReadSummary[];
   groups: WorkflowReadMonthGroup[];
+};
+
+export type WorkflowManagementFilters = {
+  requestId?: number;
+  workflowTypeId?: string;
+  areaId?: string;
+  requesterQuery?: string;
+  slaState?: WorkflowReadSlaState;
+  periodFrom?: string;
+  periodTo?: string;
+};
+
+export type WorkflowManagementActor = {
+  actorUserId: string;
+  actorName: string;
+};
+
+export type WorkflowManagementCapabilities = {
+  canViewCurrentQueue: boolean;
+  canViewAssignments: boolean;
+  canViewCompleted: boolean;
+};
+
+export type WorkflowManagementOwnership = {
+  hasOwnedScopes: boolean;
+  workflowTypeIds: string[];
+  areaIds: string[];
+};
+
+export type WorkflowManagementFilterWorkflowOption = {
+  workflowTypeId: string;
+  workflowName: string;
+  areaId: string;
+};
+
+export type WorkflowManagementFilterAreaOption = {
+  areaId: string;
+  label: string;
+};
+
+export type WorkflowManagementFilterOptions = {
+  workflows: WorkflowManagementFilterWorkflowOption[];
+  areas: WorkflowManagementFilterAreaOption[];
+};
+
+export type WorkflowManagementBootstrapData = {
+  actor: WorkflowManagementActor;
+  capabilities: WorkflowManagementCapabilities;
+  ownership: WorkflowManagementOwnership;
+  filterOptions: WorkflowManagementFilterOptions;
 };
 
 export type ReadSuccess<T> = {

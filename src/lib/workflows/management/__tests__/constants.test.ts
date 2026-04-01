@@ -1,6 +1,8 @@
 import {
+  MANAGEMENT_DEFAULT_ASSIGNMENTS_SUBTAB,
+  MANAGEMENT_DEFAULT_CURRENT_FILTER,
   MANAGEMENT_DEFAULT_TAB,
-  MANAGEMENT_SHELL_TABS,
+  MANAGEMENT_TAB_DEFINITIONS,
   WORKFLOW_MANAGEMENT_ROUTE,
 } from '../constants';
 
@@ -10,8 +12,10 @@ describe('workflow management constants', () => {
   });
 
   it('keeps the tab ids valid and in the expected order', () => {
-    expect(MANAGEMENT_DEFAULT_TAB).toBe('current');
-    expect(MANAGEMENT_SHELL_TABS.map((tab) => tab.tab)).toEqual([
+    expect(MANAGEMENT_DEFAULT_TAB).toBe('assignments');
+    expect(MANAGEMENT_DEFAULT_ASSIGNMENTS_SUBTAB).toBe('assigned');
+    expect(MANAGEMENT_DEFAULT_CURRENT_FILTER).toBe('all');
+    expect(MANAGEMENT_TAB_DEFINITIONS.map((tab) => tab.tab)).toEqual([
       'current',
       'assignments',
       'completed',

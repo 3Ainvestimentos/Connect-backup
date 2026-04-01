@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server';
-import { queryAssignmentsForActor } from '@/lib/workflows/read/queries';
+import { parseWorkflowManagementFilters, ReadValidationError } from '@/lib/workflows/read/filters';
+import { queryScopedAssignments } from '@/lib/workflows/read/queries';
 import type { ReadError, ReadSuccess, WorkflowAssignmentsReadData } from '@/lib/workflows/read/types';
 import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
 export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const filters = parseWorkflowManagementFilters(searchParams);
     const { actor } = await authenticateRuntimeActor(request);
-    const data = await queryAssignmentsForActor(actor.actorUserId);
+    const data = await queryScopedAssignments(actor.actorUserId, filters);
 
     const response: ReadSuccess<WorkflowAssignmentsReadData> = {
       ok: true,
@@ -16,6 +19,15 @@ export async function GET(request: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
+    if (error instanceof ReadValidationError) {
+      const response: ReadError = {
+        ok: false,
+        code: error.code,
+        message: error.message,
+      };
+      return NextResponse.json(response, { status: error.httpStatus });
+    }
+
     if (error instanceof RuntimeError) {
       const response: ReadError = {
         ok: false,
