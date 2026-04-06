@@ -76,6 +76,7 @@ export interface VersionFieldDef {
 export interface StepActionDef {
   type: 'approval' | 'acknowledgement' | 'execution';
   label: string;
+  /** Operational recipient identities (`id3a`), never email or Firebase `authUid`. */
   approverIds?: string[];
   commentRequired?: boolean;
   commentPlaceholder?: string;

@@ -4,6 +4,7 @@ import { buildSeedPayloadsForLot } from '@/lib/workflows/bootstrap/fase2c/shared
 import { LOTE_01_GOVERNANCA_FINANCEIRO_MANIFEST } from '@/lib/workflows/bootstrap/fase2c/manifests/lote-01-governanca-financeiro';
 import { LOTE_02_MARKETING_MANIFEST } from '@/lib/workflows/bootstrap/fase2c/manifests/lote-02-marketing';
 import { LOTE_03_TI_MANIFEST } from '@/lib/workflows/bootstrap/fase2c/manifests/lote-03-ti';
+import { LOTE_04_GENTE_SERVICOS_ATENDIMENTO_MANIFEST } from '@/lib/workflows/bootstrap/fase2c/manifests/lote-04-gente-servicos-atendimento';
 import { LOTE_05_GENTE_CICLO_VIDA_MOVIMENTACOES_MANIFEST } from '@/lib/workflows/bootstrap/fase2c/manifests/lote-05-gente-ciclo-vida-movimentacoes';
 
 const collaborators = [
@@ -87,6 +88,46 @@ describe('buildSeedPayloadsForLot', () => {
     expect(steps?.map((step) => step.kind)).toEqual(['start', 'work', 'work', 'work', 'final']);
   });
 
+  it('preserva action e mantem active=false no lote 4', () => {
+    const payloads = buildSeedPayloadsForLot(
+      LOTE_04_GENTE_SERVICOS_ATENDIMENTO_MANIFEST,
+      collaborators,
+      fakeNow,
+    );
+    const ferias = payloads.find(
+      (payload) =>
+        payload.workflowTypeId ===
+        'gente_comunicacao_solicitacao_ferias_ausencia_compensacao_horas',
+    );
+
+    const steps = ferias?.versionPayload.stepOrder.map(
+      (stepId) => ferias.versionPayload.stepsById[stepId],
+    );
+    const actionSteps = steps?.filter((step) => step.action);
+
+    expect(ferias?.typePayload.active).toBe(false);
+    expect(ferias?.versionPayload.fields.map((field) => field.id)).toEqual([
+      'nome_sobrenome',
+      'email',
+      'setor_area',
+      'tipo_solicitacao',
+      'data_inicio',
+      'data_fim',
+      'descricao_detalhada',
+    ]);
+    expect(steps?.map((step) => step.statusKey)).toEqual([
+      'solicitacao_aberta',
+      'em_analise',
+      'em_execucao',
+      'finalizado',
+    ]);
+    expect(actionSteps).toHaveLength(1);
+    expect(actionSteps?.[0].action).toMatchObject({
+      type: 'acknowledgement',
+      approverIds: ['DFA'],
+    });
+  });
+
   it('persiste action metadata e mantem lotes bloqueados em active=false no lote 5', () => {
     const payloads = buildSeedPayloadsForLot(
       LOTE_05_GENTE_CICLO_VIDA_MOVIMENTACOES_MANIFEST,
@@ -122,4 +163,3 @@ describe('buildSeedPayloadsForLot', () => {
     expect(analise?.reportItem.statusesSummary.filter((item) => item.hasAction)).toHaveLength(6);
   });
 });
-

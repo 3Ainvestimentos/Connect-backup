@@ -128,4 +128,33 @@ describe('fase2c execution', () => {
       version: 1,
     });
   });
+
+  it('executa workflowTypes_v2 e versions/1 mesmo com counter ausente', async () => {
+    const logger = jest.fn();
+
+    counterGetMock.mockResolvedValue({
+      exists: false,
+      data: () => undefined,
+    });
+
+    await runSeedForLot({
+      scriptName: 'seed-fase2c-test',
+      argv: ['node', 'script', '--execute'],
+      logger,
+      errorLogger: jest.fn(),
+      buildPayloads: async () => [buildPayload('workflow_execute_absent')],
+    });
+
+    expect(seedWorkflowType).toHaveBeenCalledWith('workflow_execute_absent', {
+      workflowTypeId: 'workflow_execute_absent',
+      ownerEmail: 'owner@3ainvestimentos.com.br',
+    });
+    expect(seedWorkflowVersion).toHaveBeenCalledWith('workflow_execute_absent', 1, {
+      workflowTypeId: 'workflow_execute_absent',
+      version: 1,
+    });
+    expect(logger).toHaveBeenCalledWith(
+      '[seed-fase2c-test] Seed concluido em workflowTypes_v2 e versions/1 sem escrita em counters/workflowCounter_v2. Counter status observado: absent.',
+    );
+  });
 });
