@@ -16,6 +16,8 @@ export type Fase2cLotId =
 
 export type Fase2cLotStatus = 'planned' | 'seeded' | 'validated' | 'enabled';
 
+export type Fase2cStepStrategy = 'preserve_legacy' | 'canonical_3_steps';
+
 export type LegacyWorkflowField = {
   label: string;
   placeholder?: string;
@@ -58,6 +60,7 @@ export type Fase2cManifestEntry = {
   workflowTypeId: string;
   lotId: Fase2cLotId;
   lotStatus: Fase2cLotStatus;
+  stepStrategy: Fase2cStepStrategy;
   ownerEmailOverride?: string;
   ownerUserIdOverride?: string;
   fieldIdOverrides?: Record<string, string[]>;
@@ -101,6 +104,7 @@ export type Fase2cDryRunItem = {
   ownerEmailResolved: string;
   ownerUserId: string;
   lotStatus: Fase2cLotStatus;
+  stepStrategy: Fase2cStepStrategy;
   workflowTypeDocPath: string;
   versionDocPath: string;
   counterStatus: 'present_valid' | 'present_invalid' | 'absent';
@@ -115,4 +119,3 @@ export type BuildSeedPayload = {
   versionPayload: WorkflowVersionV2;
   reportItem: Omit<Fase2cDryRunItem, 'counterStatus'>;
 };
-

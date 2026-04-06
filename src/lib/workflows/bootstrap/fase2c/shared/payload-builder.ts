@@ -97,6 +97,7 @@ export function buildSeedPayloadsForLot(
         ownerEmailResolved: owner.ownerEmailResolved,
         ownerUserId: owner.ownerUserId,
         lotStatus: entry.lotStatus,
+        stepStrategy: entry.stepStrategy,
         workflowTypeDocPath: `workflowTypes_v2/${entry.workflowTypeId}`,
         versionDocPath: `workflowTypes_v2/${entry.workflowTypeId}/versions/1`,
         fieldsSummary: normalizedFields.fields.map((field) => ({
@@ -110,4 +111,3 @@ export function buildSeedPayloadsForLot(
     };
   });
 }
-

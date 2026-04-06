@@ -37,8 +37,10 @@ describe('buildSeedPayloadsForLot', () => {
     expect(payloads).toHaveLength(3);
     expect(pagamento?.versionPayload.fields).toEqual([]);
     expect(pagamento?.typePayload.active).toBe(true);
+    expect(pagamento?.reportItem.stepStrategy).toBe('preserve_legacy');
     expect(espelhamento?.typePayload.ownerEmail).toBe('ti@3ainvestimentos.com.br');
     expect(espelhamento?.typePayload.ownerUserId).toBe('DFZ2');
+    expect(espelhamento?.reportItem.stepStrategy).toBe('canonical_3_steps');
     expect(espelhamento?.versionPayload.fields.map((field) => field.id)).toEqual([
       'nome_sobrenome',
       'tipo_solicitacao',
@@ -70,22 +72,31 @@ describe('buildSeedPayloadsForLot', () => {
     );
   });
 
-  it('deduplica status id do lote 3 sem perder a sequencia operacional', () => {
+  it('colapsa workflows canonicos do lote 3 para a trilha fixa de 3 etapas', () => {
     const payloads = buildSeedPayloadsForLot(LOTE_03_TI_MANIFEST, collaborators, fakeNow);
     const compra = payloads.find(
       (payload) => payload.workflowTypeId === 'ti_solicitacao_compra_equipamento',
     );
 
-    const steps = compra?.versionPayload.stepOrder.map((stepId) => compra.versionPayload.stepsById[stepId]);
+    const steps = compra?.versionPayload.stepOrder.map(
+      (stepId) => compra.versionPayload.stepsById[stepId],
+    );
 
     expect(steps?.map((step) => step.statusKey)).toEqual([
       'solicitacao_aberta',
-      'em_analise',
-      'em_aprovacao',
-      'em_execucao',
+      'em_andamento',
       'finalizado',
     ]);
-    expect(steps?.map((step) => step.kind)).toEqual(['start', 'work', 'work', 'work', 'final']);
+    expect(steps?.map((step) => step.stepName)).toEqual([
+      'Solicitação Aberta',
+      'Em andamento',
+      'Finalizado',
+    ]);
+    expect(steps?.map((step) => step.kind)).toEqual(['start', 'work', 'final']);
+    expect(compra?.reportItem.stepStrategy).toBe('canonical_3_steps');
+    expect(compra?.reportItem.sanitizations).toContain(
+      'status.strategy applied: canonical_3_steps (5 -> 3)',
+    );
   });
 
   it('preserva action e mantem active=false no lote 4', () => {
@@ -126,6 +137,7 @@ describe('buildSeedPayloadsForLot', () => {
       type: 'acknowledgement',
       approverIds: ['DFA'],
     });
+    expect(ferias?.reportItem.stepStrategy).toBe('preserve_legacy');
   });
 
   it('persiste action metadata e mantem lotes bloqueados em active=false no lote 5', () => {
@@ -160,6 +172,7 @@ describe('buildSeedPayloadsForLot', () => {
       approverIds: ['RHP2'],
       commentRequired: true,
     });
+    expect(analise?.reportItem.stepStrategy).toBe('preserve_legacy');
     expect(analise?.reportItem.statusesSummary.filter((item) => item.hasAction)).toHaveLength(6);
   });
 });

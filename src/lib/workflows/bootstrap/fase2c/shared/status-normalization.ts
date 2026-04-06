@@ -6,6 +6,16 @@ import type {
   NormalizedStatusesResult,
 } from './types';
 
+const CANONICAL_STEPS: Array<{
+  stepName: string;
+  statusKey: string;
+  kind: StepDef['kind'];
+}> = [
+  { stepName: 'Solicitação Aberta', statusKey: 'solicitacao_aberta', kind: 'start' },
+  { stepName: 'Em andamento', statusKey: 'em_andamento', kind: 'work' },
+  { stepName: 'Finalizado', statusKey: 'finalizado', kind: 'final' },
+];
+
 function sanitizeAction(action: StepActionDef): StepActionDef {
   return {
     type: action.type,
@@ -15,6 +25,18 @@ function sanitizeAction(action: StepActionDef): StepActionDef {
     commentPlaceholder: action.commentPlaceholder?.trim(),
     attachmentPlaceholder: action.attachmentPlaceholder?.trim(),
   };
+}
+
+function generateUniqueStepId(seenStepIds: Set<string>): string {
+  let stepId = generateStepId();
+
+  while (seenStepIds.has(stepId)) {
+    stepId = generateStepId();
+  }
+
+  seenStepIds.add(stepId);
+
+  return stepId;
 }
 
 function resolveOverrideId(
@@ -77,14 +99,10 @@ function inferKind(index: number, total: number): StepDef['kind'] {
   return 'work';
 }
 
-export function normalizeStatuses(
+function normalizePreserveLegacyStatuses(
   entry: Fase2cManifestEntry,
   legacyStatuses: LegacyWorkflowStatus[],
 ): NormalizedStatusesResult {
-  if (!legacyStatuses.length) {
-    throw new Error(`Workflow "${entry.workflowTypeId}" nao possui statuses no snapshot legado.`);
-  }
-
   const sanitizations: string[] = [];
   const stepsById: Record<string, StepDef> = {};
   const stepOrder: string[] = [];
@@ -119,12 +137,7 @@ export function normalizeStatuses(
       sanitizations.push(`status.label trimmed: "${originalId}"`);
     }
 
-    let stepId = generateStepId();
-    while (seenStepIds.has(stepId)) {
-      stepId = generateStepId();
-    }
-    seenStepIds.add(stepId);
-
+    const stepId = generateUniqueStepId(seenStepIds);
     const kind = inferKind(index, legacyStatuses.length);
     const action = status.action ? sanitizeAction(status.action) : undefined;
 
@@ -159,3 +172,79 @@ export function normalizeStatuses(
   };
 }
 
+function assertCanonicalStrategyEligible(
+  entry: Fase2cManifestEntry,
+  legacyStatuses: LegacyWorkflowStatus[],
+): void {
+  if (Object.keys(entry.statusIdOverrides ?? {}).length > 0) {
+    throw new Error(
+      `Workflow "${entry.workflowTypeId}" com stepStrategy "canonical_3_steps" nao pode declarar statusIdOverrides.`,
+    );
+  }
+
+  const statusWithAction = legacyStatuses.find((status) => status.action);
+
+  if (statusWithAction) {
+    throw new Error(
+      `Workflow "${entry.workflowTypeId}" com stepStrategy "canonical_3_steps" nao pode preservar status.action em "${statusWithAction.id.trim()}".`,
+    );
+  }
+}
+
+function normalizeCanonical3StepStatuses(
+  entry: Fase2cManifestEntry,
+  legacyStatuses: LegacyWorkflowStatus[],
+): NormalizedStatusesResult {
+  assertCanonicalStrategyEligible(entry, legacyStatuses);
+
+  const stepsById: Record<string, StepDef> = {};
+  const stepOrder: string[] = [];
+  const seenStepIds = new Set<string>();
+
+  for (const canonicalStep of CANONICAL_STEPS) {
+    const stepId = generateUniqueStepId(seenStepIds);
+
+    stepsById[stepId] = {
+      stepId,
+      stepName: canonicalStep.stepName,
+      statusKey: canonicalStep.statusKey,
+      kind: canonicalStep.kind,
+    };
+
+    stepOrder.push(stepId);
+  }
+
+  return {
+    initialStepId: stepOrder[0],
+    stepOrder,
+    stepsById,
+    statusesSummary: CANONICAL_STEPS.map((step) => ({
+      statusKey: step.statusKey,
+      kind: step.kind,
+      hasAction: false,
+    })),
+    sanitizations: [
+      `status.strategy applied: canonical_3_steps (${legacyStatuses.length} -> ${CANONICAL_STEPS.length})`,
+    ],
+  };
+}
+
+export function normalizeStatuses(
+  entry: Fase2cManifestEntry,
+  legacyStatuses: LegacyWorkflowStatus[],
+): NormalizedStatusesResult {
+  if (!legacyStatuses.length) {
+    throw new Error(`Workflow "${entry.workflowTypeId}" nao possui statuses no snapshot legado.`);
+  }
+
+  switch (entry.stepStrategy) {
+    case 'preserve_legacy':
+      return normalizePreserveLegacyStatuses(entry, legacyStatuses);
+    case 'canonical_3_steps':
+      return normalizeCanonical3StepStatuses(entry, legacyStatuses);
+    default:
+      throw new Error(
+        `Workflow "${entry.workflowTypeId}" possui stepStrategy desconhecido: "${String(entry.stepStrategy)}".`,
+      );
+  }
+}

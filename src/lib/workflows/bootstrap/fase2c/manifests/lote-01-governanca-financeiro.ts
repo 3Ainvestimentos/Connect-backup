@@ -6,6 +6,7 @@ export const LOTE_01_GOVERNANCA_FINANCEIRO_MANIFEST: Fase2cManifestEntry[] = [
     workflowTypeId: 'governanca_espelhamento_caso_unico',
     lotId: 'lote_01_governanca_financeiro',
     lotStatus: 'enabled',
+    stepStrategy: 'canonical_3_steps',
     fieldIdOverrides: {
       campo_3: ['email_lider_visualizado'],
       campo_4: ['email_lider_visualiza'],
@@ -18,6 +19,7 @@ export const LOTE_01_GOVERNANCA_FINANCEIRO_MANIFEST: Fase2cManifestEntry[] = [
     workflowTypeId: 'governanca_espelhamento_em_lote',
     lotId: 'lote_01_governanca_financeiro',
     lotStatus: 'enabled',
+    stepStrategy: 'canonical_3_steps',
     fieldIdOverrides: {
       email_lider: ['email_lider_visualizado', 'email_lider_visualiza'],
     },
@@ -27,6 +29,6 @@ export const LOTE_01_GOVERNANCA_FINANCEIRO_MANIFEST: Fase2cManifestEntry[] = [
     workflowTypeId: 'financeiro_solicitacao_pagamentos',
     lotId: 'lote_01_governanca_financeiro',
     lotStatus: 'enabled',
+    stepStrategy: 'preserve_legacy',
   },
 ];
-

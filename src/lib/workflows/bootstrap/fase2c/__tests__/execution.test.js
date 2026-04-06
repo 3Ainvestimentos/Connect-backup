@@ -56,6 +56,7 @@ function buildPayload(workflowTypeId = 'workflow_teste') {
       ownerEmailResolved: 'owner@3ainvestimentos.com.br',
       ownerUserId: 'OWN1',
       lotStatus: 'enabled',
+      stepStrategy: 'canonical_3_steps',
       workflowTypeDocPath: `workflowTypes_v2/${workflowTypeId}`,
       versionDocPath: `workflowTypes_v2/${workflowTypeId}/versions/1`,
       fieldsSummary: [],
@@ -92,6 +93,7 @@ describe('fase2c execution', () => {
     expect(seedWorkflowVersion).not.toHaveBeenCalled();
     expect(logger).toHaveBeenCalledWith('[seed-fase2c-test] Dry run. Nenhuma escrita foi executada.');
     expect(logger).toHaveBeenCalledWith(expect.stringContaining('"counterStatus": "present_valid"'));
+    expect(logger).toHaveBeenCalledWith(expect.stringContaining('"stepStrategy": "canonical_3_steps"'));
   });
 
   it('aborta antes da primeira escrita quando o destino ja existe', async () => {

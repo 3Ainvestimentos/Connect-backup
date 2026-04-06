@@ -10,6 +10,7 @@ const baseEntry: Fase2cManifestEntry = {
   workflowTypeId: 'workflow_teste',
   lotId: 'lote_01_governanca_financeiro',
   lotStatus: 'enabled',
+  stepStrategy: 'preserve_legacy',
 };
 
 describe('fase2c normalization and owner resolution', () => {
@@ -43,6 +44,76 @@ describe('fase2c normalization and owner resolution', () => {
     ).toThrow('Duplicidade de status.id sem cobertura de override');
   });
 
+  it('colapsa o caminho canonico para 3 etapas fixas', () => {
+    const normalized = normalizeStatuses(
+      {
+        ...baseEntry,
+        workflowTypeId: 'workflow_canonico',
+        stepStrategy: 'canonical_3_steps',
+      },
+      [
+        { id: 'solicitacao_aberta', label: 'Solicitacao aberta' },
+        { id: 'em_triagem', label: 'Em triagem' },
+        { id: 'em_execucao', label: 'Em execucao' },
+        { id: 'finalizado', label: 'Finalizado' },
+      ],
+    );
+
+    const steps = normalized.stepOrder.map((stepId) => normalized.stepsById[stepId]);
+
+    expect(steps).toHaveLength(3);
+    expect(steps.map((step) => step.statusKey)).toEqual([
+      'solicitacao_aberta',
+      'em_andamento',
+      'finalizado',
+    ]);
+    expect(steps.map((step) => step.kind)).toEqual(['start', 'work', 'final']);
+    expect(normalized.sanitizations).toContain(
+      'status.strategy applied: canonical_3_steps (4 -> 3)',
+    );
+  });
+
+  it('bloqueia caminho canonico quando ha action no legado', () => {
+    expect(() =>
+      normalizeStatuses(
+        {
+          ...baseEntry,
+          workflowTypeId: 'workflow_canonico_com_action',
+          stepStrategy: 'canonical_3_steps',
+        },
+        [
+          { id: 'solicitacao_aberta', label: 'Solicitacao aberta' },
+          {
+            id: 'em_analise',
+            label: 'Em analise',
+            action: { type: 'acknowledgement', label: 'Responder' },
+          },
+          { id: 'finalizado', label: 'Finalizado' },
+        ],
+      ),
+    ).toThrow('nao pode preservar status.action');
+  });
+
+  it('bloqueia caminho canonico quando ha statusIdOverrides', () => {
+    expect(() =>
+      normalizeStatuses(
+        {
+          ...baseEntry,
+          workflowTypeId: 'workflow_canonico_com_override',
+          stepStrategy: 'canonical_3_steps',
+          statusIdOverrides: {
+            em_analise: ['em_analise_1', 'em_analise_2'],
+          },
+        },
+        [
+          { id: 'solicitacao_aberta', label: 'Solicitacao aberta' },
+          { id: 'em_analise', label: 'Em analise' },
+          { id: 'finalizado', label: 'Finalizado' },
+        ],
+      ),
+    ).toThrow('nao pode declarar statusIdOverrides');
+  });
+
   it('exige owner univoco quando nao ha ownerUserIdOverride', () => {
     expect(() =>
       resolveOwner(
@@ -74,4 +145,3 @@ describe('fase2c normalization and owner resolution', () => {
     });
   });
 });
-
