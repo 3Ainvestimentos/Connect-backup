@@ -339,10 +339,12 @@ Emails que exigem atencao operacional no dry-run:
 
 Regra operacional para esses casos:
 
-- `--dry-run` deve expor falha explicita de owner resolution para o workflow afetado;
+- os emails acima estao confirmados como fonte correta de ownerEmail na `v1`;
+- o `--dry-run` deve apenas verificar se cada email confirmado resolve para exatamente `1` colaborador com `id3a` valido;
 - nenhum fallback automatico por area, nome parecido ou primeiro match e permitido;
-- o lote so pode seguir para `--execute` depois que o manifesto trouxer `ownerEmailOverride` ou `ownerUserIdOverride` explicitamente aprovados;
-- a decisao concreta do override pertence ao lote e deve ficar auditavel no manifesto.
+- se a resolucao nao for univoca, o lote so pode seguir para `--execute` depois que o manifesto trouxer `ownerUserIdOverride` explicitamente aprovado;
+- `ownerEmailOverride` deixa de ser a estrategia esperada para esses quatro casos, salvo descoberta excepcional posterior;
+- qualquer `ownerUserIdOverride` aplicado deve continuar auditavel no manifesto do lote.
 
 ### 4.7. Politica de contador v2
 
