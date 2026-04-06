@@ -150,6 +150,22 @@ Escopo esperado:
 - validacao funcional por grupo/area;
 - ativacao progressiva no frontend oficial para lotes suportados pelo runtime atual.
 
+Status atual:
+
+- **concluida**
+
+Fechamentos consolidados:
+
+- os `30` workflows restantes foram materializados em `workflowTypes_v2` por `5` lotes;
+- workflows diretos aprovados passaram a usar o canon de `3` etapas, alinhado a Facilities:
+  - `Solicitação Aberta`
+  - `Em andamento`
+  - `Finalizado`
+- a classificacao ficou explicita por workflow com `stepStrategy`;
+- workflows com `action` ou checkpoints semanticos relevantes permaneceram em `preserve_legacy`;
+- lotes `1`, `2` e `3` foram publicados com `active: true`;
+- lotes `4` e `5` foram publicados com `active: false`, aguardando a `2D`.
+
 Nota de dependência:
 
 - lotes sem `statuses[*].action` podem avancar ate habilitacao plena dentro da propria 2C;
@@ -173,6 +189,10 @@ Escopo esperado:
 - atualizacao consistente do read model para `waiting_action`;
 - integracao com filas operacionais e detalhe do request;
 - readiness para promover lotes `4` e `5` da 2C para `enabled`.
+
+Status atual:
+
+- **proxima macroetapa recomendada**
 
 ### 2.5. Fase 2E - Configuracao, versionamento e administracao
 

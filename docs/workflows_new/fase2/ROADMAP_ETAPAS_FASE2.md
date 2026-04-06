@@ -68,6 +68,18 @@ Expandir o novo motor para os workflows ainda fora do modelo novo, em lotes cont
 - workflows habilitados no frontend oficial quando suportados pelo runtime atual;
 - estrategia de rollout por grupo.
 
+**Status atual**
+
+- concluida
+
+**Fechamentos consolidados**
+
+- os `30` workflows restantes foram seedados em `5` lotes;
+- workflows diretos aprovados passaram a usar `canonical_3_steps`;
+- workflows com `action` ou checkpoints semanticos relevantes permaneceram em `preserve_legacy`;
+- lotes `1`, `2` e `3` ficaram com `active: true`;
+- lotes `4` e `5` ficaram com `active: false`, aguardando a `2D`.
+
 **Dependencia explicita**
 
 - workflows com `statuses[*].action` podem ser seedados e validados na `2C`, mas o enablement pleno depende da `2D`.
@@ -86,6 +98,10 @@ Implementar a capacidade de runtime necessaria para workflows com etapas action-
 - suporte a `approval`, `acknowledgement` e `execution`;
 - atualizacao correta do read model em `waiting_action`;
 - desbloqueio operacional dos lotes action-driven da `2C`.
+
+**Status atual**
+
+- proxima macroetapa recomendada
 
 ---
 
