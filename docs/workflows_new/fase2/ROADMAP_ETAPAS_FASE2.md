@@ -65,12 +65,31 @@ Expandir o novo motor para os workflows ainda fora do modelo novo, em lotes cont
 - inventario consolidado dos workflows restantes;
 - lotes de migracao definidos;
 - versoes iniciais publicadas;
-- workflows habilitados no frontend oficial;
+- workflows habilitados no frontend oficial quando suportados pelo runtime atual;
 - estrategia de rollout por grupo.
+
+**Dependencia explicita**
+
+- workflows com `statuses[*].action` podem ser seedados e validados na `2C`, mas o enablement pleno depende da `2D`.
 
 ---
 
-### 2D. Tela de configuracao, novas versoes e publicacao
+### 2D. Motor operacional de `requestAction` / `respondAction`
+
+**Objetivo**
+
+Implementar a capacidade de runtime necessaria para workflows com etapas action-driven.
+
+**Saidas esperadas**
+
+- casos de uso de `requestAction` e `respondAction`;
+- suporte a `approval`, `acknowledgement` e `execution`;
+- atualizacao correta do read model em `waiting_action`;
+- desbloqueio operacional dos lotes action-driven da `2C`.
+
+---
+
+### 2E. Tela de configuracao, novas versoes e publicacao
 
 **Objetivo**
 
@@ -89,9 +108,10 @@ Criar a superficie administrativa para configuracao e evolucao dos workflows.
 ## 3. Ordem Recomendada
 
 1. `2A` Front oficial da tela integrada
-2. `2B` Nova tela oficial de abertura de chamado
-3. `2C` Cadastro e habilitacao dos workflows restantes
-4. `2D` Tela de configuracao, novas versoes e publicacao
+2. `2C` Cadastro e habilitacao dos workflows restantes
+3. `2D` Motor operacional de `requestAction` / `respondAction`
+4. `2B` Nova tela oficial de abertura de chamado
+5. `2E` Tela de configuracao, novas versoes e publicacao
 
 ---
 

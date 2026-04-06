@@ -4,11 +4,12 @@
 
 Este documento define o roadmap macro da **Fase 2** do novo motor de workflows, sucedendo a conclusao da Fase 1 em Facilities e Suprimentos.
 
-A Fase 2 tem quatro objetivos complementares:
+A Fase 2 tem cinco objetivos complementares:
 
 - construir o **frontend oficial** da experiencia integrada de chamados;
 - construir a **nova superficie oficial de abertura de chamado** sobre o backend novo;
 - expandir o motor para os **demais workflows** ainda nao cadastrados no modelo novo;
+- construir o **motor operacional de `requestAction` / `respondAction`** para workflows action-driven;
 - criar a **superficie administrativa** para configuracao, versionamento e publicacao dos workflows.
 
 Ao contrario da Fase 1, que foi deliberadamente um piloto validatorio, a Fase 2 passa a tratar o novo motor como **produto em consolidacao**.
@@ -22,18 +23,20 @@ Isso significa que as entregas desta fase devem:
 
 ### 1.1. Principio de planejamento da Fase 2
 
-Para manter o escopo executavel, a Fase 2 fica dividida em quatro macroetapas:
+Para manter o escopo executavel, a Fase 2 fica dividida em cinco macroetapas:
 
 - **Fase 2A**: frontend oficial da tela integrada;
 - **Fase 2B**: nova tela oficial de abertura de chamado;
 - **Fase 2C**: cadastro e habilitacao dos workflows restantes;
-- **Fase 2D**: tela de configuracao dos chamados e versionamento.
+- **Fase 2D**: motor operacional de `requestAction` / `respondAction`;
+- **Fase 2E**: tela de configuracao dos chamados e versionamento.
 
 Essa divisao separa quatro naturezas distintas de trabalho:
 
 - experiencia final de uso;
 - experiencia oficial de abertura e solicitacao;
 - expansao de cobertura funcional;
+- suporte operacional aos workflows action-driven;
 - operacao administrativa da plataforma.
 
 ### 1.2. Estado herdado da Fase 1
@@ -145,9 +148,33 @@ Escopo esperado:
 - definicao de lotes de migracao;
 - materializacao das versoes iniciais;
 - validacao funcional por grupo/area;
-- ativacao progressiva no frontend oficial.
+- ativacao progressiva no frontend oficial para lotes suportados pelo runtime atual.
 
-### 2.4. Fase 2D - Configuracao, versionamento e administracao
+Nota de dependência:
+
+- lotes sem `statuses[*].action` podem avancar ate habilitacao plena dentro da propria 2C;
+- lotes action-driven podem ser materializados e validados na 2C, mas sua habilitacao plena depende da macroetapa `2D`.
+
+### 2.4. Fase 2D - Motor operacional de `requestAction` / `respondAction`
+
+Esta macroetapa entrega o suporte de runtime para workflows com etapas action-driven, preservando o contrato previsto desde a Fase 1 e desbloqueando os lotes mais complexos da 2C.
+
+Objetivos principais:
+
+- implementar `requestAction` e `respondAction` no runtime novo;
+- suportar etapas com `approval`, `acknowledgement` e `execution`;
+- refletir corretamente `waiting_action`, `pendingActionRecipientIds` e `pendingActionTypes` no write-side e no read-side;
+- liberar enablement pleno dos workflows dos lotes action-driven.
+
+Escopo esperado:
+
+- casos de uso operacionais de acao por etapa;
+- persistencia e transicao de estados de pending action;
+- atualizacao consistente do read model para `waiting_action`;
+- integracao com filas operacionais e detalhe do request;
+- readiness para promover lotes `4` e `5` da 2C para `enabled`.
+
+### 2.5. Fase 2E - Configuracao, versionamento e administracao
 
 Esta macroetapa entrega a superficie administrativa do sistema de workflows.
 
@@ -170,9 +197,9 @@ Escopo esperado:
 
 ## 3. Diretrizes da Fase 2
 
-### 3.1. Nao misturar as quatro frentes no mesmo build
+### 3.1. Nao misturar as cinco frentes no mesmo build
 
-As macroetapas 2A, 2B, 2C e 2D devem poder avancar em paralelo no planejamento, mas nao devem ser tratadas como um unico build amorfo.
+As macroetapas 2A, 2B, 2C, 2D e 2E devem poder avancar em paralelo no planejamento, mas nao devem ser tratadas como um unico build amorfo.
 
 Cada macroetapa precisa ter:
 
@@ -227,9 +254,20 @@ A macroetapa 2C deve definir:
 - estrategia de smoke test por lote;
 - gates de publicacao por area.
 
-### 3.6. A tela de configuracao e uma superficie de produto, nao um utilitario tecnico
+### 3.6. O motor de `requestAction` precisa nascer como capacidade de runtime, nao como workaround de frontend
 
-A macroetapa 2D nao deve nascer como editor improvisado de JSON.
+A macroetapa 2D deve tratar `action` como parte do motor transacional e do read model, e nao como efeito colateral da UI.
+
+Direcao esperada:
+
+- casos de uso explicitos no runtime;
+- controle de autorizacao por identidades operacionais (`id3a`);
+- transicoes semanticas claras para `waiting_action`;
+- compatibilidade com os contratos de `action` ja previstos nos artefatos tecnicos.
+
+### 3.7. A tela de configuracao e uma superficie de produto, nao um utilitario tecnico
+
+A macroetapa 2E nao deve nascer como editor improvisado de JSON.
 
 Ela deve ser pensada como superficie de administracao com:
 
