@@ -73,11 +73,21 @@ export interface VersionFieldDef {
   options?: string[];
 }
 
+export interface StepActionDef {
+  type: 'approval' | 'acknowledgement' | 'execution';
+  label: string;
+  approverIds?: string[];
+  commentRequired?: boolean;
+  commentPlaceholder?: string;
+  attachmentPlaceholder?: string;
+}
+
 export interface StepDef {
   stepId: string;
   stepName: string;
   statusKey: string;
   kind: StepKind;
+  action?: StepActionDef;
 }
 
 export interface WorkflowVersionV2 {
