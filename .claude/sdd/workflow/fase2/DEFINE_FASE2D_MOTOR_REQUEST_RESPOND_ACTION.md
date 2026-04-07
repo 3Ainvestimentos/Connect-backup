@@ -19,9 +19,24 @@ O runtime v2 e a tela oficial `/gestao-de-chamados` ja conhecem o estado `waitin
   - `approval`
   - `acknowledgement`
   - `execution`
+- `requestAction` nasce de forma **explicita** na stack oficial;
+- se a etapa atual tiver `action`, o responsavel atual pode disparar a solicitacao por CTA oficial na gestao;
+- os destinatarios da pendencia nao sao escolhidos manualmente no momento da solicitacao;
+- todos os usuarios predefinidos em `approverIds` na etapa atual devem receber a solicitacao;
+- para a `2D`, etapa com `action` sem `approverIds` e uma configuracao invalida para operacao e `requestAction` deve falhar explicitamente com erro de configuracao;
+- o request so retorna de `waiting_action` para `in_progress` quando **todos** os destinatarios configurados da etapa atual tiverem respondido;
 - o ator principal da primeira entrega e o destinatario da action;
 - owner e responsavel entram como atores observadores e operacionais relevantes, mas nao como substitutos silenciosos do destinatario;
+- `approval = rejected` nao avanca etapa nem muda responsavel; apenas registra a rejeicao, fecha a pendencia do destinatario e devolve o request ao responsavel para decisao operacional e finalizacao do chamado;
+- a rejeicao de `approval` deve aparecer explicitamente na timeline do chamado;
+- os tres tipos de action devem aceitar um campo opcional de observacao na resposta;
+- `execution` deve aceitar tambem um campo opcional de upload/anexo na resposta do destinatario;
 - o objetivo de rollout e desbloquear a habilitacao plena dos lotes `4` e `5` da `2C`, sem antecipar escopo de configuracao da `2E`.
+- `approverIds` permanece como nome tecnico comum aos tres tipos, com semantica dependente de `type`:
+  - em `approval`, `approverIds` = aprovadores
+  - em `acknowledgement`, `approverIds` = destinatarios da ciencia
+  - em `execution`, `approverIds` = executores/destinatarios da execucao
+- na futura tela de configuracao dos workflows/versoes, etapa com `action` sem `approverIds` deve ser bloqueada com erro explicito de validacao na UI administrativa
 
 ## 2. Users
 
@@ -37,14 +52,14 @@ O runtime v2 e a tela oficial `/gestao-de-chamados` ja conhecem o estado `waitin
 
 | # | Requirement | Acceptance Criteria |
 |---|-------------|-------------------|
-| M1 | Definir um contrato comum de pendencia de action no `workflows_v2` | Cada pendencia aberta identifica pelo menos etapa atual, tipo de action, destinatario(s), status da pendencia, timestamps e payload minimo de resposta, sem criar colecao operacional paralela fora do request |
-| M2 | Implementar `requestAction` como caso de uso transacional do runtime | Ao abrir a pendencia, o request permanece na mesma etapa, preserva `currentStepId/currentStepName/currentStatusKey`, entra em `waiting_action` e registra historico auditavel |
+| M1 | Definir um contrato comum de pendencia de action no `workflows_v2` | Cada pendencia aberta identifica pelo menos etapa atual, tipo de action, destinatario(s), status da pendencia, timestamps e payload minimo de resposta, sem criar colecao operacional paralela fora do request; etapa com `action` sem `approverIds` nao pode abrir pendencia e deve falhar como configuracao invalida |
+| M2 | Implementar `requestAction` como caso de uso transacional do runtime | Ao abrir a pendencia por CTA explicito do responsavel na etapa atual, o request permanece na mesma etapa, preserva `currentStepId/currentStepName/currentStatusKey`, entra em `waiting_action`, abre pendencia para todos os `approverIds` configurados na action da etapa e registra historico auditavel |
 | M3 | Implementar `respondAction` com autorizacao estrita do destinatario | Apenas usuario com pendencia aberta para a etapa atual consegue responder; tentativa de nao destinatario, pendencia fechada ou request finalizado/arquivado falha explicitamente |
-| M4 | Suportar `approval`, `acknowledgement` e `execution` na mesma iteracao | `approval` aceita `approved/rejected`, `acknowledgement` aceita `acknowledged` e `execution` aceita `executed`, com validacao de comentario/anexo quando a definicao exigir |
+| M4 | Suportar `approval`, `acknowledgement` e `execution` na mesma iteracao | `approval` aceita `approved/rejected`, `acknowledgement` aceita `acknowledged` e `execution` aceita `executed`; os tres tipos aceitam observacao opcional; `execution` aceita upload/anexo opcional na resposta do destinatario e valida comentario/anexo quando a definicao exigir |
 | M5 | Manter o read model coerente enquanto houver pendencia aberta | `hasPendingActions`, `pendingActionRecipientIds`, `pendingActionTypes` e `statusCategory` refletem exatamente as pendencias abertas da etapa atual |
-| M6 | Retornar de `waiting_action` para `in_progress` somente quando nao houver mais pendencias abertas na etapa atual | Ao fechar a ultima pendencia da etapa atual, o request volta para `in_progress`, preserva responsavel e continua na mesma etapa ate uma mutacao distinta de avancar/finalizar |
-| M7 | Expor a resposta da action na tela oficial de gestao | O detalhe do request em `/gestao-de-chamados` mostra pendencia, destinatarios, tipo, historico minimo e CTA de resposta apenas para quem puder responder |
-| M8 | Dar visibilidade operacional para owner e responsavel | Owner e responsavel conseguem acompanhar no detalhe quem recebeu a action, quem respondeu, quando respondeu e qual foi o desfecho |
+| M6 | Retornar de `waiting_action` para `in_progress` somente quando nao houver mais pendencias abertas na etapa atual | Ao fechar a ultima pendencia aberta entre todos os `approverIds` configurados para a etapa atual, o request volta para `in_progress`, preserva responsavel e continua na mesma etapa ate uma mutacao distinta de avancar/finalizar |
+| M7 | Expor a resposta da action na tela oficial de gestao | O detalhe do request em `/gestao-de-chamados` mostra pendencia, destinatarios, tipo, historico minimo, CTA explicito de solicitar action para o responsavel quando a etapa atual tiver `action`, e CTA de resposta apenas para quem puder responder |
+| M8 | Dar visibilidade operacional para owner e responsavel | Owner e responsavel conseguem acompanhar no detalhe quem recebeu a action, quem ja respondeu, quem ainda falta responder, quando respondeu, qual foi o desfecho e, no caso de `execution`, o upload/anexo enviado pelo destinatario quando existir |
 | M9 | Impedir duplicacao silenciosa de pendencias | Reabrir ou duplicar a mesma pendencia para a mesma etapa/destinatario sem decisao explicita deve ser rejeitado ou tratado de forma idempotente; o design deve fechar a estrategia, mas comportamento silencioso e proibido |
 
 ### SHOULD Have
@@ -78,6 +93,7 @@ O runtime v2 e a tela oficial `/gestao-de-chamados` ja conhecem o estado `waitin
 - os tres tipos de action conseguem ser abertos e respondidos pelo runtime novo com cobertura automatizada dedicada;
 - enquanto houver ao menos uma pendencia aberta na etapa atual, o request aparece em `waiting_action` para owner e em `Atribuicoes e acoes` para o destinatario;
 - ao responder a ultima pendencia da etapa atual, o request volta para `in_progress` sem trocar etapa nem responsavel;
+- quando uma resposta de `approval` for `rejected`, a timeline registra explicitamente a rejeicao e o request volta ao responsavel para encerramento/finalizacao manual;
 - `respondAction` retorna `403` para ator que nao seja destinatario valido da pendencia aberta;
 - o detalhe oficial do request mostra trilha minima de auditoria para pedido e resposta de action;
 - os workflows dos lotes `4` e `5` da `2C` deixam de depender de workaround legado para serem habilitados apos smoke funcional.
@@ -111,10 +127,10 @@ O runtime v2 e a tela oficial `/gestao-de-chamados` ja conhecem o estado `waitin
 
 | Component | Change Type | Details |
 |-----------|------------|---------|
-| `src/lib/workflows/management/types.ts` | Modify | adicionar tipos para action pendente, permissao de resposta e mutation de `respondAction` |
-| `src/lib/workflows/management/api-client.ts` | Modify | criar cliente oficial para `respondAction` e normalizar os novos campos do detalhe |
-| `src/hooks/use-workflow-management.ts` | Modify | adicionar mutation oficial de resposta com invalidacao das queries operacionais |
-| `src/components/workflows/management/RequestDetailDialog.tsx` | Modify | renderizar card operacional da action pendente, CTA/formulario de resposta e historico minimo visivel para owner, responsavel e destinatario |
+| `src/lib/workflows/management/types.ts` | Modify | adicionar tipos para action pendente, permissao de solicitar/responder action e mutations de `requestAction` / `respondAction` |
+| `src/lib/workflows/management/api-client.ts` | Modify | criar clientes oficiais para `requestAction` e `respondAction`, alem de normalizar os novos campos do detalhe |
+| `src/hooks/use-workflow-management.ts` | Modify | adicionar mutations oficiais de `requestAction` e `respondAction` com invalidacao das queries operacionais |
+| `src/components/workflows/management/RequestDetailDialog.tsx` | Modify | renderizar card operacional da action pendente, CTA explicito de solicitar action para o responsavel quando a etapa atual tiver `action`, formulario de resposta para o destinatario e historico minimo visivel para owner, responsavel e destinatario |
 | `src/components/workflows/management/WorkflowManagementPage.tsx` | Modify | integrar a nova mutation com toasts oficiais e refresh da tela |
 | `src/components/workflows/management/ManagementRequestList.tsx` | Modify | opcionalmente enriquecer a sinalizacao de pendencia nas listas oficiais sem criar fluxo alternativo |
 
@@ -137,7 +153,7 @@ O runtime v2 e a tela oficial `/gestao-de-chamados` ja conhecem o estado `waitin
 - testes unitarios para `requestAction` e `respondAction`, cobrindo os tres tipos;
 - testes de authz e API contract para os endpoints novos;
 - testes de read detail para permissoes, timeline e bloco de action;
-- testes da UI oficial para CTA de resposta, validacao de comentario/anexo e refresh das listas.
+- testes da UI oficial para CTA de solicitar action, CTA de resposta, validacao de comentario/anexo/upload e refresh das listas.
 
 ## 6. Auth & Security Requirements
 
@@ -145,10 +161,10 @@ O runtime v2 e a tela oficial `/gestao-de-chamados` ja conhecem o estado `waitin
 |-------------|---------|
 | Authentication | As novas mutations usam o mesmo padrao de Bearer token + `authenticateRuntimeActor` ja adotado pelas rotas de runtime |
 | Actor identity | `actorUserId` e fonte de verdade server-side; o cliente nao pode escolher livremente o ator que responde ou o destinatario efetivo da pendencia |
-| Request action authorization | `requestAction` fica restrito ao owner, ao responsavel atual ou a um entrypoint interno controlado do runtime; solicitante comum e destinatario nao podem abrir pendencia arbitrariamente |
+| Request action authorization | `requestAction` fica restrito ao owner, ao responsavel atual ou a um entrypoint interno controlado do runtime; na UX oficial da `2D`, a abertura e explicita por CTA e usa todos os `approverIds` predefinidos na etapa atual; solicitante comum e destinatario nao podem abrir pendencia arbitrariamente |
 | Respond action authorization | `respondAction` exige que o ator esteja listado na pendencia aberta da etapa atual; owner e responsavel apenas observam, salvo quando tambem forem destinatarios explicitamente |
 | User isolation | Pending recipients podem ler o detalhe do request por necessidade operacional, mas nao podem ver ou responder pendencias fora do proprio request nem agir em nome de terceiros |
-| Input validation | O payload de resposta precisa ser validado por tipo; `execution` respeita obrigatoriedade de comentario/anexo quando configurada; duplicidade, resposta tardia ou status incompativel devem falhar explicitamente |
+| Input validation | O payload de resposta precisa ser validado por tipo; `execution` aceita upload/anexo opcional e respeita obrigatoriedade de comentario/anexo quando configurada; duplicidade, resposta tardia ou status incompativel devem falhar explicitamente |
 | Auditability | O historico precisa registrar quem pediu, quem recebeu, quem respondeu, quando respondeu e o payload operacional relevante, sem lacunas silenciosas |
 
 ## 7. Out of Scope
@@ -159,6 +175,7 @@ O runtime v2 e a tela oficial `/gestao-de-chamados` ja conhecem o estado `waitin
 - automacoes externas de notificacao;
 - migracao da UX legada de `RequestApprovalModal` para o stack novo;
 - alteracao do contrato base de `stepsById[*].action` alem do necessario para consumi-lo corretamente em runtime.
+- a UI administrativa da futura `2E` nao entra nesta etapa, mas deve herdar a regra de validacao de que etapa com `action` sem `approverIds` e configuracao invalida.
 
 ## 8. Dependencies
 
