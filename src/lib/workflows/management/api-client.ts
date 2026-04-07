@@ -1,6 +1,8 @@
 import type { User } from 'firebase/auth';
 import type {
   WorkflowManagementArchiveInput,
+  WorkflowManagementRequestActionDetail,
+  WorkflowManagementRequestActionInput,
   WorkflowManagementAssignResponsibleInput,
   WorkflowManagementAssignmentsData,
   WorkflowManagementBootstrapData,
@@ -9,6 +11,7 @@ import type {
   WorkflowManagementFilters,
   WorkflowManagementMutationResult,
   WorkflowManagementMonthGroup,
+  WorkflowManagementRespondActionInput,
   WorkflowManagementRequestAttachment,
   WorkflowManagementRequestDetailData,
   WorkflowManagementRequestDetailExtraField,
@@ -263,6 +266,8 @@ function normalizePermissions(input: unknown): WorkflowManagementRequestDetailPe
     canAssign: asBoolean(permissions.canAssign),
     canFinalize: asBoolean(permissions.canFinalize),
     canArchive: asBoolean(permissions.canArchive),
+    canRequestAction: asBoolean(permissions.canRequestAction),
+    canRespondAction: asBoolean(permissions.canRespondAction),
   };
 }
 
@@ -335,6 +340,11 @@ function normalizeTimelineItem(input: unknown): WorkflowManagementRequestTimelin
       action === 'responsible_reassigned' ||
       action === 'step_completed' ||
       action === 'entered_step' ||
+      action === 'action_requested' ||
+      action === 'action_approved' ||
+      action === 'action_rejected' ||
+      action === 'action_acknowledged' ||
+      action === 'action_executed' ||
       action === 'request_finalized' ||
       action === 'request_archived'
         ? action
@@ -344,6 +354,61 @@ function normalizeTimelineItem(input: unknown): WorkflowManagementRequestTimelin
     userId: asString(item.userId),
     userName: asString(item.userName),
     details: isObject(item.details) ? item.details : {},
+  };
+}
+
+function normalizeActionDetail(input: unknown): WorkflowManagementRequestActionDetail {
+  const detail = isObject(input) ? input : {};
+
+  return {
+    available: asBoolean(detail.available),
+    state: asString(detail.state) === 'pending' ? 'pending' : 'idle',
+    type:
+      detail.type === 'approval' ||
+      detail.type === 'acknowledgement' ||
+      detail.type === 'execution'
+        ? detail.type
+        : null,
+    label: asNullableString(detail.label),
+    commentRequired: asBoolean(detail.commentRequired),
+    attachmentRequired: asBoolean(detail.attachmentRequired),
+    commentPlaceholder: asNullableString(detail.commentPlaceholder),
+    attachmentPlaceholder: asNullableString(detail.attachmentPlaceholder),
+    canRequest: asBoolean(detail.canRequest),
+    canRespond: asBoolean(detail.canRespond),
+    requestedAt: normalizeTimestamp(detail.requestedAt),
+    requestedByUserId: asNullableString(detail.requestedByUserId),
+    requestedByName: asNullableString(detail.requestedByName),
+    recipients: Array.isArray(detail.recipients)
+      ? detail.recipients.map((recipient) => {
+          const item = isObject(recipient) ? recipient : {};
+          const status = asString(item.status);
+
+          return {
+            actionRequestId: asString(item.actionRequestId),
+            recipientUserId: asString(item.recipientUserId),
+            status:
+              status === 'pending' ||
+              status === 'approved' ||
+              status === 'rejected' ||
+              status === 'acknowledged' ||
+              status === 'executed'
+                ? status
+                : 'pending',
+            respondedAt: normalizeTimestamp(item.respondedAt),
+            respondedByUserId: asNullableString(item.respondedByUserId),
+            respondedByName: asNullableString(item.respondedByName),
+            ...(typeof item.responseComment === 'string' && item.responseComment.trim() !== ''
+              ? { responseComment: item.responseComment }
+              : {}),
+            ...(typeof item.responseAttachmentUrl === 'string' &&
+            item.responseAttachmentUrl.trim() !== ''
+              ? { responseAttachmentUrl: item.responseAttachmentUrl }
+              : {}),
+          };
+        })
+      : [],
+    configurationError: asNullableString(detail.configurationError),
   };
 }
 
@@ -454,6 +519,7 @@ function normalizeRequestDetailData(input: unknown): WorkflowManagementRequestDe
       completedSteps: asNumber(progress.completedSteps),
       items: Array.isArray(progress.items) ? progress.items.map(normalizeProgressItem) : [],
     },
+    action: normalizeActionDetail(data.action),
     timeline: Array.isArray(data.timeline) ? data.timeline.map(normalizeTimelineItem) : [],
   };
 }
@@ -576,6 +642,45 @@ export async function archiveManagementRequest(
       method: 'POST',
       body: JSON.stringify({
         actorName: payload.actorName,
+      }),
+    },
+  );
+
+  return normalizeMutationResult(data);
+}
+
+export async function requestManagementAction(
+  user: User,
+  payload: WorkflowManagementRequestActionInput,
+): Promise<WorkflowManagementMutationResult> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/runtime/requests/${payload.requestId}/request-action`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        actorName: payload.actorName,
+      }),
+    },
+  );
+
+  return normalizeMutationResult(data);
+}
+
+export async function respondManagementAction(
+  user: User,
+  payload: WorkflowManagementRespondActionInput,
+): Promise<WorkflowManagementMutationResult> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/runtime/requests/${payload.requestId}/respond-action`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        actorName: payload.actorName,
+        response: payload.response,
+        comment: payload.comment,
+        attachment: payload.attachment,
       }),
     },
   );

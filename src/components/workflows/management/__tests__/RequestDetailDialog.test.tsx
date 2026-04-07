@@ -63,6 +63,8 @@ function buildDetail(overrides: Partial<Parameters<typeof RequestDetailDialog>[0
       canAssign: true,
       canFinalize: true,
       canArchive: false,
+      canRequestAction: false,
+      canRespondAction: false,
     },
     formData: {
       fields: [
@@ -107,6 +109,23 @@ function buildDetail(overrides: Partial<Parameters<typeof RequestDetailDialog>[0
         },
       ],
     },
+    action: {
+      available: true,
+      state: 'idle' as const,
+      type: 'approval' as const,
+      label: 'Aprovar etapa',
+      commentRequired: false,
+      attachmentRequired: false,
+      commentPlaceholder: null,
+      attachmentPlaceholder: null,
+      canRequest: false,
+      canRespond: false,
+      requestedAt: null,
+      requestedByUserId: null,
+      requestedByName: null,
+      recipients: [],
+      configurationError: null,
+    },
     timeline: [
       {
         action: 'request_opened' as const,
@@ -133,6 +152,8 @@ describe('RequestDetailDialog', () => {
         onAssign={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
       />,
     );
 
@@ -154,6 +175,8 @@ describe('RequestDetailDialog', () => {
         onAssign={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
       />,
     );
 
@@ -176,6 +199,8 @@ describe('RequestDetailDialog', () => {
         onAssign={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
       />,
     );
 
@@ -223,6 +248,8 @@ describe('RequestDetailDialog', () => {
         onAssign={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
       />,
     );
 
@@ -237,5 +264,52 @@ describe('RequestDetailDialog', () => {
     expect(screen.getByRole('button', { name: 'Reatribuir responsavel' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Finalizar' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
+  });
+
+  it('renders request/respond action controls when the actor is eligible', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildDetail({
+          permissions: {
+            canAssign: false,
+            canFinalize: false,
+            canArchive: false,
+            canRequestAction: true,
+            canRespondAction: true,
+          },
+          action: {
+            ...buildDetail().action,
+            state: 'pending',
+            canRequest: true,
+            canRespond: true,
+            recipients: [
+              {
+                actionRequestId: 'act_req_1',
+                recipientUserId: 'RESP1',
+                status: 'pending',
+                respondedAt: null,
+                respondedByUserId: null,
+                respondedByName: null,
+              },
+            ],
+          },
+        })}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Solicitar Aprovar etapa' })).toBeTruthy();
+    expect(screen.getByText('Responder action')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Aprovar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Rejeitar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Registrar resposta' })).toBeTruthy();
   });
 });

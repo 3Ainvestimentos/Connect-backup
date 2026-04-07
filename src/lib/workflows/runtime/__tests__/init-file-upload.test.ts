@@ -10,8 +10,17 @@ jest.mock('@/lib/workflows/runtime/upload-storage', () => ({
   createSignedWorkflowUpload: jest.fn(),
 }));
 
+jest.mock('@/lib/workflows/runtime/repository', () => ({
+  getWorkflowRequestByRequestId: jest.fn(),
+  getWorkflowVersion: jest.fn(),
+}));
+
 const { resolvePublishedVersion } = require('@/lib/workflows/runtime/use-cases/resolve-published-version');
 const { createSignedWorkflowUpload } = require('@/lib/workflows/runtime/upload-storage');
+const {
+  getWorkflowRequestByRequestId,
+  getWorkflowVersion,
+} = require('@/lib/workflows/runtime/repository');
 const { RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const { initFileUpload } = require('@/lib/workflows/runtime/use-cases/init-file-upload');
 
@@ -101,6 +110,7 @@ describe('initFileUpload', () => {
 
     await expect(
       initFileUpload({
+        target: 'form_field',
         actorUserId: 'REQ1',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'anexo_planilha',
@@ -116,6 +126,7 @@ describe('initFileUpload', () => {
 
     expect(resolvePublishedVersion).toHaveBeenCalledWith('facilities_solicitacao_suprimentos');
     expect(createSignedWorkflowUpload).toHaveBeenCalledWith({
+      target: 'form_field',
       actorUserId: 'REQ1',
       workflowTypeId: 'facilities_solicitacao_suprimentos',
       fieldId: 'anexo_planilha',
@@ -132,6 +143,7 @@ describe('initFileUpload', () => {
 
     await expect(
       initFileUpload({
+        target: 'form_field',
         actorUserId: 'REQ1',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'campo_inexistente',
@@ -166,6 +178,7 @@ describe('initFileUpload', () => {
 
     await expect(
       initFileUpload({
+        target: 'form_field',
         actorUserId: 'REQ1',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'anexo_planilha',
@@ -183,6 +196,7 @@ describe('initFileUpload', () => {
   it('rejeita metadata obrigatoria ausente antes de resolver o workflow', async () => {
     await expect(
       initFileUpload({
+        target: 'form_field',
         actorUserId: 'REQ1',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'anexo_planilha',
@@ -208,6 +222,7 @@ describe('initFileUpload', () => {
 
     await expect(
       initFileUpload({
+        target: 'form_field',
         actorUserId: 'REQ1',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'anexo_planilha',
@@ -222,5 +237,84 @@ describe('initFileUpload', () => {
     );
 
     expect(createSignedWorkflowUpload).not.toHaveBeenCalled();
+  });
+
+  it('valida action_response para execution pendente antes de assinar o upload', async () => {
+    getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-1',
+      data: {
+        requestId: 812,
+        workflowTypeId: 'facilities_solicitacao_suprimentos',
+        workflowVersion: 1,
+        currentStepId: 'stp_execucao',
+        pendingActionRecipientIds: ['EXEC1'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_1',
+            actionBatchId: 'act_batch_1',
+            stepId: 'stp_execucao',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            type: 'execution',
+            label: 'Executar atividade',
+            recipientUserId: 'EXEC1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+      },
+    });
+    getWorkflowVersion.mockResolvedValue({
+      stepsById: {
+        stp_execucao: {
+          stepId: 'stp_execucao',
+          stepName: 'Execucao',
+          statusKey: 'execucao',
+          kind: 'work',
+          action: {
+            type: 'execution',
+            label: 'Executar atividade',
+            approverIds: ['EXEC1'],
+          },
+        },
+      },
+    });
+    createSignedWorkflowUpload.mockResolvedValue({
+      uploadUrl: 'https://storage.googleapis.com/upload-signed',
+      uploadMethod: 'PUT',
+      uploadHeaders: {
+        'Content-Type': 'application/pdf',
+      },
+      fileUrl: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/file',
+      storagePath: 'Workflows/path/action_response/file.pdf',
+      uploadId: 'upl_123',
+      expiresAt: '2026-03-30T14:10:00.000Z',
+    });
+
+    await expect(
+      initFileUpload({
+        target: 'action_response',
+        actorUserId: 'EXEC1',
+        requestId: 812,
+        fileName: 'Comprovante.pdf',
+        contentType: 'application/pdf',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        uploadMethod: 'PUT',
+      }),
+    );
+
+    expect(createSignedWorkflowUpload).toHaveBeenCalledWith({
+      target: 'action_response',
+      workflowTypeId: 'facilities_solicitacao_suprimentos',
+      requestId: 812,
+      stepId: 'stp_execucao',
+      actorUserId: 'EXEC1',
+      fileName: 'Comprovante.pdf',
+      contentType: 'application/pdf',
+    });
   });
 });

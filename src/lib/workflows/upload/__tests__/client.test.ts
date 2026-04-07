@@ -2,6 +2,7 @@ import {
   putFileToSignedUrl,
   requestWorkflowFileUpload,
   uploadWorkflowFile,
+  uploadWorkflowActionResponseFile,
 } from '../client';
 
 describe('workflow upload client', () => {
@@ -38,6 +39,7 @@ describe('workflow upload client', () => {
 
     await expect(
       requestWorkflowFileUpload(user, {
+        target: 'form_field',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'anexo_planilha',
         fileName: 'Controle.xlsx',
@@ -99,6 +101,11 @@ describe('workflow upload client', () => {
       }),
     ).resolves.toEqual({
       fileUrl: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/file?alt=media&token=token-123',
+      storagePath:
+        'Workflows/Facilities e Suprimentos/workflows_v2/preopen/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl_123-Controle.xlsx',
+      uploadId: 'upl_123',
+      fileName: 'Controle.xlsx',
+      contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     });
 
     expect(globalThis.fetch).toHaveBeenNthCalledWith(
@@ -171,5 +178,54 @@ describe('workflow upload client', () => {
         httpStatus: 502,
       }),
     );
+  });
+
+  it('supports action_response uploads with the same signed-upload flow', async () => {
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          ok: true,
+          data: {
+            uploadUrl: 'https://storage.googleapis.com/upload-signed',
+            uploadMethod: 'PUT',
+            uploadHeaders: {
+              'Content-Type': 'application/pdf',
+              'x-goog-meta-firebaseStorageDownloadTokens': 'token-123',
+            },
+            fileUrl:
+              'https://firebasestorage.googleapis.com/v0/b/bucket/o/file?alt=media&token=token-123',
+            storagePath:
+              'Workflows/Facilities e Suprimentos/workflows_v2/preopen/facilities/action_response/request_812/execucao/2026-03/upl_123-comprovante.pdf',
+            uploadId: 'upl_123',
+            expiresAt: '2026-03-30T14:10:00.000Z',
+          },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+      } as Response) as typeof fetch;
+
+    const file = new File(['conteudo'], 'comprovante.pdf', {
+      type: 'application/pdf',
+    });
+
+    await expect(
+      uploadWorkflowActionResponseFile(user, {
+        requestId: 812,
+        file,
+      }),
+    ).resolves.toEqual({
+      fileUrl:
+        'https://firebasestorage.googleapis.com/v0/b/bucket/o/file?alt=media&token=token-123',
+      storagePath:
+        'Workflows/Facilities e Suprimentos/workflows_v2/preopen/facilities/action_response/request_812/execucao/2026-03/upl_123-comprovante.pdf',
+      uploadId: 'upl_123',
+      fileName: 'comprovante.pdf',
+      contentType: 'application/pdf',
+    });
   });
 });

@@ -36,6 +36,11 @@ export type HistoryAction =
   | 'responsible_reassigned'
   | 'step_completed'
   | 'entered_step'
+  | 'action_requested'
+  | 'action_approved'
+  | 'action_rejected'
+  | 'action_acknowledged'
+  | 'action_executed'
   | 'request_finalized'
   | 'request_archived';
 
@@ -79,6 +84,7 @@ export interface StepActionDef {
   /** Operational recipient identities (`id3a`), never email or Firebase `authUid`. */
   approverIds?: string[];
   commentRequired?: boolean;
+  attachmentRequired?: boolean;
   commentPlaceholder?: string;
   attachmentPlaceholder?: string;
 }
@@ -116,6 +122,41 @@ export interface HistoryEntry {
   details?: Record<string, unknown>;
 }
 
+export type WorkflowActionRequestStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'acknowledged'
+  | 'executed';
+
+export interface WorkflowActionResponseAttachment {
+  fileName: string;
+  contentType: string;
+  fileUrl: string;
+  storagePath: string;
+  uploadId?: string;
+}
+
+export interface WorkflowActionRequest {
+  actionRequestId: string;
+  actionBatchId: string;
+  stepId: string;
+  stepName: string;
+  statusKey: string;
+  type: 'approval' | 'acknowledgement' | 'execution';
+  label: string;
+  recipientUserId: string;
+  requestedByUserId: string;
+  requestedByName: string;
+  requestedAt: Timestamp;
+  status: WorkflowActionRequestStatus;
+  respondedAt?: Timestamp;
+  respondedByUserId?: string;
+  respondedByName?: string;
+  responseComment?: string;
+  responseAttachment?: WorkflowActionResponseAttachment;
+}
+
 export interface WorkflowRequestV2 {
   // --- core identity ---
   requestId: number;
@@ -128,6 +169,7 @@ export interface WorkflowRequestV2 {
   // --- step machine ---
   stepStates: Record<string, StepState>;
   history: HistoryEntry[];
+  actionRequests?: WorkflowActionRequest[];
 
   // --- read-model backbone (written by Etapa 1, consumed by Etapa 2) ---
   workflowName: string;

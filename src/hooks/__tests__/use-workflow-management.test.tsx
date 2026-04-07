@@ -20,6 +20,12 @@ jest.mock('@/lib/workflows/management/api-client', () => ({
   assignManagementResponsible: jest.fn(),
   finalizeManagementRequest: jest.fn(),
   archiveManagementRequest: jest.fn(),
+  requestManagementAction: jest.fn(),
+  respondManagementAction: jest.fn(),
+}));
+
+jest.mock('@/lib/workflows/upload/client', () => ({
+  uploadWorkflowActionResponseFile: jest.fn(),
 }));
 
 jest.mock('@tanstack/react-query', () => ({
@@ -63,7 +69,7 @@ describe('useWorkflowManagement', () => {
     }));
   });
 
-  it('invalidates official lists and detail after assign, finalize and archive', async () => {
+  it('invalidates official lists and detail after operational mutations', async () => {
     const state = {
       activeTab: 'assignments' as const,
       assignmentsSubtab: 'assigned' as const,
@@ -83,6 +89,13 @@ describe('useWorkflowManagement', () => {
     });
     await result.current.archiveMutation.mutateAsync({
       requestId: 812,
+    });
+    await result.current.requestActionMutation.mutateAsync({
+      requestId: 812,
+    });
+    await result.current.respondActionMutation.mutateAsync({
+      requestId: 812,
+      response: 'approved',
     });
 
     expect(mockInvalidateQueries).toHaveBeenCalledWith({

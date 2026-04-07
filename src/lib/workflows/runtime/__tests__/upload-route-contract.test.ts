@@ -68,6 +68,7 @@ describe('workflow upload API contract', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          target: 'form_field',
           workflowTypeId: 'facilities_solicitacao_suprimentos',
           fieldId: 'anexo_planilha',
           fileName: 'Controle.xlsx',
@@ -85,6 +86,7 @@ describe('workflow upload API contract', () => {
       }),
     });
     expect(initFileUpload).toHaveBeenCalledWith({
+      target: 'form_field',
       actorUserId: 'REQ1',
       workflowTypeId: 'facilities_solicitacao_suprimentos',
       fieldId: 'anexo_planilha',
@@ -151,6 +153,7 @@ describe('workflow upload API contract', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          target: 'form_field',
           workflowTypeId: 'facilities_solicitacao_suprimentos',
           fieldId: 'anexo_planilha',
           fileName: 'Controle.xlsx',
@@ -184,6 +187,7 @@ describe('workflow upload API contract', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          target: 'form_field',
           workflowTypeId: 'facilities_solicitacao_suprimentos',
           fieldId: 'nome_sobrenome',
           fileName: 'Controle.xlsx',
@@ -211,6 +215,7 @@ describe('workflow upload API contract', () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          target: 'form_field',
           workflowTypeId: 'facilities_solicitacao_suprimentos',
           fieldId: 'anexo_planilha',
           fileName: 'Controle.xlsx',
@@ -225,5 +230,58 @@ describe('workflow upload API contract', () => {
       code: 'INTERNAL_ERROR',
       message: 'Erro interno do servidor.',
     });
+  });
+
+  it('aceita action_response e repassa requestId ao use case', async () => {
+    initFileUpload.mockResolvedValue(buildSignedPayload());
+
+    const response = await POST(
+      new Request('http://localhost/api/workflows/runtime/uploads', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          target: 'action_response',
+          requestId: 812,
+          fileName: 'Comprovante.pdf',
+          contentType: 'application/pdf',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(initFileUpload).toHaveBeenCalledWith({
+      target: 'action_response',
+      actorUserId: 'REQ1',
+      requestId: 812,
+      fileName: 'Comprovante.pdf',
+      contentType: 'application/pdf',
+    });
+  });
+
+  it('rejeita target de upload invalido', async () => {
+    const response = await POST(
+      new Request('http://localhost/api/workflows/runtime/uploads', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer token',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: 'Controle.xlsx',
+          contentType: 'application/pdf',
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      code: RuntimeErrorCode.INVALID_UPLOAD_TARGET,
+      message: 'Target de upload invalido.',
+    });
+    expect(initFileUpload).not.toHaveBeenCalled();
   });
 });

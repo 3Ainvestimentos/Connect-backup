@@ -6,6 +6,8 @@ const {
   assertCanAssign,
   assertCanFinalize,
   assertCanArchive,
+  assertCanRequestAction,
+  assertCanRespondAction,
   assertCanReadRequest,
 } = require('@/lib/workflows/runtime/authz');
 
@@ -119,6 +121,47 @@ describe('workflow runtime authz', () => {
       expect(error).toEqual(
         expect.objectContaining({
           code: RuntimeErrorCode.FINALIZATION_NOT_ALLOWED,
+        }),
+      );
+    }
+  });
+
+  it('permite requestAction para o responsavel atual ou owner', () => {
+    expect(() => {
+      assertCanRequestAction('SMO2', 'RESP1', 'SMO2');
+      assertCanRequestAction('SMO2', 'RESP1', 'RESP1');
+    }).not.toThrow();
+  });
+
+  it('rejeita requestAction para terceiro fora do fluxo atual', () => {
+    expect.assertions(1);
+
+    try {
+      assertCanRequestAction('SMO2', 'RESP1', 'DLE');
+    } catch (error) {
+      expect(error).toEqual(
+        expect.objectContaining({
+          code: RuntimeErrorCode.FORBIDDEN,
+        }),
+      );
+    }
+  });
+
+  it('permite respondAction apenas para destinatario pendente', () => {
+    expect(() => {
+      assertCanRespondAction({ pendingActionRecipientIds: ['RESP1'] }, 'RESP1');
+    }).not.toThrow();
+  });
+
+  it('rejeita respondAction para quem nao possui action pendente', () => {
+    expect.assertions(1);
+
+    try {
+      assertCanRespondAction({ pendingActionRecipientIds: ['RESP1'] }, 'OUT1');
+    } catch (error) {
+      expect(error).toEqual(
+        expect.objectContaining({
+          code: RuntimeErrorCode.ACTION_RESPONSE_NOT_ALLOWED,
         }),
       );
     }

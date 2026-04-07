@@ -5,6 +5,7 @@ import type {
   StepKind,
   StepState,
   VersionFieldType,
+  WorkflowActionRequestStatus,
   WorkflowRequestV2,
 } from '../runtime/types';
 
@@ -134,6 +135,8 @@ export type WorkflowRequestDetailPermissions = {
   canAssign: boolean;
   canFinalize: boolean;
   canArchive: boolean;
+  canRequestAction: boolean;
+  canRespondAction: boolean;
 };
 
 export type WorkflowRequestDetailField = {
@@ -173,6 +176,35 @@ export type WorkflowRequestTimelineItem = {
   details?: Record<string, unknown>;
 };
 
+export type WorkflowRequestActionRecipientDetail = {
+  actionRequestId: string;
+  recipientUserId: string;
+  status: WorkflowActionRequestStatus;
+  respondedAt: TimestampLike;
+  respondedByUserId: string | null;
+  respondedByName: string | null;
+  responseComment?: string;
+  responseAttachmentUrl?: string;
+};
+
+export type WorkflowRequestActionDetail = {
+  available: boolean;
+  state: 'idle' | 'pending';
+  type: 'approval' | 'acknowledgement' | 'execution' | null;
+  label: string | null;
+  commentRequired: boolean;
+  attachmentRequired: boolean;
+  commentPlaceholder: string | null;
+  attachmentPlaceholder: string | null;
+  canRequest: boolean;
+  canRespond: boolean;
+  requestedAt: TimestampLike;
+  requestedByUserId: string | null;
+  requestedByName: string | null;
+  recipients: WorkflowRequestActionRecipientDetail[];
+  configurationError?: string | null;
+};
+
 export type WorkflowRequestDetailData = {
   summary: WorkflowReadSummary;
   permissions: WorkflowRequestDetailPermissions;
@@ -187,6 +219,7 @@ export type WorkflowRequestDetailData = {
     completedSteps: number;
     items: WorkflowRequestProgressItem[];
   };
+  action: WorkflowRequestActionDetail;
   timeline: WorkflowRequestTimelineItem[];
 };
 

@@ -58,6 +58,7 @@ describe('upload-storage', () => {
 
   it('gera signed upload com path, headers e fileUrl coerentes', async () => {
     const result = await createSignedWorkflowUpload({
+      target: 'form_field',
       workflowTypeId: 'facilities_solicitacao_suprimentos',
       fieldId: 'anexo_planilha',
       actorUserId: 'LGN',
@@ -78,6 +79,7 @@ describe('upload-storage', () => {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
           'x-goog-meta-firebaseStorageDownloadTokens': 'download-token-1234-5678-9abc-def012345678',
           'x-goog-meta-uploadid': 'upl_9b8d0d3a-1111-2222-3333-444444444444',
+          'x-goog-meta-target': 'form_field',
           'x-goog-meta-workflowtypeid': 'facilities_solicitacao_suprimentos',
           'x-goog-meta-fieldid': 'anexo_planilha',
           'x-goog-meta-actoruserid': 'LGN',
@@ -91,6 +93,7 @@ describe('upload-storage', () => {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'x-goog-meta-firebaseStorageDownloadTokens': 'download-token-1234-5678-9abc-def012345678',
         'x-goog-meta-uploadid': 'upl_9b8d0d3a-1111-2222-3333-444444444444',
+        'x-goog-meta-target': 'form_field',
         'x-goog-meta-workflowtypeid': 'facilities_solicitacao_suprimentos',
         'x-goog-meta-fieldid': 'anexo_planilha',
         'x-goog-meta-actoruserid': 'LGN',
@@ -110,6 +113,7 @@ describe('upload-storage', () => {
 
     await expect(
       createSignedWorkflowUpload({
+        target: 'form_field',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'anexo_planilha',
         actorUserId: 'LGN',
@@ -129,6 +133,7 @@ describe('upload-storage', () => {
 
     await expect(
       createSignedWorkflowUpload({
+        target: 'form_field',
         workflowTypeId: 'facilities_solicitacao_suprimentos',
         fieldId: 'anexo_planilha',
         actorUserId: 'LGN',

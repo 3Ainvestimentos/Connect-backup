@@ -11,12 +11,17 @@ import {
   getManagementCompleted,
   getManagementCurrent,
   getManagementRequestDetail,
+  requestManagementAction,
+  respondManagementAction,
 } from '@/lib/workflows/management/api-client';
 import { managementKeys } from '@/lib/workflows/management/query-keys';
+import { uploadWorkflowActionResponseFile } from '@/lib/workflows/upload/client';
 import type {
   WorkflowManagementArchiveInput,
   WorkflowManagementAssignResponsibleInput,
   WorkflowManagementFinalizeInput,
+  WorkflowManagementRequestActionInput,
+  WorkflowManagementRespondActionInput,
   WorkflowManagementViewState,
 } from '@/lib/workflows/management/types';
 
@@ -120,6 +125,47 @@ export function useWorkflowManagement(
     onSuccess: async (_, variables) => invalidateOperationalQueries(variables.requestId),
   });
 
+  const requestActionMutation = useMutation({
+    mutationFn: (payload: WorkflowManagementRequestActionInput) =>
+      requestManagementAction(user!, {
+        ...payload,
+        actorName,
+      }),
+    onSuccess: async (_, variables) => invalidateOperationalQueries(variables.requestId),
+  });
+
+  const respondActionMutation = useMutation({
+    mutationFn: async (payload: WorkflowManagementRespondActionInput) => {
+      const uploadResult =
+        payload.attachmentFile != null
+          ? await uploadWorkflowActionResponseFile(user!, {
+              requestId: payload.requestId,
+              file: payload.attachmentFile,
+            })
+          : undefined;
+      const attachment =
+        uploadResult &&
+        uploadResult.storagePath &&
+        uploadResult.fileName &&
+        uploadResult.contentType
+          ? {
+              fileName: uploadResult.fileName,
+              contentType: uploadResult.contentType,
+              fileUrl: uploadResult.fileUrl,
+              storagePath: uploadResult.storagePath,
+              ...(uploadResult.uploadId ? { uploadId: uploadResult.uploadId } : {}),
+            }
+          : undefined;
+
+      return respondManagementAction(user!, {
+        ...payload,
+        actorName,
+        ...(attachment ? { attachment } : {}),
+      });
+    },
+    onSuccess: async (_, variables) => invalidateOperationalQueries(variables.requestId),
+  });
+
   return {
     bootstrapQuery,
     currentQuery,
@@ -131,5 +177,7 @@ export function useWorkflowManagement(
     assignMutation,
     finalizeMutation,
     archiveMutation,
+    requestActionMutation,
+    respondActionMutation,
   };
 }

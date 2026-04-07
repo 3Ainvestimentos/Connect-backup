@@ -71,6 +71,8 @@ export function WorkflowManagementPage() {
     assignMutation,
     finalizeMutation,
     archiveMutation,
+    requestActionMutation,
+    respondActionMutation,
   } = useWorkflowManagement(rawState, selectedRequestId);
 
   const canViewCurrentQueue = bootstrapQuery.data?.capabilities.canViewCurrentQueue ?? false;
@@ -379,9 +381,58 @@ export function WorkflowManagementPage() {
                 throw error;
               }
             }}
+            onRequestAction={async (summary) => {
+              try {
+                const result = await requestActionMutation.mutateAsync({
+                  requestId: summary.requestId,
+                });
+                toast({
+                  title: 'Action solicitada',
+                  description: `Chamado #${result.requestId} entrou em aguardando action.`,
+                });
+                return result;
+              } catch (error) {
+                toast({
+                  title: 'Falha ao solicitar action',
+                  description: resolveErrorMessage(
+                    error,
+                    'Nao foi possivel abrir a action operacional desta etapa.',
+                  ),
+                  variant: 'destructive',
+                });
+                throw error;
+              }
+            }}
+            onRespondAction={async (summary, payload) => {
+              try {
+                const result = await respondActionMutation.mutateAsync({
+                  requestId: summary.requestId,
+                  response: payload.response,
+                  comment: payload.comment,
+                  attachmentFile: payload.attachmentFile,
+                });
+                toast({
+                  title: 'Action respondida',
+                  description: `Resposta operacional do chamado #${result.requestId} registrada com sucesso.`,
+                });
+                return result;
+              } catch (error) {
+                toast({
+                  title: 'Falha ao responder action',
+                  description: resolveErrorMessage(
+                    error,
+                    'Nao foi possivel registrar a resposta operacional deste chamado.',
+                  ),
+                  variant: 'destructive',
+                });
+                throw error;
+              }
+            }}
             isAssigning={assignMutation.isPending}
             isFinalizing={finalizeMutation.isPending}
             isArchiving={archiveMutation.isPending}
+            isRequestingAction={requestActionMutation.isPending}
+            isRespondingAction={respondActionMutation.isPending}
           />
         </>
       ) : null}

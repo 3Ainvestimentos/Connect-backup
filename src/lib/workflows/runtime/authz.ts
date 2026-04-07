@@ -72,6 +72,44 @@ export function assertCanFinalize(
 }
 
 /**
+ * Validates that the actor can open an operational action on the current step.
+ * Allowed actors: owner or current responsible.
+ */
+export function assertCanRequestAction(
+  ownerUserId: string,
+  responsibleUserId: string | null,
+  actorUserId: string,
+): void {
+  const isOwner = actorUserId === ownerUserId;
+  const isResponsible = responsibleUserId != null && actorUserId === responsibleUserId;
+
+  if (!isOwner && !isResponsible) {
+    throw new RuntimeError(
+      RuntimeErrorCode.FORBIDDEN,
+      'Apenas o responsavel atual ou o owner podem solicitar a action desta etapa.',
+      403,
+    );
+  }
+}
+
+/**
+ * Validates that the actor can answer the pending operational action.
+ * Only a recipient with pending action on the current step can respond.
+ */
+export function assertCanRespondAction(
+  request: Pick<WorkflowRequestV2, 'pendingActionRecipientIds'>,
+  actorUserId: string,
+): void {
+  if (!request.pendingActionRecipientIds.includes(actorUserId)) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_NOT_ALLOWED,
+      'Usuario nao possui action pendente para responder neste chamado.',
+      403,
+    );
+  }
+}
+
+/**
  * Validates that the actor can archive a request.
  * Only the owner can archive.
  *

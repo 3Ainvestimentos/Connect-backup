@@ -8,7 +8,7 @@
  */
 
 import { Timestamp } from 'firebase-admin/firestore';
-import type { StatusCategory } from './types';
+import type { StatusCategory, WorkflowActionRequest, WorkflowRequestV2 } from './types';
 
 export const WORKFLOW_READ_MODEL_REQUIRED_FIELDS = [
   'workflowName',
@@ -201,6 +201,45 @@ export function buildArchiveReadModelUpdate(params: {
     isArchived: true,
     statusCategory: 'archived' as StatusCategory,
     archivedAt: params.now,
+    lastUpdatedAt: params.now,
+  };
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
+export function getPendingActionEntriesForCurrentStep(
+  request: Pick<WorkflowRequestV2, 'currentStepId' | 'actionRequests'>,
+): WorkflowActionRequest[] {
+  return (request.actionRequests ?? []).filter(
+    (entry) => entry.stepId === request.currentStepId && entry.status === 'pending',
+  );
+}
+
+export function buildActionReadModelUpdate(params: {
+  request: Pick<WorkflowRequestV2, 'currentStepId' | 'operationalParticipantIds'>;
+  actionRequests: WorkflowActionRequest[];
+  now: Timestamp;
+  extraParticipantIds?: string[];
+}): Record<string, unknown> {
+  const pendingEntries = getPendingActionEntriesForCurrentStep({
+    currentStepId: params.request.currentStepId,
+    actionRequests: params.actionRequests,
+  });
+
+  return {
+    actionRequests: params.actionRequests,
+    hasPendingActions: pendingEntries.length > 0,
+    pendingActionRecipientIds: uniqueStrings(
+      pendingEntries.map((entry) => entry.recipientUserId),
+    ),
+    pendingActionTypes: uniqueStrings(pendingEntries.map((entry) => entry.type)),
+    operationalParticipantIds: uniqueStrings([
+      ...(params.request.operationalParticipantIds ?? []),
+      ...(params.extraParticipantIds ?? []),
+    ]),
+    statusCategory: pendingEntries.length > 0 ? ('waiting_action' as StatusCategory) : ('in_progress' as StatusCategory),
     lastUpdatedAt: params.now,
   };
 }

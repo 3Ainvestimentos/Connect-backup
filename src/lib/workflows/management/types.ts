@@ -102,6 +102,8 @@ export type WorkflowManagementRequestDetailPermissions = {
   canAssign: boolean;
   canFinalize: boolean;
   canArchive: boolean;
+  canRequestAction: boolean;
+  canRespondAction: boolean;
 };
 
 export type WorkflowManagementRequestDetailField = {
@@ -139,6 +141,11 @@ export type WorkflowManagementRequestTimelineItem = {
     | 'responsible_reassigned'
     | 'step_completed'
     | 'entered_step'
+    | 'action_requested'
+    | 'action_approved'
+    | 'action_rejected'
+    | 'action_acknowledged'
+    | 'action_executed'
     | 'request_finalized'
     | 'request_archived';
   label: string;
@@ -146,6 +153,35 @@ export type WorkflowManagementRequestTimelineItem = {
   userId: string;
   userName: string;
   details?: Record<string, unknown>;
+};
+
+export type WorkflowManagementRequestActionRecipient = {
+  actionRequestId: string;
+  recipientUserId: string;
+  status: 'pending' | 'approved' | 'rejected' | 'acknowledged' | 'executed';
+  respondedAt: Date | null;
+  respondedByUserId: string | null;
+  respondedByName: string | null;
+  responseComment?: string;
+  responseAttachmentUrl?: string;
+};
+
+export type WorkflowManagementRequestActionDetail = {
+  available: boolean;
+  state: 'idle' | 'pending';
+  type: 'approval' | 'acknowledgement' | 'execution' | null;
+  label: string | null;
+  commentRequired: boolean;
+  attachmentRequired: boolean;
+  commentPlaceholder: string | null;
+  attachmentPlaceholder: string | null;
+  canRequest: boolean;
+  canRespond: boolean;
+  requestedAt: Date | null;
+  requestedByUserId: string | null;
+  requestedByName: string | null;
+  recipients: WorkflowManagementRequestActionRecipient[];
+  configurationError?: string | null;
 };
 
 export type WorkflowManagementRequestDetailData = {
@@ -162,6 +198,7 @@ export type WorkflowManagementRequestDetailData = {
     completedSteps: number;
     items: WorkflowManagementRequestProgressItem[];
   };
+  action: WorkflowManagementRequestActionDetail;
   timeline: WorkflowManagementRequestTimelineItem[];
 };
 
@@ -185,6 +222,28 @@ export type WorkflowManagementFinalizeInput = {
 export type WorkflowManagementArchiveInput = {
   requestId: number;
   actorName?: string;
+};
+
+export type WorkflowManagementRequestActionInput = {
+  requestId: number;
+  actorName?: string;
+};
+
+export type WorkflowManagementRespondActionAttachment = {
+  fileName: string;
+  contentType: string;
+  fileUrl: string;
+  storagePath: string;
+  uploadId?: string;
+};
+
+export type WorkflowManagementRespondActionInput = {
+  requestId: number;
+  response: 'approved' | 'rejected' | 'acknowledged' | 'executed';
+  comment?: string;
+  actorName?: string;
+  attachment?: WorkflowManagementRespondActionAttachment;
+  attachmentFile?: File | null;
 };
 
 export type WorkflowManagementActor = {

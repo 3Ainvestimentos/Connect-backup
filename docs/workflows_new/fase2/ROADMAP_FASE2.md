@@ -192,7 +192,20 @@ Escopo esperado:
 
 Status atual:
 
-- **proxima macroetapa recomendada**
+- **concluida**
+
+Fechamentos consolidados:
+
+- `actionRequests[]` persistido no proprio documento `workflows_v2/{docId}`, 1 entrada por destinatario por batch;
+- `mutateWorkflowRequestAtomically` entregue no repositorio com callback snapshot-aware para proteger o 409 contra race condition;
+- `requestAction` abre batch para todos os `approverIds` da etapa publicada, entra em `waiting_action`;
+- `respondAction` fecha a linha do destinatario; retorna a `in_progress` quando a ultima pendencia fechar;
+- `approval = rejected` registra evento proprio na timeline, sem bloquear; controle retorna ao responsavel;
+- `advance-step` protegido por guard direto em `actionRequests`, antes do guard de `statusCategory`;
+- `action_requested`, `action_approved`, `action_rejected`, `action_acknowledged`, `action_executed` adicionados a `HistoryAction` e a `TIMELINE_LABELS`;
+- detalhe oficial enriquecido com bloco `action`, permissoes `canRequestAction`/`canRespondAction`;
+- `responseAttachmentUrl` visivel apenas para owner e responsavel;
+- 29/29 testes passando.
 
 ### 2.5. Fase 2E - Configuracao, versionamento e administracao
 
@@ -409,10 +422,11 @@ Criar a superficie administrativa para evolucao do catalogo de workflows sem dep
 
 ### 6.1. Ordem macro
 
-1. **Fase 2A** - Front oficial da tela integrada
-2. **Fase 2B** - Nova tela oficial de abertura de chamado
-3. **Fase 2C** - Cadastro e habilitacao dos workflows restantes
-4. **Fase 2D** - Tela de configuracao, versoes e publicacao
+1. **Fase 2A** - Front oficial da tela integrada ✅ concluida
+2. **Fase 2C** - Cadastro e habilitacao dos workflows restantes ✅ concluida
+3. **Fase 2D** - Motor operacional de `requestAction` / `respondAction` ✅ concluida
+4. **Fase 2B** - Nova tela oficial de abertura de chamado
+5. **Fase 2E** - Configuracao, versionamento e publicacao
 
 ### 6.2. Observacao de paralelismo
 

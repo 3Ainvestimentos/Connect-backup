@@ -64,6 +64,7 @@ function buildRequest(overrides = {}) {
     hasPendingActions: false,
     pendingActionRecipientIds: [],
     pendingActionTypes: [],
+    actionRequests: [],
     operationalParticipantIds: ['SMO2', 'RESP1'],
     slaDays: 5,
     expectedCompletionAt: { seconds: 10, nanoseconds: 0 },
@@ -129,6 +130,15 @@ function buildVersion(overrides = {}) {
         stepName: 'Execucao',
         statusKey: 'execucao',
         kind: 'work',
+        action: {
+          type: 'execution',
+          label: 'Executar atividade',
+          approverIds: ['RESP1', 'EXEC2'],
+          commentRequired: true,
+          attachmentRequired: true,
+          commentPlaceholder: 'Descreva o que foi executado',
+          attachmentPlaceholder: 'Envie a evidencia',
+        },
       },
       encerramento: {
         stepId: 'encerramento',
@@ -166,6 +176,8 @@ describe('workflow request detail composer', () => {
       canAssign: true,
       canFinalize: true,
       canArchive: false,
+      canRequestAction: false,
+      canRespondAction: false,
     });
     expect(detail.formData.fields).toEqual([
       expect.objectContaining({ fieldId: 'periodo', label: 'Periodo' }),
@@ -197,6 +209,102 @@ describe('workflow request detail composer', () => {
       expect.objectContaining({
         action: 'entered_step',
         label: 'Entrada em etapa',
+      }),
+    ]);
+    expect(detail.action).toEqual({
+      available: true,
+      state: 'idle',
+      type: 'execution',
+      label: 'Executar atividade',
+      commentRequired: true,
+      attachmentRequired: true,
+      commentPlaceholder: 'Descreva o que foi executado',
+      attachmentPlaceholder: 'Envie a evidencia',
+      canRequest: false,
+      canRespond: false,
+      requestedAt: null,
+      requestedByUserId: null,
+      requestedByName: null,
+      recipients: [],
+      configurationError: null,
+    });
+  });
+
+  it('expoe batch pendente de action com permissoes de resposta e timeline nova', () => {
+    const detail = buildWorkflowRequestDetail({
+      docId: 'doc-2',
+      request: buildRequest({
+        responsibleUserId: 'RESP_EXEC',
+        responsibleName: 'Responsavel Execucao',
+        statusCategory: 'waiting_action',
+        hasPendingActions: true,
+        pendingActionRecipientIds: ['EXEC2'],
+        pendingActionTypes: ['execution'],
+        operationalParticipantIds: ['SMO2', 'RESP_EXEC', 'EXEC2'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_1',
+            actionBatchId: 'act_batch_1',
+            stepId: 'execucao',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            type: 'execution',
+            label: 'Executar atividade',
+            recipientUserId: 'EXEC2',
+            requestedByUserId: 'RESP_EXEC',
+            requestedByName: 'Responsavel Execucao',
+            requestedAt: { seconds: 5, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+        history: [
+          {
+            action: 'request_opened',
+            timestamp: { seconds: 1, nanoseconds: 0 },
+            userId: 'REQ1',
+            userName: 'Requester',
+          },
+          {
+            action: 'action_requested',
+            timestamp: { seconds: 4, nanoseconds: 0 },
+            userId: 'RESP_EXEC',
+            userName: 'Responsavel Execucao',
+          },
+        ],
+      }),
+      version: buildVersion(),
+      actorUserId: 'EXEC2',
+    });
+
+    expect(detail.permissions).toEqual({
+      canAssign: false,
+      canFinalize: false,
+      canArchive: false,
+      canRequestAction: false,
+      canRespondAction: true,
+    });
+    expect(detail.action).toEqual(
+      expect.objectContaining({
+        state: 'pending',
+        canRequest: false,
+        canRespond: true,
+        recipients: [
+          expect.objectContaining({
+            actionRequestId: 'act_req_1',
+            recipientUserId: 'EXEC2',
+            status: 'pending',
+          }),
+        ],
+      }),
+    );
+    expect(detail.timeline).toEqual([
+      expect.objectContaining({
+        action: 'request_opened',
+        label: 'Solicitacao aberta',
+      }),
+      expect.objectContaining({
+        action: 'action_requested',
+        label: 'Action solicitada',
       }),
     ]);
   });

@@ -5,7 +5,7 @@
  * This module isolates raw Firestore access from business logic.
  */
 
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { RuntimeError, RuntimeErrorCode } from './errors';
 import type { HistoryEntry, WorkflowTypeV2, WorkflowVersionV2, WorkflowRequestV2 } from './types';
@@ -220,6 +220,54 @@ export async function updateWorkflowRequestWithHistory(
         history: [...currentHistory, ...nextEntries],
       }),
     );
+  });
+}
+
+export type AtomicWorkflowMutationResult<T> = {
+  update: Record<string, unknown>;
+  historyEntries?: HistoryEntry | HistoryEntry[];
+  result: T;
+};
+
+/**
+ * Applies an atomic mutation over the latest request snapshot and appends history in the same transaction.
+ */
+export async function mutateWorkflowRequestAtomically<T>(
+  docId: string,
+  mutator: (
+    currentRequest: WorkflowRequestV2,
+    now: Timestamp,
+  ) => AtomicWorkflowMutationResult<T> | Promise<AtomicWorkflowMutationResult<T>>,
+): Promise<T> {
+  const db = getDb();
+  const docRef = db.collection(WORKFLOWS_COLLECTION).doc(docId);
+
+  return db.runTransaction(async (tx) => {
+    const requestSnap = await tx.get(docRef);
+
+    if (!requestSnap.exists) {
+      throw new RuntimeError(RuntimeErrorCode.REQUEST_NOT_FOUND, 'Chamado nao encontrado.', 404);
+    }
+
+    const currentRequest = requestSnap.data() as WorkflowRequestV2;
+    const now = Timestamp.now();
+    const mutation = await mutator(currentRequest, now);
+    const nextEntries = mutation.historyEntries
+      ? Array.isArray(mutation.historyEntries)
+        ? mutation.historyEntries
+        : [mutation.historyEntries]
+      : [];
+    const currentHistory = ((requestSnap.data()?.history ?? []) as HistoryEntry[]).slice();
+
+    tx.update(
+      docRef,
+      cleanRuntimeDataForFirestore({
+        ...mutation.update,
+        ...(nextEntries.length > 0 ? { history: [...currentHistory, ...nextEntries] } : {}),
+      }),
+    );
+
+    return mutation.result;
   });
 }
 

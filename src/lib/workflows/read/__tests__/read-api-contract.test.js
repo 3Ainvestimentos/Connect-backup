@@ -91,6 +91,8 @@ function buildDetail(overrides = {}) {
       canAssign: false,
       canFinalize: true,
       canArchive: false,
+      canRequestAction: false,
+      canRespondAction: false,
     },
     formData: {
       fields: [
@@ -125,6 +127,23 @@ function buildDetail(overrides = {}) {
           isCurrent: false,
         },
       ],
+    },
+    action: {
+      available: true,
+      state: 'idle',
+      type: 'approval',
+      label: 'Aprovar etapa',
+      commentRequired: false,
+      attachmentRequired: false,
+      commentPlaceholder: null,
+      attachmentPlaceholder: null,
+      canRequest: false,
+      canRespond: false,
+      requestedAt: null,
+      requestedByUserId: null,
+      requestedByName: null,
+      recipients: [],
+      configurationError: null,
     },
     timeline: [
       {
@@ -269,8 +288,14 @@ describe('workflow read API contract', () => {
           canAssign: false,
           canFinalize: true,
           canArchive: false,
+          canRequestAction: false,
+          canRespondAction: false,
         },
         attachments: [expect.objectContaining({ fieldId: 'anexo' })],
+        action: expect.objectContaining({
+          available: true,
+          state: 'idle',
+        }),
       }),
     });
     expect(getWorkflowRequestDetail).toHaveBeenCalledWith(800, 'SMO2');

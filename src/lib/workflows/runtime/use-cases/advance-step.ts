@@ -11,6 +11,7 @@ import { Timestamp } from 'firebase-admin/firestore';
 import { assertCanAdvance, advanceStepStates } from '../engine';
 import { RuntimeError, RuntimeErrorCode } from '../errors';
 import { buildHistoryEntry } from '../history';
+import { getPendingActionEntriesForCurrentStep } from '../read-model';
 import { buildAdvanceReadModelUpdate } from '../read-model';
 import * as repo from '../repository';
 import type { StatusCategory } from '../types';
@@ -41,6 +42,13 @@ export async function advanceStep(input: AdvanceStepInput): Promise<AdvanceStepR
   }
 
   const { docId, data: request } = result;
+
+  if (getPendingActionEntriesForCurrentStep(request).length > 0) {
+    throw new RuntimeError(
+      RuntimeErrorCode.INVALID_STEP_TRANSITION,
+      'Nao e possivel avancar o chamado enquanto existem actions pendentes na etapa atual.',
+    );
+  }
 
   // Guard: must be in_progress
   if (request.statusCategory !== 'in_progress') {

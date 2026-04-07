@@ -1,5 +1,6 @@
 import type { User } from 'firebase/auth';
 import {
+  type WorkflowActionResponseUploadFileInput,
   WorkflowFileTransferError,
   WorkflowUploadRequestError,
   type WorkflowUploadFileInput,
@@ -138,6 +139,7 @@ export async function uploadWorkflowFile(
   input: WorkflowUploadFileInput,
 ): Promise<WorkflowUploadFileResult> {
   const signed = await requestWorkflowFileUpload(user, {
+    target: 'form_field',
     workflowTypeId: input.workflowTypeId,
     fieldId: input.fieldId,
     fileName: input.file.name,
@@ -151,5 +153,38 @@ export async function uploadWorkflowFile(
     signed.uploadMethod,
   );
 
-  return { fileUrl: signed.fileUrl };
+  return {
+    fileUrl: signed.fileUrl,
+    storagePath: signed.storagePath,
+    uploadId: signed.uploadId,
+    fileName: input.file.name,
+    contentType: input.file.type || 'application/octet-stream',
+  };
+}
+
+export async function uploadWorkflowActionResponseFile(
+  user: User,
+  input: WorkflowActionResponseUploadFileInput,
+): Promise<WorkflowUploadFileResult> {
+  const signed = await requestWorkflowFileUpload(user, {
+    target: 'action_response',
+    requestId: input.requestId,
+    fileName: input.file.name,
+    contentType: input.file.type || 'application/octet-stream',
+  });
+
+  await putFileToSignedUrl(
+    signed.uploadUrl,
+    signed.uploadHeaders,
+    input.file,
+    signed.uploadMethod,
+  );
+
+  return {
+    fileUrl: signed.fileUrl,
+    storagePath: signed.storagePath,
+    uploadId: signed.uploadId,
+    fileName: input.file.name,
+    contentType: input.file.type || 'application/octet-stream',
+  };
 }

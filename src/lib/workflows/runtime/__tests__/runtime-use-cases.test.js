@@ -4,6 +4,7 @@ jest.mock('@/lib/workflows/runtime/repository', () => ({
   getWorkflowRequestByRequestId: jest.fn(),
   getWorkflowVersion: jest.fn(),
   updateWorkflowRequestWithHistory: jest.fn(),
+  mutateWorkflowRequestAtomically: jest.fn(),
 }));
 
 const repo = require('@/lib/workflows/runtime/repository');
@@ -12,6 +13,8 @@ const { assignResponsible } = require('@/lib/workflows/runtime/use-cases/assign-
 const { advanceStep } = require('@/lib/workflows/runtime/use-cases/advance-step');
 const { finalizeRequest } = require('@/lib/workflows/runtime/use-cases/finalize-request');
 const { archiveRequest } = require('@/lib/workflows/runtime/use-cases/archive-request');
+const { requestAction } = require('@/lib/workflows/runtime/use-cases/request-action');
+const { respondAction } = require('@/lib/workflows/runtime/use-cases/respond-action');
 
 function buildWorkflowVersion(overrides = {}) {
   return {
@@ -31,6 +34,11 @@ function buildWorkflowVersion(overrides = {}) {
         stepName: 'Em andamento',
         statusKey: 'em_andamento',
         kind: 'work',
+        action: {
+          type: 'approval',
+          label: 'Aprovar etapa',
+          approverIds: ['APR1', 'APR2'],
+        },
       },
       stp_final: {
         stepId: 'stp_final',
@@ -60,6 +68,7 @@ function buildRequest(overrides = {}) {
     hasPendingActions: false,
     pendingActionRecipientIds: [],
     pendingActionTypes: [],
+    actionRequests: [],
     closedAt: null,
     finalizedAt: null,
     archivedAt: null,
@@ -76,6 +85,13 @@ function buildRequest(overrides = {}) {
 describe('workflow runtime use cases', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    repo.mutateWorkflowRequestAtomically.mockImplementation(async (docId, mutator) => {
+      const currentRequest = repo.getWorkflowRequestByRequestId.mock.results.at(-1)?.value
+        ? (await repo.getWorkflowRequestByRequestId.mock.results.at(-1).value).data
+        : buildRequest();
+      const mutation = await mutator(currentRequest, { seconds: 1, nanoseconds: 0 });
+      return mutation.result;
+    });
   });
 
   it('materializa a primeira atribuição em Em andamento', async () => {
@@ -413,6 +429,244 @@ describe('workflow runtime use cases', () => {
     ).rejects.toEqual(
       expect.objectContaining({
         code: RuntimeErrorCode.INVALID_STEP_TRANSITION,
+      }),
+    );
+  });
+
+  it('bloqueia advance-step quando existe action pendente na etapa atual', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-advance-pending-action',
+      data: buildRequest({
+        requestId: 20,
+        ownerUserId: 'owner-1',
+        responsibleUserId: 'resp-1',
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        hasPendingActions: true,
+        pendingActionRecipientIds: ['APR1'],
+        pendingActionTypes: ['approval'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_1',
+            actionBatchId: 'act_batch_1',
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            type: 'approval',
+            label: 'Aprovar etapa',
+            recipientUserId: 'APR1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+        stepStates: {
+          stp_work: 'active',
+          stp_review: 'pending',
+          stp_final: 'pending',
+        },
+      }),
+    });
+
+    await expect(
+      advanceStep({
+        requestId: 20,
+        actorUserId: 'resp-1',
+        actorName: 'Responsavel',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.INVALID_STEP_TRANSITION,
+      }),
+    );
+
+    expect(repo.getWorkflowVersion).not.toHaveBeenCalled();
+    expect(repo.updateWorkflowRequestWithHistory).not.toHaveBeenCalled();
+  });
+
+  it('abre requestAction para todos os approverIds e entra em waiting_action', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-open',
+      data: buildRequest({
+        requestId: 50,
+        responsibleUserId: 'RESP1',
+        responsibleName: 'Responsavel',
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        hasResponsible: true,
+        operationalParticipantIds: ['SMO2', 'RESP1'],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(buildWorkflowVersion());
+
+    await expect(
+      requestAction({
+        requestId: 50,
+        actorUserId: 'RESP1',
+        actorName: 'Responsavel',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        docId: 'doc-action-open',
+        requestId: 50,
+        pendingRecipients: ['APR1', 'APR2'],
+      }),
+    );
+
+    expect(repo.mutateWorkflowRequestAtomically).toHaveBeenCalledWith(
+      'doc-action-open',
+      expect.any(Function),
+    );
+  });
+
+  it('rejeita requestAction quando a etapa atual ja possui batch pendente', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-existing',
+      data: buildRequest({
+        requestId: 51,
+        responsibleUserId: 'RESP1',
+        responsibleName: 'Responsavel',
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        hasResponsible: true,
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_1',
+            actionBatchId: 'act_batch_1',
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            type: 'approval',
+            label: 'Aprovar etapa',
+            recipientUserId: 'APR1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(buildWorkflowVersion());
+
+    await expect(
+      requestAction({
+        requestId: 51,
+        actorUserId: 'RESP1',
+        actorName: 'Responsavel',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.ACTION_REQUEST_ALREADY_OPEN,
+      }),
+    );
+  });
+
+  it('responde approval e retorna para in_progress ao fechar a ultima pendencia', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-response',
+      data: buildRequest({
+        requestId: 52,
+        responsibleUserId: 'RESP1',
+        responsibleName: 'Responsavel',
+        statusCategory: 'waiting_action',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        hasResponsible: true,
+        hasPendingActions: true,
+        pendingActionRecipientIds: ['APR1'],
+        pendingActionTypes: ['approval'],
+        operationalParticipantIds: ['SMO2', 'RESP1', 'APR1'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_1',
+            actionBatchId: 'act_batch_1',
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            type: 'approval',
+            label: 'Aprovar etapa',
+            recipientUserId: 'APR1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(buildWorkflowVersion());
+
+    await expect(
+      respondAction({
+        requestId: 52,
+        actorUserId: 'APR1',
+        actorName: 'Aprovador',
+        response: 'approved',
+        comment: 'Tudo certo',
+      }),
+    ).resolves.toEqual({
+      docId: 'doc-action-response',
+      requestId: 52,
+      actionRequestId: 'act_req_1',
+      actionBatchId: 'act_batch_1',
+      remainingPendingCount: 0,
+      statusCategory: 'in_progress',
+    });
+  });
+
+  it('rejeita respondAction para outsider sem pendencia', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-response-forbidden',
+      data: buildRequest({
+        requestId: 53,
+        responsibleUserId: 'RESP1',
+        responsibleName: 'Responsavel',
+        statusCategory: 'waiting_action',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        hasResponsible: true,
+        hasPendingActions: true,
+        pendingActionRecipientIds: ['APR1'],
+        pendingActionTypes: ['approval'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_1',
+            actionBatchId: 'act_batch_1',
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            type: 'approval',
+            label: 'Aprovar etapa',
+            recipientUserId: 'APR1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(buildWorkflowVersion());
+
+    await expect(
+      respondAction({
+        requestId: 53,
+        actorUserId: 'OUT1',
+        actorName: 'Outsider',
+        response: 'approved',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.ACTION_RESPONSE_NOT_ALLOWED,
       }),
     );
   });

@@ -33,6 +33,7 @@ import type {
   WorkflowManagementRequestSummary,
 } from '@/lib/workflows/management/types';
 import { ManagementAsyncState, ManagementErrorState } from './ManagementAsyncState';
+import { RequestActionCard } from './RequestActionCard';
 import { RequestAttachments } from './RequestAttachments';
 import { RequestFormData } from './RequestFormData';
 import { RequestProgress } from './RequestProgress';
@@ -50,9 +51,20 @@ type RequestDetailDialogProps = {
   onAssign: (summary: WorkflowManagementRequestSummary, collaborator: Collaborator) => Promise<unknown>;
   onFinalize: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
   onArchive: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
+  onRequestAction: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
+  onRespondAction: (
+    summary: WorkflowManagementRequestSummary,
+    payload: {
+      response: 'approved' | 'rejected' | 'acknowledged' | 'executed';
+      comment?: string;
+      attachmentFile?: File | null;
+    },
+  ) => Promise<unknown>;
   isAssigning?: boolean;
   isFinalizing?: boolean;
   isArchiving?: boolean;
+  isRequestingAction?: boolean;
+  isRespondingAction?: boolean;
 };
 
 function LoadingState() {
@@ -77,9 +89,13 @@ export function RequestDetailDialog({
   onAssign,
   onFinalize,
   onArchive,
+  onRequestAction,
+  onRespondAction,
   isAssigning = false,
   isFinalizing = false,
   isArchiving = false,
+  isRequestingAction = false,
+  isRespondingAction = false,
 }: RequestDetailDialogProps) {
   const [selectedResponsibleId, setSelectedResponsibleId] = React.useState('');
 
@@ -109,7 +125,12 @@ export function RequestDetailDialog({
   const canShowAssignForm = permissions?.canAssign === true;
   const canShowFinalize = permissions?.canFinalize === true;
   const canShowArchive = permissions?.canArchive === true;
-  const hasAction = canShowAssignForm || canShowFinalize || canShowArchive;
+  const hasOperationalAction =
+    canShowAssignForm ||
+    canShowFinalize ||
+    canShowArchive ||
+    detail?.action.available === true ||
+    Boolean(detail?.action.configurationError);
   const blockingErrorMessage = detail ? undefined : errorMessage;
   const hasNonBlockingError = Boolean(detail && errorMessage);
 
@@ -284,7 +305,18 @@ export function RequestDetailDialog({
                     </div>
                   ) : null}
 
-                  {!hasAction ? (
+                  {detail ? (
+                    <RequestActionCard
+                      detail={detail}
+                      collaborators={collaborators}
+                      onRequestAction={onRequestAction}
+                      onRespondAction={onRespondAction}
+                      isRequestingAction={isRequestingAction}
+                      isRespondingAction={isRespondingAction}
+                    />
+                  ) : null}
+
+                  {!hasOperationalAction ? (
                     <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
                       Nenhuma acao operacional disponivel para o estado atual e para as permissoes
                       do ator autenticado.

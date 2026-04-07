@@ -1,9 +1,17 @@
-export type WorkflowUploadInitInput = {
-  workflowTypeId: string;
-  fieldId: string;
-  fileName: string;
-  contentType: string;
-};
+export type WorkflowUploadInitInput =
+  | {
+      target: 'form_field';
+      workflowTypeId: string;
+      fieldId: string;
+      fileName: string;
+      contentType: string;
+    }
+  | {
+      target: 'action_response';
+      requestId: number;
+      fileName: string;
+      contentType: string;
+    };
 
 export type WorkflowUploadInitResult = {
   uploadUrl: string;
@@ -21,8 +29,17 @@ export type WorkflowUploadFileInput = {
   file: File;
 };
 
+export type WorkflowActionResponseUploadFileInput = {
+  requestId: number;
+  file: File;
+};
+
 export type WorkflowUploadFileResult = {
   fileUrl: string;
+  storagePath: string;
+  uploadId?: string;
+  fileName: string;
+  contentType: string;
 };
 
 export class WorkflowUploadRequestError extends Error {

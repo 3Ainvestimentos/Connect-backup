@@ -18,13 +18,24 @@ export type SignedWorkflowUpload = {
   expiresAt: string;
 };
 
-type CreateSignedWorkflowUploadInput = {
-  workflowTypeId: string;
-  fieldId: string;
-  actorUserId: string;
-  fileName: string;
-  contentType: string;
-};
+type CreateSignedWorkflowUploadInput =
+  | {
+      target?: 'form_field';
+      workflowTypeId: string;
+      fieldId: string;
+      actorUserId: string;
+      fileName: string;
+      contentType: string;
+    }
+  | {
+      target: 'action_response';
+      workflowTypeId: string;
+      requestId: number;
+      stepId: string;
+      actorUserId: string;
+      fileName: string;
+      contentType: string;
+    };
 
 function resolveStorageBucketName(): string {
   const app = getFirebaseAdminApp();
@@ -83,7 +94,9 @@ export async function createSignedWorkflowUpload(
   const yyyyMm = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
   const safeFileName = sanitizeUploadFileName(input.fileName);
   const basePath = sanitizeStoragePath(
-    `${FACILITIES_WORKFLOW_UPLOAD_PREFIX}/${input.workflowTypeId}/${input.fieldId}`,
+    input.target !== 'action_response'
+      ? `${FACILITIES_WORKFLOW_UPLOAD_PREFIX}/${input.workflowTypeId}/${input.fieldId}`
+      : `${FACILITIES_WORKFLOW_UPLOAD_PREFIX}/${input.workflowTypeId}/action_response/request_${input.requestId}/${input.stepId}`,
   );
   const storagePath = buildStorageFilePath(basePath, yyyyMm, `${uploadId}-${safeFileName}`);
   const expiresAtMs = now.getTime() + SIGNED_UPLOAD_TTL_MS;
@@ -91,9 +104,17 @@ export async function createSignedWorkflowUpload(
     'Content-Type': input.contentType,
     'x-goog-meta-firebaseStorageDownloadTokens': downloadToken,
     'x-goog-meta-uploadid': uploadId,
+    'x-goog-meta-target': input.target ?? 'form_field',
     'x-goog-meta-workflowtypeid': input.workflowTypeId,
-    'x-goog-meta-fieldid': input.fieldId,
     'x-goog-meta-actoruserid': input.actorUserId,
+    ...(input.target !== 'action_response'
+      ? {
+          'x-goog-meta-fieldid': input.fieldId,
+        }
+      : {
+          'x-goog-meta-requestid': String(input.requestId),
+          'x-goog-meta-stepid': input.stepId,
+        }),
   };
 
   try {
@@ -108,8 +129,11 @@ export async function createSignedWorkflowUpload(
     });
 
     console.info('[workflows.runtime.uploads] signed-upload-created', {
+      target: input.target ?? 'form_field',
       workflowTypeId: input.workflowTypeId,
-      fieldId: input.fieldId,
+      ...(input.target !== 'action_response'
+        ? { fieldId: input.fieldId }
+        : { requestId: input.requestId, stepId: input.stepId }),
       actorUserId: input.actorUserId,
       storagePath,
       status: 'success',
@@ -126,8 +150,11 @@ export async function createSignedWorkflowUpload(
     };
   } catch (error) {
     console.error('[workflows.runtime.uploads] signed-upload-failed', {
+      target: input.target ?? 'form_field',
       workflowTypeId: input.workflowTypeId,
-      fieldId: input.fieldId,
+      ...(input.target !== 'action_response'
+        ? { fieldId: input.fieldId }
+        : { requestId: input.requestId, stepId: input.stepId }),
       actorUserId: input.actorUserId,
       storagePath,
       status: 'error',

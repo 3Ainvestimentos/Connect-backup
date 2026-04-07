@@ -1,4 +1,5 @@
 import { assertCanReadRequest } from '@/lib/workflows/runtime/authz';
+import { describeCurrentStepAction, getCurrentPendingActionBatchEntries } from '@/lib/workflows/runtime/action-helpers';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
 import {
   getWorkflowRequestByRequestId,
@@ -9,6 +10,7 @@ import type {
   HistoryEntry,
   StepState,
   VersionFieldDef,
+  WorkflowActionRequest,
   WorkflowRequestV2,
   WorkflowVersionV2,
 } from '@/lib/workflows/runtime/types';
@@ -16,6 +18,7 @@ import { enrichWorkflowReadSummaryWithSlaState, normalizeReadTimestamp } from '.
 import { mapWorkflowRequestToReadSummary } from './queries';
 import type {
   WorkflowRequestAttachment,
+  WorkflowRequestActionDetail,
   WorkflowRequestDetailData,
   WorkflowRequestDetailExtraField,
   WorkflowRequestDetailField,
@@ -30,6 +33,11 @@ const TIMELINE_LABELS: Record<HistoryAction, string> = {
   responsible_reassigned: 'Responsavel reatribuido',
   step_completed: 'Etapa concluida',
   entered_step: 'Entrada em etapa',
+  action_requested: 'Action solicitada',
+  action_approved: 'Action aprovada',
+  action_rejected: 'Action rejeitada',
+  action_acknowledged: 'Action registrada',
+  action_executed: 'Action executada',
   request_finalized: 'Chamado finalizado',
   request_archived: 'Chamado arquivado',
 };
@@ -73,11 +81,26 @@ function sortVersionFields(fields: VersionFieldDef[]): VersionFieldDef[] {
 
 function buildDetailPermissions(
   request: WorkflowRequestV2,
+  version: WorkflowVersionV2,
   actorUserId: string,
 ): WorkflowRequestDetailPermissions {
   const isOwner = request.ownerUserId === actorUserId;
   const isResponsible =
     request.responsibleUserId != null && request.responsibleUserId === actorUserId;
+  const actionDescription = describeCurrentStepAction(version, request);
+  const pendingActionForActor = (request.actionRequests ?? []).some(
+    (entry) =>
+      entry.stepId === request.currentStepId &&
+      entry.recipientUserId === actorUserId &&
+      entry.status === 'pending',
+  );
+  const canRequestAction =
+    request.statusCategory === 'in_progress' &&
+    isResponsible &&
+    actionDescription.available &&
+    !actionDescription.configurationError &&
+    getCurrentPendingActionBatchEntries(request).length === 0;
+  const canRespondAction = pendingActionForActor;
 
   return {
     canAssign:
@@ -89,6 +112,8 @@ function buildDetailPermissions(
       (isOwner || isResponsible) && request.statusCategory === 'in_progress',
     canArchive:
       isOwner && request.statusCategory === 'finalized' && !request.isArchived,
+    canRequestAction,
+    canRespondAction,
   };
 }
 
@@ -224,6 +249,78 @@ function buildDetailTimeline(history: HistoryEntry[]): WorkflowRequestTimelineIt
     }));
 }
 
+function buildActionRecipients(entries: WorkflowActionRequest[], actorUserId: string, request: WorkflowRequestV2) {
+  const canSeeResponseAttachment =
+    actorUserId === request.ownerUserId ||
+    (request.responsibleUserId != null && actorUserId === request.responsibleUserId);
+
+  return entries.map((entry) => ({
+    actionRequestId: entry.actionRequestId,
+    recipientUserId: entry.recipientUserId,
+    status: entry.status,
+    respondedAt: entry.respondedAt ?? null,
+    respondedByUserId: entry.respondedByUserId ?? null,
+    respondedByName: entry.respondedByName ?? null,
+    ...(typeof entry.responseComment === 'string' && entry.responseComment.trim() !== ''
+      ? { responseComment: entry.responseComment }
+      : {}),
+    ...(canSeeResponseAttachment &&
+    typeof entry.responseAttachment?.fileUrl === 'string' &&
+    entry.responseAttachment.fileUrl.trim() !== ''
+      ? { responseAttachmentUrl: entry.responseAttachment.fileUrl }
+      : {}),
+  }));
+}
+
+function buildDetailAction(
+  request: WorkflowRequestV2,
+  version: WorkflowVersionV2,
+  permissions: WorkflowRequestDetailPermissions,
+  actorUserId: string,
+): WorkflowRequestActionDetail {
+  const actionDescription = describeCurrentStepAction(version, request);
+  const batchEntries = getCurrentPendingActionBatchEntries(request);
+  const requestedEntry = batchEntries[0] ?? null;
+
+  if (!actionDescription.available) {
+    return {
+      available: false,
+      state: 'idle',
+      type: null,
+      label: null,
+      commentRequired: false,
+      attachmentRequired: false,
+      commentPlaceholder: null,
+      attachmentPlaceholder: null,
+      canRequest: false,
+      canRespond: false,
+      requestedAt: null,
+      requestedByUserId: null,
+      requestedByName: null,
+      recipients: [],
+      configurationError: null,
+    };
+  }
+
+  return {
+    available: true,
+    state: batchEntries.length > 0 ? 'pending' : 'idle',
+    type: actionDescription.action.type,
+    label: actionDescription.action.label,
+    commentRequired: actionDescription.commentRequired,
+    attachmentRequired: actionDescription.attachmentRequired,
+    commentPlaceholder: actionDescription.commentPlaceholder,
+    attachmentPlaceholder: actionDescription.attachmentPlaceholder,
+    canRequest: permissions.canRequestAction,
+    canRespond: permissions.canRespondAction,
+    requestedAt: requestedEntry?.requestedAt ?? null,
+    requestedByUserId: requestedEntry?.requestedByUserId ?? null,
+    requestedByName: requestedEntry?.requestedByName ?? null,
+    recipients: buildActionRecipients(batchEntries, actorUserId, request),
+    configurationError: actionDescription.configurationError,
+  };
+}
+
 export function buildWorkflowRequestDetail(input: {
   docId: string;
   request: WorkflowRequestV2;
@@ -231,15 +328,17 @@ export function buildWorkflowRequestDetail(input: {
   actorUserId: string;
 }): WorkflowRequestDetailData {
   const { docId, request, version, actorUserId } = input;
+  const permissions = buildDetailPermissions(request, version, actorUserId);
 
   return {
     summary: enrichWorkflowReadSummaryWithSlaState(
       mapWorkflowRequestToReadSummary(docId, request),
     ),
-    permissions: buildDetailPermissions(request, actorUserId),
+    permissions,
     formData: buildDetailFormData(request.formData ?? {}, version),
     attachments: buildDetailAttachments(request.formData ?? {}, version),
     progress: buildDetailProgress(request, version),
+    action: buildDetailAction(request, version, permissions, actorUserId),
     timeline: buildDetailTimeline(request.history ?? []),
   };
 }

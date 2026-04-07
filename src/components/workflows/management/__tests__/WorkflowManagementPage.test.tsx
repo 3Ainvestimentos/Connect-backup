@@ -118,6 +118,14 @@ function buildHookResult(canViewCurrentQueue = true) {
       mutateAsync: jest.fn(),
       isPending: false,
     },
+    requestActionMutation: {
+      mutateAsync: jest.fn(),
+      isPending: false,
+    },
+    respondActionMutation: {
+      mutateAsync: jest.fn(),
+      isPending: false,
+    },
   };
 }
 
