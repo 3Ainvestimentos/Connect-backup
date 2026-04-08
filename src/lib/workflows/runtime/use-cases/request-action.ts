@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { assertCanRequestAction } from '../authz';
 import {
   assertCurrentStepActionConfigured,
-  getPendingActionEntriesForCurrentStep,
+  hasAnyActionBatchForCurrentStep,
 } from '../action-helpers';
 import { RuntimeError, RuntimeErrorCode } from '../errors';
 import { buildHistoryEntry } from '../history';
@@ -66,10 +66,10 @@ export async function requestAction(input: RequestActionInput): Promise<RequestA
 
     const actionDescription = assertCurrentStepActionConfigured(version, currentRequest);
 
-    if (getPendingActionEntriesForCurrentStep(currentRequest).length > 0) {
+    if (hasAnyActionBatchForCurrentStep(currentRequest)) {
       throw new RuntimeError(
         RuntimeErrorCode.ACTION_REQUEST_ALREADY_OPEN,
-        'Ja existe uma action pendente aberta para a etapa atual.',
+        'A etapa atual ja possui uma action aberta ou encerrada e nao pode ser reaberta.',
         409,
       );
     }

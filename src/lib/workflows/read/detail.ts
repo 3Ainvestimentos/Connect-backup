@@ -1,7 +1,6 @@
 import { assertCanReadRequest } from '@/lib/workflows/runtime/authz';
 import {
   describeCurrentStepAction,
-  getCurrentPendingActionBatchEntries,
   getDisplayActionBatchEntriesForCurrentStep,
   hasAnyActionBatchForCurrentStep,
 } from '@/lib/workflows/runtime/action-helpers';
@@ -105,7 +104,6 @@ function buildDetailPermissions(
     isResponsible &&
     actionDescription.available &&
     !actionDescription.configurationError &&
-    getCurrentPendingActionBatchEntries(request).length === 0 &&
     !hasAnyActionBatchForCurrentStep(request);
   const canRespondAction = pendingActionForActor;
 

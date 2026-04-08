@@ -4,7 +4,12 @@ import { randomUUID } from 'node:crypto';
 import { getStorage } from 'firebase-admin/storage';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
-import { createSignedWorkflowUpload } from '@/lib/workflows/runtime/upload-storage';
+import {
+  assertAllowedWorkflowUploadPath,
+  assertAttachmentUrlMatchesStoragePath,
+  assertUploadIdMatchesFileName,
+  createSignedWorkflowUpload,
+} from '@/lib/workflows/runtime/upload-storage';
 
 jest.mock('node:crypto', () => ({
   randomUUID: jest.fn(),
@@ -126,6 +131,72 @@ describe('upload-storage', () => {
       'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_9b8d0d3a-1111-2222-3333-444444444444-Comprovante.pdf',
     );
     expect(result.storagePath).not.toContain('Facilities e Suprimentos');
+  });
+
+  it('aceita path no namespace neutro oficial e preserva compatibilidade com legado', () => {
+    expect(
+      assertAllowedWorkflowUploadPath(
+        'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_abc-Comprovante.pdf',
+      ),
+    ).toBe(
+      'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_abc-Comprovante.pdf',
+    );
+    expect(
+      assertAllowedWorkflowUploadPath(
+        'Workflows/Facilities e Suprimentos/workflows_v2/preopen/legacy/file.pdf',
+      ),
+    ).toBe('Workflows/Facilities e Suprimentos/workflows_v2/preopen/legacy/file.pdf');
+  });
+
+  it('rejeita path fora do namespace oficial de uploads', () => {
+    expect(() => assertAllowedWorkflowUploadPath('Workflows/outro_namespace/file.pdf')).toThrow(
+      expect.objectContaining({
+        code: RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+        httpStatus: 400,
+      }),
+    );
+  });
+
+  it('valida consistencia entre fileUrl e storagePath oficial', () => {
+    expect(() =>
+      assertAttachmentUrlMatchesStoragePath(
+        'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2Fworkflows_v2%2Fuploads%2Faction_response%2Ffinanceiro_reembolsos%2Frequest_812%2Fexecucao%2F2026-03%2Fupl_abc-Comprovante.pdf?alt=media&token=123',
+        'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_abc-Comprovante.pdf',
+      ),
+    ).not.toThrow();
+
+    expect(() =>
+      assertAttachmentUrlMatchesStoragePath(
+        'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2Fworkflows_v2%2Fuploads%2Faction_response%2Ffinanceiro_reembolsos%2Frequest_812%2Fexecucao%2F2026-03%2Fupl_wrong-Comprovante.pdf?alt=media&token=123',
+        'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_abc-Comprovante.pdf',
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        code: RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+        httpStatus: 400,
+      }),
+    );
+  });
+
+  it('valida consistencia entre uploadId e nome do arquivo armazenado', () => {
+    expect(
+      assertUploadIdMatchesFileName(
+        'upl_abc',
+        'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_abc-Comprovante.pdf',
+      ),
+    ).toBe('upl_abc');
+
+    expect(() =>
+      assertUploadIdMatchesFileName(
+        'upl_xyz',
+        'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_abc-Comprovante.pdf',
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        code: RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+        httpStatus: 400,
+      }),
+    );
   });
 
   it('falha com STORAGE_NOT_CONFIGURED quando o bucket nao esta configurado', async () => {

@@ -577,6 +577,74 @@ describe('workflow runtime use cases', () => {
     );
   });
 
+  it('rejeita requestAction quando a etapa atual ja possui batch historico encerrado', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-completed',
+      data: buildRequest({
+        requestId: 28,
+        ownerUserId: 'OWNER1',
+        responsibleUserId: 'RESP1',
+        responsibleName: 'Responsavel',
+        operationalParticipantIds: ['OWNER1', 'RESP1', 'APR1', 'APR2'],
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        hasResponsible: true,
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_completed_1',
+            actionBatchId: 'act_batch_completed',
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            type: 'approval',
+            label: 'Aprovar etapa',
+            recipientUserId: 'APR1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'approved',
+            respondedAt: { seconds: 2, nanoseconds: 0 },
+            respondedByUserId: 'APR1',
+            respondedByName: 'Aprovador 1',
+          },
+          {
+            actionRequestId: 'act_req_completed_2',
+            actionBatchId: 'act_batch_completed',
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            type: 'approval',
+            label: 'Aprovar etapa',
+            recipientUserId: 'APR2',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'approved',
+            respondedAt: { seconds: 3, nanoseconds: 0 },
+            respondedByUserId: 'APR2',
+            respondedByName: 'Aprovador 2',
+          },
+        ],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(buildWorkflowVersion());
+
+    await expect(
+      requestAction({
+        requestId: 28,
+        actorUserId: 'RESP1',
+        actorName: 'Responsavel',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.ACTION_REQUEST_ALREADY_OPEN,
+        httpStatus: 409,
+      }),
+    );
+  });
+
   it('responde approval e retorna para in_progress ao fechar a ultima pendencia', async () => {
     repo.getWorkflowRequestByRequestId.mockResolvedValue({
       docId: 'doc-action-response',

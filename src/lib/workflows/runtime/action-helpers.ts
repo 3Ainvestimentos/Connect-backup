@@ -164,6 +164,7 @@ export function getCurrentPendingActionBatchEntries(
 export function hasAnyActionBatchForCurrentStep(
   request: Pick<WorkflowRequestV2, 'currentStepId' | 'actionRequests'>,
 ): boolean {
+  // Canonical gate for requestAction: any batch in the current step makes it read-only.
   return (request.actionRequests ?? []).some((entry) => entry.stepId === request.currentStepId);
 }
 
