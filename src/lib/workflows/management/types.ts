@@ -166,9 +166,12 @@ export type WorkflowManagementRequestActionRecipient = {
   responseAttachmentUrl?: string;
 };
 
+export type WorkflowManagementRequestActionState = 'idle' | 'pending' | 'completed';
+
 export type WorkflowManagementRequestActionDetail = {
   available: boolean;
-  state: 'idle' | 'pending';
+  state: WorkflowManagementRequestActionState;
+  batchId: string | null;
   type: 'approval' | 'acknowledgement' | 'execution' | null;
   label: string | null;
   commentRequired: boolean;
@@ -178,6 +181,7 @@ export type WorkflowManagementRequestActionDetail = {
   canRequest: boolean;
   canRespond: boolean;
   requestedAt: Date | null;
+  completedAt: Date | null;
   requestedByUserId: string | null;
   requestedByName: string | null;
   recipients: WorkflowManagementRequestActionRecipient[];

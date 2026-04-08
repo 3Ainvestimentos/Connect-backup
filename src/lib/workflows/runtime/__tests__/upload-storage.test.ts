@@ -68,7 +68,7 @@ describe('upload-storage', () => {
 
     expect(storage.bucket).toHaveBeenCalledWith('a-riva-hub.firebasestorage.app');
     expect(bucket.file).toHaveBeenCalledWith(
-      'Workflows/Facilities e Suprimentos/workflows_v2/preopen/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl_9b8d0d3a-1111-2222-3333-444444444444-Controle___Suprimentos.xlsx',
+      'Workflows/workflows_v2/uploads/form_field/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl_9b8d0d3a-1111-2222-3333-444444444444-Controle___Suprimentos.xlsx',
     );
     expect(getSignedUrl).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -99,12 +99,33 @@ describe('upload-storage', () => {
         'x-goog-meta-actoruserid': 'LGN',
       },
       fileUrl:
-        'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FFacilities%20e%20Suprimentos%2Fworkflows_v2%2Fpreopen%2Ffacilities_solicitacao_suprimentos%2Fanexo_planilha%2F2026-03%2Fupl_9b8d0d3a-1111-2222-3333-444444444444-Controle___Suprimentos.xlsx?alt=media&token=download-token-1234-5678-9abc-def012345678',
+        'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2Fworkflows_v2%2Fuploads%2Fform_field%2Ffacilities_solicitacao_suprimentos%2Fanexo_planilha%2F2026-03%2Fupl_9b8d0d3a-1111-2222-3333-444444444444-Controle___Suprimentos.xlsx?alt=media&token=download-token-1234-5678-9abc-def012345678',
       storagePath:
-        'Workflows/Facilities e Suprimentos/workflows_v2/preopen/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl_9b8d0d3a-1111-2222-3333-444444444444-Controle___Suprimentos.xlsx',
+        'Workflows/workflows_v2/uploads/form_field/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl_9b8d0d3a-1111-2222-3333-444444444444-Controle___Suprimentos.xlsx',
       uploadId: 'upl_9b8d0d3a-1111-2222-3333-444444444444',
       expiresAt: '2026-03-30T14:10:00.000Z',
     });
+    expect(result.storagePath).not.toContain('Facilities e Suprimentos');
+  });
+
+  it('gera signed upload de action_response no namespace neutro', async () => {
+    const result = await createSignedWorkflowUpload({
+      target: 'action_response',
+      workflowTypeId: 'financeiro_reembolsos',
+      requestId: 812,
+      stepId: 'execucao',
+      actorUserId: 'RESP1',
+      fileName: 'Comprovante.pdf',
+      contentType: 'application/pdf',
+    });
+
+    expect(bucket.file).toHaveBeenCalledWith(
+      'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_9b8d0d3a-1111-2222-3333-444444444444-Comprovante.pdf',
+    );
+    expect(result.storagePath).toBe(
+      'Workflows/workflows_v2/uploads/action_response/financeiro_reembolsos/request_812/execucao/2026-03/upl_9b8d0d3a-1111-2222-3333-444444444444-Comprovante.pdf',
+    );
+    expect(result.storagePath).not.toContain('Facilities e Suprimentos');
   });
 
   it('falha com STORAGE_NOT_CONFIGURED quando o bucket nao esta configurado', async () => {

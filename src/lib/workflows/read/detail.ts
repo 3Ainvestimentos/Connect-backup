@@ -1,5 +1,10 @@
 import { assertCanReadRequest } from '@/lib/workflows/runtime/authz';
-import { describeCurrentStepAction, getCurrentPendingActionBatchEntries } from '@/lib/workflows/runtime/action-helpers';
+import {
+  describeCurrentStepAction,
+  getCurrentPendingActionBatchEntries,
+  getDisplayActionBatchEntriesForCurrentStep,
+  hasAnyActionBatchForCurrentStep,
+} from '@/lib/workflows/runtime/action-helpers';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
 import {
   getWorkflowRequestByRequestId,
@@ -17,6 +22,7 @@ import type {
 import { enrichWorkflowReadSummaryWithSlaState, normalizeReadTimestamp } from './filters';
 import { mapWorkflowRequestToReadSummary } from './queries';
 import type {
+  TimestampLike,
   WorkflowRequestAttachment,
   WorkflowRequestActionDetail,
   WorkflowRequestDetailData,
@@ -99,7 +105,8 @@ function buildDetailPermissions(
     isResponsible &&
     actionDescription.available &&
     !actionDescription.configurationError &&
-    getCurrentPendingActionBatchEntries(request).length === 0;
+    getCurrentPendingActionBatchEntries(request).length === 0 &&
+    !hasAnyActionBatchForCurrentStep(request);
   const canRespondAction = pendingActionForActor;
 
   return {
@@ -272,6 +279,29 @@ function buildActionRecipients(entries: WorkflowActionRequest[], actorUserId: st
   }));
 }
 
+function resolveCompletedAt(entries: WorkflowActionRequest[]): TimestampLike {
+  let latest: TimestampLike = null;
+
+  for (const entry of entries) {
+    if (!entry.respondedAt) {
+      continue;
+    }
+
+    if (!latest) {
+      latest = entry.respondedAt;
+      continue;
+    }
+
+    const entryTime = normalizeReadTimestamp(entry.respondedAt)?.getTime() ?? 0;
+    const latestTime = normalizeReadTimestamp(latest)?.getTime() ?? 0;
+    if (entryTime > latestTime) {
+      latest = entry.respondedAt;
+    }
+  }
+
+  return latest;
+}
+
 function buildDetailAction(
   request: WorkflowRequestV2,
   version: WorkflowVersionV2,
@@ -279,13 +309,16 @@ function buildDetailAction(
   actorUserId: string,
 ): WorkflowRequestActionDetail {
   const actionDescription = describeCurrentStepAction(version, request);
-  const batchEntries = getCurrentPendingActionBatchEntries(request);
+  const batchEntries = getDisplayActionBatchEntriesForCurrentStep(request);
   const requestedEntry = batchEntries[0] ?? null;
+  const hasPending = batchEntries.some((entry) => entry.status === 'pending');
+  const hasHistory = batchEntries.length > 0;
 
   if (!actionDescription.available) {
     return {
       available: false,
       state: 'idle',
+      batchId: null,
       type: null,
       label: null,
       commentRequired: false,
@@ -295,6 +328,7 @@ function buildDetailAction(
       canRequest: false,
       canRespond: false,
       requestedAt: null,
+      completedAt: null,
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],
@@ -304,7 +338,8 @@ function buildDetailAction(
 
   return {
     available: true,
-    state: batchEntries.length > 0 ? 'pending' : 'idle',
+    state: hasPending ? 'pending' : hasHistory ? 'completed' : 'idle',
+    batchId: requestedEntry?.actionBatchId ?? null,
     type: actionDescription.action.type,
     label: actionDescription.action.label,
     commentRequired: actionDescription.commentRequired,
@@ -314,6 +349,7 @@ function buildDetailAction(
     canRequest: permissions.canRequestAction,
     canRespond: permissions.canRespondAction,
     requestedAt: requestedEntry?.requestedAt ?? null,
+    completedAt: hasPending ? null : resolveCompletedAt(batchEntries),
     requestedByUserId: requestedEntry?.requestedByUserId ?? null,
     requestedByName: requestedEntry?.requestedByName ?? null,
     recipients: buildActionRecipients(batchEntries, actorUserId, request),

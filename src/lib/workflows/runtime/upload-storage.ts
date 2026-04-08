@@ -4,8 +4,9 @@ import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { buildStorageFilePath, sanitizeStoragePath } from '@/lib/path-sanitizer';
 import { RuntimeError, RuntimeErrorCode } from './errors';
 
-const FACILITIES_WORKFLOW_UPLOAD_PREFIX =
+const LEGACY_WORKFLOW_UPLOAD_PREFIX =
   'Workflows/Facilities e Suprimentos/workflows_v2/preopen';
+const WORKFLOW_RUNTIME_UPLOAD_PREFIX = 'Workflows/workflows_v2/uploads';
 const SIGNED_UPLOAD_TTL_MS = 10 * 60 * 1000;
 
 export type SignedWorkflowUpload = {
@@ -16,6 +17,12 @@ export type SignedWorkflowUpload = {
   storagePath: string;
   uploadId: string;
   expiresAt: string;
+};
+
+export type WorkflowUploadObjectMetadata = {
+  name?: string;
+  contentType?: string;
+  metadata?: Record<string, string | undefined>;
 };
 
 type CreateSignedWorkflowUploadInput =
@@ -80,6 +87,148 @@ function sanitizeUploadFileName(fileName: string): string {
   return safeName;
 }
 
+function parseWorkflowUploadObjectPath(fileUrl: string): string | null {
+  try {
+    const parsed = new URL(fileUrl);
+
+    if (parsed.hostname === 'firebasestorage.googleapis.com') {
+      const match = parsed.pathname.match(/\/o\/(.+)$/);
+      if (!match?.[1]) {
+        return null;
+      }
+
+      return sanitizeStoragePath(decodeURIComponent(match[1]));
+    }
+
+    if (parsed.hostname === 'storage.googleapis.com') {
+      const segments = parsed.pathname
+        .split('/')
+        .map((segment) => segment.trim())
+        .filter(Boolean);
+
+      if (segments.length < 2) {
+        return null;
+      }
+
+      return sanitizeStoragePath(decodeURIComponent(segments.slice(1).join('/')));
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function isAllowedWorkflowUploadPath(storagePath: string): boolean {
+  return (
+    storagePath === LEGACY_WORKFLOW_UPLOAD_PREFIX ||
+    storagePath.startsWith(`${LEGACY_WORKFLOW_UPLOAD_PREFIX}/`) ||
+    storagePath === WORKFLOW_RUNTIME_UPLOAD_PREFIX ||
+    storagePath.startsWith(`${WORKFLOW_RUNTIME_UPLOAD_PREFIX}/`)
+  );
+}
+
+export function assertAllowedWorkflowUploadPath(storagePath: string): string {
+  let normalizedPath: string;
+
+  try {
+    normalizedPath = sanitizeStoragePath(storagePath);
+  } catch {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Anexo da action possui storagePath invalido.',
+      400,
+    );
+  }
+
+  if (!isAllowedWorkflowUploadPath(normalizedPath)) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Anexo da action nao corresponde ao namespace oficial de uploads.',
+      400,
+    );
+  }
+
+  return normalizedPath;
+}
+
+export function assertAttachmentUrlMatchesStoragePath(
+  fileUrl: string,
+  storagePath: string,
+): void {
+  const normalizedPath = assertAllowedWorkflowUploadPath(storagePath);
+  const parsedPath = parseWorkflowUploadObjectPath(fileUrl);
+
+  if (!parsedPath || parsedPath !== normalizedPath) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Anexo da action possui fileUrl inconsistente com o storagePath informado.',
+      400,
+    );
+  }
+}
+
+export function assertUploadIdMatchesFileName(uploadId: string, storagePath: string): string {
+  const normalizedUploadId = uploadId.trim();
+  const normalizedPath = assertAllowedWorkflowUploadPath(storagePath);
+  const fileName = normalizedPath.split('/').at(-1) ?? '';
+
+  if (normalizedUploadId === '' || !fileName.startsWith(`${normalizedUploadId}-`)) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Anexo da action possui uploadId inconsistente com o arquivo informado.',
+      400,
+    );
+  }
+
+  return normalizedUploadId;
+}
+
+export async function readWorkflowUploadObjectMetadata(
+  storagePath: string,
+): Promise<WorkflowUploadObjectMetadata> {
+  const app = getFirebaseAdminApp();
+  const bucketName = resolveStorageBucketName();
+  const normalizedPath = assertAllowedWorkflowUploadPath(storagePath);
+
+  try {
+    const bucket = getStorage(app).bucket(bucketName);
+    const file = bucket.file(normalizedPath);
+    const [metadata] = await file.getMetadata();
+
+    return {
+      name: typeof metadata.name === 'string' ? metadata.name : normalizedPath,
+      contentType: typeof metadata.contentType === 'string' ? metadata.contentType : undefined,
+      metadata:
+        metadata.metadata && typeof metadata.metadata === 'object'
+          ? Object.entries(metadata.metadata).reduce<Record<string, string | undefined>>(
+              (accumulator, [key, value]) => {
+                accumulator[key] = typeof value === 'string' ? value : undefined;
+                return accumulator;
+              },
+              {},
+            )
+          : {},
+    };
+  } catch (error) {
+    const storageError = error as { code?: unknown };
+
+    if (storageError?.code === 404 || storageError?.code === '404') {
+      throw new RuntimeError(
+        RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+        'Anexo da action nao corresponde a um upload oficial existente.',
+        400,
+      );
+    }
+
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Nao foi possivel validar o anexo da action informada.',
+      400,
+    );
+  }
+}
+
 /**
  * Creates a signed upload payload for a workflow file field.
  */
@@ -95,8 +244,8 @@ export async function createSignedWorkflowUpload(
   const safeFileName = sanitizeUploadFileName(input.fileName);
   const basePath = sanitizeStoragePath(
     input.target !== 'action_response'
-      ? `${FACILITIES_WORKFLOW_UPLOAD_PREFIX}/${input.workflowTypeId}/${input.fieldId}`
-      : `${FACILITIES_WORKFLOW_UPLOAD_PREFIX}/${input.workflowTypeId}/action_response/request_${input.requestId}/${input.stepId}`,
+      ? `${WORKFLOW_RUNTIME_UPLOAD_PREFIX}/form_field/${input.workflowTypeId}/${input.fieldId}`
+      : `${WORKFLOW_RUNTIME_UPLOAD_PREFIX}/action_response/${input.workflowTypeId}/request_${input.requestId}/${input.stepId}`,
   );
   const storagePath = buildStorageFilePath(basePath, yyyyMm, `${uploadId}-${safeFileName}`);
   const expiresAtMs = now.getTime() + SIGNED_UPLOAD_TTL_MS;

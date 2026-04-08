@@ -131,6 +131,7 @@ function buildDetail(overrides = {}) {
     action: {
       available: true,
       state: 'idle',
+      batchId: null,
       type: 'approval',
       label: 'Aprovar etapa',
       commentRequired: false,
@@ -140,6 +141,7 @@ function buildDetail(overrides = {}) {
       canRequest: false,
       canRespond: false,
       requestedAt: null,
+      completedAt: null,
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],

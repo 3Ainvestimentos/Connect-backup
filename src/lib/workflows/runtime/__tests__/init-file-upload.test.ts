@@ -103,7 +103,8 @@ describe('initFileUpload', () => {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       },
       fileUrl: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/file',
-      storagePath: 'Workflows/Facilities e Suprimentos/workflows_v2/preopen/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl-file.xlsx',
+      storagePath:
+        'Workflows/workflows_v2/uploads/form_field/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl-file.xlsx',
       uploadId: 'upl_123',
       expiresAt: '2026-03-30T14:10:00.000Z',
     });
@@ -288,7 +289,8 @@ describe('initFileUpload', () => {
         'Content-Type': 'application/pdf',
       },
       fileUrl: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/file',
-      storagePath: 'Workflows/path/action_response/file.pdf',
+      storagePath:
+        'Workflows/workflows_v2/uploads/action_response/facilities_solicitacao_suprimentos/request_812/stp_execucao/2026-03/upl-action-file.pdf',
       uploadId: 'upl_123',
       expiresAt: '2026-03-30T14:10:00.000Z',
     });

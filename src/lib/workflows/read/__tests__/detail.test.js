@@ -214,6 +214,7 @@ describe('workflow request detail composer', () => {
     expect(detail.action).toEqual({
       available: true,
       state: 'idle',
+      batchId: null,
       type: 'execution',
       label: 'Executar atividade',
       commentRequired: true,
@@ -223,6 +224,7 @@ describe('workflow request detail composer', () => {
       canRequest: false,
       canRespond: false,
       requestedAt: null,
+      completedAt: null,
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],
@@ -286,8 +288,10 @@ describe('workflow request detail composer', () => {
     expect(detail.action).toEqual(
       expect.objectContaining({
         state: 'pending',
+        batchId: 'act_batch_1',
         canRequest: false,
         canRespond: true,
+        completedAt: null,
         recipients: [
           expect.objectContaining({
             actionRequestId: 'act_req_1',
@@ -307,6 +311,88 @@ describe('workflow request detail composer', () => {
         label: 'Action solicitada',
       }),
     ]);
+  });
+
+  it('mantem visivel o ultimo batch encerrado da etapa atual como completed', () => {
+    const detail = buildWorkflowRequestDetail({
+      docId: 'doc-3',
+      request: buildRequest({
+        responsibleUserId: 'RESP_EXEC',
+        responsibleName: 'Responsavel Execucao',
+        statusCategory: 'in_progress',
+        hasPendingActions: false,
+        pendingActionRecipientIds: [],
+        pendingActionTypes: [],
+        operationalParticipantIds: ['SMO2', 'RESP_EXEC', 'EXEC2'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_old',
+            actionBatchId: 'act_batch_old',
+            stepId: 'analise',
+            stepName: 'Analise',
+            statusKey: 'analise',
+            type: 'approval',
+            label: 'Aprovar etapa anterior',
+            recipientUserId: 'APR1',
+            requestedByUserId: 'RESP_OLD',
+            requestedByName: 'Responsavel Analise',
+            requestedAt: { seconds: 2, nanoseconds: 0 },
+            status: 'approved',
+            respondedAt: { seconds: 3, nanoseconds: 0 },
+            respondedByUserId: 'APR1',
+            respondedByName: 'Aprovador',
+          },
+          {
+            actionRequestId: 'act_req_2',
+            actionBatchId: 'act_batch_2',
+            stepId: 'execucao',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            type: 'execution',
+            label: 'Executar atividade',
+            recipientUserId: 'EXEC2',
+            requestedByUserId: 'RESP_EXEC',
+            requestedByName: 'Responsavel Execucao',
+            requestedAt: { seconds: 5, nanoseconds: 0 },
+            status: 'executed',
+            respondedAt: { seconds: 6, nanoseconds: 0 },
+            respondedByUserId: 'EXEC2',
+            respondedByName: 'Executor',
+            responseComment: 'Execucao concluida',
+            responseAttachment: {
+              fileName: 'comprovante.pdf',
+              contentType: 'application/pdf',
+              fileUrl: 'https://storage.googleapis.com/example/comprovante.pdf',
+              storagePath:
+                'Workflows/workflows_v2/uploads/action_response/facilities_suprimentos/request_812/execucao/2026-04/upl_123-comprovante.pdf',
+              uploadId: 'upl_123',
+            },
+          },
+        ],
+      }),
+      version: buildVersion(),
+      actorUserId: 'SMO2',
+    });
+
+    expect(detail.permissions.canRequestAction).toBe(false);
+    expect(detail.action).toEqual(
+      expect.objectContaining({
+        state: 'completed',
+        batchId: 'act_batch_2',
+        canRequest: false,
+        canRespond: false,
+        requestedAt: { seconds: 5, nanoseconds: 0 },
+        completedAt: { seconds: 6, nanoseconds: 0 },
+        recipients: [
+          expect.objectContaining({
+            actionRequestId: 'act_req_2',
+            status: 'executed',
+            responseComment: 'Execucao concluida',
+            responseAttachmentUrl: 'https://storage.googleapis.com/example/comprovante.pdf',
+          }),
+        ],
+      }),
+    );
   });
 
   it('usa a workflowVersion congelada no request ao buscar o detalhe', async () => {

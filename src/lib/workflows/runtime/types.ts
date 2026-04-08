@@ -134,6 +134,7 @@ export interface WorkflowActionResponseAttachment {
   contentType: string;
   fileUrl: string;
   storagePath: string;
+  /** Optional only for historical compatibility; new writes must always populate it. */
   uploadId?: string;
 }
 

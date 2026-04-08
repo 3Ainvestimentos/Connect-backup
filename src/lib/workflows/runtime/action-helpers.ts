@@ -161,6 +161,42 @@ export function getCurrentPendingActionBatchEntries(
   );
 }
 
+export function hasAnyActionBatchForCurrentStep(
+  request: Pick<WorkflowRequestV2, 'currentStepId' | 'actionRequests'>,
+): boolean {
+  return (request.actionRequests ?? []).some((entry) => entry.stepId === request.currentStepId);
+}
+
+export function getDisplayActionBatchEntriesForCurrentStep(
+  request: Pick<WorkflowRequestV2, 'currentStepId' | 'actionRequests'>,
+): WorkflowActionRequest[] {
+  const pendingEntries = getPendingActionEntriesForCurrentStep(request);
+
+  if (pendingEntries.length > 0) {
+    const pendingBatchId = pendingEntries[0].actionBatchId;
+
+    return (request.actionRequests ?? []).filter(
+      (entry) => entry.stepId === request.currentStepId && entry.actionBatchId === pendingBatchId,
+    );
+  }
+
+  const actionRequests = request.actionRequests ?? [];
+  for (let index = actionRequests.length - 1; index >= 0; index -= 1) {
+    const entry = actionRequests[index];
+    if (entry.stepId !== request.currentStepId) {
+      continue;
+    }
+
+    return actionRequests.filter(
+      (candidate) =>
+        candidate.stepId === request.currentStepId &&
+        candidate.actionBatchId === entry.actionBatchId,
+    );
+  }
+
+  return [];
+}
+
 export function findPendingActionForActor(
   request: Pick<WorkflowRequestV2, 'currentStepId' | 'actionRequests'>,
   actorUserId: string,

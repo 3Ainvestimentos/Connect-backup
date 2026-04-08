@@ -34,7 +34,7 @@ function buildSignedPayload(overrides = {}) {
     },
     fileUrl: 'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/path?alt=media&token=token-123',
     storagePath:
-      'Workflows/Facilities e Suprimentos/workflows_v2/preopen/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl_123-Controle.xlsx',
+      'Workflows/workflows_v2/uploads/form_field/facilities_solicitacao_suprimentos/anexo_planilha/2026-03/upl_123-Controle.xlsx',
     uploadId: 'upl_123',
     expiresAt: '2026-03-30T14:10:00.000Z',
     ...overrides,

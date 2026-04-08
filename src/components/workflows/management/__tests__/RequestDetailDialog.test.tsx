@@ -112,6 +112,7 @@ function buildDetail(overrides: Partial<Parameters<typeof RequestDetailDialog>[0
     action: {
       available: true,
       state: 'idle' as const,
+      batchId: null,
       type: 'approval' as const,
       label: 'Aprovar etapa',
       commentRequired: false,
@@ -121,6 +122,7 @@ function buildDetail(overrides: Partial<Parameters<typeof RequestDetailDialog>[0
       canRequest: false,
       canRespond: false,
       requestedAt: null,
+      completedAt: null,
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],
@@ -311,5 +313,56 @@ describe('RequestDetailDialog', () => {
     expect(screen.getByRole('button', { name: 'Aprovar' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Rejeitar' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Registrar resposta' })).toBeTruthy();
+  });
+
+  it('keeps the action card visible for a completed batch without response CTA', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildDetail({
+          permissions: {
+            canAssign: false,
+            canFinalize: true,
+            canArchive: false,
+            canRequestAction: false,
+            canRespondAction: false,
+          },
+          action: {
+            ...buildDetail().action,
+            state: 'completed',
+            batchId: 'act_batch_2',
+            type: 'execution',
+            label: 'Executar atividade',
+            requestedAt: new Date('2026-04-02T09:00:00Z'),
+            completedAt: new Date('2026-04-02T12:00:00Z'),
+            recipients: [
+              {
+                actionRequestId: 'act_req_2',
+                recipientUserId: 'RESP1',
+                status: 'executed',
+                respondedAt: new Date('2026-04-02T12:00:00Z'),
+                respondedByUserId: 'RESP1',
+                respondedByName: 'Responsavel',
+                responseComment: 'Execucao concluida',
+                responseAttachmentUrl: 'https://example.com/comprovante.pdf',
+              },
+            ],
+          },
+        })}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    expect(screen.getByText('Batch concluido')).toBeTruthy();
+    expect(screen.getByText('Execucao concluida')).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Abrir anexo da resposta' })).toBeTruthy();
+    expect(screen.queryByText('Responder action')).toBeNull();
   });
 });

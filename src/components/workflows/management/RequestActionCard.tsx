@@ -58,6 +58,17 @@ function getStatusLabel(status: string): string {
   }
 }
 
+function getActionStateLabel(state: WorkflowManagementRequestDetailData['action']['state']): string {
+  switch (state) {
+    case 'pending':
+      return 'pendente';
+    case 'completed':
+      return 'concluido';
+    default:
+      return 'idle';
+  }
+}
+
 export function RequestActionCard({
   detail,
   collaborators,
@@ -107,7 +118,7 @@ export function RequestActionCard({
           </p>
           <p className="text-sm text-muted-foreground">
             {action.type
-              ? `Tipo: ${action.type} • estado ${action.state === 'pending' ? 'pendente' : 'idle'}.`
+              ? `Tipo: ${action.type} • estado ${getActionStateLabel(action.state)}.`
               : 'A etapa atual pode abrir uma action operacional.'}
           </p>
         </div>
@@ -115,6 +126,7 @@ export function RequestActionCard({
         <div className="flex flex-wrap gap-2">
           {action.type ? <Badge variant="outline">{action.type}</Badge> : null}
           {action.state === 'pending' ? <Badge variant="outline">Batch pendente</Badge> : null}
+          {action.state === 'completed' ? <Badge variant="outline">Batch concluido</Badge> : null}
           {action.commentRequired ? <Badge variant="outline">Comentario obrigatorio</Badge> : null}
           {action.attachmentRequired ? <Badge variant="outline">Anexo obrigatorio</Badge> : null}
         </div>
@@ -126,11 +138,14 @@ export function RequestActionCard({
         </div>
       ) : null}
 
-      {action.state === 'pending' ? (
+      {action.state === 'pending' || action.state === 'completed' ? (
         <div className="mt-4 space-y-3">
           <div className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
             Solicitada por {action.requestedByName || action.requestedByUserId || 'Sistema'} em{' '}
-            {formatManagementDate(action.requestedAt)}.
+            {formatManagementDate(action.requestedAt)}
+            {action.state === 'completed' && action.completedAt
+              ? `. Batch concluido em ${formatManagementDate(action.completedAt)}.`
+              : '.'}
           </div>
 
           <div className="space-y-2">
@@ -178,7 +193,7 @@ export function RequestActionCard({
         </div>
       ) : (
         <div className="mt-4 rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-          Nenhum batch pendente nesta etapa.
+          Nenhum batch aberto nesta etapa.
         </div>
       )}
 

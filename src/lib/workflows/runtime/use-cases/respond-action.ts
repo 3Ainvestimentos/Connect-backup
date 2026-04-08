@@ -10,8 +10,15 @@ import { buildHistoryEntry } from '../history';
 import { buildActionReadModelUpdate } from '../read-model';
 import * as repo from '../repository';
 import type { WorkflowActionResponseAttachment } from '../types';
+import {
+  assertAllowedWorkflowUploadPath,
+  assertAttachmentUrlMatchesStoragePath,
+  assertUploadIdMatchesFileName,
+  readWorkflowUploadObjectMetadata,
+} from '../upload-storage';
 
 type ActionResponse = 'approved' | 'rejected' | 'acknowledged' | 'executed';
+type ValidatedActionAttachment = WorkflowActionResponseAttachment & { uploadId: string };
 
 export interface RespondActionInput {
   requestId: number;
@@ -42,7 +49,7 @@ function normalizeOptionalComment(comment?: string): string | undefined {
 
 function normalizeAttachment(
   attachment: WorkflowActionResponseAttachment | undefined,
-): WorkflowActionResponseAttachment | undefined {
+): ValidatedActionAttachment | undefined {
   if (!attachment) {
     return undefined;
   }
@@ -53,7 +60,7 @@ function normalizeAttachment(
   const storagePath = attachment.storagePath?.trim();
   const uploadId = attachment.uploadId?.trim();
 
-  if (!fileName || !contentType || !fileUrl || !storagePath) {
+  if (!fileName || !contentType || !fileUrl || !storagePath || !uploadId) {
     throw new RuntimeError(
       RuntimeErrorCode.ACTION_RESPONSE_INVALID,
       'Anexo da action possui campos obrigatorios ausentes.',
@@ -66,8 +73,38 @@ function normalizeAttachment(
     contentType,
     fileUrl,
     storagePath,
-    ...(uploadId ? { uploadId } : {}),
+    uploadId,
   };
+}
+
+async function assertValidActionResponseAttachment(params: {
+  requestId: number;
+  actorUserId: string;
+  request: { workflowTypeId: string; currentStepId: string };
+  attachment: ValidatedActionAttachment;
+}): Promise<void> {
+  const storagePath = assertAllowedWorkflowUploadPath(params.attachment.storagePath);
+  assertAttachmentUrlMatchesStoragePath(params.attachment.fileUrl, storagePath);
+  const uploadId = assertUploadIdMatchesFileName(params.attachment.uploadId, storagePath);
+  const objectMetadata = await readWorkflowUploadObjectMetadata(storagePath);
+  const metadata = objectMetadata.metadata ?? {};
+
+  if (
+    metadata.target !== 'action_response' ||
+    metadata.workflowtypeid !== params.request.workflowTypeId ||
+    metadata.requestid !== String(params.requestId) ||
+    metadata.stepid !== params.request.currentStepId ||
+    metadata.actoruserid !== params.actorUserId ||
+    metadata.uploadid !== uploadId ||
+    objectMetadata.contentType !== params.attachment.contentType ||
+    objectMetadata.name !== storagePath
+  ) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Anexo da action nao corresponde ao upload assinado desta request.',
+      400,
+    );
+  }
 }
 
 function assertResponseMatchesActionType(
@@ -123,6 +160,45 @@ export async function respondAction(input: RespondActionInput): Promise<RespondA
     );
   }
 
+  const comment = normalizeOptionalComment(input.comment);
+  const attachment = normalizeAttachment(input.attachment);
+  const currentActionDescription = assertCurrentStepActionConfigured(version, requestEntry.data);
+
+  assertResponseMatchesActionType(input.response, currentActionDescription.action.type);
+
+  if (currentActionDescription.action.type !== 'execution' && attachment) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Anexo so pode ser enviado em actions do tipo execution.',
+      400,
+    );
+  }
+
+  if (currentActionDescription.commentRequired && !comment) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Comentario obrigatorio para responder esta action.',
+      400,
+    );
+  }
+
+  if (currentActionDescription.attachmentRequired && !attachment) {
+    throw new RuntimeError(
+      RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      'Anexo obrigatorio para responder esta action.',
+      400,
+    );
+  }
+
+  if (attachment) {
+    await assertValidActionResponseAttachment({
+      requestId: input.requestId,
+      actorUserId: input.actorUserId,
+      request: requestEntry.data,
+      attachment,
+    });
+  }
+
   return repo.mutateWorkflowRequestAtomically(requestEntry.docId, (currentRequest, now) => {
     const actionDescription = assertCurrentStepActionConfigured(version, currentRequest);
     const pendingEntries = getPendingActionEntriesForCurrentStep(currentRequest);
@@ -163,8 +239,6 @@ export async function respondAction(input: RespondActionInput): Promise<RespondA
     }
 
     assertResponseMatchesActionType(input.response, actionDescription.action.type);
-
-    const comment = normalizeOptionalComment(input.comment);
     if (actionDescription.commentRequired && !comment) {
       throw new RuntimeError(
         RuntimeErrorCode.ACTION_RESPONSE_INVALID,
@@ -173,7 +247,6 @@ export async function respondAction(input: RespondActionInput): Promise<RespondA
       );
     }
 
-    const attachment = normalizeAttachment(input.attachment);
     if (actionDescription.action.type !== 'execution' && attachment) {
       throw new RuntimeError(
         RuntimeErrorCode.ACTION_RESPONSE_INVALID,

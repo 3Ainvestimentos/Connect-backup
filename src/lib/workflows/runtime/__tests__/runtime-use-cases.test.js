@@ -7,7 +7,16 @@ jest.mock('@/lib/workflows/runtime/repository', () => ({
   mutateWorkflowRequestAtomically: jest.fn(),
 }));
 
+jest.mock('@/lib/workflows/runtime/upload-storage', () => {
+  const actual = jest.requireActual('@/lib/workflows/runtime/upload-storage');
+  return {
+    ...actual,
+    readWorkflowUploadObjectMetadata: jest.fn(),
+  };
+});
+
 const repo = require('@/lib/workflows/runtime/repository');
+const { readWorkflowUploadObjectMetadata } = require('@/lib/workflows/runtime/upload-storage');
 const { RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const { assignResponsible } = require('@/lib/workflows/runtime/use-cases/assign-responsible');
 const { advanceStep } = require('@/lib/workflows/runtime/use-cases/advance-step');
@@ -620,6 +629,226 @@ describe('workflow runtime use cases', () => {
       remainingPendingCount: 0,
       statusCategory: 'in_progress',
     });
+  });
+
+  it('valida attachment oficial de execution antes de persistir a resposta', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-execution',
+      data: buildRequest({
+        requestId: 54,
+        workflowTypeId: 'workflow_execucao',
+        responsibleUserId: 'RESP1',
+        responsibleName: 'Responsavel',
+        statusCategory: 'waiting_action',
+        currentStepId: 'stp_exec',
+        currentStepName: 'Execucao',
+        currentStatusKey: 'execucao',
+        hasResponsible: true,
+        hasPendingActions: true,
+        pendingActionRecipientIds: ['EXEC1'],
+        pendingActionTypes: ['execution'],
+        operationalParticipantIds: ['SMO2', 'RESP1', 'EXEC1'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_exec_1',
+            actionBatchId: 'act_batch_exec_1',
+            stepId: 'stp_exec',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            type: 'execution',
+            label: 'Executar atividade',
+            recipientUserId: 'EXEC1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        workflowTypeId: 'workflow_execucao',
+        stepOrder: ['stp_open', 'stp_exec', 'stp_final'],
+        stepsById: {
+          stp_open: {
+            stepId: 'stp_open',
+            stepName: 'Solicitação Aberta',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          },
+          stp_exec: {
+            stepId: 'stp_exec',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            kind: 'work',
+            action: {
+              type: 'execution',
+              label: 'Executar atividade',
+              approverIds: ['EXEC1'],
+              commentRequired: true,
+              attachmentRequired: true,
+            },
+          },
+          stp_final: {
+            stepId: 'stp_final',
+            stepName: 'Finalizado',
+            statusKey: 'finalizado',
+            kind: 'final',
+          },
+        },
+      }),
+    );
+    readWorkflowUploadObjectMetadata.mockResolvedValue({
+      name:
+        'Workflows/workflows_v2/uploads/action_response/workflow_execucao/request_54/stp_exec/2026-04/upl_123-comprovante.pdf',
+      contentType: 'application/pdf',
+      metadata: {
+        target: 'action_response',
+        workflowtypeid: 'workflow_execucao',
+        requestid: '54',
+        stepid: 'stp_exec',
+        actoruserid: 'EXEC1',
+        uploadid: 'upl_123',
+      },
+    });
+
+    await expect(
+      respondAction({
+        requestId: 54,
+        actorUserId: 'EXEC1',
+        actorName: 'Executor',
+        response: 'executed',
+        comment: 'Execucao concluida',
+        attachment: {
+          fileName: 'comprovante.pdf',
+          contentType: 'application/pdf',
+          fileUrl:
+            'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2Fworkflows_v2%2Fuploads%2Faction_response%2Fworkflow_execucao%2Frequest_54%2Fstp_exec%2F2026-04%2Fupl_123-comprovante.pdf?alt=media&token=abc',
+          storagePath:
+            'Workflows/workflows_v2/uploads/action_response/workflow_execucao/request_54/stp_exec/2026-04/upl_123-comprovante.pdf',
+          uploadId: 'upl_123',
+        },
+      }),
+    ).resolves.toEqual({
+      docId: 'doc-action-execution',
+      requestId: 54,
+      actionRequestId: 'act_req_exec_1',
+      actionBatchId: 'act_batch_exec_1',
+      remainingPendingCount: 0,
+      statusCategory: 'in_progress',
+    });
+
+    expect(readWorkflowUploadObjectMetadata).toHaveBeenCalledWith(
+      'Workflows/workflows_v2/uploads/action_response/workflow_execucao/request_54/stp_exec/2026-04/upl_123-comprovante.pdf',
+    );
+  });
+
+  it('rejeita reaproveitamento de attachment de outro ator pela metadata do objeto', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-execution-invalid',
+      data: buildRequest({
+        requestId: 55,
+        workflowTypeId: 'workflow_execucao',
+        responsibleUserId: 'RESP1',
+        responsibleName: 'Responsavel',
+        statusCategory: 'waiting_action',
+        currentStepId: 'stp_exec',
+        currentStepName: 'Execucao',
+        currentStatusKey: 'execucao',
+        hasResponsible: true,
+        hasPendingActions: true,
+        pendingActionRecipientIds: ['EXEC1'],
+        pendingActionTypes: ['execution'],
+        operationalParticipantIds: ['SMO2', 'RESP1', 'EXEC1'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_exec_2',
+            actionBatchId: 'act_batch_exec_2',
+            stepId: 'stp_exec',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            type: 'execution',
+            label: 'Executar atividade',
+            recipientUserId: 'EXEC1',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        workflowTypeId: 'workflow_execucao',
+        stepOrder: ['stp_open', 'stp_exec', 'stp_final'],
+        stepsById: {
+          stp_open: {
+            stepId: 'stp_open',
+            stepName: 'Solicitação Aberta',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          },
+          stp_exec: {
+            stepId: 'stp_exec',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            kind: 'work',
+            action: {
+              type: 'execution',
+              label: 'Executar atividade',
+              approverIds: ['EXEC1'],
+              commentRequired: false,
+              attachmentRequired: true,
+            },
+          },
+          stp_final: {
+            stepId: 'stp_final',
+            stepName: 'Finalizado',
+            statusKey: 'finalizado',
+            kind: 'final',
+          },
+        },
+      }),
+    );
+    readWorkflowUploadObjectMetadata.mockResolvedValue({
+      name:
+        'Workflows/workflows_v2/uploads/action_response/workflow_execucao/request_55/stp_exec/2026-04/upl_999-comprovante.pdf',
+      contentType: 'application/pdf',
+      metadata: {
+        target: 'action_response',
+        workflowtypeid: 'workflow_execucao',
+        requestid: '55',
+        stepid: 'stp_exec',
+        actoruserid: 'OTHER_USER',
+        uploadid: 'upl_999',
+      },
+    });
+
+    await expect(
+      respondAction({
+        requestId: 55,
+        actorUserId: 'EXEC1',
+        actorName: 'Executor',
+        response: 'executed',
+        attachment: {
+          fileName: 'comprovante.pdf',
+          contentType: 'application/pdf',
+          fileUrl:
+            'https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2Fworkflows_v2%2Fuploads%2Faction_response%2Fworkflow_execucao%2Frequest_55%2Fstp_exec%2F2026-04%2Fupl_999-comprovante.pdf?alt=media&token=abc',
+          storagePath:
+            'Workflows/workflows_v2/uploads/action_response/workflow_execucao/request_55/stp_exec/2026-04/upl_999-comprovante.pdf',
+          uploadId: 'upl_999',
+        },
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.ACTION_RESPONSE_INVALID,
+      }),
+    );
+
+    expect(repo.mutateWorkflowRequestAtomically).not.toHaveBeenCalled();
   });
 
   it('rejeita respondAction para outsider sem pendencia', async () => {

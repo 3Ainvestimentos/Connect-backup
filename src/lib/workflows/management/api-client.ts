@@ -359,10 +359,12 @@ function normalizeTimelineItem(input: unknown): WorkflowManagementRequestTimelin
 
 function normalizeActionDetail(input: unknown): WorkflowManagementRequestActionDetail {
   const detail = isObject(input) ? input : {};
+  const state = asString(detail.state);
 
   return {
     available: asBoolean(detail.available),
-    state: asString(detail.state) === 'pending' ? 'pending' : 'idle',
+    state: state === 'pending' || state === 'completed' ? state : 'idle',
+    batchId: asNullableString(detail.batchId),
     type:
       detail.type === 'approval' ||
       detail.type === 'acknowledgement' ||
@@ -377,6 +379,7 @@ function normalizeActionDetail(input: unknown): WorkflowManagementRequestActionD
     canRequest: asBoolean(detail.canRequest),
     canRespond: asBoolean(detail.canRespond),
     requestedAt: normalizeTimestamp(detail.requestedAt),
+    completedAt: normalizeTimestamp(detail.completedAt),
     requestedByUserId: asNullableString(detail.requestedByUserId),
     requestedByName: asNullableString(detail.requestedByName),
     recipients: Array.isArray(detail.recipients)
