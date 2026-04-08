@@ -101,7 +101,23 @@ Implementar a capacidade de runtime necessaria para workflows com etapas action-
 
 **Status atual**
 
-- proxima macroetapa recomendada
+- concluida
+
+**Fechamentos consolidados**
+
+- `requestAction` / `respondAction` entregues no runtime novo;
+- suporte operacional aos tres tipos:
+  - `approval`
+  - `acknowledgement`
+  - `execution`
+- detalhe oficial enriquecido com bloco `action`, permissoes e timeline;
+- uploads de `action_response` endurecidos com validacao via Storage API;
+- uploads novos consolidados no namespace neutro:
+  - `Workflows/workflows_v2/uploads/...`
+- estado `completed` passou a manter o ultimo batch visivel no detalhe;
+- a regra de somente leitura para batch encerrado tambem subiu ao backend:
+  - `requestAction` nao reabre a mesma etapa depois que ela ja teve batch historico;
+- correcoes finais validadas com `3` suites e `41` testes passando.
 
 ---
 
@@ -128,6 +144,11 @@ Criar a superficie administrativa para configuracao e evolucao dos workflows.
 3. `2D` Motor operacional de `requestAction` / `respondAction`
 4. `2B` Nova tela oficial de abertura de chamado
 5. `2E` Tela de configuracao, novas versoes e publicacao
+
+**Estado recomendado agora**
+
+- `2A`, `2C` e `2D`: concluidas
+- proximo foco pode ser `2B` ou `2E`, conforme prioridade de produto
 
 ---
 

@@ -205,7 +205,22 @@ Fechamentos consolidados:
 - `action_requested`, `action_approved`, `action_rejected`, `action_acknowledged`, `action_executed` adicionados a `HistoryAction` e a `TIMELINE_LABELS`;
 - detalhe oficial enriquecido com bloco `action`, permissoes `canRequestAction`/`canRespondAction`;
 - `responseAttachmentUrl` visivel apenas para owner e responsavel;
-- 29/29 testes passando.
+- uploads de `action_response` endurecidos com validacao via Storage API antes da transacao;
+- namespace neutro consolidado para uploads novos em `Workflows/workflows_v2/uploads/...`;
+- detalhe preserva visibilidade do ultimo batch encerrado da etapa atual com estado `completed`;
+- `completed` consolidado como estado somente leitura tambem no backend:
+  - `requestAction` bloqueia reabertura da mesma etapa mesmo sem batch pendente;
+- `hasAnyActionBatchForCurrentStep` consolidado como gate canonico entre runtime e read-side;
+- correcoes finais validadas com `3` suites e `41` testes passando.
+
+Fechamento operacional:
+
+- a `2D` pode ser tratada como concluida tambem no endurecimento pos-build;
+- a capacidade action-driven do motor ficou pronta para sustentar os workflows dos lotes `4` e `5` da `2C`, respeitando:
+  - CTA explicito de `requestAction`
+  - quorum = ALL
+  - `approval = rejected` devolvendo o controle ao responsavel
+  - etapa `completed` sem reabertura manual na mesma etapa
 
 ### 2.5. Fase 2E - Configuracao, versionamento e administracao
 

@@ -1,7 +1,7 @@
 # Progress Fase 2
 
-> Updated: 2026-04-07
-> Status: 2A concluida; 2C concluida; 2D concluida; proximo foco recomendado: 2B ou 2E
+> Updated: 2026-04-08
+> Status: 2A concluida; 2C concluida; 2D concluida com correcoes pos-build; proximo foco recomendado: 2B ou 2E
 
 ## 1. Resumo executivo
 
@@ -126,15 +126,41 @@ Resultado:
 - `RequestDetailDialog.tsx` enriquecido com card operacional de action
 - `WorkflowManagementPage.tsx` integrado com mutations e toasts de action
 
+**Correcoes pos-build consolidadas:**
+- uploads de `action_response` validados via Storage API antes da transacao, incluindo:
+  - namespace permitido;
+  - consistencia entre `storagePath`, `fileUrl`, `uploadId`, metadata custom e propriedades top-level do objeto;
+- namespace neutro consolidado para uploads novos:
+  - `Workflows/workflows_v2/uploads/...`
+- bloco `action` do detalhe enriquecido para preservar visibilidade do ultimo batch encerrado da etapa atual;
+- `state = completed` consolidado como estado somente leitura no read-side;
+- regra de `completed = somente leitura` tambem promovida ao backend:
+  - `requestAction` agora bloqueia reabertura da mesma etapa mesmo quando o batch historico ja estiver encerrado;
+- `hasAnyActionBatchForCurrentStep` consolidado como gate canonico entre runtime e detalhe;
+- cobertura direta adicionada para helpers de upload em `upload-storage.test.ts`;
+- regressao adicionada para tentativa de `requestAction` com batch historico encerrado.
+
 **Invariantes criticos preservados:**
 - `requestAction` e CTA explicito — nunca automatico
 - quorum = ALL: todos os `approverIds` devem responder antes de sair de `waiting_action`
 - `approval = rejected` registra `action_rejected` na timeline, devolve controle ao responsavel, nao bloqueia o chamado
 - batch duplicado retorna `409 ACTION_REQUEST_ALREADY_OPEN`
 - `respondAction` nao avanca etapa — apenas fecha pendencia
+- batch encerrado torna a etapa atual somente leitura para nova abertura de action
 
 **Testes:**
-- 29/29 passando em `runtime-use-cases.test.js` e `detail.test.js`
+- build principal da `2D` validado com a suite-alvo da entrega;
+- correcoes finais validadas com:
+  - `3` suites passando
+  - `41` testes passando
+  - foco em `runtime-use-cases`, `upload-storage` e `detail`
+
+**Artefatos complementares das correcoes:**
+- `DEFINE_CORRECOES_POS_BUILD_FASE2D_MOTOR_REQUEST_RESPOND_ACTION.md`
+- `DESIGN_CORRECOES_POS_BUILD_FASE2D_MOTOR_REQUEST_RESPOND_ACTION.md`
+- `DEFINE_CORRECOES_FINAIS_POS_BUILD_FASE2D_MOTOR_REQUEST_RESPOND_ACTION.md`
+- `DESIGN_CORRECOES_FINAIS_POS_BUILD_FASE2D_MOTOR_REQUEST_RESPOND_ACTION.md`
+- `BUILD_CORRECOES_FINAIS_POS_BUILD_FASE2D_MOTOR_REQUEST_RESPOND_ACTION.md`
 
 ### 2E. Configuracao, versionamento e publicacao
 
@@ -151,7 +177,7 @@ Status:
 ## 4. Gaps conhecidos para evoluçao futura (nao bloqueantes)
 
 - `getPendingActionEntriesForCurrentStep` duplicada em `read-model.ts` e `action-helpers.ts` — unificar em refatoracao futura;
-- cenarios ausentes nos testes: rejection, acknowledgement, execution com attachment, quorum parcial, duplicata de resposta;
+- cenarios ainda desejaveis nos testes: rejection, acknowledgement, execution com attachment, quorum parcial, duplicata de resposta;
 - `assertCanRespondAction` em `authz.ts` definida mas nao consumida pelo use case — remover ou integrar;
 - politica de visibilidade de `responseComment` (atualmente publica para todos os destinatarios) nao foi explicitada no DESIGN.
 
