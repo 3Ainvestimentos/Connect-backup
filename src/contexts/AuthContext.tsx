@@ -44,6 +44,7 @@ const normalizeEmail = (email: string | null | undefined): string | null => {
 
 const defaultPermissions: CollaboratorPermissions = {
   canManageWorkflows: false,
+  canManageWorkflowsV2: false,
   canManageRequests: false,
   canManageContent: false,
   canManageTripsBirthdays: false,

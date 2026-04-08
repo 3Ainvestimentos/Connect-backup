@@ -94,6 +94,7 @@ export function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }:
   const hasAdminPanels =
     permissions.canManageContent ||
     permissions.canManageWorkflows ||
+    permissions.canManageWorkflowsV2 ||
     permissions.canManageTripsBirthdays ||
     isSuperAdmin;
 
@@ -213,6 +214,7 @@ export function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }:
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/admin/fab-messages" className="cursor-pointer font-body"><MessageSquarePlus className="mr-2 h-4 w-4" /><span>Mensagens FAB</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
+                {permissions.canManageWorkflowsV2 && <DropdownMenuItem asChild><Link href="/admin/request-config" className="cursor-pointer font-body"><Settings className="mr-2 h-4 w-4" /><span>Config. de chamados v2</span></Link></DropdownMenuItem>}
                 {permissions.canManageTripsBirthdays && <DropdownMenuItem asChild><Link href="/admin/travel-birthdays" className="cursor-pointer font-body"><Plane className="mr-2 h-4 w-4" /><span>Viagens</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>

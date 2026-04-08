@@ -9,6 +9,7 @@ import { useSystemSettings } from './SystemSettingsContext';
 
 export interface CollaboratorPermissions {
   canManageWorkflows: boolean;
+  canManageWorkflowsV2?: boolean;
   canManageRequests: boolean;
   canManageContent: boolean;
   canManageTripsBirthdays: boolean;
@@ -64,6 +65,7 @@ const LOG_COLLECTION_NAME = 'collaborator_logs';
 
 const defaultPermissions: CollaboratorPermissions = {
   canManageWorkflows: false,
+  canManageWorkflowsV2: false,
   canManageRequests: false,
   canManageContent: false,
   canManageTripsBirthdays: false,

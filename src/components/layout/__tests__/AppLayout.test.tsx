@@ -148,6 +148,7 @@ describe('AppLayout workflow dropdown rollout', () => {
         canViewDirectoria: false,
         canManageContent: false,
         canManageWorkflows: false,
+        canManageWorkflowsV2: false,
         canManageTripsBirthdays: false,
       },
     } as unknown as ReturnType<typeof useAuth>);
@@ -192,5 +193,46 @@ describe('AppLayout workflow dropdown rollout', () => {
     expect(legacyLabel).toBeTruthy();
     expect(requestsLink.getAttribute('href')).toBe('/requests');
     expect(tasksLink.getAttribute('href')).toBe('/me/tasks');
+  });
+
+  it('shows the request config v2 admin entry only when the dedicated permission is present', async () => {
+    const user = userEvent.setup();
+
+    mockUseAuth.mockReturnValue({
+      user: {
+        email: 'owner@3ariva.com.br',
+        displayName: 'Owner',
+        photoURL: null,
+      },
+      signOut: jest.fn(),
+      loading: false,
+      isAdmin: true,
+      isSuperAdmin: false,
+      permissions: {
+        canManageRequests: false,
+        canViewTasks: false,
+        canViewCRM: false,
+        canViewStrategicPanel: false,
+        canViewDirectoria: false,
+        canManageContent: false,
+        canManageWorkflows: false,
+        canManageWorkflowsV2: true,
+        canManageTripsBirthdays: false,
+      },
+    } as unknown as ReturnType<typeof useAuth>);
+
+    render(
+      <UserNav
+        onProfileClick={() => {}}
+        hasPendingRequests={false}
+        hasPendingTasks={false}
+      />,
+    );
+
+    await user.click(screen.getByRole('button'));
+
+    const requestConfigLink = screen.getByRole('link', { name: /Config. de chamados v2/i });
+    expect(requestConfigLink.getAttribute('href')).toBe('/admin/request-config');
+    expect(screen.queryByRole('link', { name: /^Workflows$/i })).toBeNull();
   });
 });

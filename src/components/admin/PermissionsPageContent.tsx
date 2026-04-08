@@ -18,6 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] = [
     { key: 'canManageContent', label: 'Conteúdo' },
     { key: 'canManageWorkflows', label: 'Workflows' },
+    { key: 'canManageWorkflowsV2', label: 'Workflows V2' },
     { key: 'canManageRequests', label: 'Solicitações' },
     { key: 'canManageTripsBirthdays', label: 'Viagens/Aniversários' },
     { key: 'canViewTasks', label: 'Minhas Tarefas' },
