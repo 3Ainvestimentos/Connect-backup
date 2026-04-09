@@ -29,6 +29,7 @@ const {
   createWorkflowTypeWithDraft,
   getWorkflowDraftEditorData,
   saveWorkflowDraft,
+  hydrateApproverSelections,
 } = require('../draft-repository');
 const { listWorkflowConfigAreas, listWorkflowConfigOwners, listWorkflowConfigCollaborators } = require('../lookups');
 
@@ -356,5 +357,117 @@ describe('draft-repository safeguards', () => {
       kind: 'start',
     });
     expect(savedDraft.stepsById.stp_open).not.toHaveProperty('action');
+  });
+
+  it('resolveCollaboratorDocIdsToApproverIds rejeita 422 quando collaboratorDoc nao encontrado', async () => {
+    // Arrange: workflowType + version draft devem existir para saveWorkflowDraft chegar ate
+    // o normalizeSteps. Colaborador apr1 existe, ghost nao.
+    directGetMock.mockImplementation(async (path: string) => {
+      if (path === 'workflowTypes_v2/facilities_manutencao') {
+        return {
+          exists: true,
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            name: 'Manutencao',
+            description: 'Chamados prediais',
+            icon: 'Wrench',
+            areaId: 'facilities',
+            ownerEmail: 'owner@3ariva.com.br',
+            ownerUserId: 'SMO2',
+            allowedUserIds: ['all'],
+            active: true,
+            latestPublishedVersion: null,
+          }),
+        };
+      }
+      if (path === 'workflowTypes_v2/facilities_manutencao/versions/1') {
+        return {
+          exists: true,
+          ref: makeDocRef(path),
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            version: 1,
+            state: 'draft',
+            ownerEmailAtPublish: 'owner@3ariva.com.br',
+            defaultSlaDays: 5,
+            fields: [],
+            initialStepId: '',
+            stepOrder: [],
+            stepsById: {},
+            publishedAt: null,
+          }),
+        };
+      }
+      if (path === 'workflowAreas/facilities') {
+        return { exists: true, data: () => ({ name: 'Facilities' }) };
+      }
+      if (path === 'collaborators/collab-apr1') {
+        return { exists: true, data: () => ({ id3a: 'APR1' }) };
+      }
+      if (path === 'collaborators/collab-ghost') {
+        return { exists: false, data: () => undefined };
+      }
+      return { exists: false, data: () => undefined };
+    });
+
+    // Save deve falhar com 422 antes de concluir a transacao.
+    await expect(
+      saveWorkflowDraft('facilities_manutencao', 1, {
+        general: {
+          name: 'Manutencao',
+          description: 'Chamados prediais',
+          icon: 'Wrench',
+          ownerUserId: 'SMO2',
+          defaultSlaDays: 5,
+          activeOnPublish: true,
+        },
+        access: { mode: 'all', allowedUserIds: ['all'] },
+        fields: [],
+        steps: [
+          {
+            stepName: 'Validacao',
+            statusKey: 'validacao',
+            kind: 'work',
+            action: {
+              type: 'approval',
+              label: 'Aprovar',
+              approverCollaboratorDocIds: ['collab-apr1', 'collab-ghost'],
+              unresolvedApproverIds: [],
+            },
+          },
+        ],
+        initialStepId: '',
+      }),
+    ).rejects.toMatchObject({
+      code: RuntimeErrorCode.INVALID_DRAFT_PAYLOAD,
+      httpStatus: 422,
+    });
+  });
+
+  it('hydrateApproverSelections separa aprovadores resolvidos de nao resolvidos', () => {
+    const collaboratorsByUserId = new Map([
+      [
+        'APR1',
+        {
+          collaboratorDocId: 'collab-apr1',
+          userId: 'APR1',
+          name: 'Ana Paula',
+          email: 'ana.paula@3ariva.com.br',
+          area: 'Facilities',
+        },
+      ],
+    ]);
+
+    const result = hydrateApproverSelections(['APR1', 'APR_GHOST'], collaboratorsByUserId);
+
+    expect(result.approvers).toEqual([
+      {
+        collaboratorDocId: 'collab-apr1',
+        userId: 'APR1',
+        name: 'Ana Paula',
+        email: 'ana.paula@3ariva.com.br',
+      },
+    ]);
+    expect(result.unresolvedApproverIds).toEqual(['APR_GHOST']);
   });
 });

@@ -7,6 +7,19 @@ import type {
   VersionState,
   WorkflowTypeV2,
 } from '@/lib/workflows/runtime/types';
+import type {
+  AdminHistoryDetailData,
+  AdminHistoryDetailError,
+  AdminHistoryDetailSuccess,
+  AdminHistoryFilterOption,
+  AdminHistoryFilters,
+  AdminHistoryListData,
+  AdminHistoryListError,
+  AdminHistoryListSuccess,
+  AdminHistoryOrigin,
+  AdminHistoryStatusCategory,
+  AdminHistorySummary,
+} from './history-types';
 
 export type WorkflowConfigVersionUiStatus = 'Rascunho' | 'Publicada' | 'Inativa';
 export type WorkflowConfigAccessMode = 'all' | 'specific';
@@ -258,3 +271,17 @@ export type SaveWorkflowDraftError = RuntimeErrorResponse;
 
 export type WorkflowVersionTransitionSuccess = RuntimeSuccess<WorkflowVersionTransitionResult>;
 export type WorkflowVersionTransitionError = RuntimeErrorResponse;
+
+export type {
+  AdminHistoryDetailData,
+  AdminHistoryDetailError,
+  AdminHistoryDetailSuccess,
+  AdminHistoryFilterOption,
+  AdminHistoryFilters,
+  AdminHistoryListData,
+  AdminHistoryListError,
+  AdminHistoryListSuccess,
+  AdminHistoryOrigin,
+  AdminHistoryStatusCategory,
+  AdminHistorySummary,
+};

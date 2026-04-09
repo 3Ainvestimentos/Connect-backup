@@ -306,6 +306,105 @@ describe('request-config write routes', () => {
     });
   });
 
+  it('retorna read-only payload para versao published via GET', async () => {
+    repository.getWorkflowDraftEditorData.mockResolvedValue({
+      draft: {
+        workflowTypeId: 'facilities_manutencao',
+        version: 1,
+        state: 'published',
+        mode: 'read-only',
+        derivedStatus: 'Publicada',
+        canPublish: false,
+        canActivate: true,
+        isNewWorkflowType: false,
+        general: {
+          name: 'Nome Historico',
+          description: 'Descricao historica',
+          icon: 'FileText',
+          areaId: 'governanca',
+          areaName: 'Governanca',
+          ownerEmail: 'historico@3ariva.com.br',
+          ownerUserId: 'HIS1',
+          defaultSlaDays: 3,
+          activeOnPublish: true,
+        },
+        access: {
+          mode: 'restricted',
+          allowedUserIds: ['APR1'],
+          preview: 'Acesso restrito a 1 colaborador',
+        },
+        fields: [],
+        steps: [],
+        initialStepId: '',
+        publishReadiness: [],
+        meta: { createdAt: null, updatedAt: null, latestPublishedVersion: 1 },
+      },
+      lookups: { areas: [], owners: [], collaborators: [] },
+    });
+
+    const response = await versionRoute.GET(
+      new Request('http://localhost/api/admin/request-config/workflow-types/facilities_manutencao/versions/1', {
+        headers: { Authorization: 'Bearer token' },
+      }),
+      { params: Promise.resolve({ workflowTypeId: 'facilities_manutencao', version: '1' }) },
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.draft.mode).toBe('read-only');
+    expect(body.data.draft.state).toBe('published');
+  });
+
+  it('salva draft com approverCollaboratorDocIds no PUT', async () => {
+    repository.saveWorkflowDraft.mockResolvedValue({
+      savedAt: '2026-04-09T10:00:00.000Z',
+      publishReadiness: [],
+    });
+
+    const payload = {
+      general: {
+        name: 'Manutencao',
+        description: 'Chamados prediais',
+        icon: 'Wrench',
+        ownerUserId: 'SMO2',
+        defaultSlaDays: 5,
+        activeOnPublish: true,
+      },
+      access: { mode: 'all', allowedUserIds: ['all'] },
+      fields: [],
+      steps: [
+        {
+          stepName: 'Validacao',
+          statusKey: 'validacao',
+          kind: 'work',
+          action: {
+            type: 'approval',
+            label: 'Aprovar',
+            approverCollaboratorDocIds: ['collab-apr1'],
+            unresolvedApproverIds: [],
+          },
+        },
+      ],
+      initialStepId: '',
+    };
+
+    const response = await versionRoute.PUT(
+      new Request('http://localhost/api/admin/request-config/workflow-types/facilities_manutencao/versions/1', {
+        method: 'PUT',
+        headers: { Authorization: 'Bearer token' },
+        body: JSON.stringify(payload),
+      }),
+      { params: Promise.resolve({ workflowTypeId: 'facilities_manutencao', version: '1' }) },
+    );
+
+    expect(response.status).toBe(200);
+    expect(repository.saveWorkflowDraft).toHaveBeenCalledTimes(1);
+    const [, , forwardedPayload] = repository.saveWorkflowDraft.mock.calls[0];
+    expect(forwardedPayload.steps[0].action.approverCollaboratorDocIds).toEqual(['collab-apr1']);
+    expect(forwardedPayload.steps[0].action.unresolvedApproverIds).toEqual([]);
+  });
+
   it('maps runtime errors to the HTTP response', async () => {
     repository.createOrReuseWorkflowDraft.mockRejectedValue(
       new RuntimeError(RuntimeErrorCode.DRAFT_CONFLICT, 'O tipo ja possui um draft aberto.', 409),

@@ -57,6 +57,10 @@ jest.mock('../WorkflowVersionEditorDialog', () => ({
   ),
 }));
 
+jest.mock('../WorkflowConfigHistoryTab', () => ({
+  WorkflowConfigHistoryTab: () => <div>Historico Geral carregado</div>,
+}));
+
 jest.mock('lucide-react', () => {
   const Icon = () => <svg />;
   return new Proxy(

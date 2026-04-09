@@ -150,4 +150,39 @@ describe('WorkflowDraftEditorPage', () => {
 
     expect(mutateAsync).toHaveBeenCalledTimes(1);
   });
+
+  it('exibe badge "Somente leitura" e desabilita salvar quando mode e read-only', () => {
+    const readOnlyPayload = buildDraftPayload();
+    readOnlyPayload.draft.mode = 'read-only';
+    readOnlyPayload.draft.state = 'published';
+    mockUseQuery.mockReturnValue({
+      data: readOnlyPayload,
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: jest.fn().mockResolvedValue({ data: readOnlyPayload }),
+    } as unknown as ReturnType<typeof useQuery>);
+
+    render(<WorkflowDraftEditorPage workflowTypeId="facilities_manutencao" version={1} />);
+
+    // Badge "Somente leitura" substitui o botao "Salvar rascunho":
+    expect(screen.getByRole('button', { name: /Somente leitura/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Salvar rascunho/i })).toBeNull();
+  });
+
+  it('propaga onDirtyStateChange quando formulario e montado', () => {
+    const onDirtyStateChange = jest.fn();
+
+    render(
+      <WorkflowDraftEditorPage
+        workflowTypeId="facilities_manutencao"
+        version={1}
+        onDirtyStateChange={onDirtyStateChange}
+      />,
+    );
+
+    // Chamada inicial (form limpo, modo edit):
+    expect(onDirtyStateChange).toHaveBeenCalled();
+    expect(onDirtyStateChange).toHaveBeenCalledWith({ isDirty: false, isReadOnly: false });
+  });
 });

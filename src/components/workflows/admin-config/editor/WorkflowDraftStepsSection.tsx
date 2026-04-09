@@ -1,4 +1,3 @@
-import { useMemo, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,10 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import type { WorkflowConfigCollaboratorLookup } from '@/lib/workflows/admin-config/types';
 import type { WorkflowDraftFormValues } from './types';
+import { WorkflowActionApproverPicker } from './WorkflowActionApproverPicker';
 
 const stepKinds = ['start', 'work', 'final'] as const;
 const actionTypes = ['none', 'approval', 'acknowledgement', 'execution'] as const;
@@ -29,21 +27,6 @@ export function WorkflowDraftStepsSection({
   });
   const values = watch('steps');
   const initialStepId = watch('initialStepId');
-  const [searchByStep, setSearchByStep] = useState<Record<number, string>>({});
-
-  const collaboratorsByStep = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(searchByStep).map(([index, searchTerm]) => [
-          index,
-          collaborators.filter((collaborator) => {
-            const haystack = `${collaborator.name} ${collaborator.email} ${collaborator.area || ''}`.toLowerCase();
-            return haystack.includes(searchTerm.toLowerCase());
-          }),
-        ]),
-      ),
-    [collaborators, searchByStep],
-  );
 
   return (
     <Card>
@@ -76,8 +59,6 @@ export function WorkflowDraftStepsSection({
             const actionType = step?.action?.type || 'none';
             const selectedApprovers = step?.action?.approvers || [];
             const unresolvedApproverIds = step?.action?.unresolvedApproverIds || [];
-            const filteredCollaborators =
-              collaboratorsByStep[index] || collaborators;
 
             return (
               <div key={field.id} className="space-y-3 rounded-md border p-4">
@@ -172,92 +153,19 @@ export function WorkflowDraftStepsSection({
                       <Input disabled={readOnly} {...register(`steps.${index}.action.label`)} />
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Selecionar aprovadores</Label>
-                      <Input
-                        placeholder="Filtrar por nome, email ou area"
-                        value={searchByStep[index] || ''}
-                        disabled={readOnly}
-                        onChange={(event) =>
-                          setSearchByStep((current) => ({ ...current, [index]: event.target.value }))
-                        }
-                      />
-                      <div className="flex flex-wrap gap-2">
-                        {selectedApprovers.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">Nenhum aprovador selecionado.</p>
-                        ) : (
-                          selectedApprovers.map((approver) => (
-                            <Badge key={approver.collaboratorDocId} variant="secondary">
-                              {approver.name}
-                            </Badge>
-                          ))
-                        )}
-                      </div>
-                      {unresolvedApproverIds.length > 0 ? (
-                        <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                          Existem aprovadores historicos nao resolvidos nesta etapa. Revise a selecao antes de salvar.
-                        </div>
-                      ) : null}
-                      <ScrollArea className="h-48 rounded-md border bg-background p-3">
-                        <div className="space-y-3">
-                          {filteredCollaborators.map((collaborator) => {
-                            const checked = selectedApprovers.some(
-                              (approver) => approver.collaboratorDocId === collaborator.collaboratorDocId,
-                            );
-
-                            return (
-                              <label
-                                key={collaborator.collaboratorDocId}
-                                className="flex items-start gap-3 rounded-md border p-3 text-sm"
-                              >
-                                <Checkbox
-                                  checked={checked}
-                                  disabled={readOnly}
-                                  onCheckedChange={(nextChecked) => {
-                                    const currentApprovers = step.action?.approvers || [];
-                                    const nextApprovers =
-                                      nextChecked === true
-                                        ? [
-                                            ...currentApprovers,
-                                            {
-                                              collaboratorDocId: collaborator.collaboratorDocId,
-                                              userId: collaborator.userId,
-                                              name: collaborator.name,
-                                              email: collaborator.email,
-                                            },
-                                          ]
-                                        : currentApprovers.filter(
-                                            (approver) =>
-                                              approver.collaboratorDocId !== collaborator.collaboratorDocId,
-                                          );
-
-                                    setValue(
-                                      `steps.${index}.action.approvers`,
-                                      Array.from(
-                                        new Map(
-                                          nextApprovers.map((approver) => [approver.collaboratorDocId, approver]),
-                                        ).values(),
-                                      ),
-                                      { shouldDirty: true },
-                                    );
-                                    setValue(`steps.${index}.action.unresolvedApproverIds`, [], {
-                                      shouldDirty: true,
-                                    });
-                                  }}
-                                />
-                                <div className="space-y-1">
-                                  <p className="font-medium">{collaborator.name}</p>
-                                  <p className="text-xs text-muted-foreground">{collaborator.email}</p>
-                                  {collaborator.area ? (
-                                    <p className="text-xs text-muted-foreground">{collaborator.area}</p>
-                                  ) : null}
-                                </div>
-                              </label>
-                            );
-                          })}
-                        </div>
-                      </ScrollArea>
-                    </div>
+                    <WorkflowActionApproverPicker
+                      collaborators={collaborators}
+                      selectedApprovers={selectedApprovers}
+                      unresolvedApproverIds={unresolvedApproverIds}
+                      readOnly={readOnly}
+                      testIdPrefix={`approver-picker-step-${index}`}
+                      onChange={(approvers, unresolvedIds) => {
+                        setValue(`steps.${index}.action.approvers`, approvers, { shouldDirty: true });
+                        setValue(`steps.${index}.action.unresolvedApproverIds`, unresolvedIds, {
+                          shouldDirty: true,
+                        });
+                      }}
+                    />
 
                     <div className="grid gap-4 md:grid-cols-2">
                       <label className="flex items-center gap-2 text-sm">

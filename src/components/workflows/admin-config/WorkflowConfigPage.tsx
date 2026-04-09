@@ -12,7 +12,7 @@ import { fetchWorkflowConfigCatalog, WorkflowConfigApiError } from '@/lib/workfl
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { WorkflowConfigDefinitionsTab } from './WorkflowConfigDefinitionsTab';
-import { WorkflowConfigHistoryPlaceholder } from './WorkflowConfigHistoryPlaceholder';
+import { WorkflowConfigHistoryTab } from './WorkflowConfigHistoryTab';
 import { WorkflowVersionEditorDialog } from './WorkflowVersionEditorDialog';
 
 export function WorkflowConfigPage() {
@@ -135,7 +135,7 @@ export function WorkflowConfigPage() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-6">
-          <WorkflowConfigHistoryPlaceholder />
+          <WorkflowConfigHistoryTab />
         </TabsContent>
       </Tabs>
     </div>

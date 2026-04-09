@@ -372,7 +372,7 @@ function buildAreaNameMap(areas: Awaited<ReturnType<typeof listWorkflowConfigAre
   return new Map(areas.map((area) => [area.areaId, area.name]));
 }
 
-function hydrateApproverSelections(
+export function hydrateApproverSelections(
   approverIds: string[] | undefined,
   collaboratorsByUserId: Map<string, WorkflowConfigCollaboratorLookup>,
 ): {

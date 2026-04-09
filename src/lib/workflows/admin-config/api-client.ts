@@ -18,6 +18,14 @@ import type {
   WorkflowVersionTransitionResult,
 } from './types';
 import type { RuntimeErrorResponse, RuntimeSuccess } from '@/lib/workflows/runtime/types';
+import type {
+  AdminHistoryDetailData,
+  AdminHistoryFilters,
+  AdminHistoryLegacyDetail,
+  AdminHistoryListData,
+  AdminHistoryOrigin,
+  AdminHistoryStatusCategory,
+} from './history-types';
 
 type ApiEnvelope<TData> = RuntimeSuccess<TData> | RuntimeErrorResponse;
 
@@ -49,12 +57,161 @@ function asBoolean(value: unknown): boolean {
   return value === true;
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 function asAccessMode(value: unknown): WorkflowConfigAccessMode {
   return value === 'specific' ? 'specific' : 'all';
 }
 
 function asStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
+function appendFilterParam(params: URLSearchParams, key: string, value: string | number | undefined) {
+  if (value === undefined || value === '') {
+    return;
+  }
+
+  params.set(key, String(value));
+}
+
+function buildHistoryFilterParams(filters: AdminHistoryFilters): URLSearchParams {
+  const params = new URLSearchParams();
+
+  appendFilterParam(params, 'origin', filters.origin);
+  appendFilterParam(params, 'areaId', filters.areaId);
+  appendFilterParam(params, 'workflowTypeId', filters.workflowTypeId);
+  appendFilterParam(params, 'statusCategory', filters.statusCategory);
+  appendFilterParam(params, 'ownerUserId', filters.ownerUserId);
+  appendFilterParam(params, 'periodFrom', filters.periodFrom);
+  appendFilterParam(params, 'periodTo', filters.periodTo);
+  appendFilterParam(params, 'query', filters.query);
+  appendFilterParam(params, 'limit', filters.limit);
+
+  return params;
+}
+
+function asHistoryOrigin(value: unknown): AdminHistoryOrigin {
+  return value === 'legacy' ? 'legacy' : 'v2';
+}
+
+function asHistoryStatusCategory(value: unknown): AdminHistoryStatusCategory | 'unknown' {
+  if (
+    value === 'open' ||
+    value === 'in_progress' ||
+    value === 'waiting_action' ||
+    value === 'finalized' ||
+    value === 'archived'
+  ) {
+    return value;
+  }
+
+  return 'unknown';
+}
+
+function normalizeHistorySummary(input: unknown): AdminHistoryListData['items'][number] {
+  const item = isObject(input) ? input : {};
+
+  return {
+    origin: asHistoryOrigin(item.origin),
+    requestKey: asString(item.requestKey),
+    requestIdLabel: asString(item.requestIdLabel),
+    sourceRequestId:
+      typeof item.sourceRequestId === 'number' || typeof item.sourceRequestId === 'string'
+        ? item.sourceRequestId
+        : null,
+    areaId: typeof item.areaId === 'string' ? item.areaId : null,
+    areaLabel: asString(item.areaLabel),
+    workflowTypeId: typeof item.workflowTypeId === 'string' ? item.workflowTypeId : null,
+    workflowLabel: asString(item.workflowLabel),
+    statusKey: typeof item.statusKey === 'string' ? item.statusKey : null,
+    statusLabel: asString(item.statusLabel),
+    statusCategory: asHistoryStatusCategory(item.statusCategory),
+    ownerUserId: typeof item.ownerUserId === 'string' ? item.ownerUserId : null,
+    ownerLabel: asString(item.ownerLabel),
+    requesterLabel: asString(item.requesterLabel),
+    responsibleLabel: typeof item.responsibleLabel === 'string' ? item.responsibleLabel : null,
+    submittedAt: typeof item.submittedAt === 'string' ? item.submittedAt : null,
+    lastUpdatedAt: typeof item.lastUpdatedAt === 'string' ? item.lastUpdatedAt : null,
+    periodReferenceAt: typeof item.periodReferenceAt === 'string' ? item.periodReferenceAt : null,
+    isArchived: asBoolean(item.isArchived),
+    compatibilityWarnings: asStringArray(item.compatibilityWarnings),
+  };
+}
+
+function normalizeHistoryListData(input: unknown): AdminHistoryListData {
+  const item = isObject(input) ? input : {};
+  const filterOptions = isObject(item.filterOptions) ? item.filterOptions : {};
+
+  return {
+    items: Array.isArray(item.items) ? item.items.map(normalizeHistorySummary) : [],
+    filterOptions: {
+      origins: Array.isArray(filterOptions.origins)
+        ? filterOptions.origins.map(asHistoryOrigin)
+        : ['legacy', 'v2'],
+      areas: Array.isArray(filterOptions.areas)
+        ? (filterOptions.areas as AdminHistoryListData['filterOptions']['areas'])
+        : [],
+      workflows: Array.isArray(filterOptions.workflows)
+        ? (filterOptions.workflows as AdminHistoryListData['filterOptions']['workflows'])
+        : [],
+      owners: Array.isArray(filterOptions.owners)
+        ? (filterOptions.owners as AdminHistoryListData['filterOptions']['owners'])
+        : [],
+      statusCategories: Array.isArray(filterOptions.statusCategories)
+        ? filterOptions.statusCategories
+            .map(asHistoryStatusCategory)
+            .filter((value): value is AdminHistoryStatusCategory => value !== 'unknown')
+        : [],
+    },
+    partialSources: Array.isArray(item.partialSources) ? item.partialSources.map(asHistoryOrigin) : [],
+    totalVisible: asNumber(item.totalVisible),
+  };
+}
+
+function normalizeHistoryDetailData(input: unknown): AdminHistoryDetailData {
+  const item = isObject(input) ? input : {};
+  const origin = asHistoryOrigin(item.origin);
+
+  if (origin === 'legacy') {
+    const detail = isObject(item.detail) ? item.detail : {};
+
+    return {
+      origin,
+      summary: normalizeHistorySummary(item.summary),
+      detail: {
+        formEntries: Array.isArray(detail.formEntries)
+          ? (detail.formEntries as AdminHistoryLegacyDetail['formEntries'])
+          : [],
+        history: Array.isArray(detail.history)
+          ? (detail.history as AdminHistoryLegacyDetail['history'])
+          : [],
+        attachments: Array.isArray(detail.attachments)
+          ? (detail.attachments as AdminHistoryLegacyDetail['attachments'])
+          : [],
+      },
+    };
+  }
+
+  const detail =
+    isObject(item.detail)
+      ? (item.detail as Extract<AdminHistoryDetailData, { origin: 'v2' }>['detail'])
+      : ({} as Extract<AdminHistoryDetailData, { origin: 'v2' }>['detail']);
+
+  return {
+    origin,
+    summary: normalizeHistorySummary(item.summary),
+    detail,
+    permissions: {
+      canAssign: false,
+      canFinalize: false,
+      canArchive: false,
+      canRequestAction: false,
+      canRespondAction: false,
+    },
+  };
 }
 
 function normalizeVersion(input: unknown): WorkflowConfigVersionListItem {
@@ -316,6 +473,32 @@ async function requestJson<TData>(
 export async function fetchWorkflowConfigCatalog(user: User): Promise<WorkflowConfigCatalogData> {
   const data = await requestJson<WorkflowConfigCatalogData>(user, '/api/admin/request-config/catalog');
   return normalizeCatalog(data);
+}
+
+export async function fetchWorkflowConfigHistory(
+  user: User,
+  filters: AdminHistoryFilters = {},
+): Promise<AdminHistoryListData> {
+  const params = buildHistoryFilterParams(filters);
+  const path = params.toString()
+    ? `/api/admin/request-config/history?${params.toString()}`
+    : '/api/admin/request-config/history';
+  const data = await requestJson<AdminHistoryListData>(user, path);
+
+  return normalizeHistoryListData(data);
+}
+
+export async function fetchWorkflowConfigHistoryDetail(
+  user: User,
+  origin: 'legacy' | 'v2',
+  requestKey: string,
+): Promise<AdminHistoryDetailData> {
+  const data = await requestJson<AdminHistoryDetailData>(
+    user,
+    `/api/admin/request-config/history/${origin}/${encodeURIComponent(requestKey)}`,
+  );
+
+  return normalizeHistoryDetailData(data);
 }
 
 export async function createWorkflowArea(user: User, input: CreateWorkflowAreaInput): Promise<CreateWorkflowAreaResult> {
