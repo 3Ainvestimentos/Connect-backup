@@ -11,6 +11,8 @@ type WorkflowConfigAdminPermissions = {
 
 type WorkflowConfigAdminCollaborator = {
   id: string;
+  id3a?: string;
+  name?: string;
   email?: string;
   authUid?: string;
   permissions?: WorkflowConfigAdminPermissions;

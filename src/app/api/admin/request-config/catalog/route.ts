@@ -1,11 +1,8 @@
 import { NextResponse } from 'next/server';
 import { authenticateWorkflowConfigAdmin } from '@/lib/workflows/admin-config/auth';
 import { buildWorkflowConfigCatalog } from '@/lib/workflows/admin-config/catalog';
-import type {
-  WorkflowConfigCatalogError,
-  WorkflowConfigCatalogSuccess,
-} from '@/lib/workflows/admin-config/types';
-import { RuntimeError } from '@/lib/workflows/runtime/errors';
+import { handleWorkflowConfigRouteError } from '@/lib/workflows/admin-config/route-helpers';
+import type { WorkflowConfigCatalogSuccess } from '@/lib/workflows/admin-config/types';
 
 export async function GET(request: Request) {
   try {
@@ -19,20 +16,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof RuntimeError) {
-      const response: WorkflowConfigCatalogError = {
-        ok: false,
-        code: error.code,
-        message: error.message,
-      };
-
-      return NextResponse.json(response, { status: error.httpStatus });
-    }
-
-    console.error('[GET /api/admin/request-config/catalog] Unexpected error:', error);
-    return NextResponse.json(
-      { ok: false, code: 'INTERNAL_ERROR', message: 'Erro interno do servidor.' },
-      { status: 500 },
-    );
+    return handleWorkflowConfigRouteError('GET /api/admin/request-config/catalog', error);
   }
 }

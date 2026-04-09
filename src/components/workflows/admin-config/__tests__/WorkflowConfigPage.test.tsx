@@ -13,6 +13,24 @@ jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
 }));
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
+
+jest.mock('@/lib/workflows/admin-config/api-client', () => ({
+  createWorkflowDraft: jest.fn(),
+}));
+
+jest.mock('../CreateWorkflowAreaDialog', () => ({
+  CreateWorkflowAreaDialog: () => null,
+}));
+
+jest.mock('../CreateWorkflowTypeDialog', () => ({
+  CreateWorkflowTypeDialog: () => null,
+}));
+
 jest.mock('lucide-react', () => {
   const Icon = () => <svg />;
   return new Proxy(
@@ -49,6 +67,7 @@ function buildCatalog() {
             versionCount: 2,
             publishedVersionLabel: 'v2 publicada',
             hasPublishedVersion: true,
+            draftVersion: null,
             versions: [
               {
                 version: 1,
@@ -153,7 +172,7 @@ describe('WorkflowConfigPage', () => {
 
     render(<WorkflowConfigPage />);
 
-    expect(screen.getByText('Catalogo vazio')).toBeTruthy();
+    expect(screen.getByText(/Nenhuma area foi encontrada/i)).toBeTruthy();
   });
 
   it('reveals workflow types and versions when an area is expanded', async () => {

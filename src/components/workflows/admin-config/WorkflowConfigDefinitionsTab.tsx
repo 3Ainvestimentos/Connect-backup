@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Accordion,
   AccordionContent,
@@ -5,9 +9,16 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
+import { createWorkflowDraft } from '@/lib/workflows/admin-config/api-client';
 import type { WorkflowConfigCatalogData, WorkflowConfigVersionUiStatus } from '@/lib/workflows/admin-config/types';
+import { Loader2, PenSquare, PlusCircle, Sparkles } from 'lucide-react';
+import { CreateWorkflowAreaDialog } from './CreateWorkflowAreaDialog';
+import { CreateWorkflowTypeDialog } from './CreateWorkflowTypeDialog';
 
 function badgeVariantForStatus(status: WorkflowConfigVersionUiStatus): 'default' | 'secondary' | 'outline' {
   if (status === 'Publicada') {
@@ -43,111 +54,215 @@ function SummaryCard({
   );
 }
 
-export function WorkflowConfigDefinitionsTab({ catalog }: { catalog: WorkflowConfigCatalogData }) {
-  return (
-    <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        <SummaryCard
-          title="Areas"
-          value={catalog.summary.areaCount}
-          caption="Agrupamentos lidos de workflowAreas."
-        />
-        <SummaryCard
-          title="Workflow types"
-          value={catalog.summary.workflowTypeCount}
-          caption="Tipos organizados por area e owner."
-        />
-        <SummaryCard
-          title="Versoes"
-          value={catalog.summary.versionCount}
-          caption="Historico de versoes exposto em modo somente leitura."
-        />
-      </div>
+export function WorkflowConfigDefinitionsTab({
+  catalog,
+  onRefresh,
+}: {
+  catalog: WorkflowConfigCatalogData;
+  onRefresh: () => void;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [createAreaOpen, setCreateAreaOpen] = useState(false);
+  const [createTypeOpen, setCreateTypeOpen] = useState(false);
+  const [openingDraftFor, setOpeningDraftFor] = useState<string | null>(null);
 
-      <Accordion type="multiple" className="rounded-lg border px-4">
-        {catalog.areas.map((area) => (
-          <AccordionItem key={area.areaId} value={area.areaId}>
-            <AccordionTrigger className="hover:no-underline">
-              <div className="flex min-w-0 flex-1 flex-col items-start gap-2 text-left">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">{area.name}</span>
-                  <Badge variant="outline">{area.icon}</Badge>
-                  <Badge variant="secondary">{area.typeCount} tipos</Badge>
+  async function handleCreateDraft(workflowTypeId: string) {
+    if (!user) {
+      return;
+    }
+
+    setOpeningDraftFor(workflowTypeId);
+
+    try {
+      const result = await createWorkflowDraft(user, workflowTypeId);
+      onRefresh();
+      router.push(result.editorPath);
+    } catch (error) {
+      toast({
+        title: 'Falha ao abrir draft',
+        description: error instanceof Error ? error.message : 'Erro inesperado.',
+        variant: 'destructive',
+      });
+    } finally {
+      setOpeningDraftFor(null);
+    }
+  }
+
+  return (
+    <>
+      <div className="space-y-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <SummaryCard
+            title="Areas"
+            value={catalog.summary.areaCount}
+            caption="Agrupamentos lidos de workflowAreas."
+          />
+          <SummaryCard
+            title="Workflow types"
+            value={catalog.summary.workflowTypeCount}
+            caption="Tipos organizados por area e owner."
+          />
+          <SummaryCard
+            title="Versoes"
+            value={catalog.summary.versionCount}
+            caption="Historico de versoes exposto na superficie administrativa."
+          />
+        </div>
+
+        <Card>
+          <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <CardTitle>Definicoes</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Crie areas, abra novos workflow types e continue drafts existentes sem alterar o runtime publicado.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setCreateAreaOpen(true)}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Nova area
+              </Button>
+              <Button onClick={() => setCreateTypeOpen(true)}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Novo tipo
+              </Button>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {catalog.areas.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6 text-sm text-muted-foreground">
+              Nenhuma area foi encontrada. Use "Nova area" para iniciar o catalogo.
+            </CardContent>
+          </Card>
+        ) : (
+          <Accordion type="multiple" className="rounded-lg border px-4">
+            {catalog.areas.map((area) => (
+            <AccordionItem key={area.areaId} value={area.areaId}>
+              <AccordionTrigger className="hover:no-underline">
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-2 text-left">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{area.name}</span>
+                    <Badge variant="outline">{area.icon}</Badge>
+                    <Badge variant="secondary">{area.typeCount} tipos</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {area.publishedTypeCount} publicados, {area.draftOnlyTypeCount} em rascunho inicial.
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {area.publishedTypeCount} publicados, {area.draftOnlyTypeCount} em rascunho inicial.
-                </p>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="space-y-4">
-              {area.types.length === 0 ? (
-                <Card>
-                  <CardContent className="pt-6 text-sm text-muted-foreground">
-                    Nenhum workflow type associado a esta area no momento.
-                  </CardContent>
-                </Card>
-              ) : (
-                area.types.map((workflowType) => (
-                  <Card key={workflowType.workflowTypeId}>
-                    <CardHeader className="space-y-3">
-                      <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="text-lg">{workflowType.name}</CardTitle>
-                          <p className="text-sm text-muted-foreground">
-                            {workflowType.description || 'Sem descricao cadastrada.'}
-                          </p>
-                        </div>
-                        <Badge variant={workflowType.hasPublishedVersion ? 'default' : 'outline'}>
-                          {workflowType.publishedVersionLabel}
-                        </Badge>
-                      </div>
-                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                        <span>Owner: {workflowType.ownerEmail || 'Nao informado'}</span>
-                        <span>ID owner: {workflowType.ownerUserId || 'Nao informado'}</span>
-                        <span>workflowTypeId: {workflowType.workflowTypeId}</span>
-                        <span>{workflowType.active ? 'Tipo ativo' : 'Tipo inativo'}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      {workflowType.versions.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          Nenhuma versao encontrada para este workflow type.
-                        </p>
-                      ) : (
-                        workflowType.versions.map((version, index) => (
-                          <div key={`${workflowType.workflowTypeId}-v${version.version}`} className="space-y-3">
-                            <div className="flex flex-col gap-2 rounded-md border p-4 md:flex-row md:items-center md:justify-between">
-                              <div className="space-y-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <span className="font-medium">v{version.version}</span>
-                                  <Badge variant={badgeVariantForStatus(version.uiStatus)}>
-                                    {version.uiStatus}
-                                  </Badge>
-                                  {version.isActivePublished ? (
-                                    <Badge variant="default">Ativa</Badge>
-                                  ) : null}
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                  {version.stepCount} etapas, {version.fieldCount} campos
-                                  {version.publishedAt ? `, publicada em ${version.publishedAt}` : ''}
-                                </p>
-                              </div>
-                              <p className="text-xs text-muted-foreground">
-                                state={version.state}
-                              </p>
-                            </div>
-                            {index < workflowType.versions.length - 1 ? <Separator /> : null}
-                          </div>
-                        ))
-                      )}
+              </AccordionTrigger>
+              <AccordionContent className="space-y-4">
+                {area.types.length === 0 ? (
+                  <Card>
+                    <CardContent className="pt-6 text-sm text-muted-foreground">
+                      Nenhum workflow type associado a esta area no momento.
                     </CardContent>
                   </Card>
-                ))
-              )}
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-    </div>
+                ) : (
+                  area.types.map((workflowType) => {
+                    const draftVersion = workflowType.versions.find((version) => version.state === 'draft') ?? null;
+
+                    return (
+                      <Card key={workflowType.workflowTypeId}>
+                        <CardHeader className="space-y-3">
+                          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                            <div className="space-y-1">
+                              <CardTitle className="text-lg">{workflowType.name}</CardTitle>
+                              <p className="text-sm text-muted-foreground">
+                                {workflowType.description || 'Sem descricao cadastrada.'}
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-2 md:items-end">
+                              <Badge variant={workflowType.hasPublishedVersion ? 'default' : 'outline'}>
+                                {workflowType.publishedVersionLabel}
+                              </Badge>
+                              {draftVersion ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    router.push(
+                                      `/admin/request-config/${workflowType.workflowTypeId}/versions/${draftVersion.version}/edit`,
+                                    )
+                                  }
+                                >
+                                  <PenSquare className="mr-2 h-4 w-4" />
+                                  Editar rascunho
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleCreateDraft(workflowType.workflowTypeId)}
+                                  disabled={openingDraftFor === workflowType.workflowTypeId}
+                                >
+                                  {openingDraftFor === workflowType.workflowTypeId ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                  )}
+                                  Nova versao draft
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            <span>Owner: {workflowType.ownerEmail || 'Nao informado'}</span>
+                            <span>ID owner: {workflowType.ownerUserId || 'Nao informado'}</span>
+                            <span>workflowTypeId: {workflowType.workflowTypeId}</span>
+                            <span>{workflowType.active ? 'Tipo ativo' : 'Tipo inativo'}</span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {workflowType.versions.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                              Nenhuma versao encontrada para este workflow type.
+                            </p>
+                          ) : (
+                            workflowType.versions.map((version, index) => (
+                              <div key={`${workflowType.workflowTypeId}-v${version.version}`} className="space-y-3">
+                                <div className="flex flex-col gap-2 rounded-md border p-4 md:flex-row md:items-center md:justify-between">
+                                  <div className="space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <span className="font-medium">v{version.version}</span>
+                                      <Badge variant={badgeVariantForStatus(version.uiStatus)}>
+                                        {version.uiStatus}
+                                      </Badge>
+                                      {version.isActivePublished ? (
+                                        <Badge variant="default">Ativa</Badge>
+                                      ) : null}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                      {version.stepCount} etapas, {version.fieldCount} campos
+                                      {version.publishedAt ? `, publicada em ${version.publishedAt}` : ''}
+                                    </p>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">state={version.state}</p>
+                                </div>
+                                {index < workflowType.versions.length - 1 ? <Separator /> : null}
+                              </div>
+                            ))
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+                )}
+              </AccordionContent>
+            </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+      </div>
+
+      <CreateWorkflowAreaDialog
+        open={createAreaOpen}
+        onOpenChange={setCreateAreaOpen}
+        onCreated={onRefresh}
+      />
+
+      <CreateWorkflowTypeDialog open={createTypeOpen} onOpenChange={setCreateTypeOpen} />
+    </>
   );
 }

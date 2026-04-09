@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { fetchWorkflowConfigCatalog, WorkflowConfigApiError } from '@/lib/workflows/admin-config/api-client';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, RefreshCcw, Settings2 } from 'lucide-react';
+import { AlertCircle, RefreshCcw } from 'lucide-react';
 import { useState } from 'react';
 import { WorkflowConfigDefinitionsTab } from './WorkflowConfigDefinitionsTab';
 import { WorkflowConfigHistoryPlaceholder } from './WorkflowConfigHistoryPlaceholder';
@@ -34,7 +34,7 @@ export function WorkflowConfigPage() {
     <div className="space-y-6 p-6 md:p-8">
       <PageHeader
         title="Configuracao de chamados v2"
-        description="Catalogo administrativo read-only por area, workflow type e versoes publicadas ou em rascunho."
+        description="Catalogo administrativo com criacao de areas, abertura de drafts e editor dedicado por versao."
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -64,21 +64,13 @@ export function WorkflowConfigPage() {
             </Alert>
           ) : null}
 
-          {!catalogQuery.isLoading &&
-          !catalogQuery.isError &&
-          catalogQuery.data &&
-          catalogQuery.data.areas.length === 0 ? (
-            <Alert>
-              <Settings2 className="h-4 w-4" />
-              <AlertTitle>Catalogo vazio</AlertTitle>
-              <AlertDescription>
-                Nenhuma area foi encontrada em `workflowAreas` para montar o catalogo administrativo.
-              </AlertDescription>
-            </Alert>
-          ) : null}
-
           {!catalogQuery.isLoading && !catalogQuery.isError && catalogQuery.data ? (
-            <WorkflowConfigDefinitionsTab catalog={catalogQuery.data} />
+            <WorkflowConfigDefinitionsTab
+              catalog={catalogQuery.data}
+              onRefresh={() => {
+                void catalogQuery.refetch();
+              }}
+            />
           ) : null}
         </TabsContent>
 

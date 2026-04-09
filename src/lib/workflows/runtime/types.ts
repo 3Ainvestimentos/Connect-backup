@@ -59,7 +59,7 @@ export interface WorkflowTypeV2 {
   ownerUserId: string;
   allowedUserIds: string[];
   active: boolean;
-  latestPublishedVersion: number;
+  latestPublishedVersion: number | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -107,7 +107,21 @@ export interface WorkflowVersionV2 {
   initialStepId: string;
   stepOrder: string[];
   stepsById: Record<string, StepDef>;
-  publishedAt: Timestamp;
+  publishedAt: Timestamp | null;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  draftConfig?: {
+    workflowType: {
+      name: string;
+      description: string;
+      icon: string;
+      areaId: string;
+      ownerEmail: string;
+      ownerUserId: string;
+      allowedUserIds: string[];
+      active: boolean;
+    };
+  } | null;
 }
 
 // ---------------------------------------------------------------------------

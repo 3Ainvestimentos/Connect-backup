@@ -1,14 +1,23 @@
 import type { User } from 'firebase/auth';
 import type {
+  CreateWorkflowAreaInput,
+  CreateWorkflowAreaResult,
+  CreateWorkflowDraftResult,
+  CreateWorkflowTypeInput,
+  CreateWorkflowTypeResult,
+  SaveWorkflowDraftInput,
+  SaveWorkflowDraftResult,
+  WorkflowConfigAccessMode,
   WorkflowConfigAreaListItem,
   WorkflowConfigCatalogData,
-  WorkflowConfigCatalogError,
-  WorkflowConfigCatalogSuccess,
+  WorkflowConfigOwnerLookup,
   WorkflowConfigTypeListItem,
   WorkflowConfigVersionListItem,
+  WorkflowDraftEditorData,
 } from './types';
+import type { RuntimeErrorResponse, RuntimeSuccess } from '@/lib/workflows/runtime/types';
 
-type ApiEnvelope = WorkflowConfigCatalogSuccess | WorkflowConfigCatalogError;
+type ApiEnvelope<TData> = RuntimeSuccess<TData> | RuntimeErrorResponse;
 
 export class WorkflowConfigApiError extends Error {
   code: string;
@@ -26,12 +35,24 @@ function asString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback;
 }
 
+function asNumberOrNull(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 function asNumber(value: unknown, fallback = 0): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
 function asBoolean(value: unknown): boolean {
   return value === true;
+}
+
+function asAccessMode(value: unknown): WorkflowConfigAccessMode {
+  return value === 'specific' ? 'specific' : 'all';
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 }
 
 function normalizeVersion(input: unknown): WorkflowConfigVersionListItem {
@@ -41,7 +62,7 @@ function normalizeVersion(input: unknown): WorkflowConfigVersionListItem {
 
   return {
     version: asNumber(item.version),
-    state: state === 'draft' || state === 'published' ? state : 'draft',
+    state: state === 'published' ? 'published' : 'draft',
     uiStatus:
       uiStatus === 'Publicada' || uiStatus === 'Inativa' || uiStatus === 'Rascunho'
         ? uiStatus
@@ -64,10 +85,11 @@ function normalizeType(input: unknown): WorkflowConfigTypeListItem {
     ownerEmail: asString(item.ownerEmail),
     ownerUserId: asString(item.ownerUserId),
     active: asBoolean(item.active),
-    latestPublishedVersion: asNumber(item.latestPublishedVersion),
+    latestPublishedVersion: asNumberOrNull(item.latestPublishedVersion),
     versionCount: asNumber(item.versionCount),
     publishedVersionLabel: asString(item.publishedVersionLabel),
     hasPublishedVersion: asBoolean(item.hasPublishedVersion),
+    draftVersion: asNumberOrNull(item.draftVersion),
     versions: Array.isArray(item.versions) ? item.versions.map(normalizeVersion) : [],
   };
 }
@@ -103,26 +125,111 @@ function normalizeCatalog(input: unknown): WorkflowConfigCatalogData {
   };
 }
 
-export async function fetchWorkflowConfigCatalog(user: User): Promise<WorkflowConfigCatalogData> {
+function normalizeOwnerLookup(input: unknown): WorkflowConfigOwnerLookup {
+  const item = typeof input === 'object' && input !== null ? (input as Record<string, unknown>) : {};
+
+  return {
+    userId: asString(item.userId),
+    name: asString(item.name),
+    email: asString(item.email),
+    area: asString(item.area),
+    position: asString(item.position),
+  };
+}
+
+function normalizeDraftEditor(input: unknown): WorkflowDraftEditorData {
+  const item = typeof input === 'object' && input !== null ? (input as Record<string, unknown>) : {};
+  const draft = typeof item.draft === 'object' && item.draft !== null ? (item.draft as Record<string, unknown>) : {};
+  const lookups =
+    typeof item.lookups === 'object' && item.lookups !== null
+      ? (item.lookups as Record<string, unknown>)
+      : {};
+  const general =
+    typeof draft.general === 'object' && draft.general !== null
+      ? (draft.general as Record<string, unknown>)
+      : {};
+  const access =
+    typeof draft.access === 'object' && draft.access !== null
+      ? (draft.access as Record<string, unknown>)
+      : {};
+  const meta =
+    typeof draft.meta === 'object' && draft.meta !== null ? (draft.meta as Record<string, unknown>) : {};
+
+  return {
+    draft: {
+      workflowTypeId: asString(draft.workflowTypeId),
+      version: asNumber(draft.version),
+      state: asString(draft.state) === 'published' ? 'published' : 'draft',
+      isNewWorkflowType: asBoolean(draft.isNewWorkflowType),
+      general: {
+        name: asString(general.name),
+        description: asString(general.description),
+        icon: asString(general.icon),
+        areaId: asString(general.areaId),
+        ownerEmail: asString(general.ownerEmail),
+        ownerUserId: asString(general.ownerUserId),
+        defaultSlaDays: asNumber(general.defaultSlaDays),
+        activeOnPublish: asBoolean(general.activeOnPublish),
+      },
+      access: {
+        mode: asAccessMode(access.mode),
+        allowedUserIds: asStringArray(access.allowedUserIds),
+        preview: asString(access.preview),
+      },
+      fields: Array.isArray(draft.fields) ? (draft.fields as WorkflowDraftEditorData['draft']['fields']) : [],
+      steps: Array.isArray(draft.steps) ? (draft.steps as WorkflowDraftEditorData['draft']['steps']) : [],
+      initialStepId: asString(draft.initialStepId),
+      publishReadiness: Array.isArray(draft.publishReadiness)
+        ? (draft.publishReadiness as WorkflowDraftEditorData['draft']['publishReadiness'])
+        : [],
+      meta: {
+        createdAt: typeof meta.createdAt === 'string' ? meta.createdAt : null,
+        updatedAt: typeof meta.updatedAt === 'string' ? meta.updatedAt : null,
+        latestPublishedVersion: asNumberOrNull(meta.latestPublishedVersion),
+      },
+    },
+    lookups: {
+      areas: Array.isArray(lookups.areas)
+        ? (lookups.areas as WorkflowDraftEditorData['lookups']['areas'])
+        : [],
+      owners: Array.isArray(lookups.owners) ? lookups.owners.map(normalizeOwnerLookup) : [],
+      collaborators: Array.isArray(lookups.collaborators)
+        ? lookups.collaborators.map(normalizeOwnerLookup)
+        : [],
+    },
+  };
+}
+
+async function getAuthHeaders(user: User) {
   const token = await user.getIdToken();
-  const response = await fetch('/api/admin/request-config/catalog', {
+
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+async function requestJson<TData>(
+  user: User,
+  url: string,
+  init?: RequestInit,
+): Promise<TData> {
+  const response = await fetch(url, {
+    ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
+      ...(await getAuthHeaders(user)),
+      ...(init?.headers || {}),
     },
     cache: 'no-store',
   });
 
-  let payload: ApiEnvelope | null = null;
+  let payload: ApiEnvelope<TData> | null = null;
 
   try {
-    payload = (await response.json()) as ApiEnvelope;
+    payload = (await response.json()) as ApiEnvelope<TData>;
   } catch (error) {
     if (!response.ok) {
-      throw new WorkflowConfigApiError(
-        'UNKNOWN_ERROR',
-        'Falha ao consumir o catalogo administrativo de chamados.',
-        response.status,
-      );
+      throw new WorkflowConfigApiError('UNKNOWN_ERROR', 'Falha ao consumir a API administrativa.', response.status);
     }
 
     throw error;
@@ -132,14 +239,74 @@ export async function fetchWorkflowConfigCatalog(user: User): Promise<WorkflowCo
     const errorPayload =
       payload && payload.ok === false
         ? payload
-        : { code: 'UNKNOWN_ERROR', message: 'Falha ao consumir o catalogo administrativo de chamados.' };
+        : { code: 'UNKNOWN_ERROR', message: 'Falha ao consumir a API administrativa.' };
 
-    throw new WorkflowConfigApiError(
-      errorPayload.code,
-      errorPayload.message,
-      response.status,
-    );
+    throw new WorkflowConfigApiError(errorPayload.code, errorPayload.message, response.status);
   }
 
-  return normalizeCatalog(payload.data);
+  return payload.data;
+}
+
+export async function fetchWorkflowConfigCatalog(user: User): Promise<WorkflowConfigCatalogData> {
+  const data = await requestJson<WorkflowConfigCatalogData>(user, '/api/admin/request-config/catalog');
+  return normalizeCatalog(data);
+}
+
+export async function createWorkflowArea(user: User, input: CreateWorkflowAreaInput): Promise<CreateWorkflowAreaResult> {
+  return requestJson<CreateWorkflowAreaResult>(user, '/api/admin/request-config/areas', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function createWorkflowType(
+  user: User,
+  input: CreateWorkflowTypeInput,
+): Promise<CreateWorkflowTypeResult> {
+  return requestJson<CreateWorkflowTypeResult>(user, '/api/admin/request-config/workflow-types', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function createWorkflowDraft(
+  user: User,
+  workflowTypeId: string,
+): Promise<CreateWorkflowDraftResult> {
+  return requestJson<CreateWorkflowDraftResult>(
+    user,
+    `/api/admin/request-config/workflow-types/${workflowTypeId}/drafts`,
+    {
+      method: 'POST',
+    },
+  );
+}
+
+export async function fetchWorkflowDraftEditor(
+  user: User,
+  workflowTypeId: string,
+  version: number,
+): Promise<WorkflowDraftEditorData> {
+  const data = await requestJson<WorkflowDraftEditorData>(
+    user,
+    `/api/admin/request-config/workflow-types/${workflowTypeId}/versions/${version}`,
+  );
+
+  return normalizeDraftEditor(data);
+}
+
+export async function saveWorkflowDraft(
+  user: User,
+  workflowTypeId: string,
+  version: number,
+  input: SaveWorkflowDraftInput,
+): Promise<SaveWorkflowDraftResult> {
+  return requestJson<SaveWorkflowDraftResult>(
+    user,
+    `/api/admin/request-config/workflow-types/${workflowTypeId}/versions/${version}`,
+    {
+      method: 'PUT',
+      body: JSON.stringify(input),
+    },
+  );
 }

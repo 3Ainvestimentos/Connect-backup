@@ -66,6 +66,8 @@ function toTypeListItem(
     typeof workflowType.latestPublishedVersion === 'number' && workflowType.latestPublishedVersion > 0;
 
   const sortedVersions = [...versions].sort((left, right) => left.version - right.version);
+  const draftVersion =
+    sortedVersions.find((version) => version.state === 'draft')?.version ?? null;
 
   return {
     workflowTypeId: workflowType.workflowTypeId || snapshot.id,
@@ -75,12 +77,13 @@ function toTypeListItem(
     ownerEmail: workflowType.ownerEmail?.trim() || '',
     ownerUserId: workflowType.ownerUserId?.trim() || '',
     active: workflowType.active === true,
-    latestPublishedVersion: hasPublishedVersion ? workflowType.latestPublishedVersion ?? 0 : 0,
+    latestPublishedVersion: hasPublishedVersion ? workflowType.latestPublishedVersion ?? null : null,
     versionCount: sortedVersions.length,
     publishedVersionLabel: hasPublishedVersion
       ? `v${workflowType.latestPublishedVersion} publicada`
       : 'Rascunho inicial / sem publicada',
     hasPublishedVersion,
+    draftVersion,
     versions: sortedVersions.map((version) => toVersionListItem(workflowType, version)),
   };
 }

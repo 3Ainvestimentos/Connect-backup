@@ -146,6 +146,7 @@ describe('buildWorkflowConfigCatalog', () => {
             workflowTypeId: 'facilities_manutencao',
             publishedVersionLabel: 'v2 publicada',
             hasPublishedVersion: true,
+            draftVersion: 3,
             versions: [
               expect.objectContaining({ version: 1, uiStatus: 'Inativa', isActivePublished: false }),
               expect.objectContaining({ version: 2, uiStatus: 'Publicada', isActivePublished: true }),
@@ -166,6 +167,7 @@ describe('buildWorkflowConfigCatalog', () => {
             workflowTypeId: 'people_admission',
             publishedVersionLabel: 'Rascunho inicial / sem publicada',
             hasPublishedVersion: false,
+            draftVersion: 1,
             versions: [expect.objectContaining({ version: 1, uiStatus: 'Rascunho' })],
           }),
         ],
