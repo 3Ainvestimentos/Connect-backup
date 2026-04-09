@@ -12,8 +12,13 @@ import type {
 } from '@/lib/workflows/runtime/types';
 import { appendNumericSuffix, buildAreaId, buildFieldId, buildStatusKey, buildWorkflowTypeId } from './id-generation';
 import { buildAccessPreview, normalizeAllowedUserIds } from './draft-readiness';
-import { listWorkflowConfigAreas, listWorkflowConfigOwners, resolveOwnerByUserId } from './lookups';
-import { deriveVersionStatus, evaluatePublishability, hasBlockingPublishIssues } from './publishability';
+import {
+  listWorkflowConfigAreas,
+  listWorkflowConfigCollaborators,
+  listWorkflowConfigOwners,
+  resolveOwnerByUserId,
+} from './lookups';
+import { canActivateVersion, deriveVersionStatus, evaluatePublishability, hasBlockingPublishIssues } from './publishability';
 import type {
   CreateWorkflowAreaInput,
   CreateWorkflowAreaResult,
@@ -22,9 +27,12 @@ import type {
   CreateWorkflowTypeResult,
   SaveWorkflowDraftInput,
   SaveWorkflowDraftResult,
+  WorkflowConfigCollaboratorLookup,
   WorkflowDraftEditorData,
+  WorkflowDraftEditorApprover,
   WorkflowDraftEditorDraft,
   WorkflowDraftEditorGeneral,
+  WorkflowDraftEditorStep,
 } from './types';
 
 function getDb() {
@@ -196,6 +204,62 @@ function parseDraftSteps(value: unknown): Array<Partial<StepDef>> {
   });
 }
 
+function parseSaveDraftSteps(value: unknown): SaveWorkflowDraftInput['steps'] {
+  if (!Array.isArray(value)) {
+    throw invalidDraftPayload('steps invalido.');
+  }
+
+  return value.map((item) => {
+    const step = asRecord(item, 'step invalido.');
+    const action =
+      step.action == null
+        ? undefined
+        : (() => {
+            const actionRecord = asRecord(step.action, 'step.action invalido.');
+            return {
+              type: readString(actionRecord.type, 'step.action.type invalido.', '') as NonNullable<
+                StepDef['action']
+              >['type'],
+              label: readString(actionRecord.label, 'step.action.label invalido.', ''),
+              approverCollaboratorDocIds:
+                actionRecord.approverCollaboratorDocIds == null
+                  ? []
+                  : readStringArray(
+                      actionRecord.approverCollaboratorDocIds,
+                      'step.action.approverCollaboratorDocIds invalido.',
+                    ),
+              unresolvedApproverIds:
+                actionRecord.unresolvedApproverIds == null
+                  ? []
+                  : readStringArray(
+                      actionRecord.unresolvedApproverIds,
+                      'step.action.unresolvedApproverIds invalido.',
+                    ),
+              commentRequired: readBoolean(actionRecord.commentRequired, false),
+              attachmentRequired: readBoolean(actionRecord.attachmentRequired, false),
+              commentPlaceholder: readString(
+                actionRecord.commentPlaceholder,
+                'step.action.commentPlaceholder invalido.',
+                '',
+              ),
+              attachmentPlaceholder: readString(
+                actionRecord.attachmentPlaceholder,
+                'step.action.attachmentPlaceholder invalido.',
+                '',
+              ),
+            };
+          })();
+
+    return {
+      stepId: readString(step.stepId, 'step.stepId invalido.', ''),
+      stepName: readString(step.stepName, 'step.stepName invalido.', ''),
+      statusKey: readString(step.statusKey, 'step.statusKey invalido.', ''),
+      kind: readString(step.kind, 'step.kind invalido.', '') as StepDef['kind'],
+      action,
+    };
+  });
+}
+
 function parseSaveWorkflowDraftInput(input: SaveWorkflowDraftInput): SaveWorkflowDraftInput {
   const payload = asRecord(input, 'Payload de salvamento de draft invalido.');
   const general = asRecord(payload.general, 'general invalido.');
@@ -206,7 +270,6 @@ function parseSaveWorkflowDraftInput(input: SaveWorkflowDraftInput): SaveWorkflo
       name: readString(general.name, 'general.name invalido.'),
       description: readString(general.description, 'general.description invalido.', ''),
       icon: readString(general.icon, 'general.icon invalido.', 'FileText'),
-      areaId: readString(general.areaId, 'general.areaId invalido.'),
       ownerUserId: readString(general.ownerUserId, 'general.ownerUserId invalido.'),
       defaultSlaDays: readNumber(general.defaultSlaDays, 'general.defaultSlaDays invalido.', 0),
       activeOnPublish: readBoolean(general.activeOnPublish, false),
@@ -222,30 +285,35 @@ function parseSaveWorkflowDraftInput(input: SaveWorkflowDraftInput): SaveWorkflo
           : readStringArray(access.allowedUserIds, 'access.allowedUserIds invalido.'),
     },
     fields: parseDraftFields(payload.fields),
-    steps: parseDraftSteps(payload.steps),
+    steps: parseSaveDraftSteps(payload.steps),
     initialStepId: readString(payload.initialStepId, 'initialStepId invalido.', ''),
   };
 }
 
 function normalizeDraftWorkflowType(
-  workflowType: WorkflowTypeV2,
+  typeState: Pick<
+    WorkflowTypeV2,
+    'name' | 'description' | 'icon' | 'areaId' | 'ownerEmail' | 'ownerUserId' | 'active'
+  > & { allowedUserIds?: string[] },
   version: WorkflowVersionV2,
+  areaName: string,
 ): WorkflowDraftEditorGeneral {
   const draftType = version.draftConfig?.workflowType;
 
   return {
-    name: draftType?.name ?? workflowType.name ?? '',
-    description: draftType?.description ?? workflowType.description ?? '',
-    icon: draftType?.icon ?? workflowType.icon ?? 'FileText',
-    areaId: draftType?.areaId ?? workflowType.areaId ?? '',
-    ownerEmail: draftType?.ownerEmail ?? workflowType.ownerEmail ?? '',
-    ownerUserId: draftType?.ownerUserId ?? workflowType.ownerUserId ?? '',
+    name: draftType?.name ?? typeState.name ?? '',
+    description: draftType?.description ?? typeState.description ?? '',
+    icon: draftType?.icon ?? typeState.icon ?? 'FileText',
+    areaId: draftType?.areaId ?? typeState.areaId ?? '',
+    areaName,
+    ownerEmail: draftType?.ownerEmail ?? typeState.ownerEmail ?? '',
+    ownerUserId: draftType?.ownerUserId ?? typeState.ownerUserId ?? '',
     defaultSlaDays: typeof version.defaultSlaDays === 'number' ? version.defaultSlaDays : 0,
-    activeOnPublish: draftType?.active ?? workflowType.active ?? true,
+    activeOnPublish: draftType?.active ?? typeState.active ?? true,
   };
 }
 
-function normalizeDraftSteps(version: WorkflowVersionV2): StepDef[] {
+function normalizeRuntimeSteps(version: WorkflowVersionV2): StepDef[] {
   const order = Array.isArray(version.stepOrder) ? version.stepOrder : [];
   const map = version.stepsById || {};
 
@@ -298,6 +366,127 @@ async function ensureAreaExists(areaId: string) {
   if (!doc.exists) {
     throw new RuntimeError(RuntimeErrorCode.INVALID_DRAFT_PAYLOAD, 'Area informada nao foi encontrada.', 422);
   }
+}
+
+function buildAreaNameMap(areas: Awaited<ReturnType<typeof listWorkflowConfigAreas>>) {
+  return new Map(areas.map((area) => [area.areaId, area.name]));
+}
+
+function hydrateApproverSelections(
+  approverIds: string[] | undefined,
+  collaboratorsByUserId: Map<string, WorkflowConfigCollaboratorLookup>,
+): {
+  approvers: WorkflowDraftEditorApprover[];
+  unresolvedApproverIds: string[];
+} {
+  if (!Array.isArray(approverIds)) {
+    return {
+      approvers: [],
+      unresolvedApproverIds: [],
+    };
+  }
+
+  const unresolvedApproverIds: string[] = [];
+  const approvers = approverIds
+    .map((approverId) => {
+      const collaborator = collaboratorsByUserId.get(approverId);
+      if (!collaborator) {
+        unresolvedApproverIds.push(approverId);
+        return null;
+      }
+
+      return {
+        collaboratorDocId: collaborator.collaboratorDocId,
+        userId: collaborator.userId,
+        name: collaborator.name,
+        email: collaborator.email,
+      } satisfies WorkflowDraftEditorApprover;
+    })
+    .filter((item): item is WorkflowDraftEditorApprover => item !== null);
+
+  return {
+    approvers,
+    unresolvedApproverIds,
+  };
+}
+
+async function resolveCollaboratorDocIdsToApproverIds(
+  collaboratorDocIds: string[] | undefined,
+): Promise<string[]> {
+  const normalizedDocIds = Array.isArray(collaboratorDocIds)
+    ? Array.from(new Set(collaboratorDocIds.map((item) => item.trim()).filter(Boolean)))
+    : [];
+
+  if (normalizedDocIds.length === 0) {
+    return [];
+  }
+
+  const snapshots = await Promise.all(
+    normalizedDocIds.map((collaboratorDocId) => getDb().collection('collaborators').doc(collaboratorDocId).get()),
+  );
+
+  return snapshots.map((snapshot, index) => {
+    if (!snapshot.exists) {
+      throw invalidDraftPayload(`Aprovador selecionado nao foi encontrado: ${normalizedDocIds[index]}.`);
+    }
+
+    const data = snapshot.data() as { id3a?: string };
+    const approverId = data.id3a?.trim() || '';
+
+    if (!approverId) {
+      throw invalidDraftPayload(`Aprovador selecionado nao possui id3a valido: ${normalizedDocIds[index]}.`);
+    }
+
+    return approverId;
+  });
+}
+
+function hasUnresolvedApproverSelections(input: SaveWorkflowDraftInput['steps']) {
+  return input.some(
+    (step) => Array.isArray(step.action?.unresolvedApproverIds) && step.action!.unresolvedApproverIds!.length > 0,
+  );
+}
+
+function resolveWorkflowTypeStateForEditor(
+  workflowType: WorkflowTypeV2,
+  workflowVersion: WorkflowVersionV2,
+) {
+  if (workflowVersion.state === 'draft') {
+    return {
+      name: workflowType.name,
+      description: workflowType.description,
+      icon: workflowType.icon,
+      areaId: workflowType.areaId,
+      ownerEmail: workflowType.ownerEmail,
+      ownerUserId: workflowType.ownerUserId,
+      allowedUserIds: workflowType.allowedUserIds,
+      active: workflowType.active,
+    };
+  }
+
+  if (workflowVersion.workflowTypeSnapshot) {
+    return {
+      name: workflowVersion.workflowTypeSnapshot.name,
+      description: workflowVersion.workflowTypeSnapshot.description,
+      icon: workflowVersion.workflowTypeSnapshot.icon,
+      areaId: workflowVersion.workflowTypeSnapshot.areaId,
+      ownerEmail: workflowVersion.workflowTypeSnapshot.ownerEmail,
+      ownerUserId: workflowVersion.workflowTypeSnapshot.ownerUserId,
+      allowedUserIds: workflowVersion.workflowTypeSnapshot.allowedUserIds,
+      active: workflowVersion.workflowTypeSnapshot.active,
+    };
+  }
+
+  return {
+    name: workflowType.name,
+    description: workflowType.description,
+    icon: workflowType.icon,
+    areaId: workflowType.areaId,
+    ownerEmail: workflowType.ownerEmail,
+    ownerUserId: workflowType.ownerUserId,
+    allowedUserIds: workflowType.allowedUserIds,
+    active: workflowType.active,
+  };
 }
 
 function buildCandidateId(baseId: string, suffix: number, separator: '-' | '_') {
@@ -626,13 +815,13 @@ function normalizeFields(
   });
 }
 
-function normalizeSteps(
+async function normalizeSteps(
   input: SaveWorkflowDraftInput['steps'],
   current: StepDef[],
-): { steps: StepDef[]; stepsById: Record<string, StepDef>; stepOrder: string[] } {
+): Promise<{ steps: StepDef[]; stepsById: Record<string, StepDef>; stepOrder: string[] }> {
   const existingIds = new Set(current.map((step) => step.stepId));
   const usedIds = new Set<string>();
-  const steps = input.map((step, index) => {
+  const steps = await Promise.all(input.map(async (step, index) => {
     const providedId = (step.stepId || '').trim();
     let stepId = providedId && existingIds.has(providedId) ? providedId : '';
 
@@ -654,9 +843,7 @@ function normalizeSteps(
         ? {
             type: actionType,
             label: (step.action?.label || '').trim() || 'Acao',
-            approverIds: Array.isArray(step.action?.approverIds)
-              ? Array.from(new Set(step.action?.approverIds.map((item) => item.trim()).filter(Boolean)))
-              : [],
+            approverIds: await resolveCollaboratorDocIdsToApproverIds(step.action?.approverCollaboratorDocIds),
             commentRequired: step.action?.commentRequired === true,
             attachmentRequired: step.action?.attachmentRequired === true,
             commentPlaceholder: (step.action?.commentPlaceholder || '').trim(),
@@ -671,7 +858,7 @@ function normalizeSteps(
       kind: normalizeStepKind(step.kind),
       ...(action ? { action } : {}),
     } satisfies StepDef;
-  });
+  }));
 
   return {
     steps,
@@ -680,7 +867,7 @@ function normalizeSteps(
   };
 }
 
-async function loadDraftVersion(workflowTypeId: string, version: number) {
+async function loadWorkflowVersion(workflowTypeId: string, version: number) {
   const typeRef = getDb().collection('workflowTypes_v2').doc(workflowTypeId);
   const [typeDoc, versionDoc] = await Promise.all([
     typeRef.get(),
@@ -698,32 +885,75 @@ async function loadDraftVersion(workflowTypeId: string, version: number) {
   const workflowType = typeDoc.data() as WorkflowTypeV2;
   const workflowVersion = versionDoc.data() as WorkflowVersionV2;
 
-  if (workflowVersion.state !== 'draft') {
-    throw new RuntimeError(RuntimeErrorCode.INVALID_DRAFT_PAYLOAD, 'A rota so aceita versoes draft.', 422);
-  }
-
   return { workflowType, workflowVersion, typeRef, versionRef: versionDoc.ref };
 }
 
-function buildDraftDto(workflowType: WorkflowTypeV2, workflowVersion: WorkflowVersionV2): WorkflowDraftEditorDraft {
-  const general = normalizeDraftWorkflowType(workflowType, workflowVersion);
-  const allowedUserIds = workflowVersion.draftConfig?.workflowType.allowedUserIds ?? workflowType.allowedUserIds ?? ['all'];
+async function loadDraftVersion(workflowTypeId: string, version: number) {
+  const loaded = await loadWorkflowVersion(workflowTypeId, version);
+
+  if (loaded.workflowVersion.state !== 'draft') {
+    throw new RuntimeError(RuntimeErrorCode.INVALID_DRAFT_PAYLOAD, 'A rota de salvamento aceita apenas drafts.', 422);
+  }
+
+  return loaded;
+}
+
+function buildDraftDto(
+  workflowType: WorkflowTypeV2,
+  workflowVersion: WorkflowVersionV2,
+  areas: Awaited<ReturnType<typeof listWorkflowConfigAreas>>,
+  collaborators: WorkflowConfigCollaboratorLookup[],
+): WorkflowDraftEditorDraft {
+  const typeState = resolveWorkflowTypeStateForEditor(workflowType, workflowVersion);
+  const areaName = buildAreaNameMap(areas).get(typeState.areaId) || typeState.areaId;
+  const general = normalizeDraftWorkflowType(typeState, workflowVersion, areaName);
+  const allowedUserIds = workflowVersion.draftConfig?.workflowType.allowedUserIds ?? typeState.allowedUserIds ?? ['all'];
   const mode = allowedUserIds.includes('all') ? 'all' : 'specific';
   const fields = (workflowVersion.fields || []).map(cloneField);
-  const steps = normalizeDraftSteps(workflowVersion);
+  const collaboratorsByUserId = new Map(collaborators.map((collaborator) => [collaborator.userId, collaborator]));
+  const steps = normalizeRuntimeSteps(workflowVersion).map((step) => {
+    if (!step.action) {
+      return step;
+    }
+
+    const hydrated = hydrateApproverSelections(step.action.approverIds, collaboratorsByUserId);
+
+    return {
+      ...step,
+      action: {
+        ...step.action,
+        approvers: hydrated.approvers,
+        unresolvedApproverIds: hydrated.unresolvedApproverIds,
+      },
+    };
+  }) as WorkflowDraftEditorStep[];
   const publishReadiness = evaluatePublishability({
     workflowType,
     version: workflowVersion,
-    collaborators: [],
+    collaborators,
   });
+  const unresolvedIssues = steps.flatMap((step, index) =>
+    step.action?.unresolvedApproverIds?.length
+      ? [
+          {
+            code: 'UNRESOLVED_ACTION_APPROVERS',
+            category: 'actions' as const,
+            severity: 'blocking' as const,
+            message: 'Existem aprovadores historicos nao resolvidos nesta etapa. Revise a selecao antes de salvar ou publicar.',
+            path: `steps.${index}.action.approvers`,
+          },
+        ]
+      : [],
+  );
 
   return {
     workflowTypeId: workflowType.workflowTypeId,
     version: workflowVersion.version,
-    state: 'draft',
+    state: workflowVersion.state,
+    mode: workflowVersion.state === 'draft' ? 'edit' : 'read-only',
     derivedStatus: deriveVersionStatus(workflowType, workflowVersion),
-    canPublish: !hasBlockingPublishIssues(publishReadiness),
-    canActivate: false,
+    canPublish: workflowVersion.state === 'draft' && !hasBlockingPublishIssues(publishReadiness),
+    canActivate: canActivateVersion(workflowType, workflowVersion),
     isNewWorkflowType: workflowType.latestPublishedVersion == null,
     general,
     access: {
@@ -734,7 +964,7 @@ function buildDraftDto(workflowType: WorkflowTypeV2, workflowVersion: WorkflowVe
     fields,
     steps,
     initialStepId: workflowVersion.initialStepId || '',
-    publishReadiness,
+    publishReadiness: [...publishReadiness, ...unresolvedIssues],
     meta: {
       createdAt: asIso(workflowVersion.createdAt),
       updatedAt: asIso(workflowVersion.updatedAt),
@@ -747,18 +977,28 @@ export async function getWorkflowDraftEditorData(
   workflowTypeId: string,
   version: number,
 ): Promise<WorkflowDraftEditorData> {
-  const [{ workflowType, workflowVersion }, areas, owners] = await Promise.all([
-    loadDraftVersion(workflowTypeId, version),
+  const [{ workflowType, workflowVersion }, areas, owners, collaborators] = await Promise.all([
+    loadWorkflowVersion(workflowTypeId, version),
     listWorkflowConfigAreas(),
     listWorkflowConfigOwners(),
+    listWorkflowConfigCollaborators(),
   ]);
 
-  const draft = buildDraftDto(workflowType, workflowVersion);
-  draft.publishReadiness = evaluatePublishability({
+  const draft = buildDraftDto(
+    workflowType,
+    workflowVersion,
+    areas,
+    collaborators,
+  );
+  const unresolvedIssues = draft.publishReadiness.filter((issue) => issue.code === 'UNRESOLVED_ACTION_APPROVERS');
+  draft.publishReadiness = [
+    ...evaluatePublishability({
     workflowType,
     version: workflowVersion,
     collaborators: owners,
-  });
+    }),
+    ...unresolvedIssues,
+  ];
   draft.canPublish = !hasBlockingPublishIssues(draft.publishReadiness);
 
   return {
@@ -766,7 +1006,7 @@ export async function getWorkflowDraftEditorData(
     lookups: {
       areas,
       owners,
-      collaborators: owners,
+      collaborators,
     },
   };
 }
@@ -777,14 +1017,22 @@ export async function saveWorkflowDraft(
   input: SaveWorkflowDraftInput,
 ): Promise<SaveWorkflowDraftResult> {
   const parsedInput = parseSaveWorkflowDraftInput(input);
+  if (hasUnresolvedApproverSelections(parsedInput.steps || [])) {
+    throw invalidDraftPayload(
+      'Existem aprovadores historicos nao resolvidos. Revise a selecao da etapa antes de salvar o draft.',
+    );
+  }
   const { workflowType, workflowVersion, typeRef, versionRef } = await loadDraftVersion(workflowTypeId, version);
-  await ensureAreaExists(ensureAreaId(parsedInput.general.areaId));
+  await ensureAreaExists(ensureAreaId(workflowType.areaId));
 
   const ownerLookup = await resolveOwnerByUserId(parsedInput.general.ownerUserId);
   const fields = normalizeFields(parsedInput.fields || [], workflowVersion.fields || []);
   const normalizedAccess = normalizeAllowedUserIds(parsedInput.access.mode, parsedInput.access.allowedUserIds || []);
   const allowedUserIds = parsedInput.access.mode === 'all' ? ['all'] : normalizedAccess;
-  const { steps, stepsById, stepOrder } = normalizeSteps(parsedInput.steps || [], normalizeDraftSteps(workflowVersion));
+  const { steps, stepsById, stepOrder } = await normalizeSteps(
+    parsedInput.steps || [],
+    normalizeRuntimeSteps(workflowVersion),
+  );
   const initialStepId =
     stepOrder.includes(parsedInput.initialStepId) ? parsedInput.initialStepId : stepOrder[0] || '';
 
@@ -792,7 +1040,8 @@ export async function saveWorkflowDraft(
     name: parsedInput.general.name.trim(),
     description: parsedInput.general.description.trim(),
     icon: parsedInput.general.icon.trim() || 'FileText',
-    areaId: parsedInput.general.areaId.trim(),
+    areaId: workflowType.areaId,
+    areaName: workflowType.areaId,
     ownerEmail: ownerLookup.email,
     ownerUserId: ownerLookup.userId,
     defaultSlaDays:
@@ -817,7 +1066,7 @@ export async function saveWorkflowDraft(
           name: general.name,
           description: general.description,
           icon: general.icon,
-          areaId: general.areaId,
+          areaId: workflowType.areaId,
           ownerEmail: general.ownerEmail,
           ownerUserId: general.ownerUserId,
           allowedUserIds,
@@ -844,7 +1093,7 @@ export async function saveWorkflowDraft(
           name: general.name,
           description: general.description,
           icon: general.icon,
-          areaId: general.areaId,
+          areaId: workflowType.areaId,
           ownerEmail: general.ownerEmail,
           ownerUserId: general.ownerUserId,
           allowedUserIds,
@@ -858,7 +1107,7 @@ export async function saveWorkflowDraft(
         name: general.name,
         description: general.description,
         icon: general.icon,
-        areaId: general.areaId,
+        areaId: workflowType.areaId,
         ownerEmail: general.ownerEmail,
         ownerUserId: general.ownerUserId,
         allowedUserIds,

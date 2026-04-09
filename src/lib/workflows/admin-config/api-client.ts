@@ -10,6 +10,7 @@ import type {
   WorkflowConfigAccessMode,
   WorkflowConfigAreaListItem,
   WorkflowConfigCatalogData,
+  WorkflowConfigCollaboratorLookup,
   WorkflowConfigOwnerLookup,
   WorkflowConfigTypeListItem,
   WorkflowConfigVersionListItem,
@@ -138,11 +139,25 @@ function normalizeOwnerLookup(input: unknown): WorkflowConfigOwnerLookup {
   const item = typeof input === 'object' && input !== null ? (input as Record<string, unknown>) : {};
 
   return {
+    collaboratorDocId: typeof item.collaboratorDocId === 'string' ? item.collaboratorDocId : undefined,
     userId: asString(item.userId),
     name: asString(item.name),
     email: asString(item.email),
     area: asString(item.area),
     position: asString(item.position),
+  };
+}
+
+function normalizeCollaboratorLookup(input: unknown): WorkflowConfigCollaboratorLookup {
+  const owner = normalizeOwnerLookup(input);
+
+  return {
+    collaboratorDocId: owner.collaboratorDocId || '',
+    userId: owner.userId,
+    name: owner.name,
+    email: owner.email,
+    area: owner.area,
+    position: owner.position,
   };
 }
 
@@ -169,6 +184,7 @@ function normalizeDraftEditor(input: unknown): WorkflowDraftEditorData {
       workflowTypeId: asString(draft.workflowTypeId),
       version: asNumber(draft.version),
       state: asString(draft.state) === 'published' ? 'published' : 'draft',
+      mode: asString(draft.mode) === 'read-only' ? 'read-only' : 'edit',
       derivedStatus:
         asString(draft.derivedStatus) === 'Publicada' ||
         asString(draft.derivedStatus) === 'Inativa' ||
@@ -183,6 +199,7 @@ function normalizeDraftEditor(input: unknown): WorkflowDraftEditorData {
         description: asString(general.description),
         icon: asString(general.icon),
         areaId: asString(general.areaId),
+        areaName: asString(general.areaName),
         ownerEmail: asString(general.ownerEmail),
         ownerUserId: asString(general.ownerUserId),
         defaultSlaDays: asNumber(general.defaultSlaDays),
@@ -194,7 +211,20 @@ function normalizeDraftEditor(input: unknown): WorkflowDraftEditorData {
         preview: asString(access.preview),
       },
       fields: Array.isArray(draft.fields) ? (draft.fields as WorkflowDraftEditorData['draft']['fields']) : [],
-      steps: Array.isArray(draft.steps) ? (draft.steps as WorkflowDraftEditorData['draft']['steps']) : [],
+      steps: Array.isArray(draft.steps)
+        ? (draft.steps as WorkflowDraftEditorData['draft']['steps']).map((step) => ({
+            ...step,
+            action: step.action
+              ? {
+                  ...step.action,
+                  approvers: Array.isArray(step.action.approvers) ? step.action.approvers : [],
+                  unresolvedApproverIds: Array.isArray(step.action.unresolvedApproverIds)
+                    ? step.action.unresolvedApproverIds.filter((item) => typeof item === 'string')
+                    : [],
+                }
+              : undefined,
+          }))
+        : [],
       initialStepId: asString(draft.initialStepId),
       publishReadiness: Array.isArray(draft.publishReadiness)
         ? (draft.publishReadiness as WorkflowDraftEditorData['draft']['publishReadiness'])
@@ -211,7 +241,7 @@ function normalizeDraftEditor(input: unknown): WorkflowDraftEditorData {
         : [],
       owners: Array.isArray(lookups.owners) ? lookups.owners.map(normalizeOwnerLookup) : [],
       collaborators: Array.isArray(lookups.collaborators)
-        ? lookups.collaborators.map(normalizeOwnerLookup)
+        ? lookups.collaborators.map(normalizeCollaboratorLookup)
         : [],
     },
   };

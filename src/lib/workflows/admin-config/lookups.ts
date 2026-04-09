@@ -1,7 +1,11 @@
 import { getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
-import type { WorkflowConfigAreaLookup, WorkflowConfigOwnerLookup } from './types';
+import type {
+  WorkflowConfigAreaLookup,
+  WorkflowConfigCollaboratorLookup,
+  WorkflowConfigOwnerLookup,
+} from './types';
 
 type CollaboratorLookupDocument = {
   id3a?: string;
@@ -64,6 +68,7 @@ export async function resolveOwnerByUserId(ownerUserId: string): Promise<Workflo
   }
 
   return {
+    collaboratorDocId: snapshot.docs[0].id,
     userId: data.id3a?.trim() || normalizedOwnerId,
     name: data.name?.trim() || email,
     email,
@@ -92,6 +97,7 @@ export async function listWorkflowConfigOwners(): Promise<WorkflowConfigOwnerLoo
     .map((doc) => {
       const data = doc.data() as CollaboratorLookupDocument;
       return {
+        collaboratorDocId: doc.id,
         userId: data.id3a?.trim() || '',
         name: data.name?.trim() || data.email?.trim() || doc.id,
         email: data.email?.trim() || '',
@@ -101,4 +107,13 @@ export async function listWorkflowConfigOwners(): Promise<WorkflowConfigOwnerLoo
     })
     .filter((owner) => owner.userId !== '' && owner.email !== '')
     .sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export async function listWorkflowConfigCollaborators(): Promise<WorkflowConfigCollaboratorLookup[]> {
+  const owners = await listWorkflowConfigOwners();
+
+  return owners.filter(
+    (owner): owner is WorkflowConfigCollaboratorLookup =>
+      typeof owner.collaboratorDocId === 'string' && owner.collaboratorDocId.trim() !== '',
+  );
 }

@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { RecipientSelectionModal } from '@/components/admin/RecipientSelectionModal';
-import type { WorkflowConfigOwnerLookup } from '@/lib/workflows/admin-config/types';
+import type { WorkflowConfigCollaboratorLookup } from '@/lib/workflows/admin-config/types';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import type { WorkflowDraftFormValues } from './WorkflowDraftEditorPage';
+import type { WorkflowDraftFormValues } from './types';
 
 const defaultPermissions = {
   canManageWorkflows: false,
@@ -26,7 +26,13 @@ const defaultPermissions = {
   canViewBILeaders: false,
 } as const;
 
-export function WorkflowDraftAccessSection({ collaborators }: { collaborators: WorkflowConfigOwnerLookup[] }) {
+export function WorkflowDraftAccessSection({
+  collaborators,
+  readOnly = false,
+}: {
+  collaborators: WorkflowConfigCollaboratorLookup[];
+  readOnly?: boolean;
+}) {
   const { control, watch, setValue } = useFormContext<WorkflowDraftFormValues>();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const mode = watch('access.mode');
@@ -71,6 +77,7 @@ export function WorkflowDraftAccessSection({ collaborators }: { collaborators: W
                     setValue('access.allowedUserIds', value === 'all' ? ['all'] : []);
                   }}
                   className="grid gap-3 md:grid-cols-2"
+                  disabled={readOnly}
                 >
                   <label className="flex items-center gap-2 rounded-md border p-3">
                     <RadioGroupItem value="all" id="draft-access-all" />
@@ -93,7 +100,12 @@ export function WorkflowDraftAccessSection({ collaborators }: { collaborators: W
                 <p className="mt-1 text-xs text-muted-foreground">{selectedIds.length} IDs selecionados</p>
               ) : null}
             </div>
-            <Button type="button" variant="outline" disabled={mode !== 'specific'} onClick={() => setIsModalOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={mode !== 'specific' || readOnly}
+              onClick={() => setIsModalOpen(true)}
+            >
               Selecionar colaboradores
             </Button>
           </div>
@@ -101,7 +113,7 @@ export function WorkflowDraftAccessSection({ collaborators }: { collaborators: W
       </Card>
 
       <RecipientSelectionModal
-        isOpen={isModalOpen}
+        isOpen={isModalOpen && !readOnly}
         onClose={() => setIsModalOpen(false)}
         allCollaborators={modalCollaborators}
         selectedIds={mode === 'all' ? ['all'] : selectedIds}

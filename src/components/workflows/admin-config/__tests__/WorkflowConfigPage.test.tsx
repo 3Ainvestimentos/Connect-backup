@@ -5,6 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { WorkflowConfigPage } from '../WorkflowConfigPage';
 
+const pushMock = jest.fn();
+let currentSearchParams = new URLSearchParams({
+  tab: 'definitions',
+});
+
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
@@ -15,8 +20,10 @@ jest.mock('@tanstack/react-query', () => ({
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: jest.fn(),
+    push: pushMock,
   }),
+  usePathname: () => '/admin/request-config',
+  useSearchParams: () => currentSearchParams,
 }));
 
 jest.mock('@/lib/workflows/admin-config/api-client', () => ({
@@ -29,6 +36,25 @@ jest.mock('../CreateWorkflowAreaDialog', () => ({
 
 jest.mock('../CreateWorkflowTypeDialog', () => ({
   CreateWorkflowTypeDialog: () => null,
+}));
+
+jest.mock('../WorkflowVersionEditorDialog', () => ({
+  WorkflowVersionEditorDialog: ({
+    workflowTypeId,
+    version,
+    onClose,
+  }: {
+    workflowTypeId: string;
+    version: number;
+    onClose: () => void;
+  }) => (
+    <div>
+      <p>{`Modal ${workflowTypeId} v${version}`}</p>
+      <button type="button" onClick={onClose}>
+        Fechar modal
+      </button>
+    </div>
+  ),
 }));
 
 jest.mock('lucide-react', () => {
@@ -113,6 +139,9 @@ function buildCatalog() {
 describe('WorkflowConfigPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    currentSearchParams = new URLSearchParams({
+      tab: 'definitions',
+    });
     mockUseAuth.mockReturnValue({
       user: { uid: 'firebase-uid-1' },
     } as ReturnType<typeof useAuth>);
@@ -134,15 +163,14 @@ describe('WorkflowConfigPage', () => {
     expect(screen.queryByText('Manutencao')).toBeNull();
   });
 
-  it('renders the placeholder when the history tab is selected', async () => {
+  it('pushes the history tab state into the URL when the history tab is selected', async () => {
     const user = userEvent.setup();
 
     render(<WorkflowConfigPage />);
 
     await user.click(screen.getByRole('tab', { name: 'Historico Geral' }));
 
-    expect(screen.getByText('Planejado para a proxima subetapa')).toBeTruthy();
-    expect(screen.getByText(/grid consolidado de historico ainda nao entra na 2E.1/i)).toBeTruthy();
+    expect(pushMock).toHaveBeenCalledWith('/admin/request-config?tab=history');
   });
 
   it('shows retry state when the catalog query fails', async () => {
@@ -195,5 +223,36 @@ describe('WorkflowConfigPage', () => {
     expect(screen.getByText('Manutencao')).toBeTruthy();
     expect(screen.getByText('v2 publicada')).toBeTruthy();
     expect(screen.getAllByText('state=published')).toHaveLength(2);
+  });
+
+  it('opens the editor modal from deep-link search params', async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams({
+      tab: 'definitions',
+      editorWorkflowTypeId: 'facilities_manutencao',
+      editorVersion: '2',
+    });
+
+    render(<WorkflowConfigPage />);
+
+    await user.click(screen.getByRole('button', { name: /Facilities/i }));
+
+    expect(screen.getByText('Modal facilities_manutencao v2')).toBeTruthy();
+  });
+
+  it('cleans only editor params when the modal is closed', async () => {
+    const user = userEvent.setup();
+    currentSearchParams = new URLSearchParams({
+      tab: 'definitions',
+      editorWorkflowTypeId: 'facilities_manutencao',
+      editorVersion: '2',
+    });
+
+    render(<WorkflowConfigPage />);
+
+    await user.click(screen.getByRole('button', { name: /Facilities/i }));
+    await user.click(screen.getByRole('button', { name: 'Fechar modal' }));
+
+    expect(pushMock).toHaveBeenCalledWith('/admin/request-config?tab=definitions');
   });
 });

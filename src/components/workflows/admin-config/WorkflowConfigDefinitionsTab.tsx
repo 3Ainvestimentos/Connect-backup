@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Accordion,
   AccordionContent,
@@ -61,12 +60,13 @@ function SummaryCard({
 export function WorkflowConfigDefinitionsTab({
   catalog,
   onRefresh,
+  onOpenEditor,
 }: {
   catalog: WorkflowConfigCatalogData;
   onRefresh: () => void;
+  onOpenEditor: (workflowTypeId: string, version: number) => void;
 }) {
   const { user } = useAuth();
-  const router = useRouter();
   const [createAreaOpen, setCreateAreaOpen] = useState(false);
   const [createTypeOpen, setCreateTypeOpen] = useState(false);
   const [openingDraftFor, setOpeningDraftFor] = useState<string | null>(null);
@@ -82,7 +82,7 @@ export function WorkflowConfigDefinitionsTab({
     try {
       const result = await createWorkflowDraft(user, workflowTypeId);
       onRefresh();
-      router.push(result.editorPath);
+      onOpenEditor(result.workflowTypeId, result.version);
     } catch (error) {
       toast({
         title: 'Falha ao abrir draft',
@@ -238,11 +238,7 @@ export function WorkflowConfigDefinitionsTab({
                               {draftVersion ? (
                                 <Button
                                   size="sm"
-                                  onClick={() =>
-                                    router.push(
-                                      `/admin/request-config/${workflowType.workflowTypeId}/versions/${draftVersion.version}/edit`,
-                                    )
-                                  }
+                                  onClick={() => onOpenEditor(workflowType.workflowTypeId, draftVersion.version)}
                                 >
                                   <PenSquare className="mr-2 h-4 w-4" />
                                   Editar rascunho
@@ -300,16 +296,21 @@ export function WorkflowConfigDefinitionsTab({
                                       <Button
                                         size="sm"
                                         variant="outline"
-                                        onClick={() =>
-                                          router.push(
-                                            `/admin/request-config/${workflowType.workflowTypeId}/versions/${version.version}/edit`,
-                                          )
-                                        }
+                                        onClick={() => onOpenEditor(workflowType.workflowTypeId, version.version)}
                                       >
                                         <PenSquare className="mr-2 h-4 w-4" />
                                         Editar
                                       </Button>
-                                    ) : null}
+                                    ) : (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => onOpenEditor(workflowType.workflowTypeId, version.version)}
+                                      >
+                                        <PenSquare className="mr-2 h-4 w-4" />
+                                        Ver versao
+                                      </Button>
+                                    )}
                                     {version.canPublish ? (
                                       <Button
                                         size="sm"
@@ -373,7 +374,11 @@ export function WorkflowConfigDefinitionsTab({
         onCreated={onRefresh}
       />
 
-      <CreateWorkflowTypeDialog open={createTypeOpen} onOpenChange={setCreateTypeOpen} />
+      <CreateWorkflowTypeDialog
+        open={createTypeOpen}
+        onOpenChange={setCreateTypeOpen}
+        onOpenEditor={onOpenEditor}
+      />
     </>
   );
 }

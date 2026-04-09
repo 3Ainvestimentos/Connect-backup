@@ -1,6 +1,7 @@
 import type {
   RuntimeErrorResponse,
   RuntimeSuccess,
+  StepActionDef,
   StepDef,
   VersionFieldDef,
   VersionState,
@@ -72,11 +73,16 @@ export type WorkflowConfigAreaLookup = {
 };
 
 export type WorkflowConfigOwnerLookup = {
+  collaboratorDocId?: string;
   userId: string;
   name: string;
   email: string;
   area?: string;
   position?: string;
+};
+
+export type WorkflowConfigCollaboratorLookup = WorkflowConfigOwnerLookup & {
+  collaboratorDocId: string;
 };
 
 export type DraftReadinessIssue = {
@@ -92,6 +98,7 @@ export type WorkflowDraftEditorGeneral = {
   description: string;
   icon: string;
   areaId: string;
+  areaName: string;
   ownerEmail: string;
   ownerUserId: string;
   defaultSlaDays: number;
@@ -110,10 +117,29 @@ export type WorkflowDraftEditorMeta = {
   latestPublishedVersion: number | null;
 };
 
+export type WorkflowDraftEditorMode = 'edit' | 'read-only';
+
+export type WorkflowDraftEditorApprover = {
+  collaboratorDocId: string;
+  userId: string;
+  name: string;
+  email: string;
+};
+
+export type WorkflowDraftEditorStepAction = Omit<StepActionDef, 'approverIds'> & {
+  approvers: WorkflowDraftEditorApprover[];
+  unresolvedApproverIds?: string[];
+};
+
+export type WorkflowDraftEditorStep = Omit<StepDef, 'action'> & {
+  action?: WorkflowDraftEditorStepAction;
+};
+
 export type WorkflowDraftEditorDraft = {
   workflowTypeId: string;
   version: number;
   state: VersionState;
+  mode: WorkflowDraftEditorMode;
   derivedStatus: WorkflowConfigVersionUiStatus;
   canPublish: boolean;
   canActivate: boolean;
@@ -121,7 +147,7 @@ export type WorkflowDraftEditorDraft = {
   general: WorkflowDraftEditorGeneral;
   access: WorkflowDraftEditorAccess;
   fields: VersionFieldDef[];
-  steps: StepDef[];
+  steps: WorkflowDraftEditorStep[];
   initialStepId: string;
   publishReadiness: DraftReadinessIssue[];
   meta: WorkflowDraftEditorMeta;
@@ -130,7 +156,7 @@ export type WorkflowDraftEditorDraft = {
 export type WorkflowDraftEditorLookups = {
   areas: WorkflowConfigAreaLookup[];
   owners: WorkflowConfigOwnerLookup[];
-  collaborators: WorkflowConfigOwnerLookup[];
+  collaborators: WorkflowConfigCollaboratorLookup[];
 };
 
 export type WorkflowDraftEditorData = {
@@ -177,7 +203,6 @@ export type SaveWorkflowDraftInput = {
     name: string;
     description: string;
     icon: string;
-    areaId: string;
     ownerUserId: string;
     defaultSlaDays: number;
     activeOnPublish: boolean;
@@ -187,7 +212,14 @@ export type SaveWorkflowDraftInput = {
     allowedUserIds: string[];
   };
   fields: Array<Partial<VersionFieldDef>>;
-  steps: Array<Partial<StepDef>>;
+  steps: Array<
+    Omit<Partial<WorkflowDraftEditorStep>, 'action'> & {
+      action?: Omit<Partial<WorkflowDraftEditorStepAction>, 'approvers'> & {
+        approverCollaboratorDocIds?: string[];
+        unresolvedApproverIds?: string[];
+      };
+    }
+  >;
   initialStepId: string;
 };
 

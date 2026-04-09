@@ -128,8 +128,9 @@ describe('WorkflowConfigDefinitionsTab', () => {
   it('renders publish and activate CTAs for eligible versions', async () => {
     const user = userEvent.setup();
     const onRefresh = jest.fn();
+    const onOpenEditor = jest.fn();
 
-    render(<WorkflowConfigDefinitionsTab catalog={buildCatalog()} onRefresh={onRefresh} />);
+    render(<WorkflowConfigDefinitionsTab catalog={buildCatalog()} onRefresh={onRefresh} onOpenEditor={onOpenEditor} />);
 
     await user.click(screen.getByRole('button', { name: /Facilities/i }));
     await user.click(screen.getByRole('button', { name: /^Publicar$/i }));
@@ -138,5 +139,6 @@ describe('WorkflowConfigDefinitionsTab', () => {
     expect(publishWorkflowVersion).toHaveBeenCalledTimes(1);
     expect(activateWorkflowVersion).toHaveBeenCalledTimes(1);
     expect(onRefresh).toHaveBeenCalledTimes(2);
+    expect(onOpenEditor).not.toHaveBeenCalled();
   });
 });

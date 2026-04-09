@@ -5,7 +5,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,15 +38,16 @@ type FormValues = z.infer<typeof schema>;
 export function CreateWorkflowTypeDialog({
   open,
   onOpenChange,
+  onOpenEditor,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onOpenEditor?: (workflowTypeId: string, version: number) => void;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
   const { collaborators } = useCollaborators();
   const { workflowAreas } = useWorkflowAreas();
-  const router = useRouter();
   const [isRecipientModalOpen, setIsRecipientModalOpen] = useState(false);
   const {
     control,
@@ -135,7 +135,9 @@ export function CreateWorkflowTypeDialog({
         description: 'O rascunho inicial foi aberto no editor.',
       });
       onOpenChange(false);
-      router.push(result.editorPath);
+      if (onOpenEditor) {
+        onOpenEditor(result.workflowTypeId, result.version);
+      }
     } catch (error) {
       toast({
         title: 'Falha ao criar workflow',

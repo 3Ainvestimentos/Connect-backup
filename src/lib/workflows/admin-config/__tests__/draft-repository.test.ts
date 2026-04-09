@@ -17,6 +17,7 @@ jest.mock('../lookups', () => ({
   resolveOwnerByUserId: jest.fn(),
   listWorkflowConfigAreas: jest.fn(),
   listWorkflowConfigOwners: jest.fn(),
+  listWorkflowConfigCollaborators: jest.fn(),
 }));
 
 const { getFirestore } = require('firebase-admin/firestore');
@@ -26,8 +27,10 @@ const {
   createWorkflowArea,
   createOrReuseWorkflowDraft,
   createWorkflowTypeWithDraft,
+  getWorkflowDraftEditorData,
   saveWorkflowDraft,
 } = require('../draft-repository');
+const { listWorkflowConfigAreas, listWorkflowConfigOwners, listWorkflowConfigCollaborators } = require('../lookups');
 
 const directCreateMock = jest.fn();
 const directGetMock = jest.fn();
@@ -71,6 +74,21 @@ beforeEach(() => {
     name: 'Owner Name',
     email: 'owner@3ariva.com.br',
   });
+  listWorkflowConfigAreas.mockResolvedValue([
+    { areaId: 'facilities', name: 'Facilities', icon: 'Building2' },
+    { areaId: 'governanca', name: 'Governanca', icon: 'Lock' },
+  ]);
+  listWorkflowConfigOwners.mockResolvedValue([]);
+  listWorkflowConfigCollaborators.mockResolvedValue([
+    {
+      collaboratorDocId: 'collab-apr1',
+      userId: 'APR1',
+      name: 'Ana Paula',
+      email: 'ana.paula@3ariva.com.br',
+      area: 'Facilities',
+      position: 'Coordenadora',
+    },
+  ]);
 });
 
 describe('draft-repository safeguards', () => {
@@ -162,6 +180,108 @@ describe('draft-repository safeguards', () => {
     });
 
     expect(getFirestore).not.toHaveBeenCalled();
+  });
+
+  it('rejects save when payload still carries unresolved approver ids', async () => {
+    await expect(
+      saveWorkflowDraft('facilities_manutencao', 1, {
+        general: {
+          name: 'Manutencao',
+          description: 'Chamados prediais',
+          icon: 'Wrench',
+          ownerUserId: 'SMO2',
+          defaultSlaDays: 5,
+          activeOnPublish: true,
+        },
+        access: {
+          mode: 'all',
+          allowedUserIds: ['all'],
+        },
+        fields: [],
+        steps: [
+          {
+            stepName: 'Validacao',
+            statusKey: 'validacao',
+            kind: 'work',
+            action: {
+              type: 'approval',
+              label: 'Aprovar',
+              approverCollaboratorDocIds: ['collab-apr1'],
+              unresolvedApproverIds: ['APR_GHOST'],
+            },
+          },
+        ],
+        initialStepId: '',
+      }),
+    ).rejects.toMatchObject({
+      code: RuntimeErrorCode.INVALID_DRAFT_PAYLOAD,
+      httpStatus: 422,
+    });
+
+    expect(getFirestore).not.toHaveBeenCalled();
+  });
+
+  it('builds published read-only data from the version snapshot instead of the current root', async () => {
+    directGetMock.mockImplementation(async (path: string) => {
+      if (path === 'workflowTypes_v2/facilities_manutencao') {
+        return {
+          exists: true,
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            name: 'Nome Atual',
+            description: 'Descricao atual',
+            icon: 'Wrench',
+            areaId: 'facilities',
+            ownerEmail: 'atual@3ariva.com.br',
+            ownerUserId: 'OWN1',
+            allowedUserIds: ['all'],
+            active: true,
+            latestPublishedVersion: 2,
+          }),
+        };
+      }
+
+      if (path === 'workflowTypes_v2/facilities_manutencao/versions/1') {
+        return {
+          exists: true,
+          ref: makeDocRef(path),
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            version: 1,
+            state: 'published',
+            ownerEmailAtPublish: 'historico@3ariva.com.br',
+            defaultSlaDays: 3,
+            fields: [],
+            initialStepId: '',
+            stepOrder: [],
+            stepsById: {},
+            publishedAt: null,
+            workflowTypeSnapshot: {
+              name: 'Nome Historico',
+              description: 'Descricao historica',
+              icon: 'FileText',
+              areaId: 'governanca',
+              ownerEmail: 'historico@3ariva.com.br',
+              ownerUserId: 'HIS1',
+              allowedUserIds: ['APR1'],
+              active: true,
+            },
+          }),
+        };
+      }
+
+      return { exists: false, data: () => undefined };
+    });
+
+    const result = await getWorkflowDraftEditorData('facilities_manutencao', 1);
+
+    expect(result.draft.mode).toBe('read-only');
+    expect(result.draft.general.name).toBe('Nome Historico');
+    expect(result.draft.general.description).toBe('Descricao historica');
+    expect(result.draft.general.ownerUserId).toBe('HIS1');
+    expect(result.draft.general.areaId).toBe('governanca');
+    expect(result.draft.general.areaName).toBe('Governanca');
+    expect(result.draft.access.allowedUserIds).toEqual(['APR1']);
   });
 
   it('creates next draft from published version without writing action: undefined', async () => {
