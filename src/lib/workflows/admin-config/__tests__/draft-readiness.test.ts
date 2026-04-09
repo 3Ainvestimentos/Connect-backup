@@ -15,7 +15,7 @@ describe('draft-readiness helpers', () => {
     expect(buildAccessPreview('specific', ['SMO2', 'DLE'])).toBe('Acesso restrito a 2 colaboradores');
   });
 
-  it('returns warnings without blocking incomplete drafts', () => {
+  it('returns blocking issues for incomplete drafts', () => {
     const issues = evaluateDraftReadiness({
       general: {
         name: '',
@@ -34,13 +34,14 @@ describe('draft-readiness helpers', () => {
       fields: [],
       steps: [],
       initialStepId: '',
+      collaborators: [],
     });
 
     expect(issues).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ code: 'MISSING_NAME', category: 'general' }),
-        expect.objectContaining({ code: 'MISSING_ALLOWED_USERS', category: 'access' }),
-        expect.objectContaining({ code: 'MISSING_STEPS', category: 'steps' }),
+        expect.objectContaining({ code: 'MISSING_NAME', category: 'general', severity: 'blocking' }),
+        expect.objectContaining({ code: 'INVALID_OWNER', category: 'general', severity: 'blocking' }),
+        expect.objectContaining({ code: 'MISSING_STEPS', category: 'steps', severity: 'blocking' }),
       ]),
     );
   });

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, Save } from 'lucide-react';
@@ -13,6 +14,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import {
+  publishWorkflowVersion,
   fetchWorkflowDraftEditor,
   saveWorkflowDraft,
   WorkflowConfigApiError,
@@ -62,6 +64,7 @@ export function WorkflowDraftEditorPage({
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<WorkflowDraftFormValues>({
     defaultValues: buildDefaultValues(),
   });
@@ -174,6 +177,30 @@ export function WorkflowDraftEditorPage({
     },
   });
 
+  const publishMutation = useMutation({
+    mutationFn: async () => {
+      if (!user) {
+        throw new WorkflowConfigApiError('UNAUTHORIZED', 'Usuario nao autenticado.', 401);
+      }
+
+      return publishWorkflowVersion(user, workflowTypeId, version);
+    },
+    onSuccess: async () => {
+      toast({
+        title: 'Versao publicada',
+        description: 'A versao foi publicada e ativada no runtime.',
+      });
+      router.push('/admin/request-config');
+    },
+    onError: (error) => {
+      toast({
+        title: 'Falha ao publicar versao',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    },
+  });
+
   const readiness = useMemo(
     () => draftQuery.data?.draft.publishReadiness || [],
     [draftQuery.data?.draft.publishReadiness],
@@ -235,7 +262,7 @@ export function WorkflowDraftEditorPage({
         />
 
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="outline">Rascunho</Badge>
+          <Badge variant="outline">{draftQuery.data.draft.derivedStatus}</Badge>
           <Badge variant="secondary">v{draftQuery.data.draft.version}</Badge>
           {draftQuery.data.draft.isNewWorkflowType ? <Badge variant="outline">Tipo novo</Badge> : null}
         </div>
@@ -249,7 +276,15 @@ export function WorkflowDraftEditorPage({
         <WorkflowDraftAccessSection collaborators={draftQuery.data.lookups.collaborators} />
         <WorkflowDraftFieldsSection />
         <WorkflowDraftStepsSection />
-        <WorkflowDraftReadinessPanel issues={readiness} />
+        <WorkflowDraftReadinessPanel
+          issues={readiness}
+          canPublish={draftQuery.data.draft.canPublish}
+          isPublishing={publishMutation.isPending}
+          hasUnsavedChanges={form.formState.isDirty}
+          onPublish={() => {
+            void publishMutation.mutateAsync();
+          }}
+        />
       </form>
     </FormProvider>
   );

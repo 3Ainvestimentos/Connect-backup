@@ -14,9 +14,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
-import { createWorkflowDraft } from '@/lib/workflows/admin-config/api-client';
+import {
+  activateWorkflowVersion,
+  createWorkflowDraft,
+  publishWorkflowVersion,
+} from '@/lib/workflows/admin-config/api-client';
 import type { WorkflowConfigCatalogData, WorkflowConfigVersionUiStatus } from '@/lib/workflows/admin-config/types';
-import { Loader2, PenSquare, PlusCircle, Sparkles } from 'lucide-react';
+import { CheckCircle2, Loader2, PenSquare, PlusCircle, Rocket, Sparkles } from 'lucide-react';
 import { CreateWorkflowAreaDialog } from './CreateWorkflowAreaDialog';
 import { CreateWorkflowTypeDialog } from './CreateWorkflowTypeDialog';
 
@@ -66,6 +70,7 @@ export function WorkflowConfigDefinitionsTab({
   const [createAreaOpen, setCreateAreaOpen] = useState(false);
   const [createTypeOpen, setCreateTypeOpen] = useState(false);
   const [openingDraftFor, setOpeningDraftFor] = useState<string | null>(null);
+  const [transitioningVersion, setTransitioningVersion] = useState<string | null>(null);
 
   async function handleCreateDraft(workflowTypeId: string) {
     if (!user) {
@@ -86,6 +91,58 @@ export function WorkflowConfigDefinitionsTab({
       });
     } finally {
       setOpeningDraftFor(null);
+    }
+  }
+
+  async function handlePublishVersion(workflowTypeId: string, version: number) {
+    if (!user) {
+      return;
+    }
+
+    const key = `${workflowTypeId}:${version}:publish`;
+    setTransitioningVersion(key);
+
+    try {
+      await publishWorkflowVersion(user, workflowTypeId, version);
+      toast({
+        title: 'Versao publicada',
+        description: `A versao v${version} agora esta publicada e ativa.`,
+      });
+      onRefresh();
+    } catch (error) {
+      toast({
+        title: 'Falha ao publicar',
+        description: error instanceof Error ? error.message : 'Erro inesperado.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTransitioningVersion(null);
+    }
+  }
+
+  async function handleActivateVersion(workflowTypeId: string, version: number) {
+    if (!user) {
+      return;
+    }
+
+    const key = `${workflowTypeId}:${version}:activate`;
+    setTransitioningVersion(key);
+
+    try {
+      await activateWorkflowVersion(user, workflowTypeId, version);
+      toast({
+        title: 'Versao ativada',
+        description: `A versao v${version} voltou a ser a publicada ativa.`,
+      });
+      onRefresh();
+    } catch (error) {
+      toast({
+        title: 'Falha ao ativar versao',
+        description: error instanceof Error ? error.message : 'Erro inesperado.',
+        variant: 'destructive',
+      });
+    } finally {
+      setTransitioningVersion(null);
     }
   }
 
@@ -235,11 +292,65 @@ export function WorkflowConfigDefinitionsTab({
                                     </div>
                                     <p className="text-xs text-muted-foreground">
                                       {version.stepCount} etapas, {version.fieldCount} campos
-                                      {version.publishedAt ? `, publicada em ${version.publishedAt}` : ''}
+                                      {version.lastTransitionAt ? `, ultima transicao em ${version.lastTransitionAt}` : ''}
                                     </p>
                                   </div>
-                                  <p className="text-xs text-muted-foreground">state={version.state}</p>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {version.state === 'draft' ? (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          router.push(
+                                            `/admin/request-config/${workflowType.workflowTypeId}/versions/${version.version}/edit`,
+                                          )
+                                        }
+                                      >
+                                        <PenSquare className="mr-2 h-4 w-4" />
+                                        Editar
+                                      </Button>
+                                    ) : null}
+                                    {version.canPublish ? (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handlePublishVersion(workflowType.workflowTypeId, version.version)}
+                                        disabled={
+                                          transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:publish`
+                                        }
+                                      >
+                                        {transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:publish` ? (
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <Rocket className="mr-2 h-4 w-4" />
+                                        )}
+                                        Publicar
+                                      </Button>
+                                    ) : null}
+                                    {version.canActivate ? (
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() => handleActivateVersion(workflowType.workflowTypeId, version.version)}
+                                        disabled={
+                                          transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:activate`
+                                        }
+                                      >
+                                        {transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:activate` ? (
+                                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        ) : (
+                                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                                        )}
+                                        Ativar
+                                      </Button>
+                                    ) : null}
+                                    <p className="text-xs text-muted-foreground">state={version.state}</p>
+                                  </div>
                                 </div>
+                                {version.hasBlockingIssues && version.state === 'draft' ? (
+                                  <p className="text-xs text-amber-700">
+                                    Este rascunho possui bloqueios e nao pode ser publicado ainda.
+                                  </p>
+                                ) : null}
                                 {index < workflowType.versions.length - 1 ? <Separator /> : null}
                               </div>
                             ))

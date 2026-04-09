@@ -14,6 +14,7 @@ import type {
   WorkflowConfigTypeListItem,
   WorkflowConfigVersionListItem,
   WorkflowDraftEditorData,
+  WorkflowVersionTransitionResult,
 } from './types';
 import type { RuntimeErrorResponse, RuntimeSuccess } from '@/lib/workflows/runtime/types';
 
@@ -68,9 +69,17 @@ function normalizeVersion(input: unknown): WorkflowConfigVersionListItem {
         ? uiStatus
         : 'Rascunho',
     isActivePublished: asBoolean(item.isActivePublished),
+    derivedStatus:
+      uiStatus === 'Publicada' || uiStatus === 'Inativa' || uiStatus === 'Rascunho'
+        ? uiStatus
+        : 'Rascunho',
+    canPublish: asBoolean(item.canPublish),
+    canActivate: asBoolean(item.canActivate),
+    hasBlockingIssues: asBoolean(item.hasBlockingIssues),
     stepCount: asNumber(item.stepCount),
     fieldCount: asNumber(item.fieldCount),
     publishedAt: typeof item.publishedAt === 'string' ? item.publishedAt : null,
+    lastTransitionAt: typeof item.lastTransitionAt === 'string' ? item.lastTransitionAt : null,
   };
 }
 
@@ -160,6 +169,14 @@ function normalizeDraftEditor(input: unknown): WorkflowDraftEditorData {
       workflowTypeId: asString(draft.workflowTypeId),
       version: asNumber(draft.version),
       state: asString(draft.state) === 'published' ? 'published' : 'draft',
+      derivedStatus:
+        asString(draft.derivedStatus) === 'Publicada' ||
+        asString(draft.derivedStatus) === 'Inativa' ||
+        asString(draft.derivedStatus) === 'Rascunho'
+          ? (asString(draft.derivedStatus) as WorkflowDraftEditorData['draft']['derivedStatus'])
+          : 'Rascunho',
+      canPublish: asBoolean(draft.canPublish),
+      canActivate: asBoolean(draft.canActivate),
       isNewWorkflowType: asBoolean(draft.isNewWorkflowType),
       general: {
         name: asString(general.name),
@@ -197,6 +214,25 @@ function normalizeDraftEditor(input: unknown): WorkflowDraftEditorData {
         ? lookups.collaborators.map(normalizeOwnerLookup)
         : [],
     },
+  };
+}
+
+function normalizeTransitionResult(input: unknown): WorkflowVersionTransitionResult {
+  const item = typeof input === 'object' && input !== null ? (input as Record<string, unknown>) : {};
+  const transition = asString(item.transition);
+  const catalogStatus = asString(item.catalogStatus);
+
+  return {
+    workflowTypeId: asString(item.workflowTypeId),
+    version: asNumber(item.version),
+    state: asString(item.state) === 'published' ? 'published' : undefined,
+    latestPublishedVersion: asNumberOrNull(item.latestPublishedVersion),
+    publishedAt: typeof item.publishedAt === 'string' ? item.publishedAt : null,
+    transition: transition === 'activated' ? 'activated' : 'published',
+    catalogStatus:
+      catalogStatus === 'Publicada' || catalogStatus === 'Inativa' || catalogStatus === 'Rascunho'
+        ? catalogStatus
+        : 'Publicada',
   };
 }
 
@@ -309,4 +345,38 @@ export async function saveWorkflowDraft(
       body: JSON.stringify(input),
     },
   );
+}
+
+export async function publishWorkflowVersion(
+  user: User,
+  workflowTypeId: string,
+  version: number,
+): Promise<WorkflowVersionTransitionResult> {
+  const data = await requestJson<WorkflowVersionTransitionResult>(
+    user,
+    `/api/admin/request-config/workflow-types/${workflowTypeId}/versions/${version}/publish`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ confirm: true }),
+    },
+  );
+
+  return normalizeTransitionResult(data);
+}
+
+export async function activateWorkflowVersion(
+  user: User,
+  workflowTypeId: string,
+  version: number,
+): Promise<WorkflowVersionTransitionResult> {
+  const data = await requestJson<WorkflowVersionTransitionResult>(
+    user,
+    `/api/admin/request-config/workflow-types/${workflowTypeId}/versions/${version}/activate`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ confirm: true }),
+    },
+  );
+
+  return normalizeTransitionResult(data);
 }

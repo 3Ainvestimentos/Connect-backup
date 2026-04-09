@@ -60,6 +60,8 @@ export interface WorkflowTypeV2 {
   allowedUserIds: string[];
   active: boolean;
   latestPublishedVersion: number | null;
+  lastActivatedAt?: Timestamp | null;
+  lastActivatedVersion?: number | null;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
@@ -97,6 +99,17 @@ export interface StepDef {
   action?: StepActionDef;
 }
 
+export interface WorkflowTypeSnapshotV2 {
+  name: string;
+  description: string;
+  icon: string;
+  areaId: string;
+  ownerEmail: string;
+  ownerUserId: string;
+  allowedUserIds: string[];
+  active: boolean;
+}
+
 export interface WorkflowVersionV2 {
   workflowTypeId: string;
   version: number;
@@ -108,19 +121,16 @@ export interface WorkflowVersionV2 {
   stepOrder: string[];
   stepsById: Record<string, StepDef>;
   publishedAt: Timestamp | null;
+  publishedByUserId?: string;
+  publishedByName?: string;
+  activatedAt?: Timestamp | null;
+  activatedByUserId?: string;
+  activatedByName?: string;
+  workflowTypeSnapshot?: WorkflowTypeSnapshotV2 | null;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   draftConfig?: {
-    workflowType: {
-      name: string;
-      description: string;
-      icon: string;
-      areaId: string;
-      ownerEmail: string;
-      ownerUserId: string;
-      allowedUserIds: string[];
-      active: boolean;
-    };
+    workflowType: WorkflowTypeSnapshotV2;
   } | null;
 }
 

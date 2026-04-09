@@ -15,10 +15,15 @@ export type WorkflowConfigVersionListItem = {
   version: number;
   state: VersionState;
   uiStatus: WorkflowConfigVersionUiStatus;
+  derivedStatus: WorkflowConfigVersionUiStatus;
   isActivePublished: boolean;
+  canPublish: boolean;
+  canActivate: boolean;
+  hasBlockingIssues: boolean;
   stepCount: number;
   fieldCount: number;
   publishedAt: string | null;
+  lastTransitionAt: string | null;
 };
 
 export type WorkflowConfigTypeListItem = Pick<
@@ -77,7 +82,7 @@ export type WorkflowConfigOwnerLookup = {
 export type DraftReadinessIssue = {
   code: string;
   category: DraftReadinessCategory;
-  severity: 'warning';
+  severity: 'warning' | 'blocking';
   message: string;
   path?: string;
 };
@@ -109,6 +114,9 @@ export type WorkflowDraftEditorDraft = {
   workflowTypeId: string;
   version: number;
   state: VersionState;
+  derivedStatus: WorkflowConfigVersionUiStatus;
+  canPublish: boolean;
+  canActivate: boolean;
   isNewWorkflowType: boolean;
   general: WorkflowDraftEditorGeneral;
   access: WorkflowDraftEditorAccess;
@@ -188,6 +196,16 @@ export type SaveWorkflowDraftResult = {
   publishReadiness: DraftReadinessIssue[];
 };
 
+export type WorkflowVersionTransitionResult = {
+  workflowTypeId: string;
+  version: number;
+  state?: VersionState;
+  latestPublishedVersion: number | null;
+  publishedAt?: string | null;
+  transition: 'published' | 'activated';
+  catalogStatus: WorkflowConfigVersionUiStatus;
+};
+
 export type WorkflowConfigCatalogSuccess = RuntimeSuccess<WorkflowConfigCatalogData>;
 export type WorkflowConfigCatalogError = RuntimeErrorResponse;
 
@@ -205,3 +223,6 @@ export type WorkflowDraftEditorError = RuntimeErrorResponse;
 
 export type SaveWorkflowDraftSuccess = RuntimeSuccess<SaveWorkflowDraftResult>;
 export type SaveWorkflowDraftError = RuntimeErrorResponse;
+
+export type WorkflowVersionTransitionSuccess = RuntimeSuccess<WorkflowVersionTransitionResult>;
+export type WorkflowVersionTransitionError = RuntimeErrorResponse;

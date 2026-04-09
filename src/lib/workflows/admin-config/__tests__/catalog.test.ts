@@ -10,7 +10,12 @@ jest.mock('@/lib/firebase-admin', () => ({
   getFirebaseAdminApp: jest.fn(() => ({ name: 'admin-app' })),
 }));
 
+jest.mock('../lookups', () => ({
+  listWorkflowConfigOwners: jest.fn(),
+}));
+
 const { getFirestore } = require('firebase-admin/firestore');
+const { listWorkflowConfigOwners } = require('../lookups');
 const { buildWorkflowConfigCatalog } = require('../catalog');
 
 function createTimestamp(isoString: string) {
@@ -38,6 +43,11 @@ function createDoc(id: string, data: Record<string, unknown>, versions: Array<Re
 describe('buildWorkflowConfigCatalog', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    listWorkflowConfigOwners.mockResolvedValue([
+      { userId: 'SMO2', email: 'owner@3ariva.com.br', name: 'Owner' },
+      { userId: 'HR1', email: 'hr@3ariva.com.br', name: 'HR' },
+      { userId: 'APR1', email: 'apr1@3ariva.com.br', name: 'Approver 1' },
+    ]);
   });
 
   it('aggregates areas, workflow types and versions while deriving UI status fields', async () => {
@@ -87,8 +97,32 @@ describe('buildWorkflowConfigCatalog', () => {
             workflowTypeId: 'facilities_manutencao',
             version: 3,
             state: 'draft',
+            defaultSlaDays: 5,
             fields: [{ id: 'impacto' }, { id: 'urgencia' }, { id: 'anexo' }],
+            initialStepId: 'open',
             stepOrder: ['open', 'approve'],
+            stepsById: {
+              open: { stepId: 'open', stepName: 'Abertura', statusKey: 'abertura', kind: 'start' },
+              approve: {
+                stepId: 'approve',
+                stepName: 'Aprovar',
+                statusKey: 'aprovar',
+                kind: 'final',
+                action: { type: 'approval', label: 'Aprovar', approverIds: ['APR1'] },
+              },
+            },
+            draftConfig: {
+              workflowType: {
+                name: 'Manutencao',
+                description: 'Chamados prediais.',
+                icon: 'Wrench',
+                areaId: 'facilities',
+                ownerEmail: 'owner@3ariva.com.br',
+                ownerUserId: 'SMO2',
+                allowedUserIds: ['all'],
+                active: true,
+              },
+            },
             publishedAt: createTimestamp('2026-04-04T15:30:00.000Z'),
           },
         ],
@@ -109,8 +143,25 @@ describe('buildWorkflowConfigCatalog', () => {
             workflowTypeId: 'people_admission',
             version: 1,
             state: 'draft',
+            defaultSlaDays: 0,
             fields: [{ id: 'candidate' }],
+            initialStepId: 'open',
             stepOrder: ['open'],
+            stepsById: {
+              open: { stepId: 'open', stepName: 'Abertura', statusKey: 'abertura', kind: 'start' },
+            },
+            draftConfig: {
+              workflowType: {
+                name: 'Admissao',
+                description: 'Onboarding',
+                icon: 'Users',
+                areaId: 'people',
+                ownerEmail: 'hr@3ariva.com.br',
+                ownerUserId: 'HR1',
+                allowedUserIds: ['all'],
+                active: true,
+              },
+            },
             publishedAt: null,
           },
         ],
@@ -149,8 +200,8 @@ describe('buildWorkflowConfigCatalog', () => {
             draftVersion: 3,
             versions: [
               expect.objectContaining({ version: 1, uiStatus: 'Inativa', isActivePublished: false }),
-              expect.objectContaining({ version: 2, uiStatus: 'Publicada', isActivePublished: true }),
-              expect.objectContaining({ version: 3, uiStatus: 'Rascunho', isActivePublished: false }),
+              expect.objectContaining({ version: 2, uiStatus: 'Publicada', isActivePublished: true, canActivate: false }),
+              expect.objectContaining({ version: 3, uiStatus: 'Rascunho', isActivePublished: false, canPublish: true }),
             ],
           }),
         ],
@@ -168,7 +219,7 @@ describe('buildWorkflowConfigCatalog', () => {
             publishedVersionLabel: 'Rascunho inicial / sem publicada',
             hasPublishedVersion: false,
             draftVersion: 1,
-            versions: [expect.objectContaining({ version: 1, uiStatus: 'Rascunho' })],
+            versions: [expect.objectContaining({ version: 1, uiStatus: 'Rascunho', canPublish: false })],
           }),
         ],
       },

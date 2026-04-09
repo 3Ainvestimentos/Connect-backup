@@ -14,6 +14,21 @@ jest.mock('@/lib/workflows/admin-config/draft-repository', () => ({
   saveWorkflowDraft: jest.fn(),
 }));
 
+jest.mock('@/lib/workflows/admin-config/publication-service', () => ({
+  publishDraftVersion: jest.fn(),
+  activatePublishedVersion: jest.fn(),
+  VersionNotPublishableError: class VersionNotPublishableError extends Error {
+    code = 'VERSION_NOT_PUBLISHABLE';
+    httpStatus = 409;
+    issues: unknown;
+
+    constructor(issues: unknown) {
+      super('A versao possui bloqueios e nao pode ser publicada.');
+      this.issues = issues;
+    }
+  },
+}));
+
 const { RuntimeError, RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const { authenticateWorkflowConfigAdmin } = require('@/lib/workflows/admin-config/auth');
 const repository = require('@/lib/workflows/admin-config/draft-repository');
@@ -21,6 +36,9 @@ const areasRoute = require('@/app/api/admin/request-config/areas/route');
 const workflowTypesRoute = require('@/app/api/admin/request-config/workflow-types/route');
 const draftRoute = require('@/app/api/admin/request-config/workflow-types/[workflowTypeId]/drafts/route');
 const versionRoute = require('@/app/api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]/route');
+const publicationService = require('@/lib/workflows/admin-config/publication-service');
+const publishRoute = require('@/app/api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]/publish/route');
+const activateRoute = require('@/app/api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]/activate/route');
 
 describe('request-config write routes', () => {
   beforeEach(() => {
@@ -122,6 +140,9 @@ describe('request-config write routes', () => {
         workflowTypeId: 'facilities_manutencao',
         version: 1,
         state: 'draft',
+        derivedStatus: 'Rascunho',
+        canPublish: true,
+        canActivate: false,
         isNewWorkflowType: true,
         general: {
           name: 'Manutencao',
@@ -181,7 +202,7 @@ describe('request-config write routes', () => {
         {
           code: 'MISSING_FINAL_STEP',
           category: 'steps',
-          severity: 'warning',
+          severity: 'blocking',
           message: 'Defina uma etapa final antes de publicar.',
         },
       ],
@@ -218,6 +239,68 @@ describe('request-config write routes', () => {
       ok: true,
       data: expect.objectContaining({
         savedAt: '2026-04-08T18:30:00.000Z',
+      }),
+    });
+  });
+
+  it('publishes a draft version', async () => {
+    publicationService.publishDraftVersion.mockResolvedValue({
+      workflowTypeId: 'facilities_manutencao',
+      version: 3,
+      state: 'published',
+      latestPublishedVersion: 3,
+      publishedAt: '2026-04-08T19:10:00.000Z',
+      transition: 'published',
+      catalogStatus: 'Publicada',
+    });
+
+    const response = await publishRoute.POST(
+      new Request('http://localhost/api/admin/request-config/workflow-types/facilities_manutencao/versions/3/publish', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer token' },
+        body: JSON.stringify({ confirm: true }),
+      }),
+      { params: Promise.resolve({ workflowTypeId: 'facilities_manutencao', version: '3' }) },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        workflowTypeId: 'facilities_manutencao',
+        version: 3,
+        transition: 'published',
+      }),
+    });
+  });
+
+  it('activates a published historical version', async () => {
+    publicationService.activatePublishedVersion.mockResolvedValue({
+      workflowTypeId: 'facilities_manutencao',
+      version: 1,
+      state: 'published',
+      latestPublishedVersion: 1,
+      publishedAt: '2026-04-01T10:00:00.000Z',
+      transition: 'activated',
+      catalogStatus: 'Publicada',
+    });
+
+    const response = await activateRoute.POST(
+      new Request('http://localhost/api/admin/request-config/workflow-types/facilities_manutencao/versions/1/activate', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer token' },
+        body: JSON.stringify({ confirm: true }),
+      }),
+      { params: Promise.resolve({ workflowTypeId: 'facilities_manutencao', version: '1' }) },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      data: expect.objectContaining({
+        workflowTypeId: 'facilities_manutencao',
+        version: 1,
+        transition: 'activated',
       }),
     });
   });

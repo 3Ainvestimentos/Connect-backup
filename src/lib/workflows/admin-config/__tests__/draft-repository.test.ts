@@ -24,12 +24,15 @@ const { RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const { resolveOwnerByUserId } = require('../lookups');
 const {
   createWorkflowArea,
+  createOrReuseWorkflowDraft,
   createWorkflowTypeWithDraft,
   saveWorkflowDraft,
 } = require('../draft-repository');
 
 const directCreateMock = jest.fn();
 const directGetMock = jest.fn();
+const directSetMock = jest.fn();
+const directCollectionGetMock = jest.fn();
 const transactionGetMock = jest.fn();
 const transactionCreateMock = jest.fn();
 const transactionUpdateMock = jest.fn();
@@ -47,7 +50,9 @@ function makeDocRef(path: string) {
     path,
     create: (data: unknown) => directCreateMock(path, data),
     get: () => directGetMock(path),
+    set: (data: unknown) => directSetMock(path, data),
     collection: (name: string) => ({
+      get: () => directCollectionGetMock(`${path}/${name}`),
       doc: (id: string) => makeDocRef(`${path}/${name}/${id}`),
     }),
   };
@@ -157,5 +162,79 @@ describe('draft-repository safeguards', () => {
     });
 
     expect(getFirestore).not.toHaveBeenCalled();
+  });
+
+  it('creates next draft from published version without writing action: undefined', async () => {
+    directGetMock.mockImplementation(async (path: string) => {
+      if (path === 'workflowTypes_v2/facilities_solicitacao_suprimentos') {
+        return {
+          exists: true,
+          data: () => ({
+            workflowTypeId: 'facilities_solicitacao_suprimentos',
+            name: 'Solicitacao de Suprimentos',
+            description: 'Descricao',
+            icon: 'Package',
+            areaId: 'facilities',
+            ownerEmail: 'owner@3ariva.com.br',
+            ownerUserId: 'SMO2',
+            allowedUserIds: ['all'],
+            active: true,
+            latestPublishedVersion: 1,
+          }),
+        };
+      }
+
+      return { exists: false, data: () => undefined };
+    });
+
+    directCollectionGetMock.mockResolvedValue({
+      docs: [
+        {
+          id: '1',
+          data: () => ({
+            workflowTypeId: 'facilities_solicitacao_suprimentos',
+            version: 1,
+            state: 'published',
+            ownerEmailAtPublish: 'owner@3ariva.com.br',
+            defaultSlaDays: 2,
+            fields: [],
+            initialStepId: 'stp_open',
+            stepOrder: ['stp_open', 'stp_final'],
+            stepsById: {
+              stp_open: {
+                stepId: 'stp_open',
+                stepName: 'Inicio',
+                statusKey: 'inicio',
+                kind: 'start',
+              },
+              stp_final: {
+                stepId: 'stp_final',
+                stepName: 'Fim',
+                statusKey: 'fim',
+                kind: 'final',
+              },
+            },
+            publishedAt: null,
+          }),
+        },
+      ],
+    });
+
+    await expect(createOrReuseWorkflowDraft('facilities_solicitacao_suprimentos')).resolves.toEqual({
+      workflowTypeId: 'facilities_solicitacao_suprimentos',
+      version: 2,
+      reusedExistingDraft: false,
+      editorPath: '/admin/request-config/facilities_solicitacao_suprimentos/versions/2/edit',
+    });
+
+    expect(directSetMock).toHaveBeenCalledTimes(1);
+    const [, savedDraft] = directSetMock.mock.calls[0];
+    expect(savedDraft.stepsById.stp_open).toEqual({
+      stepId: 'stp_open',
+      stepName: 'Inicio',
+      statusKey: 'inicio',
+      kind: 'start',
+    });
+    expect(savedDraft.stepsById.stp_open).not.toHaveProperty('action');
   });
 });

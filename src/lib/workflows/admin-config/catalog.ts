@@ -2,6 +2,14 @@ import type { QueryDocumentSnapshot, Timestamp } from 'firebase-admin/firestore'
 import { getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import type { WorkflowVersionV2 } from '@/lib/workflows/runtime/types';
+import { listWorkflowConfigOwners } from './lookups';
+import {
+  canActivateVersion,
+  deriveVersionStatus,
+  evaluatePublishability,
+  getLastTransitionAt,
+  hasBlockingPublishIssues,
+} from './publishability';
 import type {
   WorkflowConfigAreaListItem,
   WorkflowConfigCatalogData,
@@ -40,20 +48,44 @@ function asTimestampIso(value: Timestamp | null | undefined): string | null {
 function toVersionListItem(
   workflowType: WorkflowTypeDocument,
   version: WorkflowVersionV2,
+  collaborators: Awaited<ReturnType<typeof listWorkflowConfigOwners>>,
 ): WorkflowConfigVersionListItem {
-  const isActivePublished =
-    version.state === 'published' &&
-    workflowType.active === true &&
-    workflowType.latestPublishedVersion === version.version;
+  const derivedStatus = deriveVersionStatus(
+    { latestPublishedVersion: workflowType.latestPublishedVersion ?? null },
+    version,
+  );
+  const isActivePublished = derivedStatus === 'Publicada';
+  const publishIssues = evaluatePublishability(
+    version.state === 'draft'
+      ? {
+          workflowType: { latestPublishedVersion: workflowType.latestPublishedVersion ?? null },
+          version,
+          collaborators,
+        }
+      : {
+          workflowType: { latestPublishedVersion: workflowType.latestPublishedVersion ?? null },
+          version: { ...version, state: 'published' },
+          collaborators,
+        },
+  );
+  const hasBlockingIssues = hasBlockingPublishIssues(publishIssues);
 
   return {
     version: version.version,
     state: version.state,
-    uiStatus: version.state === 'draft' ? 'Rascunho' : isActivePublished ? 'Publicada' : 'Inativa',
+    uiStatus: derivedStatus,
+    derivedStatus,
     isActivePublished,
+    canPublish: version.state === 'draft' && !hasBlockingIssues,
+    canActivate: canActivateVersion(
+      { latestPublishedVersion: workflowType.latestPublishedVersion ?? null },
+      version,
+    ),
+    hasBlockingIssues,
     stepCount: Array.isArray(version.stepOrder) ? version.stepOrder.length : 0,
     fieldCount: Array.isArray(version.fields) ? version.fields.length : 0,
     publishedAt: version.state === 'published' ? asTimestampIso(version.publishedAt) : null,
+    lastTransitionAt: getLastTransitionAt(version),
   };
 }
 
@@ -61,6 +93,7 @@ function toTypeListItem(
   snapshot: QueryDocumentSnapshot,
   workflowType: WorkflowTypeDocument,
   versions: WorkflowVersionV2[],
+  collaborators: Awaited<ReturnType<typeof listWorkflowConfigOwners>>,
 ): WorkflowConfigTypeListItem {
   const hasPublishedVersion =
     typeof workflowType.latestPublishedVersion === 'number' && workflowType.latestPublishedVersion > 0;
@@ -84,7 +117,7 @@ function toTypeListItem(
       : 'Rascunho inicial / sem publicada',
     hasPublishedVersion,
     draftVersion,
-    versions: sortedVersions.map((version) => toVersionListItem(workflowType, version)),
+    versions: sortedVersions.map((version) => toVersionListItem(workflowType, version, collaborators)),
   };
 }
 
@@ -108,9 +141,10 @@ function toAreaListItem(
 
 export async function buildWorkflowConfigCatalog(): Promise<WorkflowConfigCatalogData> {
   const db = getDb();
-  const [areaSnapshot, typeSnapshot] = await Promise.all([
+  const [areaSnapshot, typeSnapshot, collaborators] = await Promise.all([
     db.collection('workflowAreas').get(),
     db.collection('workflowTypes_v2').get(),
+    listWorkflowConfigOwners(),
   ]);
 
   const typesWithVersions = await Promise.all(
@@ -121,7 +155,7 @@ export async function buildWorkflowConfigCatalog(): Promise<WorkflowConfigCatalo
 
       return {
         areaId: workflowType.areaId || '',
-        item: toTypeListItem(snapshot, workflowType, versions),
+        item: toTypeListItem(snapshot, workflowType, versions, collaborators),
       };
     }),
   );

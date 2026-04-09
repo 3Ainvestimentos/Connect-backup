@@ -1,5 +1,11 @@
 import type { StepDef, VersionFieldDef } from '@/lib/workflows/runtime/types';
-import type { DraftReadinessIssue, WorkflowConfigAccessMode, WorkflowDraftEditorGeneral } from './types';
+import type {
+  DraftReadinessIssue,
+  WorkflowConfigAccessMode,
+  WorkflowConfigOwnerLookup,
+  WorkflowDraftEditorGeneral,
+} from './types';
+import { evaluatePublishability } from './publishability';
 
 export function normalizeAllowedUserIds(mode: WorkflowConfigAccessMode, allowedUserIds: string[]): string[] {
   if (mode === 'all') {
@@ -42,100 +48,32 @@ export function evaluateDraftReadiness(input: {
   fields: VersionFieldDef[];
   steps: StepDef[];
   initialStepId: string;
+  collaborators?: WorkflowConfigOwnerLookup[];
 }): DraftReadinessIssue[] {
-  const issues: DraftReadinessIssue[] = [];
-
-  if (input.general.name.trim() === '') {
-    issues.push({
-      code: 'MISSING_NAME',
-      category: 'general',
-      severity: 'warning',
-      message: 'Informe o nome do workflow antes de publicar.',
-      path: 'general.name',
-    });
-  }
-
-  if (input.general.areaId.trim() === '') {
-    issues.push({
-      code: 'MISSING_AREA',
-      category: 'general',
-      severity: 'warning',
-      message: 'Selecione uma area antes de publicar.',
-      path: 'general.areaId',
-    });
-  }
-
-  if (input.general.ownerUserId.trim() === '') {
-    issues.push({
-      code: 'MISSING_OWNER',
-      category: 'general',
-      severity: 'warning',
-      message: 'Selecione um owner valido antes de publicar.',
-      path: 'general.ownerUserId',
-    });
-  }
-
-  if (input.access.mode === 'specific' && input.access.allowedUserIds.length === 0) {
-    issues.push({
-      code: 'MISSING_ALLOWED_USERS',
-      category: 'access',
-      severity: 'warning',
-      message: 'Selecione ao menos um colaborador quando o acesso for restrito.',
-      path: 'access.allowedUserIds',
-    });
-  }
-
-  if (input.steps.length === 0) {
-    issues.push({
-      code: 'MISSING_STEPS',
-      category: 'steps',
-      severity: 'warning',
-      message: 'Defina ao menos uma etapa antes de publicar.',
-      path: 'steps',
-    });
-  }
-
-  if (input.steps.length > 0 && !input.steps.some((step) => step.stepId === input.initialStepId)) {
-    issues.push({
-      code: 'INVALID_INITIAL_STEP',
-      category: 'steps',
-      severity: 'warning',
-      message: 'A etapa inicial precisa apontar para uma etapa existente.',
-      path: 'initialStepId',
-    });
-  }
-
-  if (input.steps.length > 0 && !input.steps.some((step) => step.kind === 'final')) {
-    issues.push({
-      code: 'MISSING_FINAL_STEP',
-      category: 'steps',
-      severity: 'warning',
-      message: 'Defina uma etapa final antes de publicar.',
-      path: 'steps',
-    });
-  }
-
-  input.steps.forEach((step, index) => {
-    if (step.action?.type === 'approval' && (!step.action.approverIds || step.action.approverIds.length === 0)) {
-      issues.push({
-        code: 'APPROVAL_STEP_WITHOUT_APPROVERS',
-        category: 'actions',
-        severity: 'warning',
-        message: `A etapa ${index + 1} exige aprovadores predefinidos para publicar.`,
-        path: `steps.${index}.action.approverIds`,
-      });
-    }
+  return evaluatePublishability({
+    workflowType: { latestPublishedVersion: null },
+    version: {
+      version: 1,
+      state: 'draft',
+      defaultSlaDays: input.general.defaultSlaDays,
+      fields: input.fields,
+      initialStepId: input.initialStepId,
+      stepOrder: input.steps.map((step) => step.stepId),
+      stepsById: Object.fromEntries(input.steps.map((step) => [step.stepId, step])),
+      draftConfig: {
+        workflowType: {
+          name: input.general.name,
+          description: input.general.description,
+          icon: input.general.icon,
+          areaId: input.general.areaId,
+          ownerEmail: input.general.ownerEmail,
+          ownerUserId: input.general.ownerUserId,
+          allowedUserIds: input.access.mode === 'all' ? ['all'] : input.access.allowedUserIds,
+          active: input.general.activeOnPublish,
+        },
+      },
+      workflowTypeSnapshot: null,
+    },
+    collaborators: input.collaborators || [],
   });
-
-  if (input.fields.some((field) => field.label.trim() === '')) {
-    issues.push({
-      code: 'FIELD_WITHOUT_LABEL',
-      category: 'fields',
-      severity: 'warning',
-      message: 'Todos os campos devem ter um rotulo antes de publicar.',
-      path: 'fields',
-    });
-  }
-
-  return issues;
 }

@@ -3,10 +3,17 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { sanitizeStoragePath } from '@/lib/path-sanitizer';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
-import type { StepDef, StepKind, VersionFieldDef, WorkflowTypeV2, WorkflowVersionV2 } from '@/lib/workflows/runtime/types';
+import type {
+  StepDef,
+  StepKind,
+  VersionFieldDef,
+  WorkflowTypeV2,
+  WorkflowVersionV2,
+} from '@/lib/workflows/runtime/types';
 import { appendNumericSuffix, buildAreaId, buildFieldId, buildStatusKey, buildWorkflowTypeId } from './id-generation';
-import { buildAccessPreview, evaluateDraftReadiness, normalizeAllowedUserIds } from './draft-readiness';
+import { buildAccessPreview, normalizeAllowedUserIds } from './draft-readiness';
 import { listWorkflowConfigAreas, listWorkflowConfigOwners, resolveOwnerByUserId } from './lookups';
+import { deriveVersionStatus, evaluatePublishability, hasBlockingPublishIssues } from './publishability';
 import type {
   CreateWorkflowAreaInput,
   CreateWorkflowAreaResult,
@@ -134,7 +141,7 @@ function parseDraftFields(value: unknown): Array<Partial<VersionFieldDef>> {
     return {
       id: readString(field.id, 'field.id invalido.', ''),
       label: readString(field.label, 'field.label invalido.', ''),
-      type: readString(field.type, 'field.type invalido.', ''),
+      type: readString(field.type, 'field.type invalido.', '') as VersionFieldDef['type'],
       required: readBoolean(field.required, false),
       order: readNumber(field.order, 'field.order invalido.', 0),
       placeholder: readString(field.placeholder, 'field.placeholder invalido.', ''),
@@ -156,7 +163,9 @@ function parseDraftSteps(value: unknown): Array<Partial<StepDef>> {
         : (() => {
             const actionRecord = asRecord(step.action, 'step.action invalido.');
             return {
-              type: readString(actionRecord.type, 'step.action.type invalido.', ''),
+              type: readString(actionRecord.type, 'step.action.type invalido.', '') as NonNullable<
+                StepDef['action']
+              >['type'],
               label: readString(actionRecord.label, 'step.action.label invalido.', ''),
               approverIds:
                 actionRecord.approverIds == null
@@ -181,7 +190,7 @@ function parseDraftSteps(value: unknown): Array<Partial<StepDef>> {
       stepId: readString(step.stepId, 'step.stepId invalido.', ''),
       stepName: readString(step.stepName, 'step.stepName invalido.', ''),
       statusKey: readString(step.statusKey, 'step.statusKey invalido.', ''),
-      kind: readString(step.kind, 'step.kind invalido.', ''),
+      kind: readString(step.kind, 'step.kind invalido.', '') as StepDef['kind'],
       action,
     };
   });
@@ -262,14 +271,16 @@ function cloneField(field: VersionFieldDef, index: number): VersionFieldDef {
 }
 
 function cloneStep(step: StepDef): StepDef {
+  const clonedAction = step.action
+    ? {
+        ...step.action,
+        approverIds: Array.isArray(step.action.approverIds) ? [...step.action.approverIds] : [],
+      }
+    : undefined;
+
   return {
     ...step,
-    action: step.action
-      ? {
-          ...step.action,
-          approverIds: Array.isArray(step.action.approverIds) ? [...step.action.approverIds] : [],
-        }
-      : undefined,
+    ...(clonedAction ? { action: clonedAction } : {}),
   };
 }
 
@@ -658,7 +669,7 @@ function normalizeSteps(
       stepName: (step.stepName || '').trim(),
       statusKey: buildStatusKey(step.statusKey?.trim() || step.stepName?.trim() || `status_${index + 1}`),
       kind: normalizeStepKind(step.kind),
-      action,
+      ...(action ? { action } : {}),
     } satisfies StepDef;
   });
 
@@ -700,11 +711,19 @@ function buildDraftDto(workflowType: WorkflowTypeV2, workflowVersion: WorkflowVe
   const mode = allowedUserIds.includes('all') ? 'all' : 'specific';
   const fields = (workflowVersion.fields || []).map(cloneField);
   const steps = normalizeDraftSteps(workflowVersion);
+  const publishReadiness = evaluatePublishability({
+    workflowType,
+    version: workflowVersion,
+    collaborators: [],
+  });
 
   return {
     workflowTypeId: workflowType.workflowTypeId,
     version: workflowVersion.version,
     state: 'draft',
+    derivedStatus: deriveVersionStatus(workflowType, workflowVersion),
+    canPublish: !hasBlockingPublishIssues(publishReadiness),
+    canActivate: false,
     isNewWorkflowType: workflowType.latestPublishedVersion == null,
     general,
     access: {
@@ -715,13 +734,7 @@ function buildDraftDto(workflowType: WorkflowTypeV2, workflowVersion: WorkflowVe
     fields,
     steps,
     initialStepId: workflowVersion.initialStepId || '',
-    publishReadiness: evaluateDraftReadiness({
-      general,
-      access: { mode, allowedUserIds },
-      fields,
-      steps,
-      initialStepId: workflowVersion.initialStepId || '',
-    }),
+    publishReadiness,
     meta: {
       createdAt: asIso(workflowVersion.createdAt),
       updatedAt: asIso(workflowVersion.updatedAt),
@@ -740,8 +753,16 @@ export async function getWorkflowDraftEditorData(
     listWorkflowConfigOwners(),
   ]);
 
+  const draft = buildDraftDto(workflowType, workflowVersion);
+  draft.publishReadiness = evaluatePublishability({
+    workflowType,
+    version: workflowVersion,
+    collaborators: owners,
+  });
+  draft.canPublish = !hasBlockingPublishIssues(draft.publishReadiness);
+
   return {
-    draft: buildDraftDto(workflowType, workflowVersion),
+    draft,
     lookups: {
       areas,
       owners,
@@ -781,12 +802,30 @@ export async function saveWorkflowDraft(
     activeOnPublish: parsedInput.general.activeOnPublish === true,
   };
 
-  const publishReadiness = evaluateDraftReadiness({
-    general,
-    access: { mode: parsedInput.access.mode, allowedUserIds },
-    fields,
-    steps,
-    initialStepId,
+  const collaborators = await listWorkflowConfigOwners();
+  const publishReadiness = evaluatePublishability({
+    workflowType,
+    version: {
+      ...workflowVersion,
+      defaultSlaDays: general.defaultSlaDays,
+      fields,
+      initialStepId,
+      stepOrder,
+      stepsById,
+      draftConfig: {
+        workflowType: {
+          name: general.name,
+          description: general.description,
+          icon: general.icon,
+          areaId: general.areaId,
+          ownerEmail: general.ownerEmail,
+          ownerUserId: general.ownerUserId,
+          allowedUserIds,
+          active: general.activeOnPublish,
+        },
+      },
+    },
+    collaborators,
   });
 
   const now = FieldValue.serverTimestamp();

@@ -17,6 +17,12 @@ jest.mock('@tanstack/react-query', () => ({
   useMutation: jest.fn(),
 }));
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+  }),
+}));
+
 jest.mock('lucide-react', () => {
   const Icon = () => <svg />;
   return new Proxy(
@@ -55,6 +61,9 @@ function buildDraftPayload() {
       workflowTypeId: 'facilities_manutencao',
       version: 1,
       state: 'draft',
+      derivedStatus: 'Rascunho',
+      canPublish: false,
+      canActivate: false,
       isNewWorkflowType: true,
       general: {
         name: 'Manutencao Predial',
@@ -78,7 +87,7 @@ function buildDraftPayload() {
         {
           code: 'MISSING_STEPS',
           category: 'steps',
-          severity: 'warning',
+          severity: 'blocking',
           message: 'Defina ao menos uma etapa antes de publicar.',
         },
       ],
@@ -122,6 +131,7 @@ describe('WorkflowDraftEditorPage', () => {
     expect(screen.getByText('General section')).toBeTruthy();
     expect(screen.getByText('Access section')).toBeTruthy();
     expect(screen.getByText('Defina ao menos uma etapa antes de publicar.')).toBeTruthy();
+    expect((screen.getByRole('button', { name: /Publicar versao/i }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('submits the save action', async () => {

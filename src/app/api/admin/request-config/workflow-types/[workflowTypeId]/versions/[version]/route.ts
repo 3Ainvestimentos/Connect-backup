@@ -3,6 +3,7 @@ import { authenticateWorkflowConfigAdmin } from '@/lib/workflows/admin-config/au
 import { getWorkflowDraftEditorData, saveWorkflowDraft } from '@/lib/workflows/admin-config/draft-repository';
 import type { SaveWorkflowDraftInput, SaveWorkflowDraftSuccess, WorkflowDraftEditorSuccess } from '@/lib/workflows/admin-config/types';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
+import { handleWorkflowConfigRouteError } from '@/lib/workflows/admin-config/route-helpers';
 
 function parseVersion(value: string) {
   const version = Number(value);
@@ -28,17 +29,9 @@ export async function GET(
 
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof RuntimeError) {
-      return NextResponse.json(
-        { ok: false, code: error.code, message: error.message },
-        { status: error.httpStatus },
-      );
-    }
-
-    console.error('[GET /api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]] Unexpected error:', error);
-    return NextResponse.json(
-      { ok: false, code: 'INTERNAL_ERROR', message: 'Erro interno do servidor.' },
-      { status: 500 },
+    return handleWorkflowConfigRouteError(
+      'GET /api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]',
+      error,
     );
   }
 }
@@ -60,17 +53,9 @@ export async function PUT(
 
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof RuntimeError) {
-      return NextResponse.json(
-        { ok: false, code: error.code, message: error.message },
-        { status: error.httpStatus },
-      );
-    }
-
-    console.error('[PUT /api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]] Unexpected error:', error);
-    return NextResponse.json(
-      { ok: false, code: 'INTERNAL_ERROR', message: 'Erro interno do servidor.' },
-      { status: 500 },
+    return handleWorkflowConfigRouteError(
+      'PUT /api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]',
+      error,
     );
   }
 }
