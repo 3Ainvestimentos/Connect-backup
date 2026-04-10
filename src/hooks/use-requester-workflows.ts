@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   fetchRequesterCatalog,
@@ -44,15 +44,11 @@ export function usePublishedWorkflow(workflowTypeId: string | null) {
 
 export function useOpenRequesterWorkflow() {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (payload: OpenRequesterWorkflowInput) => {
       if (!user) throw new Error('Usuario nao autenticado');
       return openRequesterWorkflow(user, payload);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflows', 'requester', 'catalog'] });
     },
   });
 

@@ -65,7 +65,7 @@ export function WorkflowSubmissionModal({
   workflow,
   onSuccess,
 }: WorkflowSubmissionModalProps) {
-  const { user } = useAuth();
+  const { user, currentUserCollab } = useAuth();
   const workflowTypeId = workflow?.workflowTypeId ?? '';
   const { data: metadata, isLoading: isLoadingMetadata } = usePublishedWorkflow(
     open ? workflowTypeId : null,
@@ -200,9 +200,11 @@ export function WorkflowSubmissionModal({
         }
       }
 
+      const canonicalRequesterName = currentUserCollab?.name?.trim() || '';
+
       const result = await openMutation.mutateAsync({
         workflowTypeId: workflow.workflowTypeId,
-        requesterName: user.displayName || user.email || '',
+        requesterName: canonicalRequesterName,
         formData,
       });
 

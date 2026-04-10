@@ -15,8 +15,22 @@ export function RequestsV2Page() {
   const [selectedWorkflow, setSelectedWorkflow] = React.useState<RequesterCatalogWorkflow | null>(null);
   const [showSelectionModal, setShowSelectionModal] = React.useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = React.useState(false);
-  const [submittedRequestId, setSubmittedRequestId] = React.useState<number | null>(null);
   const { toast } = useToast();
+
+  const resetSubmissionFlow = React.useCallback(() => {
+    setShowSubmissionModal(false);
+    setSelectedWorkflow(null);
+    setSelectedArea(null);
+  }, []);
+
+  const handleSubmissionSuccess = (requestId: number) => {
+    toast({
+      title: 'Solicitacao aberta com sucesso!',
+      description: `Seu numero de solicitacao e ${requestId}.`,
+    });
+
+    resetSubmissionFlow();
+  };
 
   const handleAreaClick = (area: RequesterCatalogArea) => {
     if (area.workflows.length === 1) {
@@ -34,20 +48,6 @@ export function RequestsV2Page() {
     setSelectedWorkflow(workflow);
     setShowSelectionModal(false);
     setShowSubmissionModal(true);
-  };
-
-  const handleSubmissionSuccess = (requestId: number) => {
-    setSubmittedRequestId(requestId);
-    toast({
-      title: 'Solicitacao aberta com sucesso!',
-      description: `Seu numero de solicitacao e ${requestId}.`,
-    });
-  };
-
-  const handleSubmissionModalClose = () => {
-    setShowSubmissionModal(false);
-    setSelectedWorkflow(null);
-    setSelectedArea(null);
   };
 
   return (
@@ -90,7 +90,11 @@ export function RequestsV2Page() {
 
       <WorkflowSubmissionModal
         open={showSubmissionModal}
-        onOpenChange={handleSubmissionModalClose}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            resetSubmissionFlow();
+          }
+        }}
         workflow={selectedWorkflow}
         onSuccess={handleSubmissionSuccess}
       />
