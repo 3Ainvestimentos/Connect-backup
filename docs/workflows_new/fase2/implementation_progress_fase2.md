@@ -1,23 +1,22 @@
 # Progress Fase 2
 
-> Updated: 2026-04-08
-> Status: 2A concluida; 2C concluida; 2D concluida com correcoes pos-build; proximo foco recomendado: 2B ou 2E
+> Updated: 2026-04-10
+> Status: 2A concluida; 2C concluida; 2D concluida com correcoes pos-build; 2E concluida em 4 subetapas + ajustes pontuais; proximo foco: 2B
 
 ## 1. Resumo executivo
 
-O programa da Fase 2 chegou a um estado estavel em tres frentes:
+O programa da Fase 2 chegou a um estado estavel em quatro frentes:
 
 - **2A** concluida, com a tela oficial `/gestao-de-chamados` em producao interna;
 - **2C** concluida, com os `30` workflows restantes materializados em `workflowTypes_v2` por lotes;
-- **2D** concluida, com o motor de `requestAction` / `respondAction` operacional ponta a ponta.
+- **2D** concluida, com o motor de `requestAction` / `respondAction` operacional ponta a ponta;
+- **2E** concluida, com a superficie administrativa de configuracao, versionamento e publicacao entregue em `4` subetapas e `2` rounds de ajustes pontuais.
 
 Os lotes `4` e `5` da 2C estao prontos para smoke de enablement (mudar `active: true`).
 
-O proximo foco recomendado do roadmap passa a ser:
+O proximo foco recomendado do roadmap:
 
-1. **Smoke de enablement dos lotes 4 e 5** (nao e macroetapa, e uma acao operacional)
-2. **2B** Nova tela oficial de abertura de chamado
-3. **2E** Configuracao, versionamento e publicacao
+1. **2B** Nova tela oficial de abertura de chamado (brainstorm iniciado)
 
 ## 2. Estado por macroetapa
 
@@ -165,7 +164,153 @@ Resultado:
 ### 2E. Configuracao, versionamento e publicacao
 
 Status:
-- **nao iniciada**
+- **concluida**
+
+Artefatos de referencia:
+- `BRAINSTORM_FASE2E_TELA_CONFIGURACAO_CHAMADOS.md`
+- `DEFINE_FASE2E_TELA_CONFIGURACAO_CHAMADOS.md`
+- `DEFINE_FASE2E_1_SHELL_CATALOGO_CHAMADOS.md`
+- `DEFINE_FASE2E_2_EDITOR_RASCUNHO_CHAMADOS.md`
+- `DEFINE_FASE2E_3_PUBLICACAO_ATIVACAO_CHAMADOS.md`
+- `DEFINE_FASE2E_4_HISTORICO_GERAL_CHAMADOS.md`
+- `DEFINE_AJUSTES_PONTUAIS_CONFIGURADOR_2E_MODAL_E_APPROVERS.md`
+
+#### 2E.1 — Shell e catalogo administrativo
+
+Resultado:
+- permissao dedicada `canManageWorkflowsV2` adicionada ao contrato de colaboradores e ao `AuthContext`;
+- toggle `"Workflows V2"` exposto em `PermissionsPageContent`;
+- item `"Config. de chamados v2"` adicionado ao menu de admin, condicionado exclusivamente a `canManageWorkflowsV2`;
+- `WorkflowConfigAdminGuard` criado — redireciona para `/login` ou `/dashboard` conforme estado de autenticacao e permissao;
+- rota `/admin/request-config` criada com shell de tabs (`Definicoes` / `Historico Geral`);
+- endpoint `GET /api/admin/request-config/catalog` criado — agrega `areas`, `workflowTypes` e `versions` server-side;
+- `WorkflowConfigPage.tsx` e `WorkflowConfigDefinitionsTab.tsx` como shell inicial com placeholders;
+- `10` arquivos criados, `6` modificados.
+
+#### 2E.2 — Editor de rascunho
+
+Resultado:
+
+**Backend / contratos:**
+- `WorkflowConfigArea`, `WorkflowConfigOwnerLookup`, `WorkflowVersionDraftDto` e tipos associados adicionados a `types.ts`;
+- `id-generation.ts` criado — gera `workflowTypeId` a partir de `areaId + name` com dedup por sufixo numerico;
+- `lookups.ts` criado — `listWorkflowConfigAreas`, `listWorkflowConfigOwners`, `resolveOwnerByUserId`;
+- `draft-readiness.ts` criado — `buildAccessPreview`, `evaluatePublishReadiness` com categorias e severidades;
+- `draft-repository.ts` criado — `createWorkflowArea`, `createWorkflowTypeWithDraft`, `createOrReuseWorkflowDraft`, `buildDraftDto`, `getWorkflowDraftEditorData`, `saveWorkflowDraft` com `cleanDataForFirestore`;
+- `api-client.ts` criado — `fetchWorkflowConfigCatalog`, `fetchWorkflowDraftEditor`, `saveWorkflowDraft`, `createWorkflowArea`, `createWorkflowTypeWithDraft`, `createWorkflowDraft`.
+
+**Rotas HTTP:**
+- `POST /api/admin/request-config/areas`
+- `POST /api/admin/request-config/workflow-types`
+- `POST /api/admin/request-config/workflow-types/[workflowTypeId]/drafts`
+- `GET /api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]`
+- `PUT /api/admin/request-config/workflow-types/[workflowTypeId]/versions/[version]`
+
+**Frontend:**
+- `WorkflowConfigDefinitionsTab.tsx` com catalogo por area, CTAs de criar area, criar tipo e editar rascunho;
+- `CreateWorkflowAreaDialog.tsx` e `CreateWorkflowTypeDialog.tsx`;
+- `WorkflowDraftEditorPage.tsx` com secoes de configuracao geral, acesso, campos, etapas e painel de pendencias;
+- `WorkflowDraftGeneralSection.tsx`, `WorkflowDraftAccessSection.tsx`, `WorkflowDraftFieldsSection.tsx`, `WorkflowDraftStepsSection.tsx`, `WorkflowDraftReadinessPanel.tsx`;
+- rota dedicada `/(app)/admin/request-config/[workflowTypeId]/versions/[version]/edit/page.tsx`;
+- `15` arquivos criados, `12` modificados, `23` testes passando.
+
+#### 2E.3 — Publicacao e ativacao
+
+Resultado:
+
+**Backend:**
+- `publishability.ts` criado — `evaluatePublishReadiness` canonico (com categorias `general`, `steps`, `access`), `deriveVersionStatus`, `canActivateVersion`, `getLastVersionTransition`;
+- `publication-service.ts` criado — `publishDraftVersion` e `activatePublishedVersion` como transacoes atomicas que atualizam `root + version` no mesmo commit Firestore;
+- rotas `POST .../publish` e `POST .../activate` criadas com authz admin e envelope canonico de resposta;
+- `catalog.ts` atualizado — cada versao passa a derivar `canPublish`, `canActivate`, `hasBlockingIssues`, `lastTransitionAt`.
+
+**Frontend:**
+- `WorkflowConfigDefinitionsTab.tsx` recebe CTAs `Publicar` e `Ativar` com loading e refresh apos mutacao;
+- `WorkflowDraftReadinessPanel.tsx` separa bloqueios de warnings e expoe CTA de publicacao;
+- `WorkflowDraftEditorPage.tsx` aciona publicacao e exibe badge de status derivado.
+
+**Correcoes pos-build da 2E.3:**
+- `hasSufficientWorkflowTypeSnapshot` adicionado a `publishability.ts` — verificacao estrutural de `7` campos do snapshot (`name`, `description`, `icon`, `areaId`, `ownerEmail`, `ownerUserId`, `allowedUserIds.length > 0`) como type predicate; usado por `canActivateVersion` e por `activatePublishedVersion`;
+- `hasUnsavedChanges` adicionado ao `WorkflowDraftReadinessPanel` — impede publicacao enquanto ha alteracoes nao salvas;
+- `7` arquivos criados, `16` modificados.
+
+#### 2E.4 — Historico geral unificado
+
+Resultado:
+
+**Backend:**
+- read model administrativo proprio para historico global de chamados;
+- endpoint `GET /api/admin/request-config/history` — unifica `Legado (workflows)` e `V2 (workflows_v2)` em DTO comum;
+- endpoint `GET /api/admin/request-config/history/[origin]/[requestKey]` — detalhe somente leitura;
+- filtros server-side por `origin`, `areaId`, `workflowTypeId`, `statusCategory`, `ownerUserId` e periodo;
+- builder admin read-only para detalhe v2 (sem mutacoes, sem CTAs operacionais).
+
+**Frontend:**
+- `WorkflowConfigHistoryTab.tsx` com estado de carregamento, erro e filtros ativos;
+- `HistoryFiltersBar.tsx` — filtros por origem, area, tipo, status, owner e periodo;
+- `HistoryGrid.tsx` — tabela unificada com colunas comuns `Legado + V2`;
+- `HistoryDetailDialog.tsx` — dialog somente leitura roteado por origem;
+- `LegacyHistoryDetailView.tsx` e `V2HistoryDetailView.tsx` — visoes de detalhe especializadas por origem.
+
+**Correcao pos-build da 2E.4:**
+- builder admin read-only dedicado para detalhe v2 no historico, separado do builder operacional de `/gestao-de-chamados`.
+
+#### Ajustes Pontuais do Configurador 2E — Modal editor, area read-only e approvers canonicos
+
+Entregues em `2` builds sequenciais.
+
+**Build principal (17 arquivos):**
+
+*Contratos:*
+- `WorkflowConfigCollaboratorLookup` com `collaboratorDocId: string` (required) adicionado a `types.ts`;
+- `WorkflowDraftEditorApprover = { collaboratorDocId, userId, name, email }` adicionado;
+- `SaveWorkflowDraftInput` ampliado com `approverCollaboratorDocIds?: string[]` e `unresolvedApproverIds?: string[]`;
+- `WorkflowDraftDirtyState = { isDirty: boolean; isReadOnly: boolean }` adicionado a `editor/types.ts`.
+
+*Backend:*
+- `listWorkflowConfigCollaborators` adicionado a `lookups.ts`;
+- `resolveWorkflowTypeStateForEditor` — tres caminhos: draft → root, published + snapshot → snapshot, fallback → root;
+- `hydrateApproverSelections` — separa aprovadores resolvidos de `unresolvedApproverIds`;
+- `resolveCollaboratorDocIdsToApproverIds` — resolve `collaboratorDocId → id3a` lendo por `doc.id`, rejeita `422` para doc ausente ou `id3a` vazio;
+- `hasUnresolvedApproverSelections` — gate antes de qualquer acesso a DB no save;
+- `buildDraftDto` ampliado com `areas[]`, `unresolvedApproverIds` por step e bloqueio `UNRESOLVED_ACTION_APPROVERS` na readiness;
+- GET de versao passa a aceitar `draft` e `published` via `loadWorkflowVersion`;
+- `canPublish: state === 'draft' && !hasBlockingIssues`; `canActivate: canActivateVersion(workflowType, workflowVersion)`.
+
+*Orquestracao modal:*
+- `WorkflowConfigPage.tsx` — estado do editor migrado para search params (`editorWorkflowTypeId` + `editorVersion`), preservando `tab=definitions`; `handleOpenEditor`, `handleCloseEditor`, `handleTabChange` com limpeza cirurgica de params;
+- `WorkflowConfigDefinitionsTab.tsx` — `onOpenEditor` prop substitui `useRouter`; botao `"Ver versao"` para published; `CreateWorkflowTypeDialog` recebe `onOpenEditor`;
+- `WorkflowVersionEditorDialog.tsx` — shell modal com `dirtyState`, `requestClose` com confirm guard, `onEscapeKeyDown` e `onInteractOutside` com `preventDefault`.
+
+*Editor:*
+- `WorkflowDraftEditorPage.tsx` — prop `onDirtyStateChange`, `embedded` para layout modal, save payload sem `areaId`, `approverCollaboratorDocIds + unresolvedApproverIds` no payload;
+- `WorkflowDraftGeneralSection.tsx` — icon picker com `Controller/Select/ScrollArea h-72`, owner select com nome e email, area `Input readOnly bg-muted/30`;
+- `WorkflowDraftReadinessPanel.tsx` — prop `readOnly` com hierarquia de mensagens contextual;
+- `WorkflowDraftStepsSection.tsx` — picker inline de aprovadores com banner ambar para `unresolvedApproverIds`, auto-clear em todo toggle;
+- rota fallback `edit/page.tsx` com `WorkflowConfigAdminGuard`.
+
+**Build de completude (7 arquivos):**
+- `WorkflowActionApproverPicker.tsx` extraido como componente stateless: filtragem local por nome/email/area, badges de selecionados, banner ambar, deduplicacao por `collaboratorDocId`, auto-clear de `unresolvedApproverIds` em todo toggle (ADR-3);
+- `WorkflowDraftStepsSection.tsx` reduzido em `~85` linhas — bloco inline substituido por `<WorkflowActionApproverPicker />`;
+- `hydrateApproverSelections` exportado de `draft-repository.ts` para cobertura unitaria;
+- `+8` cenarios de teste nos `4` arquivos parciais: `422` path em `resolveCollaboratorDocIds`, hydrate split, GET published read-only, PUT com `approverCollaboratorDocIds`, dialog confirm/close, badge `"Somente leitura"`, propagacao de `onDirtyStateChange`.
+
+**Estado final dos testes:**
+- `71/71` testes passando em `18` suites cobrindo todo o dominio `admin-config`;
+- `0` erros de typecheck nos arquivos do escopo;
+- `0` regressoes de lint (saldo `-1` violacao).
+
+**Invariantes criticos da 2E:**
+- `areaId` e imutavel no editor — lido do root, nunca do payload do cliente;
+- `collaboratorDocId` e a chave de transporte admin; `id3a` e resolvido server-side antes de persistir;
+- `unresolvedApproverIds` bloqueia publicacao (`UNRESOLVED_ACTION_APPROVERS`) e rejeita PUT com `422` se presente;
+- versoes publicadas abertas no editor operam em `mode: 'read-only'` — sem save, sem publish, sem dirty confirm;
+- dirty-close guard no dialog intercepta ESC e interact-outside; read-only nao dispara confirm;
+- `canActivateVersion` e o helper canonico unico — usado pelo catalogo, pelo DTO do editor e pelo `publication-service`.
+
+**Gaps conhecidos pos-2E (nao bloqueantes):**
+- `canPublish` de versoes published retorna `false` porque `state !== 'draft'`; cosmetically consistente mas semanticamente redundante com `mode: read-only`;
+- smoke manual pendente: persistencia de approvers no Firestore real, banner ambar em draft herdado com approvers nao resolvidos, UX de versao publicada no editor.
 
 ## 3. Decisoes de continuidade
 
@@ -188,4 +333,7 @@ Status:
 - executar `requestAction` + `respondAction` no ambiente de test;
 - apos validacao, mudar `active: true` nos documentos dos lotes `4` e `5`.
 
-**Proxima macroetapa**: abrir **2B** (nova tela oficial de abertura de chamado) ou **2E** (configuracao e versionamento).
+**Proxima macroetapa**: **2B** — nova tela oficial de abertura de chamado.
+- Brainstorm iniciado em `2026-04-10`.
+- Diretriz fechada: nova implementacao sobre o backend `workflowTypes_v2` + runtime, desacoplada do legado `/applications`; limpeza do legado fica para hardening posterior.
+- Referencia piloto existente: `OpenWorkflowCard` em `/pilot/facilities` (usa `DynamicFieldRenderer`, upload via signed URL, `openRequest` do runtime).
