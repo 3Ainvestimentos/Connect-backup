@@ -1,22 +1,21 @@
 # Progress Fase 2
 
 > Updated: 2026-04-10
-> Status: 2A concluida; 2C concluida; 2D concluida com correcoes pos-build; 2E concluida em 4 subetapas + ajustes pontuais; proximo foco: 2B
+> Status: 2A concluida; 2C concluida; 2D concluida com correcoes pos-build; 2E concluida em 4 subetapas + ajustes pontuais; 2B concluida em 2 subetapas + correcoes pos-build
 
 ## 1. Resumo executivo
 
-O programa da Fase 2 chegou a um estado estavel em quatro frentes:
+O programa da Fase 2 chegou a um estado estavel em cinco frentes:
 
 - **2A** concluida, com a tela oficial `/gestao-de-chamados` em producao interna;
 - **2C** concluida, com os `30` workflows restantes materializados em `workflowTypes_v2` por lotes;
 - **2D** concluida, com o motor de `requestAction` / `respondAction` operacional ponta a ponta;
-- **2E** concluida, com a superficie administrativa de configuracao, versionamento e publicacao entregue em `4` subetapas e `2` rounds de ajustes pontuais.
+- **2E** concluida, com a superficie administrativa de configuracao, versionamento e publicacao entregue em `4` subetapas e `2` rounds de ajustes pontuais;
+- **2B** concluida, com a superficie oficial de abertura e acompanhamento de chamados v2 entregue em `2` subetapas + `2` rounds de correcoes pos-build.
 
 Os lotes `4` e `5` da 2C estao prontos para smoke de enablement (mudar `active: true`).
 
-O proximo foco recomendado do roadmap:
-
-1. **2B** Nova tela oficial de abertura de chamado (brainstorm iniciado)
+A superficie requester v2 (`/solicitacoes`) esta operacional para workflows publicados e ativos em `workflowTypes_v2`.
 
 ## 2. Estado por macroetapa
 
@@ -34,11 +33,92 @@ Resultado:
 ### 2B. Nova tela oficial de abertura de chamado
 
 Status:
-- **nao iniciada**
+- **concluida**
 
-Diretriz ja fechada:
-- a nova tela pode ser visualmente identica a legada no primeiro momento;
-- a implementacao deve ser nova e conectada ao backend novo.
+Artefatos de referencia:
+- `BRAINSTORM_FASE2B_TELA_ABERTURA_CHAMADOS_V2.md`
+- `DEFINE_FASE2B_TELA_ABERTURA_CHAMADOS_V2.md` (Clarity Score 13/15)
+- `DEFINE_CORRECOES_POS_BUILD_FASE2B_1_CATALOGO_ABERTURA_CHAMADOS_V2.md`
+- `DESIGN_CORRECOES_POS_BUILD_FASE2B_1_CATALOGO_ABERTURA_CHAMADOS_V2.md`
+- `DESIGN_FASE2B_2_MINHAS_SOLICITACOES_DETALHE_READ_ONLY_V2.md`
+- `DEFINE_CORRECOES_POS_BUILD_FASE2B_2_MINHAS_SOLICITACOES_DETALHE_READ_ONLY_V2.md`
+- `DESIGN_CORRECOES_POS_BUILD_FASE2B_2_MINHAS_SOLICITACOES_DETALHE_READ_ONLY_V2.md`
+
+#### 2B.1 — Catalogo requester e abertura de chamado
+
+Resultado:
+
+**Backend / contratos:**
+- `RequesterCatalogWorkflow`, `RequesterCatalogArea`, `OpenRequesterWorkflowInput`, `OpenRequesterWorkflowResult` adicionados a `catalog-types.ts`;
+- `buildRequesterCatalog(actorUserId)` criado em `build-catalog.ts` — le `workflowAreas` e `workflowTypes_v2` em paralelo, filtra `active == true`, `latestPublishedVersion != null`, `allowedUserIds.includes('all') || includes(actorUserId)`, agrupa por area e ordena alfabeticamente;
+- endpoint `GET /api/workflows/requester/catalog` criado — autentica com `authenticateRuntimeActor`, retorna `RequesterCatalogArea[]`;
+- `RequesterApiError` com `code` e `httpStatus` adicionado a `api-client.ts`;
+- `fetchRequesterCatalog`, `fetchPublishedWorkflow`, `openRequesterWorkflow`, `fetchMyRequests`, `fetchRequestDetail` criados em `api-client.ts`.
+
+**Frontend:**
+- `src/hooks/use-requester-workflows.ts` criado com `useRequesterCatalog` (staleTime 5min), `usePublishedWorkflow`, `useOpenRequesterWorkflow` (invalida `mine` apos sucesso), `useMyRequests` (staleTime 30s);
+- `RequestsV2Page.tsx` — container principal com estado de selecao de area, workflow, modal de selecao, modal de submissao e `resetSubmissionFlow`;
+- `WorkflowAreaGrid.tsx` — grid de areas clicaveis;
+- `WorkflowSelectionModal.tsx` — selecao de workflow quando area tem mais de um;
+- `WorkflowSubmissionModal.tsx` — formulario dinamico de abertura com `canonicalRequesterName = currentUserCollab?.name?.trim() || ''`;
+- `src/app/(app)/solicitacoes/page.tsx` — wrapper da rota oficial.
+
+**Correcoes pos-build da 2B.1 (4 findings):**
+- modal nao fechava apos sucesso: `resetSubmissionFlow` movido para o container da pagina como callback unico para sucesso e cancelamento;
+- `requesterName` usava `user.displayName`: corrigido para `currentUserCollab?.name?.trim() || ''` (ADR-2B1-FIX-002);
+- `invalidateQueries` invalidava o catalogo pos-abertura: corrigido para invalidar apenas `['workflows', 'requester', 'mine']` (ADR-2B1-FIX-003);
+- cobertura por camada adicionada: `WorkflowSubmissionModal.test.tsx` (4 testes), `RequestsV2Page.test.tsx` (3 testes);
+- indice Firestore composto `active ASC + latestPublishedVersion ASC` em `workflowTypes_v2` documentado (ADR-2B1-FIX-005).
+
+#### 2B.2 — Minhas Solicitacoes e detalhe read-only
+
+Resultado:
+
+**Frontend:**
+- `MyRequestsV2Section.tsx` — tabela com colunas `#`, `Tipo`, `Status` (label via `currentStepName`), `Previsao de Conclusao`, `Acoes`; badge derivado de `statusCategory`; botao do olho com `aria-label` deterministico por `requestId`;
+- `MyRequestDetailDialog.tsx` — dialog read-only com `stableData`/`hasStableData` para erro nao bloqueante; resolve `openedInLabel` do `areaLabelById`; reutiliza `RequestFormData`, `RequestProgress`, `RequestTimeline`, `RequestAttachments` de `management/`; sem CTAs operacionais; `DialogTitle` + `DialogDescription` presentes;
+- `RequesterRequestSummaryHeader.tsx` — card informativo com `openedInLabel` (label amigavel da area com fallback para `areaId`);
+- `RequestsV2Page.tsx` atualizado — deriva `areaLabelById` via `useMemo` a partir do catalogo; passa mapa ao dialog; `handleSelectRequest`, `showDetailDialog`, `selectedRequestId` gerenciados na pagina;
+- `use-requester-workflows.ts` atualizado — `useRequestDetail(requestId, enabled)` com `staleTime: 0`, expoe `stableData` (indexado por `requestId` via `useRef<Map>`) e `hasStableData`; garante ausencia de vazamento entre requests distintos.
+
+**Reutilizacao de infraestrutura existente:**
+- `GET /api/workflows/read/mine` — sem alteracao; usa `queryRequesterHistory(requesterUserId)` ja existente;
+- `GET /api/workflows/read/requests/[requestId]` — sem alteracao; autorizacao por `assertCanReadRequest` ja existente.
+
+**Correcoes pos-build da 2B.2 (5 findings + 2 de qualidade de testes):**
+- M1: `getStatusPresentation` agora retorna `currentStepName?.trim() || fallbackLabel` como label do badge;
+- M2: `Aberto em` resolve `areaLabelById.get(areaId) ?? areaId ?? '-'` — sem novo fetch;
+- M3: `aria-label="Ver detalhes da solicitacao {requestId}"` no botao do olho; testes deixam de usar `name: ''`;
+- M4: hook expoe `stableData` por `requestId`; dialog diferencia erro bloqueante (sem snapshot) de erro nao bloqueante (com snapshot + alerta overlay);
+- S1: `RequestsV2Page.test.tsx` expandido com testes de integracao (render da secao, abertura do dialog via olho, ciclo de fechamento via Escape);
+- S2: `DialogDescription` adicionado ao dialog requester;
+- qualidade de testes: `3` assertions `isEnabled` (propriedade inexistente no retorno de `useQuery` v5) substituidas por `expect(mockFetch*).not.toHaveBeenCalled()`.
+
+**Correcao de runtime error pos-deploy (RangeError: Invalid time value):**
+- `formatExpectedCompletion` em `MyRequestsV2Section` passou a usar `normalizeReadTimestamp` em vez de `timestamp.toDate()` — timestamps serializados da API chegam como `{ _seconds, _nanoseconds }`, nao como instancias de `Timestamp`;
+- `formatTimestamp` em `RequesterRequestSummaryHeader` idem;
+- `adaptTimeline` em `MyRequestDetailDialog` passou a normalizar `item.timestamp` via `normalizeReadTimestamp` antes de passar ao `RequestTimeline` de `management/`, que chama `formatManagementDate` diretamente.
+
+**Estado final dos testes:**
+- `43/43` testes passando em `5` suites cobrindo todo o dominio requester v2:
+  - `WorkflowSubmissionModal.test.tsx`
+  - `RequestsV2Page.test.tsx`
+  - `MyRequestsV2Section.test.tsx`
+  - `MyRequestDetailDialog.test.tsx`
+  - `use-requester-workflows.test.tsx`
+
+**Invariantes criticos da 2B:**
+- catalogo requester filtra `active == true` + `latestPublishedVersion != null` + `allowedUserIds.includes(actorUserId) || 'all'`;
+- `canonicalRequesterName = currentUserCollab?.name?.trim() || ''` — nunca `user.displayName`;
+- `invalidateQueries` pos-abertura invalida apenas `['workflows', 'requester', 'mine']`, nunca o catalogo;
+- dialog requester e estritamente read-only — `permissions` ignorado, sem CTAs operacionais;
+- `staleTime`: `5min` catalogo, `30s` lista mine, `0` detalhe;
+- `stableData` nunca vaza entre `requestId`s distintos;
+- compatibilidade exclusiva com `workflows_v2` — requests legados da colecao `workflows` nao aparecem na superficie v2.
+
+**Gaps conhecidos pos-2B (nao bloqueantes):**
+- `fetchPublishedWorkflow` reutiliza o endpoint de catalogo do admin (`/api/workflows/catalog/[workflowTypeId]`) em vez de um endpoint dedicado para o requester — nao afeta funcionalidade, mas eh acoplamento nao intencional;
+- autorizacao de `GET /api/workflows/read/requests/[requestId]` nao e scope-limitada ao proprio solicitante: `assertCanReadRequest` ja restringe leitura a owner/requester/responsavel/participantes operacionais — considerado suficiente para o fluxo atual.
 
 ### 2C. Cadastro e habilitacao dos workflows restantes
 
@@ -333,7 +413,13 @@ Entregues em `2` builds sequenciais.
 - executar `requestAction` + `respondAction` no ambiente de test;
 - apos validacao, mudar `active: true` nos documentos dos lotes `4` e `5`.
 
-**Proxima macroetapa**: **2B** — nova tela oficial de abertura de chamado.
-- Brainstorm iniciado em `2026-04-10`.
-- Diretriz fechada: nova implementacao sobre o backend `workflowTypes_v2` + runtime, desacoplada do legado `/applications`; limpeza do legado fica para hardening posterior.
-- Referencia piloto existente: `OpenWorkflowCard` em `/pilot/facilities` (usa `DynamicFieldRenderer`, upload via signed URL, `openRequest` do runtime).
+**Smoke da superficie requester v2 (`/solicitacoes`)**:
+- acessar `/solicitacoes` com um usuario que tenha pelo menos um workflow disponivel no catalogo;
+- abrir um chamado, validar o nome do solicitante, confirmar aparicao em `Minhas Solicitacoes`;
+- abrir o detalhe via botao do olho, validar label de area, timeline e campos do formulario;
+- validar que nenhum CTA operacional aparece no dialog do solicitante.
+
+**Proximas macroetapas potenciais**:
+- hardening do legado (`/applications`) para convivencia controlada ou descontinuacao;
+- notificacoes para o solicitante (abertura, avanco de etapa, finalizacao);
+- upload de anexos pelo solicitante no momento da abertura do chamado.
