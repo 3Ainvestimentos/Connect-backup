@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RequestsV2Page } from '../RequestsV2Page';
-import { useRequesterCatalog, useOpenRequesterWorkflow, usePublishedWorkflow } from '@/hooks/use-requester-workflows';
+import { useRequesterCatalog, useOpenRequesterWorkflow, usePublishedWorkflow, useMyRequests, useRequestDetail } from '@/hooks/use-requester-workflows';
 import type { RequesterCatalogArea } from '@/lib/workflows/requester/catalog-types';
 import '@testing-library/jest-dom';
 
@@ -9,6 +9,8 @@ jest.mock('@/hooks/use-requester-workflows', () => ({
   useRequesterCatalog: jest.fn(),
   usePublishedWorkflow: jest.fn(),
   useOpenRequesterWorkflow: jest.fn(),
+  useMyRequests: jest.fn(),
+  useRequestDetail: jest.fn(),
 }));
 
 jest.mock('@/contexts/AuthContext', () => ({
@@ -75,6 +77,19 @@ describe('RequestsV2Page', () => {
     (useOpenRequesterWorkflow as jest.Mock).mockReturnValue({
       mutateAsync: jest.fn().mockResolvedValue({ requestId: 1001, docId: 'abc123' }),
       isPending: false,
+    });
+    // MyRequests default mock
+    (useMyRequests as jest.Mock).mockReturnValue({
+      data: { items: [], groups: [] },
+      isLoading: false,
+      error: null,
+    });
+    // RequestDetail default mock
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: null,
+      isError: false,
     });
   });
 

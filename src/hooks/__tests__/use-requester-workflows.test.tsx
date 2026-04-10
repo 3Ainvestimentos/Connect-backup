@@ -1,8 +1,17 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { useOpenRequesterWorkflow } from '../use-requester-workflows';
-import { openRequesterWorkflow } from '@/lib/workflows/requester/api-client';
+import {
+  useOpenRequesterWorkflow,
+  useMyRequests,
+  useRequestDetail,
+} from '../use-requester-workflows';
+import {
+  openRequesterWorkflow,
+  fetchMyRequests,
+  fetchRequestDetail,
+} from '@/lib/workflows/requester/api-client';
+import type { WorkflowGroupedReadData, WorkflowRequestDetailData } from '@/lib/workflows/read/types';
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
@@ -10,10 +19,14 @@ jest.mock('@/contexts/AuthContext', () => ({
 
 jest.mock('@/lib/workflows/requester/api-client', () => ({
   openRequesterWorkflow: jest.fn(),
+  fetchMyRequests: jest.fn(),
+  fetchRequestDetail: jest.fn(),
 }));
 
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockOpenRequesterWorkflow = openRequesterWorkflow as jest.MockedFunction<typeof openRequesterWorkflow>;
+const mockFetchMyRequests = fetchMyRequests as jest.MockedFunction<typeof fetchMyRequests>;
+const mockFetchRequestDetail = fetchRequestDetail as jest.MockedFunction<typeof fetchRequestDetail>;
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -115,5 +128,112 @@ describe('useOpenRequesterWorkflow', () => {
     await expect(result.current.mutateAsync(payload)).rejects.toThrow(
       'Usuario nao autenticado'
     );
+  });
+
+  it('should invalidate mine query on openRequest success', async () => {
+    const invalidateQueriesSpy = jest.spyOn(QueryClient.prototype, 'invalidateQueries');
+
+    const { result } = renderHook(() => useOpenRequesterWorkflow(), {
+      wrapper: createWrapper(),
+    });
+
+    const payload = {
+      workflowTypeId: 'wf-test-001',
+      requesterName: 'Test User',
+      formData: { description: 'Test' },
+    };
+
+    await result.current.mutateAsync(payload);
+
+    expect(invalidateQueriesSpy).toHaveBeenCalledWith({
+      queryKey: ['workflows', 'requester', 'mine'],
+    });
+
+    invalidateQueriesSpy.mockRestore();
+  });
+});
+
+describe('useMyRequests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: { uid: 'user-1', displayName: 'Test User', email: 'test@example.com' },
+      currentUserCollab: { id: 'collab-1', id3a: '1', name: 'Test User', email: 'test@example.com' },
+    } as any);
+  });
+
+  it('should fetch my requests when user is authenticated', async () => {
+    const mockData: WorkflowGroupedReadData = { items: [], groups: [] };
+    mockFetchMyRequests.mockResolvedValue(mockData);
+
+    const { result } = renderHook(() => useMyRequests(), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockFetchMyRequests).toHaveBeenCalled();
+  });
+
+  it('should not fetch when user is not authenticated', () => {
+    mockUseAuth.mockReturnValue({ user: null, currentUserCollab: null } as any);
+
+    const { result } = renderHook(() => useMyRequests(), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isEnabled).toBe(false);
+  });
+});
+
+describe('useRequestDetail', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: { uid: 'user-1', displayName: 'Test User', email: 'test@example.com' },
+      currentUserCollab: { id: 'collab-1', id3a: '1', name: 'Test User', email: 'test@example.com' },
+    } as any);
+  });
+
+  it('should fetch detail when enabled and requestId is valid', async () => {
+    const mockDetail: WorkflowRequestDetailData = {
+      summary: {} as any,
+      permissions: {} as any,
+      formData: { fields: [], extraFields: [] },
+      attachments: [],
+      progress: { currentStepId: 'step-1', totalSteps: 1, completedSteps: 0, items: [] },
+      action: {} as any,
+      timeline: [],
+    };
+    mockFetchRequestDetail.mockResolvedValue(mockDetail);
+
+    const { result } = renderHook(() => useRequestDetail(1001, true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(mockFetchRequestDetail).toHaveBeenCalled();
+  });
+
+  it('should not fetch when disabled', () => {
+    const { result } = renderHook(() => useRequestDetail(1001, false), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isEnabled).toBe(false);
+  });
+
+  it('should not fetch when requestId is null', () => {
+    const { result } = renderHook(() => useRequestDetail(null, true), {
+      wrapper: createWrapper(),
+    });
+
+    expect(result.current.isEnabled).toBe(false);
   });
 });

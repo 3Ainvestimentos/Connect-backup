@@ -5,6 +5,7 @@ import type {
   OpenRequesterWorkflowInput,
   OpenRequesterWorkflowResult,
 } from './catalog-types';
+import type { WorkflowGroupedReadData, WorkflowRequestDetailData } from '@/lib/workflows/read/types';
 
 type ApiSuccess<T> = {
   ok: true;
@@ -106,4 +107,20 @@ export async function openRequesterWorkflow(
     body: JSON.stringify(payload),
   });
   return data as OpenRequesterWorkflowResult;
+}
+
+export async function fetchMyRequests(user: User): Promise<WorkflowGroupedReadData> {
+  const data = await authenticatedFetch<unknown>(user, '/api/workflows/read/mine');
+  return data as WorkflowGroupedReadData;
+}
+
+export async function fetchRequestDetail(
+  user: User,
+  requestId: number,
+): Promise<WorkflowRequestDetailData> {
+  const data = await authenticatedFetch<unknown>(
+    user,
+    `/api/workflows/read/requests/${requestId}`,
+  );
+  return data as WorkflowRequestDetailData;
 }

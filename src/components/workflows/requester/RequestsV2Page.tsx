@@ -1,10 +1,12 @@
 'use client';
 
 import * as React from 'react';
-import { useRequesterCatalog } from '@/hooks/use-requester-workflows';
+import { useRequesterCatalog, useOpenRequesterWorkflow } from '@/hooks/use-requester-workflows';
 import { WorkflowAreaGrid } from './WorkflowAreaGrid';
 import { WorkflowSelectionModal } from './WorkflowSelectionModal';
 import { WorkflowSubmissionModal } from './WorkflowSubmissionModal';
+import { MyRequestsV2Section } from './MyRequestsV2Section';
+import { MyRequestDetailDialog } from './MyRequestDetailDialog';
 import type { RequesterCatalogArea, RequesterCatalogWorkflow } from '@/lib/workflows/requester/catalog-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +17,8 @@ export function RequestsV2Page() {
   const [selectedWorkflow, setSelectedWorkflow] = React.useState<RequesterCatalogWorkflow | null>(null);
   const [showSelectionModal, setShowSelectionModal] = React.useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = React.useState(false);
+  const [selectedRequestId, setSelectedRequestId] = React.useState<number | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = React.useState(false);
   const { toast } = useToast();
 
   const resetSubmissionFlow = React.useCallback(() => {
@@ -48,6 +52,11 @@ export function RequestsV2Page() {
     setSelectedWorkflow(workflow);
     setShowSelectionModal(false);
     setShowSubmissionModal(true);
+  };
+
+  const handleSelectRequest = (requestId: number) => {
+    setSelectedRequestId(requestId);
+    setShowDetailDialog(true);
   };
 
   return (
@@ -97,6 +106,21 @@ export function RequestsV2Page() {
         }}
         workflow={selectedWorkflow}
         onSuccess={handleSubmissionSuccess}
+      />
+
+      <div className="mt-10">
+        <MyRequestsV2Section onSelectRequest={handleSelectRequest} />
+      </div>
+
+      <MyRequestDetailDialog
+        open={showDetailDialog}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setShowDetailDialog(false);
+            setSelectedRequestId(null);
+          }
+        }}
+        requestId={selectedRequestId}
       />
     </div>
   );
