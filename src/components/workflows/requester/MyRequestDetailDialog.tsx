@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useRequestDetail } from '@/hooks/use-requester-workflows';
+import { normalizeReadTimestamp } from '@/lib/workflows/read/filters';
 import { RequestFormData } from '@/components/workflows/management/RequestFormData';
 import { RequestProgress } from '@/components/workflows/management/RequestProgress';
 import { RequestTimeline } from '@/components/workflows/management/RequestTimeline';
@@ -57,7 +58,10 @@ function adaptProgress(
 function adaptTimeline(
   timeline: WorkflowRequestTimelineItem[],
 ): WorkflowManagementRequestTimelineItem[] {
-  return timeline as unknown as WorkflowManagementRequestTimelineItem[];
+  return timeline.map((item) => ({
+    ...item,
+    timestamp: normalizeReadTimestamp(item.timestamp),
+  })) as unknown as WorkflowManagementRequestTimelineItem[];
 }
 
 export function MyRequestDetailDialog({ open, onOpenChange, requestId, areaLabelById }: MyRequestDetailDialogProps) {
