@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatManagementDate } from '@/lib/workflows/management/presentation';
+import { normalizeReadTimestamp } from '@/lib/workflows/read/filters';
 import type { TimestampLike } from '@/lib/workflows/read/types';
 
 type RequesterRequestSummaryHeaderProps = {
@@ -10,12 +11,12 @@ type RequesterRequestSummaryHeaderProps = {
   workflowName: string | null | undefined;
   lastUpdatedAt: TimestampLike;
   responsibleName: string | null | undefined;
-  areaId: string | null | undefined;
+  openedInLabel: string;
 };
 
 function formatTimestamp(date: TimestampLike, fallback = '-'): string {
-  if (!date) return fallback;
-  const d = date instanceof Date ? date : date.toDate();
+  const d = normalizeReadTimestamp(date);
+  if (!d) return fallback;
   return formatManagementDate(d);
 }
 
@@ -25,7 +26,7 @@ export function RequesterRequestSummaryHeader({
   workflowName,
   lastUpdatedAt,
   responsibleName,
-  areaId,
+  openedInLabel,
 }: RequesterRequestSummaryHeaderProps) {
   return (
     <Card>
@@ -56,7 +57,7 @@ export function RequesterRequestSummaryHeader({
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Aberto em</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{areaId ?? '-'}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{openedInLabel}</p>
           </div>
         </div>
       </CardContent>

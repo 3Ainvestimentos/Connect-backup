@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { FileClock, Inbox, Eye, Timer } from 'lucide-react';
 import { useMyRequests } from '@/hooks/use-requester-workflows';
+import { normalizeReadTimestamp } from '@/lib/workflows/read/filters';
 import type { WorkflowReadSummary } from '@/lib/workflows/read/types';
 import type { TimestampLike } from '@/lib/workflows/read/types';
 
@@ -16,26 +17,34 @@ type MyRequestsV2SectionProps = {
 };
 
 function formatExpectedCompletion(expectedCompletionAt: TimestampLike): string {
-  if (!expectedCompletionAt) return '-';
-
-  const date = expectedCompletionAt instanceof Date ? expectedCompletionAt : expectedCompletionAt.toDate();
+  const date = normalizeReadTimestamp(expectedCompletionAt);
+  if (!date) return '-';
   return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function getStatusPresentation(item: WorkflowReadSummary): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
-  if (item.statusCategory === 'archived') {
-    return { label: 'Arquivado', variant: 'outline' };
-  }
-  if (item.statusCategory === 'finalized') {
-    return { label: 'Concluido', variant: 'secondary' };
-  }
-  if (item.statusCategory === 'waiting_action') {
-    return { label: 'Aguardando acao', variant: 'outline' };
-  }
-  if (item.statusCategory === 'open' && !item.hasResponsible) {
-    return { label: 'Aguardando atribuicao', variant: 'destructive' };
-  }
-  return { label: 'Em andamento', variant: 'default' };
+  const fallbackLabel =
+    item.statusCategory === 'archived'
+      ? 'Arquivado'
+      : item.statusCategory === 'finalized'
+        ? 'Concluido'
+        : item.statusCategory === 'waiting_action'
+          ? 'Aguardando acao'
+          : item.statusCategory === 'open' && !item.hasResponsible
+            ? 'Aguardando atribuicao'
+            : 'Em andamento';
+
+  return {
+    label: item.currentStepName?.trim() || fallbackLabel,
+    variant:
+      item.statusCategory === 'archived'
+        ? 'outline'
+        : item.statusCategory === 'finalized'
+          ? 'secondary'
+          : item.statusCategory === 'open' && !item.hasResponsible
+            ? 'destructive'
+            : 'default',
+  };
 }
 
 export function MyRequestsV2Section({ onSelectRequest }: MyRequestsV2SectionProps) {
@@ -160,6 +169,7 @@ export function MyRequestsV2Section({ onSelectRequest }: MyRequestsV2SectionProp
                         variant="ghost"
                         size="icon"
                         onClick={() => onSelectRequest(item.requestId)}
+                        aria-label={`Ver detalhes da solicitacao ${item.requestId}`}
                         className="hover:bg-muted"
                       >
                         <Eye className="h-5 w-5" />

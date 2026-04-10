@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -28,6 +28,7 @@ type MyRequestDetailDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   requestId: number | null;
+  areaLabelById?: Map<string, string>;
 };
 
 /**
@@ -59,8 +60,17 @@ function adaptTimeline(
   return timeline as unknown as WorkflowManagementRequestTimelineItem[];
 }
 
-export function MyRequestDetailDialog({ open, onOpenChange, requestId }: MyRequestDetailDialogProps) {
-  const { data, isLoading, error, isError } = useRequestDetail(requestId, open);
+export function MyRequestDetailDialog({ open, onOpenChange, requestId, areaLabelById }: MyRequestDetailDialogProps) {
+  const { data, isLoading, error, isError, stableData, hasStableData } = useRequestDetail(requestId, open);
+
+  // Usa stableData como fonte principal, caindo para data quando disponivel
+  const detail = stableData ?? data;
+  const isBlockingError = isError && !hasStableData;
+  const isNonBlockingError = isError && hasStableData;
+
+  const openedInLabel = detail
+    ? (areaLabelById?.get(detail.summary.areaId) ?? detail.summary.areaId ?? '-')
+    : '-';
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -73,22 +83,27 @@ export function MyRequestDetailDialog({ open, onOpenChange, requestId }: MyReque
       <DialogContent className="max-h-[92vh] max-w-5xl overflow-hidden p-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>
-            {data
-              ? `Solicitacao #${data.summary.requestId} — ${data.summary.workflowName}`
+            {detail
+              ? `Solicitacao #${detail.summary.requestId} - ${detail.summary.workflowName}`
               : 'Detalhe da solicitacao'}
           </DialogTitle>
+          <DialogDescription>
+            {detail
+              ? `${detail.summary.workflowName || detail.summary.workflowTypeId} - etapa atual ${detail.summary.currentStepName || '-'}.`
+              : 'Visualizacao read-only do chamado do solicitante.'}
+          </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="max-h-[calc(92vh-146px)]">
           <div className="space-y-6 px-6 py-5">
-            {isLoading && !data ? (
+            {isLoading && !detail ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                 <span className="ml-3 text-sm text-muted-foreground">Carregando detalhe...</span>
               </div>
             ) : null}
 
-            {isError && error ? (
+            {isBlockingError && error ? (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>
@@ -97,20 +112,29 @@ export function MyRequestDetailDialog({ open, onOpenChange, requestId }: MyReque
               </Alert>
             ) : null}
 
-            {data ? (
+            {isNonBlockingError ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Nao foi possivel atualizar os detalhes. Exibindo dados carregados anteriormente.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            {detail ? (
               <>
                 <RequesterRequestSummaryHeader
-                  requesterName={data.summary.requesterName}
-                  submittedAt={data.summary.submittedAt}
-                  workflowName={data.summary.workflowName}
-                  lastUpdatedAt={data.summary.lastUpdatedAt}
-                  responsibleName={data.summary.responsibleName}
-                  areaId={data.summary.areaId}
+                  requesterName={detail.summary.requesterName}
+                  submittedAt={detail.summary.submittedAt}
+                  workflowName={detail.summary.workflowName}
+                  lastUpdatedAt={detail.summary.lastUpdatedAt}
+                  responsibleName={detail.summary.responsibleName}
+                  openedInLabel={openedInLabel}
                 />
-                <RequestFormData formData={adaptFormData(data.formData)} />
-                <RequestProgress progress={adaptProgress(data.progress)} />
-                <RequestTimeline timeline={adaptTimeline(data.timeline)} />
-                <RequestAttachments attachments={adaptAttachments(data.attachments)} />
+                <RequestFormData formData={adaptFormData(detail.formData)} />
+                <RequestProgress progress={adaptProgress(detail.progress)} />
+                <RequestTimeline timeline={adaptTimeline(detail.timeline)} />
+                <RequestAttachments attachments={adaptAttachments(detail.attachments)} />
               </>
             ) : null}
           </div>

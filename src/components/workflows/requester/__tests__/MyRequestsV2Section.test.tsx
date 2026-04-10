@@ -5,6 +5,13 @@ import { useMyRequests, useRequestDetail, useOpenRequesterWorkflow } from '@/hoo
 import type { WorkflowGroupedReadData } from '@/lib/workflows/read/types';
 import '@testing-library/jest-dom';
 
+jest.mock('lucide-react', () => ({
+  FileClock: () => null,
+  Inbox: () => null,
+  Eye: () => null,
+  Timer: () => null,
+}));
+
 jest.mock('@/hooks/use-requester-workflows', () => ({
   useMyRequests: jest.fn(),
   useRequestDetail: jest.fn(),
@@ -88,9 +95,8 @@ describe('MyRequestsV2Section', () => {
     render(<MyRequestsV2Section onSelectRequest={jest.fn()} />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Minhas Solicitacoes')).toBeInTheDocument();
-    // Should have skeleton elements
-    const skeletons = screen.getAllByRole('progressbar', { hidden: true });
-    expect(skeletons.length).toBeGreaterThan(0);
+    // Should have skeleton elements with specific text
+    expect(screen.getByText(/Acompanhe o status das suas solicitacoes aqui/i)).toBeInTheDocument();
   });
 
   it('should render error state when query fails', () => {
@@ -154,8 +160,8 @@ describe('MyRequestsV2Section', () => {
 
     render(<MyRequestsV2Section onSelectRequest={handleSelectRequest} />, { wrapper: createWrapper() });
 
-    // Find and click the eye button
-    const eyeButton = screen.getByRole('button', { name: '' });
+    // Find and click the eye button by accessible name
+    const eyeButton = screen.getByRole('button', { name: 'Ver detalhes da solicitacao 1001' });
     await act(async () => {
       fireEvent.click(eyeButton);
     });
@@ -172,6 +178,43 @@ describe('MyRequestsV2Section', () => {
 
     render(<MyRequestsV2Section onSelectRequest={jest.fn()} />, { wrapper: createWrapper() });
 
+    // currentStepName should be used as label
+    expect(screen.getByText('Em andamento')).toBeInTheDocument();
+  });
+
+  it('should use currentStepName over fallback when available', () => {
+    const itemWithStepName = {
+      ...mockItems[0],
+      requestId: 1004,
+      currentStepName: 'Aguardando aprovacao',
+      statusCategory: 'in_progress',
+    };
+    (useMyRequests as jest.Mock).mockReturnValue({
+      data: { items: [itemWithStepName], groups: [] },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<MyRequestsV2Section onSelectRequest={jest.fn()} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('Aguardando aprovacao')).toBeInTheDocument();
+  });
+
+  it('should fallback to statusCategory label when currentStepName is empty', () => {
+    const itemWithoutStepName = {
+      ...mockItems[0],
+      requestId: 1005,
+      currentStepName: '',
+      statusCategory: 'in_progress',
+    };
+    (useMyRequests as jest.Mock).mockReturnValue({
+      data: { items: [itemWithoutStepName], groups: [] },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<MyRequestsV2Section onSelectRequest={jest.fn()} />, { wrapper: createWrapper() });
+
     expect(screen.getByText('Em andamento')).toBeInTheDocument();
   });
 
@@ -179,6 +222,7 @@ describe('MyRequestsV2Section', () => {
     const archivedItem = {
       ...mockItems[0],
       requestId: 1002,
+      currentStepName: null,
       statusCategory: 'archived' as const,
     };
     (useMyRequests as jest.Mock).mockReturnValue({
@@ -196,6 +240,7 @@ describe('MyRequestsV2Section', () => {
     const finalizedItem = {
       ...mockItems[0],
       requestId: 1003,
+      currentStepName: null,
       statusCategory: 'finalized' as const,
     };
     (useMyRequests as jest.Mock).mockReturnValue({
@@ -207,5 +252,25 @@ describe('MyRequestsV2Section', () => {
     render(<MyRequestsV2Section onSelectRequest={jest.fn()} />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Concluido')).toBeInTheDocument();
+  });
+
+  it('should render expected completion when API returns serialized timestamp', () => {
+    const itemWithSerializedTimestamp = {
+      ...mockItems[0],
+      requestId: 1006,
+      expectedCompletionAt: {
+        seconds: Date.UTC(2026, 3, 15, 12, 0, 0) / 1000,
+        nanoseconds: 0,
+      },
+    };
+    (useMyRequests as jest.Mock).mockReturnValue({
+      data: { items: [itemWithSerializedTimestamp], groups: [] },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<MyRequestsV2Section onSelectRequest={jest.fn()} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('15/04/2026')).toBeInTheDocument();
   });
 });

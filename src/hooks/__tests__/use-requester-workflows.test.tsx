@@ -185,7 +185,7 @@ describe('useMyRequests', () => {
     });
 
     expect(result.current.isLoading).toBe(false);
-    expect(result.current.isEnabled).toBe(false);
+    expect(mockFetchMyRequests).not.toHaveBeenCalled();
   });
 });
 
@@ -222,18 +222,88 @@ describe('useRequestDetail', () => {
   });
 
   it('should not fetch when disabled', () => {
-    const { result } = renderHook(() => useRequestDetail(1001, false), {
+    renderHook(() => useRequestDetail(1001, false), {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.isEnabled).toBe(false);
+    expect(mockFetchRequestDetail).not.toHaveBeenCalled();
   });
 
   it('should not fetch when requestId is null', () => {
-    const { result } = renderHook(() => useRequestDetail(null, true), {
+    renderHook(() => useRequestDetail(null, true), {
       wrapper: createWrapper(),
     });
 
-    expect(result.current.isEnabled).toBe(false);
+    expect(mockFetchRequestDetail).not.toHaveBeenCalled();
+  });
+
+  it('should expose stableData after successful fetch', async () => {
+    const mockDetail: WorkflowRequestDetailData = {
+      summary: { requestId: 1001 } as any,
+      permissions: {} as any,
+      formData: { fields: [], extraFields: [] },
+      attachments: [],
+      progress: { currentStepId: 'step-1', totalSteps: 1, completedSteps: 0, items: [] },
+      action: {} as any,
+      timeline: [],
+    };
+    mockFetchRequestDetail.mockResolvedValue(mockDetail);
+
+    const { result } = renderHook(() => useRequestDetail(1001, true), {
+      wrapper: createWrapper(),
+    });
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    expect(result.current.stableData).toEqual(mockDetail);
+    expect(result.current.hasStableData).toBe(true);
+  });
+
+  it('should not leak stableData between different requestIds', async () => {
+    const mockDetail1: WorkflowRequestDetailData = {
+      summary: { requestId: 1001 } as any,
+      permissions: {} as any,
+      formData: { fields: [], extraFields: [] },
+      attachments: [],
+      progress: { currentStepId: 'step-1', totalSteps: 1, completedSteps: 0, items: [] },
+      action: {} as any,
+      timeline: [],
+    };
+    const mockDetail2: WorkflowRequestDetailData = {
+      summary: { requestId: 1002 } as any,
+      permissions: {} as any,
+      formData: { fields: [], extraFields: [] },
+      attachments: [],
+      progress: { currentStepId: 'step-1', totalSteps: 1, completedSteps: 0, items: [] },
+      action: {} as any,
+      timeline: [],
+    };
+
+    mockFetchRequestDetail.mockResolvedValueOnce(mockDetail1);
+
+    const { result, rerender } = renderHook(
+      ({ requestId, enabled }) => useRequestDetail(requestId, enabled),
+      {
+        wrapper: createWrapper(),
+        initialProps: { requestId: 1001, enabled: true },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.stableData?.summary.requestId).toBe(1001);
+    });
+
+    // Switch to a different requestId
+    mockFetchRequestDetail.mockResolvedValueOnce(mockDetail2);
+    rerender({ requestId: 1002, enabled: true });
+
+    await waitFor(() => {
+      expect(result.current.stableData?.summary.requestId).toBe(1002);
+    });
+
+    // stableData for 1002 should not contain 1001
+    expect(result.current.stableData?.summary.requestId).toBe(1002);
   });
 });

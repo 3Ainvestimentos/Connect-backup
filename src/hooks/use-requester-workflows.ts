@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -82,6 +83,7 @@ export function useMyRequests() {
 
 export function useRequestDetail(requestId: number | null, enabled: boolean) {
   const { user } = useAuth();
+  const lastSuccessfulRef = React.useRef<Map<number, WorkflowRequestDetailData>>(new Map());
 
   const query = useQuery<WorkflowRequestDetailData>({
     queryKey: ['workflows', 'requester', 'detail', requestId],
@@ -93,5 +95,18 @@ export function useRequestDetail(requestId: number | null, enabled: boolean) {
     staleTime: 0,
   });
 
-  return query;
+  React.useEffect(() => {
+    if (requestId != null && query.data) {
+      lastSuccessfulRef.current.set(requestId, query.data);
+    }
+  }, [requestId, query.data]);
+
+  const stableData =
+    requestId != null ? (query.data ?? lastSuccessfulRef.current.get(requestId)) : undefined;
+
+  return {
+    ...query,
+    stableData,
+    hasStableData: Boolean(stableData),
+  };
 }

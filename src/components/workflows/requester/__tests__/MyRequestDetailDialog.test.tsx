@@ -135,6 +135,8 @@ const mockDetail: WorkflowRequestDetailData = {
   ],
 };
 
+const mockAreaLabelById = new Map([['facilities', 'Facilities']]);
+
 describe('MyRequestDetailDialog', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -155,10 +157,12 @@ describe('MyRequestDetailDialog', () => {
       isLoading: true,
       error: null,
       isError: false,
+      stableData: undefined,
+      hasStableData: false,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -171,10 +175,12 @@ describe('MyRequestDetailDialog', () => {
       isLoading: false,
       error: new Error('Network error'),
       isError: true,
+      stableData: undefined,
+      hasStableData: false,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -184,15 +190,32 @@ describe('MyRequestDetailDialog', () => {
   });
 
   it('should render summary header with correct fields', () => {
+    const detailWithSerializedTimestamps: WorkflowRequestDetailData = {
+      ...mockDetail,
+      summary: {
+        ...mockDetail.summary,
+        submittedAt: {
+          seconds: Date.UTC(2026, 3, 10, 14, 30, 0) / 1000,
+          nanoseconds: 0,
+        } as any,
+        lastUpdatedAt: {
+          _seconds: Date.UTC(2026, 3, 11, 9, 15, 0) / 1000,
+          _nanoseconds: 0,
+        } as any,
+      },
+    };
+
     (useRequestDetail as jest.Mock).mockReturnValue({
-      data: mockDetail,
+      data: detailWithSerializedTimestamps,
       isLoading: false,
       error: null,
       isError: false,
+      stableData: detailWithSerializedTimestamps,
+      hasStableData: true,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -207,9 +230,31 @@ describe('MyRequestDetailDialog', () => {
     expect(screen.getByText('Ultima Atualizacao')).toBeInTheDocument();
     expect(screen.getByText('Responsavel')).toBeInTheDocument();
     expect(screen.getByText('Aberto em')).toBeInTheDocument();
-    expect(screen.getByText('facilities')).toBeInTheDocument();
+    // openedInLabel should be resolved from areaLabelById
+    expect(screen.getByText('Facilities')).toBeInTheDocument();
+    expect(screen.getByText('10/04/2026 as 11:30')).toBeInTheDocument();
+    expect(screen.getByText('11/04/2026 as 06:15')).toBeInTheDocument();
     // Test User appears in both summary and timeline, so use queryAll
     expect(screen.getAllByText('Test User').length).toBeGreaterThan(0);
+  });
+
+  it('should render DialogDescription for accessibility', () => {
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: mockDetail,
+      isLoading: false,
+      error: null,
+      isError: false,
+      stableData: mockDetail,
+      hasStableData: true,
+    });
+
+    render(
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
+      { wrapper: createWrapper() },
+    );
+
+    // DialogDescription should be present with workflow info
+    expect(screen.getByText(/Manutencao Geral - etapa atual Em andamento/i)).toBeInTheDocument();
   });
 
   it('should render formData section', () => {
@@ -218,10 +263,12 @@ describe('MyRequestDetailDialog', () => {
       isLoading: false,
       error: null,
       isError: false,
+      stableData: mockDetail,
+      hasStableData: true,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -236,10 +283,12 @@ describe('MyRequestDetailDialog', () => {
       isLoading: false,
       error: null,
       isError: false,
+      stableData: mockDetail,
+      hasStableData: true,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -255,10 +304,12 @@ describe('MyRequestDetailDialog', () => {
       isLoading: false,
       error: null,
       isError: false,
+      stableData: mockDetail,
+      hasStableData: true,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -282,10 +333,12 @@ describe('MyRequestDetailDialog', () => {
       isLoading: false,
       error: null,
       isError: false,
+      stableData: detailWithPerms,
+      hasStableData: true,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -303,10 +356,12 @@ describe('MyRequestDetailDialog', () => {
       isLoading: false,
       error: null,
       isError: false,
+      stableData: mockDetail,
+      hasStableData: true,
     });
 
     render(
-      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
@@ -322,14 +377,60 @@ describe('MyRequestDetailDialog', () => {
       isLoading: false,
       error: null,
       isError: false,
+      stableData: undefined,
+      hasStableData: false,
     });
 
     render(
-      <MyRequestDetailDialog open={false} onOpenChange={jest.fn()} requestId={1001} />,
+      <MyRequestDetailDialog open={false} onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
       { wrapper: createWrapper() },
     );
 
     // Query should be disabled, so no loading/error/data
     expect(screen.queryByText('Carregando detalhe...')).not.toBeInTheDocument();
+  });
+
+  it('should show non-blocking error alert when stableData exists but fetch fails', () => {
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('Network error'),
+      isError: true,
+      stableData: mockDetail,
+      hasStableData: true,
+    });
+
+    render(
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={mockAreaLabelById} />,
+      { wrapper: createWrapper() },
+    );
+
+    // Should show non-blocking error message
+    expect(
+      screen.getByText(/Nao foi possivel atualizar os detalhes. Exibindo dados carregados anteriormente/i)
+    ).toBeInTheDocument();
+    // Should still show detail content from stableData
+    expect(screen.getByText('Manutencao Geral')).toBeInTheDocument();
+    expect(screen.getByText('Facilities')).toBeInTheDocument();
+  });
+
+  it('should fallback to areaId when areaLabelById does not have the area', () => {
+    const emptyMap = new Map<string, string>();
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: mockDetail,
+      isLoading: false,
+      error: null,
+      isError: false,
+      stableData: mockDetail,
+      hasStableData: true,
+    });
+
+    render(
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={emptyMap} />,
+      { wrapper: createWrapper() },
+    );
+
+    // Should fallback to raw areaId
+    expect(screen.getByText('facilities')).toBeInTheDocument();
   });
 });

@@ -21,6 +21,10 @@ export function RequestsV2Page() {
   const [showDetailDialog, setShowDetailDialog] = React.useState(false);
   const { toast } = useToast();
 
+  const areaLabelById = React.useMemo(() => {
+    return new Map((catalog ?? []).map((area) => [area.areaId, area.areaName]));
+  }, [catalog]);
+
   const resetSubmissionFlow = React.useCallback(() => {
     setShowSubmissionModal(false);
     setSelectedWorkflow(null);
@@ -121,6 +125,7 @@ export function RequestsV2Page() {
           }
         }}
         requestId={selectedRequestId}
+        areaLabelById={areaLabelById}
       />
     </div>
   );
