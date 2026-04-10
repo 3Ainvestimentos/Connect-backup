@@ -1,6 +1,6 @@
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
-import { buildWorkflowRequestDetail } from '@/lib/workflows/read/detail';
+import { buildAdminWorkflowRequestDetail } from '@/lib/workflows/read/detail';
 import { mapWorkflowRequestToReadSummary } from '@/lib/workflows/read/queries';
 import { normalizeReadTimestamp } from '@/lib/workflows/read/filters';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
@@ -101,11 +101,10 @@ export async function getAdminV2HistoryDetail(
     );
   }
 
-  const detail = buildWorkflowRequestDetail({
+  const detail = buildAdminWorkflowRequestDetail({
     docId: requestEntry.docId,
     request: requestEntry.data,
     version,
-    actorUserId: requestEntry.data.ownerUserId,
   });
 
   const permissions = {
@@ -126,11 +125,6 @@ export async function getAdminV2HistoryDetail(
     detail: {
       ...detail,
       permissions,
-      action: {
-        ...detail.action,
-        canRequest: false,
-        canRespond: false,
-      },
     },
     permissions,
   };
