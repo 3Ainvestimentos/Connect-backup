@@ -31,8 +31,9 @@ O projeto precisa colocar em producao as superficies v2 de workflows apos a conc
 | M4 | Preservacao do legado durante o rollout inicial | `/requests`, `/me/tasks`, `/applications` e `/admin/workflows` continuam operacionais e semanticamente intactos durante o piloto e a primeira onda de liberacao |
 | M5 | Piloto fechado com quatro usuarios | Apenas voce e mais 3 admins recebem as tres permissoes v2 na Fase 2 do rollout; o restante da empresa permanece sem visibilidade das telas v2 |
 | M6 | Smoke tecnico e operacional apos deploy | Existe checklist executavel para usuario sem permissao, piloto, admin de gestao e admin de configuracao; o rollout nao avanca sem esse smoke minimo aprovado |
-| M7 | Kill-switch operacional sem rollback de codigo | O super admin consegue desligar as tres permissoes v2 e remover imediatamente a visibilidade/acesso da feature para o piloto ou para toda a empresa sem novo deploy |
+| M7 | Kill-switch operacional sem rollback de codigo | O super admin consegue desligar manualmente as tres permissoes v2 e remover imediatamente a visibilidade/acesso da feature para o piloto ou para toda a empresa sem novo deploy; o kill-switch e o proprio desligamento dos toggles, sem script ou mecanismo paralelo |
 | M8 | Criterio objetivo para segunda onda | A liberacao ampla so ocorre apos smoke aprovado, ausencia de regressao no legado e estabilidade do piloto durante o periodo definido pelo rollout |
+| M9 | Entrada dedicada de `Solicitacoes V2` no menu lateral | Usuarios com `canOpenRequestsV2` veem a nova rota `/solicitacoes` na sidebar autenticada com o mesmo icone da tela legada `/applications`; usuarios sem permissao nao veem a entrada |
 
 ### SHOULD Have
 
@@ -86,6 +87,7 @@ O projeto precisa colocar em producao as superficies v2 de workflows apos a conc
 | Component | Change Type | Details |
 |-----------|------------|---------|
 | Menu principal autenticado | Modify | Exibir links v2 apenas para usuarios com as novas permissoes e preservar menus legados durante a convivencia |
+| Sidebar autenticada | Modify | Adicionar entrada dedicada para `/solicitacoes` usando o mesmo icone visual da tela legada `/applications`, gated por `canOpenRequestsV2` |
 | Rotas `/gestao-de-chamados`, `/solicitacoes`, `/admin/request-config` | Modify | Aplicar guards de pagina coerentes com as novas permissoes e comportamento de rollout |
 | Tela administrativa de permissoes | Modify | Exibir labels administrativas finais das permissoes v2 e, opcionalmente, labels legadas menos ambiguas |
 
@@ -109,7 +111,7 @@ O projeto precisa colocar em producao as superficies v2 de workflows apos a conc
 | Authentication | Todas as superficies v2 continuam dentro da area autenticada existente; usuario anonimo nao acessa menus nem rotas |
 | Role-based access | `canOpenRequestsV2` controla `/solicitacoes`; `canManageRequestsV2` controla `/gestao-de-chamados`; `canManageWorkflowsV2` controla `/admin/request-config` |
 | User isolation | Usuarios sem permissao v2 nao podem ver links nem usar acesso direto por URL; gates client-side e server-side precisam ser coerentes |
-| Admin operation | Apenas super admin ou fluxo administrativo equivalente pode ligar/desligar as permissoes v2 para rollout e rollback operacional |
+| Admin operation | Apenas super admin ou fluxo administrativo equivalente pode ligar/desligar as permissoes v2 para rollout e rollback operacional; o kill-switch consiste apenas em desligar esses mesmos toggles de permissao |
 | Input validation | Mudancas de permissoes precisam validar payload e manter compatibilidade com o modelo atual de colaboradores/permissoes |
 
 ## 7. Out of Scope
@@ -132,7 +134,77 @@ O projeto precisa colocar em producao as superficies v2 de workflows apos a conc
 | Lista final dos 4 usuarios piloto | Operational | Required before deploy |
 | Janela de deploy em horario comercial com owner definido | Operational | Required before deploy |
 
-## 9. Clarity Score
+## 9. Sequenciamento Proposto
+
+### 9.1. Navegacao e guards de pagina das 3 superficies
+
+Objetivo:
+Fazer com que menu, sidebar, helpers de navegacao e guards de pagina passem a obedecer exclusivamente as novas permissoes v2.
+
+Escopo:
+- `canOpenRequestsV2` controla a entrada e a pagina de `/solicitacoes`
+- `canManageRequestsV2` controla a entrada e a pagina de `/gestao-de-chamados`
+- `canManageWorkflowsV2` controla a entrada e a pagina de `/admin/request-config`
+- A sidebar autenticada deve ganhar a entrada dedicada de `Solicitacoes V2` com o mesmo icone da tela legada `/applications`
+
+Resultado esperado:
+- Usuario sem permissao nao ve o item no menu/sidebar
+- Usuario sem permissao nao acessa a pagina por URL direta
+- Usuario com a permissao correta ve apenas a superficie correspondente
+
+### 9.2. Gates server-side das 3 superficies
+
+Objetivo:
+Garantir que APIs, loaders e qualquer acesso server-side respeitem as mesmas tres permissoes, para que ocultacao visual nao seja a unica barreira.
+
+Escopo:
+- Validacao server-side de `canOpenRequestsV2` nas rotas da abertura v2
+- Validacao server-side de `canManageRequestsV2` nas rotas da gestao v2
+- Validacao server-side de `canManageWorkflowsV2` nas rotas da configuracao v2
+
+Resultado esperado:
+- URL direta sem permissao falha de forma controlada
+- Endpoint v2 sem permissao responde negando acesso
+- Menu, pagina e backend ficam coerentes entre si
+
+### 9.3. Tela administrativa de permissoes
+
+Objetivo:
+Expor as tres permissoes v2 com labels finais claros e default `false`, preservando a operacao segura do rollout.
+
+Escopo:
+- Adicionar/exibir `Gestao Chamados V2`
+- Adicionar/exibir `Config Chamados V2`
+- Adicionar/exibir `Solicitacoes V2`
+- Garantir default `false` fora do piloto
+
+Resultado esperado:
+- O super admin identifica com clareza quais toggles controlam as superficies v2
+- As permissoes legadas continuam existindo sem quebrar compatibilidade
+
+### 9.4. Procedimento de deploy/rollout
+
+Objetivo:
+Formalizar a execucao do rollout em producao sem confundir tarefas manuais com tarefas automatizaveis pelo build.
+
+Escopo:
+- Documentar merge em `master` e deploy escuro
+- Documentar piloto fechado com voce + 3 admins
+- Documentar smoke tecnico e operacional a ser executado apos o deploy
+- Documentar kill-switch operacional como desligamento manual dos toggles de permissao v2
+- Documentar criterio de abertura gradual para a segunda onda
+
+Regra operacional importante:
+- A liberacao e remocao das permissoes dos usuarios piloto sera feita manualmente pelo time responsavel; os artefatos devem apenas citar esse passo, nao automatiza-lo
+- Nao havera script dedicado de kill-switch; o controle de acesso e o desligamento emergencial usam a mesma camada de toggles/permissoes
+- O smoke test pode e deve ser coberto pelo build/LLM naquilo que for verificavel em codigo, navegação, guards e fluxos previstos
+
+Resultado esperado:
+- Deploy e enablement ficam claramente separados
+- Operacao manual de permissoes fica documentada, mas nao acoplada ao codigo
+- Smoke minimo fica executavel e repetivel
+
+## 10. Clarity Score
 
 | Dimension | Score (0-3) | Notes |
 |-----------|------------|-------|
@@ -143,9 +215,23 @@ O projeto precisa colocar em producao as superficies v2 de workflows apos a conc
 | Edge cases considered | 2 | Ha boa cobertura de rollout, piloto e rollback; detalhes finais de ownership/comunicacao ficam para design operacional |
 | **TOTAL** | **14/15** | Pronto para `/design` |
 
-## 10. Next Step
+## 11. Next Step
 
-Ready for `/design DEPLOY_ROLLOUT_POS_2B_FASE2` to definir o procedimento tecnico-operacional, arquivos afetados, estrategia de validacao e plano de execucao do rollout.
+Quebrar o rollout em subetapas sequenciais antes do design final:
+
+1. Gates e navegacao base
+   Atualizar menu, sidebar, helpers de navegacao e guards de pagina para que as tres superficies v2 dependam exclusivamente das novas permissoes:
+   `canOpenRequestsV2` para abertura em `/solicitacoes`,
+   `canManageRequestsV2` para gestao em `/gestao-de-chamados`,
+   `canManageWorkflowsV2` para configuracao em `/admin/request-config`.
+2. Gates server-side e protecao de endpoints
+   Garantir que rotas API e loaders server-side validem `canOpenRequestsV2`, `canManageRequestsV2` e `canManageWorkflowsV2`.
+3. Tela administrativa de permissoes e labels finais
+   Expor os novos toggles com nomes administrativos claros e defaults seguros (`false`).
+4. Procedimento operacional de deploy e rollout
+   Formalizar merge, deploy escuro, piloto de 4 usuarios, smoke, kill-switch e criterio de segunda onda.
+
+Depois disso, seguir para `/design DEPLOY_ROLLOUT_POS_2B_FASE2` com a execucao ja fatiada por ordem de implementacao.
 
 ---
 
@@ -154,3 +240,4 @@ Ready for `/design DEPLOY_ROLLOUT_POS_2B_FASE2` to definir o procedimento tecnic
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-04-10 | Codex (`define` skill) | Initial requirements from `BRAINSTORM_DEPLOY_ROLLOUT_POS_2B_FASE2.md` |
+| 1.1 | 2026-04-11 | Codex (`iterate` skill) | Split rollout into 4 sequential sections; clarified sidebar entry for `/solicitacoes`; documented manual permission enablement vs build-executable smoke |
