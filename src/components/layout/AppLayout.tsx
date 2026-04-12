@@ -60,6 +60,7 @@ export const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false, permission: null },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false, permission: null },
   { href: '/applications', label: 'Solicitações', icon: Workflow, external: false, permission: null },
+  { href: '/solicitacoes', label: 'Solicitacoes V2', icon: Workflow, external: false, permission: 'canOpenRequestsV2' },
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false, permission: null },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
   { href: '/rankings', label: 'Rankings e Campanhas', icon: Award, external: false, permission: 'canViewRankings' },
@@ -90,7 +91,7 @@ export function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }:
   const hasPendingWorkflowWork = hasPendingRequests || hasPendingTasks;
   const showLegacyWorkflowLinks = permissions.canManageRequests || permissions.canViewTasks;
 
-  const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
+  const hasTools = permissions.canManageRequestsV2 || permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
   const hasAdminPanels =
     permissions.canManageContent ||
     permissions.canManageWorkflows ||

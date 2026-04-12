@@ -11,6 +11,8 @@ export interface CollaboratorPermissions {
   canManageWorkflows: boolean;
   canManageWorkflowsV2?: boolean;
   canManageRequests: boolean;
+  canManageRequestsV2?: boolean;
+  canOpenRequestsV2?: boolean;
   canManageContent: boolean;
   canManageTripsBirthdays: boolean;
   canViewTasks: boolean;
@@ -67,6 +69,8 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageWorkflows: false,
   canManageWorkflowsV2: false,
   canManageRequests: false,
+  canManageRequestsV2: false,
+  canOpenRequestsV2: false,
   canManageContent: false,
   canManageTripsBirthdays: false,
   canViewTasks: false,

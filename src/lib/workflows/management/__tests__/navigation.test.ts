@@ -1,29 +1,39 @@
 import { canAccessWorkflowManagementEntry } from '../navigation';
 
 describe('canAccessWorkflowManagementEntry', () => {
-  it('returns true when the user can manage requests', () => {
+  it('returns true when the user has canManageRequestsV2', () => {
+    expect(
+      canAccessWorkflowManagementEntry({
+        canManageRequestsV2: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('returns false when canManageRequestsV2 is false even if legacy permissions are true', () => {
+    expect(
+      canAccessWorkflowManagementEntry({
+        canManageRequests: true,
+        canViewTasks: true,
+        canManageRequestsV2: false,
+      }),
+    ).toBe(false);
+  });
+
+  it('returns false when canManageRequestsV2 is absent', () => {
     expect(
       canAccessWorkflowManagementEntry({
         canManageRequests: true,
         canViewTasks: false,
       }),
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  it('returns true when the user can view tasks even without request management', () => {
-    expect(
-      canAccessWorkflowManagementEntry({
-        canManageRequests: false,
-        canViewTasks: true,
-      }),
-    ).toBe(true);
-  });
-
-  it('returns false when both transitional permissions are absent', () => {
+  it('returns false when all permissions are absent or false', () => {
     expect(
       canAccessWorkflowManagementEntry({
         canManageRequests: false,
         canViewTasks: false,
+        canManageRequestsV2: false,
       }),
     ).toBe(false);
     expect(canAccessWorkflowManagementEntry()).toBe(false);

@@ -46,6 +46,8 @@ const defaultPermissions: CollaboratorPermissions = {
   canManageWorkflows: false,
   canManageWorkflowsV2: false,
   canManageRequests: false,
+  canManageRequestsV2: false,
+  canOpenRequestsV2: false,
   canManageContent: false,
   canManageTripsBirthdays: false,
   canViewTasks: false,

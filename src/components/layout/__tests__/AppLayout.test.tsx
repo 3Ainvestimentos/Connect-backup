@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCollaborators } from '@/contexts/CollaboratorsContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { UserNav } from '../AppLayout';
+import { UserNav, AppLayout } from '../AppLayout';
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
@@ -149,6 +149,8 @@ describe('AppLayout workflow dropdown rollout', () => {
         canManageContent: false,
         canManageWorkflows: false,
         canManageWorkflowsV2: false,
+        canManageRequestsV2: false,
+        canOpenRequestsV2: false,
         canManageTripsBirthdays: false,
       },
     } as unknown as ReturnType<typeof useAuth>);
@@ -173,6 +175,33 @@ describe('AppLayout workflow dropdown rollout', () => {
   it('promotes the official route and groups legacy entries under a transition label', async () => {
     const user = userEvent.setup();
 
+    // Gate da gestao oficial mudou para canManageRequestsV2; usuario em transicao
+    // tem canManageRequestsV2 + permissoes legadas simultaneamente.
+    mockUseAuth.mockReturnValue({
+      user: {
+        email: 'owner@3ariva.com.br',
+        displayName: 'Owner',
+        photoURL: null,
+      },
+      signOut: jest.fn(),
+      loading: false,
+      isAdmin: false,
+      isSuperAdmin: false,
+      permissions: {
+        canManageRequests: true,
+        canViewTasks: true,
+        canViewCRM: false,
+        canViewStrategicPanel: false,
+        canViewDirectoria: false,
+        canManageContent: false,
+        canManageWorkflows: false,
+        canManageWorkflowsV2: false,
+        canManageRequestsV2: true,
+        canOpenRequestsV2: false,
+        canManageTripsBirthdays: false,
+      },
+    } as unknown as ReturnType<typeof useAuth>);
+
     render(
       <UserNav
         onProfileClick={() => {}}
@@ -193,6 +222,23 @@ describe('AppLayout workflow dropdown rollout', () => {
     expect(legacyLabel).toBeTruthy();
     expect(requestsLink.getAttribute('href')).toBe('/requests');
     expect(tasksLink.getAttribute('href')).toBe('/me/tasks');
+  });
+
+  it('hides the official management link when canManageRequestsV2 is false', async () => {
+    const user = userEvent.setup();
+
+    // beforeEach ja configura canManageRequestsV2: false
+    render(
+      <UserNav
+        onProfileClick={() => {}}
+        hasPendingRequests={false}
+        hasPendingTasks={false}
+      />,
+    );
+
+    await user.click(screen.getByRole('button'));
+
+    expect(screen.queryByRole('link', { name: /Gestao de chamados/i })).toBeNull();
   });
 
   it('shows the request config v2 admin entry only when the dedicated permission is present', async () => {
@@ -217,6 +263,8 @@ describe('AppLayout workflow dropdown rollout', () => {
         canManageContent: false,
         canManageWorkflows: false,
         canManageWorkflowsV2: true,
+        canManageRequestsV2: false,
+        canOpenRequestsV2: false,
         canManageTripsBirthdays: false,
       },
     } as unknown as ReturnType<typeof useAuth>);
@@ -234,5 +282,53 @@ describe('AppLayout workflow dropdown rollout', () => {
     const requestConfigLink = screen.getByRole('link', { name: /Config. de chamados v2/i });
     expect(requestConfigLink.getAttribute('href')).toBe('/admin/request-config');
     expect(screen.queryByRole('link', { name: /^Workflows$/i })).toBeNull();
+  });
+});
+
+describe('AppLayout sidebar permission filtering', () => {
+  function buildAuthMock(permissionOverrides: Record<string, boolean> = {}) {
+    return {
+      user: {
+        email: 'owner@3ariva.com.br',
+        displayName: 'Owner',
+        photoURL: null,
+      },
+      signOut: jest.fn(),
+      loading: false,
+      isAdmin: false,
+      isSuperAdmin: false,
+      permissions: {
+        canManageRequests: false,
+        canViewTasks: false,
+        canViewCRM: false,
+        canViewStrategicPanel: false,
+        canViewDirectoria: false,
+        canManageContent: false,
+        canManageWorkflows: false,
+        canManageWorkflowsV2: false,
+        canManageRequestsV2: false,
+        canOpenRequestsV2: false,
+        canManageTripsBirthdays: false,
+        ...permissionOverrides,
+      },
+    } as unknown as ReturnType<typeof useAuth>;
+  }
+
+  it('shows the Solicitacoes V2 sidebar entry when canOpenRequestsV2 is true', () => {
+    mockUseAuth.mockReturnValue(buildAuthMock({ canOpenRequestsV2: true }));
+
+    render(<AppLayout>conteudo</AppLayout>);
+
+    const link = screen.getByRole('link', { name: /Solicitacoes V2/i });
+    expect(link).toBeDefined();
+    expect(link.getAttribute('href')).toBe('/solicitacoes');
+  });
+
+  it('hides the Solicitacoes V2 sidebar entry when canOpenRequestsV2 is false', () => {
+    mockUseAuth.mockReturnValue(buildAuthMock({ canOpenRequestsV2: false }));
+
+    render(<AppLayout>conteudo</AppLayout>);
+
+    expect(screen.queryByRole('link', { name: /Solicitacoes V2/i })).toBeNull();
   });
 });
