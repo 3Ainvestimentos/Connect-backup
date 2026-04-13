@@ -8,29 +8,76 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
-import { Shield, Loader2, Search, DollarSign, Award, Filter, ChevronDown, ChevronUp, Target, Briefcase, Compass } from 'lucide-react';
+import { Loader2, Search, Filter } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
-const permissionLabels: { key: keyof CollaboratorPermissions; label: string }[] = [
-    { key: 'canManageContent', label: 'Conteúdo' },
-    { key: 'canManageWorkflows', label: 'Workflows' },
-    { key: 'canManageWorkflowsV2', label: 'Workflows V2' },
-    { key: 'canManageRequests', label: 'Solicitações' },
-    { key: 'canManageTripsBirthdays', label: 'Viagens/Aniversários' },
-    { key: 'canViewTasks', label: 'Minhas Tarefas' },
-    { key: 'canViewBI', label: 'Business Intelligence' },
-    { key: 'canViewRankings', label: 'Rankings' },
-    { key: 'canViewOpportunityMap', label: 'Mapa de Oportunidades' },
-    { key: 'canViewCRM', label: 'CRM Interno' },
-    { key: 'canViewStrategicPanel', label: 'Painel Estratégico' },
-    { key: 'canViewDirectoria', label: 'Diretoria' },
-    { key: 'canViewMeetAnalyses', label: 'Bob Meet Análises' },
-    { key: 'canViewBILeaders', label: 'BI Líderes' },
+type PermissionKey = keyof CollaboratorPermissions;
+
+interface PermissionLabel {
+    key: PermissionKey;
+    label: string;
+    description?: string;
+}
+
+interface PermissionGroup {
+    key: 'legacy' | 'v2' | 'platform';
+    label: string;
+    items: PermissionLabel[];
+}
+
+/**
+ * Agrupa os toggles por natureza (legado, rollout v2, plataforma)
+ * para reduzir ambiguidade visual durante a fase de convivência.
+ * Veja ADR-2 em DESIGN_ROLLOUT_FASE9_3.md.
+ */
+const permissionGroups: PermissionGroup[] = [
+    {
+        key: 'legacy',
+        label: 'Chamados Legado',
+        items: [
+            { key: 'canManageWorkflows', label: 'Workflows (Legado)' },
+            { key: 'canManageRequests', label: 'Solicitações (Legado)' },
+            { key: 'canViewTasks', label: 'Minhas Tarefas' },
+        ],
+    },
+    {
+        key: 'v2',
+        label: 'Chamados V2 (Rollout)',
+        items: [
+            { key: 'canOpenRequestsV2', label: 'Solicitações V2' },
+            { key: 'canManageRequestsV2', label: 'Gestão Chamados V2' },
+            { key: 'canManageWorkflowsV2', label: 'Config Chamados V2' },
+        ],
+    },
+    {
+        key: 'platform',
+        label: 'Plataforma',
+        items: [
+            { key: 'canManageContent', label: 'Conteúdo' },
+            { key: 'canManageTripsBirthdays', label: 'Viagens/Aniversários' },
+            { key: 'canViewBI', label: 'Business Intelligence' },
+            { key: 'canViewRankings', label: 'Rankings' },
+            { key: 'canViewOpportunityMap', label: 'Mapa de Oportunidades' },
+            { key: 'canViewCRM', label: 'CRM Interno' },
+            { key: 'canViewStrategicPanel', label: 'Painel Estratégico' },
+            { key: 'canViewDirectoria', label: 'Diretoria' },
+            { key: 'canViewMeetAnalyses', label: 'Bob Meet Análises' },
+            { key: 'canViewBILeaders', label: 'BI Líderes' },
+        ],
+    },
 ];
+
+/**
+ * Flat list usado para iterar nas <TableCell> de cada colaborador,
+ * derivado diretamente de permissionGroups para manter ordem e
+ * consistência entre header e body da tabela.
+ */
+const permissionLabels: PermissionLabel[] = permissionGroups.flatMap(g => g.items);
 
 function PermissionsTable() {
     const { collaborators, loading, updateCollaboratorPermissions } = useCollaborators();
@@ -99,8 +146,18 @@ function PermissionsTable() {
         });
     };
     
-    const FilterableHeader = ({ fkey, label, uniqueValues }: { fkey: 'area' | 'position', label: string, uniqueValues: string[] }) => (
-        <TableHead>
+    const FilterableHeader = ({
+        fkey,
+        label,
+        uniqueValues,
+        rowSpan,
+    }: {
+        fkey: 'area' | 'position';
+        label: string;
+        uniqueValues: string[];
+        rowSpan?: number;
+    }) => (
+        <TableHead rowSpan={rowSpan} className="align-bottom">
             <div className="flex items-center gap-2">
                 <span className="flex-grow">{label}</span>
                 <DropdownMenu>
@@ -138,13 +195,10 @@ function PermissionsTable() {
                            <Skeleton className="h-4 w-48" />
                            <Skeleton className="h-3 w-64" />
                         </div>
-                         <div className="flex gap-4">
-                            <Skeleton className="h-6 w-11" />
-                            <Skeleton className="h-6 w-11" />
-                            <Skeleton className="h-6 w-11" />
-                            <Skeleton className="h-6 w-11" />
-                            <Skeleton className="h-6 w-11" />
-                            <Skeleton className="h-6 w-11" />
+                         <div className="flex gap-3">
+                            {Array.from({ length: Math.min(permissionLabels.length, 8) }).map((_, j) => (
+                                <Skeleton key={j} className="h-6 w-11" />
+                            ))}
                         </div>
                     </div>
                 ))}
@@ -177,11 +231,37 @@ function PermissionsTable() {
                 <div className="border rounded-lg overflow-x-auto">
                     <Table>
                         <TableHeader>
+                            {/* Linha 1: grupos (Legado | V2 (Rollout) | Plataforma) */}
                             <TableRow>
-                                <TableHead>Colaborador</TableHead>
-                                <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas} />
-                                <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions} />
-                                {permissionLabels.map(p => <TableHead key={p.key}>{p.label}</TableHead>)}
+                                <TableHead rowSpan={2} className="align-bottom">
+                                    Colaborador
+                                </TableHead>
+                                <FilterableHeader fkey="area" label="Área" uniqueValues={uniqueAreas} rowSpan={2} />
+                                <FilterableHeader fkey="position" label="Cargo" uniqueValues={uniquePositions} rowSpan={2} />
+                                {permissionGroups.map(group => (
+                                    <TableHead
+                                        key={group.key}
+                                        colSpan={group.items.length}
+                                        className={cn(
+                                            'text-center border-b',
+                                            group.key === 'v2' && 'bg-[hsl(170,60%,50%)]/10 text-[hsl(170,60%,30%)] font-semibold'
+                                        )}
+                                        aria-label={`Grupo ${group.label}`}
+                                    >
+                                        {group.label}
+                                    </TableHead>
+                                ))}
+                            </TableRow>
+
+                            {/* Linha 2: labels individuais por permissão */}
+                            <TableRow>
+                                {permissionGroups.map(group =>
+                                    group.items.map(item => (
+                                        <TableHead key={item.key} className="whitespace-nowrap">
+                                            {item.label}
+                                        </TableHead>
+                                    ))
+                                )}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
