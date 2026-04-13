@@ -15,7 +15,7 @@ export default function AdminPage() {
 
     return (
         <SuperAdminGuard>
-            <div className="space-y-6 p-6 md:p-8">
+            <div className="space-y-6 p-6 md:p-8 overflow-x-hidden">
                 <PageHeader 
                     title="Administração do Sistema"
                     description="Gerencie colaboradores, permissões de acesso e o estado da plataforma."
@@ -26,13 +26,13 @@ export default function AdminPage() {
                         <TabsTrigger value="permissions">Permissões</TabsTrigger>
                         <TabsTrigger value="maintenance">Configurações</TabsTrigger>
                     </TabsList>
-                     <TabsContent value="collaborators">
+                    <TabsContent value="collaborators">
                         <ManageCollaborators />
                     </TabsContent>
-                     <TabsContent value="permissions">
+                    <TabsContent value="permissions">
                         <PermissionsPageContent />
                     </TabsContent>
-                     <TabsContent value="maintenance">
+                    <TabsContent value="maintenance">
                         <MaintenanceMode />
                     </TabsContent>
                 </Tabs>

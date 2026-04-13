@@ -50,6 +50,7 @@ const defaultPermissions: CollaboratorPermissions = {
   canOpenRequestsV2: false,
   canManageContent: false,
   canManageTripsBirthdays: false,
+  canManageVacation: false,
   canViewTasks: false,
   canViewBI: false,
   canViewRankings: false,

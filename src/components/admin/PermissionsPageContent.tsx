@@ -60,6 +60,7 @@ const permissionGroups: PermissionGroup[] = [
         items: [
             { key: 'canManageContent', label: 'Conteúdo' },
             { key: 'canManageTripsBirthdays', label: 'Viagens/Aniversários' },
+            { key: 'canManageVacation', label: 'Férias' },
             { key: 'canViewBI', label: 'Business Intelligence' },
             { key: 'canViewRankings', label: 'Rankings' },
             { key: 'canViewOpportunityMap', label: 'Mapa de Oportunidades' },
@@ -228,8 +229,8 @@ function PermissionsTable() {
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="border rounded-lg overflow-x-auto">
-                    <Table>
+                <div className="border rounded-lg overflow-x-auto max-w-full">
+                    <Table className="min-w-[1400px]">
                         <TableHeader>
                             {/* Linha 1: grupos (Legado | V2 (Rollout) | Plataforma) */}
                             <TableRow>
