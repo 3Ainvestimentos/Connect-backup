@@ -6,7 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
+import { authenticateManagementV2Actor } from '@/lib/workflows/runtime/permission-auth';
 import { advanceStep } from '@/lib/workflows/runtime/use-cases/advance-step';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
@@ -24,7 +24,7 @@ export async function POST(
       );
     }
 
-    const { actor } = await authenticateRuntimeActor(request);
+    const { actor } = await authenticateManagementV2Actor(request);
 
     // --- Parse body ---
     const body = await request.json();

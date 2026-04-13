@@ -2,14 +2,14 @@ import { NextResponse } from 'next/server';
 import { parseWorkflowManagementFilters, ReadValidationError } from '@/lib/workflows/read/filters';
 import { queryScopedAssignments } from '@/lib/workflows/read/queries';
 import type { ReadError, ReadSuccess, WorkflowAssignmentsReadData } from '@/lib/workflows/read/types';
-import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
+import { authenticateManagementV2Actor } from '@/lib/workflows/runtime/permission-auth';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const filters = parseWorkflowManagementFilters(searchParams);
-    const { actor } = await authenticateRuntimeActor(request);
+    const { actor } = await authenticateManagementV2Actor(request);
     const data = await queryScopedAssignments(actor.actorUserId, filters);
 
     const response: ReadSuccess<WorkflowAssignmentsReadData> = {

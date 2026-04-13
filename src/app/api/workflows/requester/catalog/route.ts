@@ -7,14 +7,14 @@
  */
 
 import { NextResponse } from 'next/server';
-import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
+import { authenticateRequesterV2Actor } from '@/lib/workflows/runtime/permission-auth';
 import { buildRequesterCatalog } from '@/lib/workflows/requester/build-catalog';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 import type { RequesterCatalogArea } from '@/lib/workflows/requester/catalog-types';
 
 export async function GET(request: Request) {
   try {
-    const { actor } = await authenticateRuntimeActor(request);
+    const { actor } = await authenticateRequesterV2Actor(request);
 
     const data = await buildRequesterCatalog(actor.actorUserId);
 

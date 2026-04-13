@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { buildWorkflowManagementBootstrap } from '@/lib/workflows/read/bootstrap';
 import type { ReadError, ReadSuccess, WorkflowManagementBootstrapData } from '@/lib/workflows/read/types';
-import { authenticateRuntimeActor } from '@/lib/workflows/runtime/auth-helpers';
+import { authenticateManagementV2Actor } from '@/lib/workflows/runtime/permission-auth';
 import { RuntimeError } from '@/lib/workflows/runtime/errors';
 
 export async function GET(request: Request) {
   try {
-    const { actor } = await authenticateRuntimeActor(request);
+    const { actor } = await authenticateManagementV2Actor(request);
     const data = await buildWorkflowManagementBootstrap(actor);
 
     const response: ReadSuccess<WorkflowManagementBootstrapData> = {
