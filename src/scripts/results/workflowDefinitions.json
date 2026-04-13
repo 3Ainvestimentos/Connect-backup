@@ -1,0 +1,3725 @@
+{
+  "0zUsgLc1UFRHVZQtFQ3o": {
+    "icon": "Calendar",
+    "areaId": "LDen2yCCXjlVXsWQKREo",
+    "defaultSlaDays": 5,
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "description": "Solicitação para organização de eventos, incluindo definição de público-alvo e arte de divulgação.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva o evento que deseja organizar.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Objetivo do evento",
+        "placeholder": "",
+        "id": "objetivo",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual público alvo da solicitação de Eventos?",
+        "placeholder": "",
+        "id": "publico_alvo",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Interno (equipes 3A RIVA)",
+          "Clientes",
+          "Híbrida (clientes e público interno)"
+        ]
+      },
+      {
+        "label": "Quantidade de pessoas prevista no evento",
+        "placeholder": "",
+        "id": "quantidade_pessoas",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Horário do evento",
+        "placeholder": "",
+        "id": "horario",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Data do evento",
+        "placeholder": "",
+        "id": "data",
+        "type": "date",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nome do evento",
+        "placeholder": "",
+        "id": "nome_evento",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Formato",
+        "placeholder": "",
+        "id": "formato",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Happy Hour",
+          "Café da manhã"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Evento"
+  },
+  "1FEfsHnEALOAETwq6H3S": {
+    "icon": "Cpu",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "defaultSlaDays": 5,
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Solicitação para resolver problemas relacionados a hardwares, como defeitos, substituição ou configuração.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail",
+        "placeholder": "",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva o problema de hardware que está enfrentando.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Problemas de Hardware"
+  },
+  "1tmzWIwCC21zxB3vaV5J": {
+    "icon": "Heart",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Fale com a GENTE",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Descrição detalhada",
+        "placeholder": "Insira sua solicitação",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Fale com a GENTE"
+  },
+  "2bnzgKX37heY7P9jK6LP": {
+    "icon": "FileText",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual o tipo da solicitação?",
+        "placeholder": "",
+        "id": "tipo_solicitacao",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Criar um espelhamento",
+          "Suspender um espelhamento"
+        ]
+      },
+      {
+        "label": "Qual o e-mail do líder do Assessor a ser visualizado?",
+        "placeholder": "",
+        "id": "campo_3",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual o e-mail do líder do Assessor que visualiza?",
+        "placeholder": "",
+        "id": "campo_4",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Codigo do Assessor a ser visualizado:",
+        "placeholder": "",
+        "id": "campo_5",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Codigo do Assessor que visualiza:",
+        "placeholder": "",
+        "id": "campo_6",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Insira o motivo da solicitação:",
+        "placeholder": "",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "defaultSlaDays": 1,
+    "routingRules": [],
+    "description": "Solicitar ou criar espelhamento / Suspender um espelhamento de base a ser feito junto a XP.",
+    "subtitle": "",
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "ownerEmail": "ti@3ariva.com.br",
+    "areaId": "9iuhbwx2KVxwXUiqywDZ",
+    "allowedUserIds": [
+      "DMS",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "ROS",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LPM",
+      "LRV2",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2"
+    ],
+    "slaRules": [],
+    "name": "Espelhamento - Caso Único "
+  },
+  "2bsVIVhd22bV3bN5rp7W": {
+    "icon": "Monitor",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "defaultSlaDays": 5,
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Solicitação de Compra  - Equipamento TI",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em Análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em aprovação",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome Completo",
+        "placeholder": "Insira nome completo",
+        "id": "nome_completo",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail",
+        "placeholder": "Insira seu E-mail",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Digite seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Oque precisa ser comprado/solicitado?",
+        "placeholder": "Insira o item necessário",
+        "id": "item_compra_ti",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual a quantidade?",
+        "placeholder": "Insira a quantidade",
+        "id": "quantiadade_compra_ti",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Link produto",
+        "placeholder": "Insira o link do item necessário",
+        "id": "link_compra_ti",
+        "type": "textarea",
+        "required": false,
+        "options": []
+      }
+    ],
+    "subtitle": "",
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Compra - Equipamento"
+  },
+  "7PkFd2mVhjIvCSDy73Pj": {
+    "icon": "ShoppingCart",
+    "areaId": "u3entfMNB17iklBOdq5H",
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Solicitação para aquisição de materiais e equipamentos, incluindo compras gerais. \n\nPara compras de equipamentos de Tecnologia (TI), navegue até o menu “TI” e faça a solicitação.",
+    "subtitle": "",
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em aprovação - FIN",
+        "id": "emaprovacao_fin"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizada"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Centro de custos",
+        "placeholder": "Informe o centro de custo responsável",
+        "id": "centro_custo",
+        "type": "select",
+        "required": true,
+        "options": [
+          "3ARI-Belo Horizonte",
+          "3ARI-Campinas",
+          "3ARI-Pouso Alegre",
+          "3ARI-Itajubá",
+          "3ARI-Jundiaí",
+          "3ARI-São José dos Campos",
+          "3ARI-Contagem",
+          "3ARI-Varginha",
+          "3ARI-Limeira",
+          "3ARI-São Paulo",
+          "3ARI-Rio de Janeiro",
+          "3ARI-Floripa"
+        ]
+      },
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "O que precisa ser comprado?",
+        "placeholder": "Descreva o item com detalhes (marca, modelo, especificações)",
+        "id": "item_compra",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Quantidade",
+        "placeholder": "Número de unidades",
+        "id": "quantidade",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Motivo da compra",
+        "placeholder": "Justifique a necessidade desta compra",
+        "id": "motivo",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Link do produto",
+        "placeholder": "Cole aqui o link de referência do produto",
+        "id": "link_produto",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Anexos complementares",
+        "placeholder": "",
+        "id": "anexos",
+        "type": "file",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      }
+    ],
+    "ownerEmail": "stefania.otoni@3ainvestimentos.com.br",
+    "allowedUserIds": [
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LBC2",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "SMO2",
+      "HSM",
+      "DFZ2",
+      "BFG2",
+      "JPU",
+      "DFA",
+      "MEM2",
+      "MVT",
+      "LHG",
+      "RLF",
+      "JRC",
+      "GOC",
+      "PIS",
+      "MEJ2"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Compras"
+  },
+  "8SlrLRDUXs86Kz7lNwu9": {
+    "icon": "ShoppingBag",
+    "areaId": "LDen2yCCXjlVXsWQKREo",
+    "defaultSlaDays": 5,
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "description": "Solicitação para envio de sugestões de produtos para a 3A RIVA Store.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva sua sugestão de produto para a 3A RIVA Store.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Sugestão 3A RIVA Store"
+  },
+  "98fUoidQBMm3MPW4NTic": {
+    "icon": "UserPlus",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "subtitle": "Análise de desligamento de assessor para pré-análise de contrato e financeiro",
+    "routingRules": [],
+    "description": "Análise de desligamento de assessor para pré-análise de contrato e financeiro",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome - Líder",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo - Líder",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nome do colaborador a ser desligado",
+        "placeholder": "Insira o nome do colaborador a ser desligado",
+        "id": "nome_desligado",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Cargo atual do colaborador a ser desligado",
+        "placeholder": "Insira o cargo atual do colaborador a ser desligado",
+        "id": "cargo_desligado",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área do colaborador a ser desligado",
+        "placeholder": "Insira o setor/Área do colaborador a ser desligado",
+        "id": "area_desligado",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Motivo do desligamento",
+        "placeholder": "Insira o motivo do desligamento",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Tipo do desligamento",
+        "placeholder": "Insira o tipo do desligamento",
+        "id": "tipo_desligamento",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Iniciativa Própria",
+          "Iniciativa da empresa",
+          "Término de Contrato",
+          "Outros"
+        ]
+      },
+      {
+        "label": "Código XP",
+        "placeholder": "Insira o código XP",
+        "id": "cod_xp",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Observações",
+        "placeholder": "Insira as observações",
+        "id": "observacoes",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Data do Desligamento - Prevista",
+        "placeholder": "Insira a data do desligamento",
+        "id": "data",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Iniciar processo de análise ",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em análise - BI",
+        "action": {
+          "label": "Análise BI - Concluída ",
+          "commentRequired": true,
+          "commentPlaceholder": "Analise: Insira em anexo a carteira do Assessor",
+          "type": "execution",
+          "approverIds": [
+            "RHP2"
+          ],
+          "attachmentPlaceholder": ""
+        },
+        "id": "em_analise"
+      },
+      {
+        "label": "Em análise - Financeiro",
+        "action": {
+          "label": "Análise Financeiro - Concluída",
+          "commentRequired": true,
+          "commentPlaceholder": "Analise: Incentivo financeiro, Dedução do incentivo, Analise contratual.",
+          "type": "execution",
+          "approverIds": [
+            "LBC2",
+            "PTC2",
+            "MPA2"
+          ],
+          "attachmentPlaceholder": ""
+        },
+        "id": "em_analise"
+      },
+      {
+        "label": "Em análise - Jurídico ",
+        "action": {
+          "label": "Análise Jurídico - Concluída",
+          "commentRequired": true,
+          "commentPlaceholder": "Analise: Trâmites jurídicos ",
+          "type": "execution",
+          "approverIds": [
+            "LBC"
+          ],
+          "attachmentPlaceholder": ""
+        },
+        "id": "em_analise"
+      },
+      {
+        "label": "Em análise - Governança",
+        "action": {
+          "label": "Análise Governaça - Concluída",
+          "commentRequired": true,
+          "commentPlaceholder": "Analise: Contencioso ou Distrato?",
+          "type": "execution",
+          "approverIds": [
+            "MPA2"
+          ],
+          "attachmentPlaceholder": ""
+        },
+        "id": "em_analise"
+      },
+      {
+        "label": "Re-analise do Jurídico ",
+        "action": {
+          "label": "Re-Análise Jurídico - Concluída",
+          "commentRequired": true,
+          "commentPlaceholder": "Seguir orientação do time de Governança, caso necessário",
+          "type": "execution",
+          "approverIds": [
+            "AMP2",
+            "LBC",
+            "BCS2"
+          ],
+          "attachmentPlaceholder": ""
+        },
+        "id": "em_analise"
+      },
+      {
+        "label": "Desligamento - Governança",
+        "action": {
+          "label": "Desligamento - Gov. - Concluído (Avisae áreas)",
+          "type": "acknowledgement",
+          "approverIds": [
+            "MPA2"
+          ]
+        },
+        "id": "etapa_7"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "ownerEmail": "barbara@3ainvestimentos.com.br",
+    "defaultSlaDays": 1,
+    "allowedUserIds": [
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LBC2",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "MPA2",
+      "DFZ2",
+      "DFA",
+      "GBL2",
+      "LHG",
+      "DMS",
+      "FSG",
+      "ROS",
+      "GA",
+      "HJ"
+    ],
+    "slaRules": [],
+    "name": "Análise Pré-Desligamento (Acesso líderes)"
+  },
+  "BhCq9faCPTmGEXjYCg1t": {
+    "icon": "Wifi",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "defaultSlaDays": 5,
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Solicitação  ara resolver problemas relacionados a rede, problemas de conexão, senhas de Wi-Fi, manutenção de rede, perda de sinal ou sinal fraco.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome",
+        "placeholder": "",
+        "id": "nome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Sobrenome",
+        "placeholder": "",
+        "id": "sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail",
+        "placeholder": "",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva o problema de rede que está enfrentando.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Importante: Antes de abrir um chamado de TI, avalie com cuidado a real prioridade da sua solicitação. Quando classificamos um problema como mais crítico do que ele realmente é, acabamos desviando recursos de situações que precisam de atenção imediata.",
+        "placeholder": "Impacto",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Problemas de Rede"
+  },
+  "Eqlgq3ZBINFo6TLONl9g": {
+    "icon": "UserPlus",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "defaultSlaDays": 5,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Alteração de Cargo / Remuneração / Time ou Equipe",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome - Líder",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo - Líder",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nome e Sobrenome - Colaborador",
+        "placeholder": "Insira o nome e sobrenome do colaborador",
+        "id": "nome_sobrenome_colaborador",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": " E-mail - Corporativo - Colaborador",
+        "placeholder": "Insira o e-mail corporativo do colaborador",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Cargo Atual - Colaborador",
+        "placeholder": "Insira cargo e área atual",
+        "id": "cargo_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Novo cargo - Colaborador",
+        "placeholder": "Insira o novo cargo",
+        "id": "novo_cargo",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Nova equipe/time/área - Colaborador",
+        "placeholder": "Insira a nova equipe/time/área ",
+        "id": "nova_equipe",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Nova remuneração - Colaborador",
+        "placeholder": "Insira a nova remuneração",
+        "id": "nova_remuneracao",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Observações adicionais",
+        "placeholder": "Insira uma observação adicional",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Anexo de comprovação",
+        "placeholder": "Insira um anexo comprobatório da alteração do colaborador",
+        "id": "anexo",
+        "type": "file",
+        "required": true,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Análise de documentação - G&C",
+        "id": "em_analise"
+      },
+      {
+        "label": "Análise de BI/Governança",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "routingRules": [],
+    "subtitle": "",
+    "allowedUserIds": [
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LBC2",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "MVT",
+      "DFA",
+      "DFZ2",
+      "RLF",
+      "DMS",
+      "GBL2",
+      "GA",
+      "LHG",
+      "HPP2",
+      "FAM",
+      "PTC2",
+      "ROS"
+    ],
+    "slaRules": [],
+    "name": "Alteração de Cargo / Remuneração / Time ou Equipe"
+  },
+  "IPWhvTC82Dv4nn9vC2Xa": {
+    "icon": "UserPlus",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "defaultSlaDays": 5,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Processo para cadastro de novos membros sem movimentação de contrato social.",
+    "subtitle": "Demais Áreas - Analistas, Assistentes e Estagiários ",
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Enviado ao TIME de Gente",
+        "id": "enviado_gente"
+      },
+      {
+        "label": "Criar acessos/equipamentos - TI",
+        "action": {
+          "label": "Ciente - TI",
+          "type": "acknowledgement",
+          "approverIds": [
+            "DFZ2"
+          ]
+        },
+        "id": "acessos_ti"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome - Novo entrante",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail pessoal - Novo entrante",
+        "placeholder": "Insira seu e-mail o e-mail pessoal do novo entrante",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Contratação via",
+        "placeholder": "Insira a empresa de contratação",
+        "id": "contratacao_via",
+        "type": "select",
+        "required": true,
+        "options": [
+          "RIVA Investimentos",
+          "3A Investimentos",
+          "RV Corretora (RVCS)"
+        ]
+      },
+      {
+        "label": "Telefone para contato",
+        "placeholder": "(XX) XXXXX-XXXX",
+        "id": "telefone",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Cargo proposto",
+        "placeholder": "Ex: Líder Comercial, Gerente de Operações",
+        "id": "cargo_proposto",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nome do líder",
+        "placeholder": "Nome do líder responsável",
+        "id": "nome_lider",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Equipe/Time/Eixo que fará parte",
+        "placeholder": "Ex: Comercial SP, Operações RJ",
+        "id": "equipe",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Data de início prevista",
+        "placeholder": "",
+        "id": "data_inicio",
+        "type": "date",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Formulário RespondiApp",
+        "placeholder": "Insira o formulário de entrada",
+        "id": "anexo",
+        "type": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Observações adicionais",
+        "placeholder": "Insira uma observação adicional e data de entrada especificada com hora",
+        "id": "observacoes",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "routingRules": [],
+    "allowedUserIds": [
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "LBC2",
+      "DFZ2",
+      "MVT",
+      "DFA",
+      "AMP2",
+      "DSC2",
+      "RLF",
+      "PTC2",
+      "GBL2",
+      "LHG"
+    ],
+    "slaRules": [],
+    "name": "Cadastro de Novos Entrantes - Demais Áreas "
+  },
+  "L1E0hJpRaJ3xFYufilyG": {
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": " Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Sugestão",
+        "placeholder": "Insira aqui suas sugestões",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "defaultSlaDays": 4,
+    "ownerEmail": "matheus@3ainvestimentos.com.br",
+    "description": "Insira aqui suas sugestões de implementação, melhorias, sugestões ou críticas do Connect.",
+    "subtitle": "",
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em Análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em Andamento",
+        "id": "em_andamento"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "routingRules": [],
+    "icon": "MessageCircle",
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Sugestões 3A RIVA Connect"
+  },
+  "LL9f3hMXcv4xVbyy3Nne": {
+    "icon": "Code",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "defaultSlaDays": 5,
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Para resolver problemas relacionados a softwares, como erros, lentidão ou incompatibilidades.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail",
+        "placeholder": "",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva o problema de software que está enfrentando.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Importante: Antes de abrir um chamado de TI, avalie com cuidado a real prioridade da sua solicitação. Quando classificamos um problema como mais crítico do que ele realmente é, acabamos desviando recursos de situações que precisam de atenção imediata.",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Problemas de Software"
+  },
+  "MLAqXidcqSfg6dtdynVl": {
+    "icon": "Image",
+    "areaId": "LDen2yCCXjlVXsWQKREo",
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Solicitação para criação de arte ou material gráfico, incluindo revisão de texto e definição de público-alvo.",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva o material gráfico necessário.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual público alvo da sua demanda da Arte / Material gráfico?",
+        "placeholder": "",
+        "id": "publico_alvo",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Interno (equipes 3A RIVA)",
+          "Clientes",
+          "Híbrida (clientes e público interno)"
+        ]
+      },
+      {
+        "label": "Qual objetivo da Arte / Material gráfico?",
+        "placeholder": "",
+        "id": "objetivo",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual o conteúdo de texto?",
+        "placeholder": "O texto já deve estar com a ortografia revisada e as informações validadas.",
+        "id": "conteudo_texto",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Quantas versões são necessárias?",
+        "placeholder": "Exemplo: 2 Versões com datas diferentes, 2 Formatos de arquivos diferentes",
+        "id": "versoes",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual a categoria do material?",
+        "placeholder": "Exemplos: Imagem para WhatsApp / Slack, Convite, Apresentação, Cartão, etc",
+        "id": "categoria",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Existe alguma imagem de referência?",
+        "placeholder": "Se sim, preencha o campo de anexo",
+        "id": "imagem_referencia",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Sim",
+          "Não"
+        ]
+      },
+      {
+        "label": "Qual o prazo limite para recebimento da Arte / Material gráfico?",
+        "placeholder": "",
+        "id": "prazo",
+        "type": "date",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Imagem de referencia (Se houver)",
+        "placeholder": "Se houver uma imagem de referencia, anexe aqui",
+        "id": "imagem_referencia",
+        "type": "file",
+        "required": false,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "ownerEmail": "joao.pompeu@3ainvestimentos.com.br",
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Arte / Material gráfico"
+  },
+  "NA1cQ6ejRgZhoB0ZMPY2": {
+    "icon": "Compass",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "defaultSlaDays": 4,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Solicitação para ajustes no serviço de plano de saúde ",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Tipo da solicitação",
+        "placeholder": "Insira o tipo da solicitação",
+        "id": "tipo_solicitacao",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Inclusão",
+          "Alteração",
+          "Exclusão"
+        ]
+      },
+      {
+        "label": "Descrição detalhada / Observação",
+        "placeholder": "Insira a descrição desta solicitação",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": false,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Finalizada",
+        "id": "finalizado"
+      }
+    ],
+    "routingRules": [],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Serviços de Plano de Saúde "
+  },
+  "OA1RjWNmKby613e6YgQ9": {
+    "icon": "Book",
+    "areaId": "LDen2yCCXjlVXsWQKREo",
+    "subtitle": "",
+    "ownerEmail": "joao.pompeu@3ainvestimentos.com.br",
+    "description": "Solicitação para revisão de materiais e apresentações",
+    "defaultSlaDays": 2,
+    "statuses": [
+      {
+        "label": "Em aberto",
+        "id": "em_aberto"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "routingRules": [],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Área/TIME",
+        "placeholder": "Insira Área/TIME",
+        "id": "area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Material a ser avaliado",
+        "placeholder": "Insira o material a ser avaliado",
+        "id": "material",
+        "type": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Observações",
+        "placeholder": "Insira alguma descrição a ser observada",
+        "id": "observacao",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Revisão de materiais e Apresentações"
+  },
+  "QfSuSpnLb1Ef8E36Bgbj": {
+    "icon": "Settings",
+    "areaId": "u3entfMNB17iklBOdq5H",
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Solicitação para serviços administrativos gerais, incluindo manutenções, reparos e demandas internas.\n\nPara compras/solicitações de equipamentos de Tecnologia (TI), navegue até o menu “TI” e faça a solicitação.",
+    "subtitle": "",
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em andamento",
+        "id": "em_andamento"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Descrição detalhada",
+        "placeholder": "Descreva a solicitação com máximo de detalhes possível",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual o centro de custo?",
+        "placeholder": "Insira o centro de custo",
+        "id": "centrodecusto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "3ARI-Belo Horizonte",
+          "3ARI-Campinas",
+          "3ARI-Pouso Alegre",
+          "3ARI-Itajubá",
+          "3ARI-Jundiaí",
+          "3ARI-São José dos Campos",
+          "3ARI-Contagem",
+          "3ARI-Varginha",
+          "3ARI-Limeira",
+          "3ARI-São Paulo",
+          "3ARI-Rio de Janeiro",
+          "3ARI-Floripa"
+        ]
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "ownerEmail": "stefania.otoni@3ainvestimentos.com.br",
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Manutenção / Solicitações Gerais"
+  },
+  "RABkxl7grAbuECLvvyWa": {
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "icon": "Book",
+    "defaultSlaDays": 5,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Realize o upload do seu comprovante de credenciamento na ANCORD. \n\nPara fazer o download do comprovante de credenciamento, acesse a área logada da Ancord, em: \nhttps://credenciamento.ancord.org.br/index.html\n\nMenu > Assessor de Investimento > Credenciamento > Minhas Credenciais\n\nClique no ID > Visualizar\n\nNo momento pós-padronização, se já houver código XP, abra uma solicitação em: TI > Padronização XP.",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Em qual empresa você entrou no contrato social?",
+        "placeholder": "Insira a empresa de contratação",
+        "id": "contratacao_via",
+        "type": "select",
+        "required": true,
+        "options": [
+          "RIVA",
+          "3A"
+        ]
+      },
+      {
+        "label": "Código XP (Se houver)",
+        "placeholder": "Seu código de assessor XP",
+        "id": "codigo_xp",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Comprovante de Credenciamento ANCORD",
+        "placeholder": "Anexe o comprovante da Ancord",
+        "id": "comprovante_ancord",
+        "type": "file",
+        "required": true,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Análise - Jurídico",
+        "id": "analise_juridico"
+      },
+      {
+        "label": "Análise - Gestão",
+        "id": "analise_gestao"
+      },
+      {
+        "label": "Finalizada",
+        "id": "finalizada"
+      }
+    ],
+    "subtitle": "",
+    "routingRules": [],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Comprovação ANCORD"
+  },
+  "VOs3jGJHQl18xyj4XrES": {
+    "icon": "Contact",
+    "areaId": "LDen2yCCXjlVXsWQKREo",
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Solicitação para confecção de assinatura de e-mail, cartão de visita físico ou digital.",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva os itens necessários.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual será necessário?",
+        "placeholder": "Selecione o item necessário",
+        "id": "necessario",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Cartão de Visita (Físico)",
+          "Assinatura de E-mail",
+          "Cartão de Visita (Digital)",
+          "Todos"
+        ]
+      },
+      {
+        "label": "Cargo / Área",
+        "placeholder": "Insira cargo e área ",
+        "id": "cargo_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Telefone",
+        "placeholder": "",
+        "id": "telefone",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Filial",
+        "placeholder": "Insira sua filial",
+        "id": "filial",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "ownerEmail": "joao.pompeu@3ainvestimentos.com.br",
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Assinatura de e-mail; Cartão de visita; Cartão de visita digital"
+  },
+  "Vz53Sn7cdupJpFVNA7X6": {
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "icon": "ExternalLink",
+    "defaultSlaDays": 5,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Solicitação de desligamento de colaboradores: Analistas, Assistentes e Estagiários.",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome - Líder",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo - Líder",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nome do colaborador a ser desligado",
+        "placeholder": "Insira o nome do colaborador a ser desligado",
+        "id": "nome_desligado",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Cargo atual do colaborador a ser desligado",
+        "placeholder": "Insira o cargo atual do colaborador a ser desligado",
+        "id": "cargo_desligado",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área do colaborador a ser desligado",
+        "placeholder": "Insira o setor/Área do colaborador a ser desligado",
+        "id": "area_desligado",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Motivo do desligamento",
+        "placeholder": "Insira o motivo do desligamento",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Tipo do cargo",
+        "placeholder": "Insira o tipo do cargo",
+        "id": "tipo_cargo",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Demais Áreas"
+        ]
+      },
+      {
+        "label": "Tipo do desligamento",
+        "placeholder": "Insira o tipo do desligamento",
+        "id": "tipo_desligamento",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Iniciativa Própria",
+          "Iniciativa da empresa",
+          "Término de Contrato",
+          "Outros"
+        ]
+      },
+      {
+        "label": "Código XP (Se houver)",
+        "placeholder": "Insira o código XP",
+        "id": "cod_xp",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Observações",
+        "placeholder": "Insira as observações",
+        "id": "observacoes",
+        "type": "textarea",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Data do Desligamento",
+        "placeholder": "Insira a data do desligamento",
+        "id": "data",
+        "type": "date",
+        "required": true,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em andamento",
+        "action": {
+          "label": "Aprovação - Gente",
+          "type": "approval",
+          "approverIds": [
+            "FPA2"
+          ]
+        },
+        "id": "em_andamento"
+      },
+      {
+        "label": "Desligamento - Gente",
+        "action": {
+          "label": "Desligamento - Gente",
+          "type": "acknowledgement",
+          "approverIds": [
+            "DFA"
+          ]
+        },
+        "id": "desligamento_gente"
+      },
+      {
+        "label": "Desligamento - TI/FIN",
+        "action": {
+          "label": "Desligamento - TI",
+          "type": "acknowledgement",
+          "approverIds": [
+            "DFZ2",
+            "MPA2",
+            "PTC2"
+          ]
+        },
+        "id": "desligamento_ti"
+      },
+      {
+        "label": "Desligamento - BI / Gestão",
+        "action": {
+          "label": "Desligamento - BI",
+          "type": "acknowledgement",
+          "approverIds": [
+            "RHP2"
+          ]
+        },
+        "id": "desligamento_bi"
+      },
+      {
+        "label": "Desligamento - ADM",
+        "action": {
+          "label": "Desligamento - ADM",
+          "type": "acknowledgement",
+          "approverIds": [
+            "SMO2"
+          ]
+        },
+        "id": "enviar_adm"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "Solicitação de desligamento de colaboradores: Analistas, Assistentes e Estagiários.",
+    "routingRules": [],
+    "allowedUserIds": [
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LBC2",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "MVT",
+      "DFA",
+      "DFZ2",
+      "RLF",
+      "PTC2",
+      "GBL2",
+      "LHG",
+      "FSG"
+    ],
+    "slaRules": [],
+    "name": "Solicitação Desligamento - Demais áreas (Não comerciais)"
+  },
+  "YVfXjlFxZciT4zaD5UAP": {
+    "icon": "FileText",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "defaultSlaDays": 5,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Solicitação de Líderes para abertura de nova vaga",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Cargo / Área de abertura",
+        "placeholder": "Cargo / Área de abertura",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Descrição da vaga",
+        "placeholder": "Descrição da Vaga",
+        "id": "descricao_vaga",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Prazo de contratação",
+        "placeholder": "Insira a data limite da contratação",
+        "id": "prazo_contratacao",
+        "type": "date",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail Líder",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "allowedUserIds": [
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LBC2",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "MVT",
+      "DFZ2",
+      "DFA",
+      "RLF",
+      "DMS",
+      "LHG"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Abertura de Vaga"
+  },
+  "Z415O27iyMAOS9xp7Vw4": {
+    "icon": "Megaphone",
+    "areaId": "LDen2yCCXjlVXsWQKREo",
+    "defaultSlaDays": 5,
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "description": "Solicitação para ações de marketing direcionadas a clientes.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva o objetivo da ação de marketing.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual o prazo limite da solicitação de Ações para clientes?",
+        "placeholder": "Insira o prazo",
+        "id": "prazo",
+        "type": "date",
+        "required": true,
+        "options": []
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Ações Marketing"
+  },
+  "a5M0z8iYLJquGmr2VSqO": {
+    "icon": "Layers",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual o tipo da solicitação?",
+        "placeholder": "Insira o tipo:",
+        "id": "tipo_solicitacao",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Criar um espelhamento",
+          "Suspender um espelhamento"
+        ]
+      },
+      {
+        "label": "Qual o e-mail do líder do Assessor visualizado?",
+        "placeholder": "",
+        "id": "email_lider",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual o e-mail do líder do Assessor que visualiza? ",
+        "placeholder": "",
+        "id": "email_lider",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Anexe o arquivo.",
+        "placeholder": "",
+        "id": "anexo_planilha",
+        "type": "file",
+        "required": true,
+        "options": []
+      }
+    ],
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Solicitar ou criar espelhamento / Suspender um espelhamento de base a ser feito junto a XP.\n\nLink Download:  Template de Espelhamento: \n\nhttps://drive.google.com/uc?export=download&id=17hVEBhiOswtBsHFEp1R7zCAPdDiJvEB_",
+    "subtitle": "",
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "ownerEmail": "ti@3ariva.com.br",
+    "areaId": "9iuhbwx2KVxwXUiqywDZ",
+    "allowedUserIds": [
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LPM",
+      "LRV2",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "DMS",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "ROS",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL"
+    ],
+    "slaRules": [],
+    "name": "Espelhamento - Em lote"
+  },
+  "anUoZTYU9wxa2cEQCjlJ": {
+    "icon": "DollarSign",
+    "areaId": "pZi0P2z6yVSsollt4cFt",
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Solicitação para pagamentos de fornecedores, com envio de notas fiscais e comprovantes.\nObservação: Os pagamentos são feitos somente as segundas e quartas.\n\nAcesse o Link: \nSolicitação de Pagamentos || MKT/RH/ADM/TI/RADARFIN\n\nhttps://forms.gle/hwSzgQ5ysz7xEykcA",
+    "fields": [],
+    "statuses": [
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Verificar formulário ",
+        "id": "etapa_2"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "ownerEmail": "pablo.costa@3ariva.com.br",
+    "allowedUserIds": [
+      "DFA",
+      "FPA2",
+      "MEM2",
+      "MVT",
+      "BFG2",
+      "JPU",
+      "SDC2",
+      "BCS2",
+      "LBC",
+      "DLE",
+      "DG",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "TFBS2",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "GAE2",
+      "LBC2",
+      "PTC2",
+      "WND2",
+      "RLF",
+      "LHG"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Pagamentos "
+  },
+  "bKomJE5rZo7T4jV6xebF": {
+    "icon": "DollarSign",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "subtitle": "",
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Solicitação de Compra - Software/Sistema",
+    "defaultSlaDays": 1,
+    "statuses": [
+      {
+        "label": "Em Análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em aprovação",
+        "id": "em_aprovacao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "routingRules": [],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Descrição o sistema/software contratado",
+        "placeholder": "Insira a descrição o sistema/software contratado",
+        "id": "descricao",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Recorrência ",
+        "placeholder": "Insira a recorrência da cobrança",
+        "id": "recorrencia",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Mensal",
+          "Anual",
+          "Semanal",
+          "Em lote"
+        ]
+      },
+      {
+        "label": "Motivo",
+        "placeholder": "Insira o motivo",
+        "id": "motivo",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Área / Setor",
+        "placeholder": "Insira Área / Setor",
+        "id": "area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Usuários ",
+        "placeholder": "Insira os usuários que faram uso do sistema/software ",
+        "id": "nome",
+        "type": "text",
+        "required": false,
+        "options": []
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Compra - Software/Sistema"
+  },
+  "d3MLICQmG7qtsQMKMUUu": {
+    "icon": "UserPlus",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "subtitle": "Colaboradores com Ancord ou Associados",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Cadastro de Novos Entrantes - Ancord ou Associados",
+    "defaultSlaDays": 5,
+    "statuses": [
+      {
+        "label": "Em aberto",
+        "id": "em_aberto"
+      },
+      {
+        "label": "Enviado ao TIME de Gente",
+        "id": "enviado_gente"
+      },
+      {
+        "label": "Enviado ao TI (Acessos)",
+        "action": {
+          "label": "Ciente - TI",
+          "type": "acknowledgement",
+          "approverIds": [
+            "DFZ2"
+          ]
+        },
+        "id": "enviar_ti"
+      },
+      {
+        "label": "Enviado ao Jurídico",
+        "action": {
+          "label": "Ciente - Jurídico ",
+          "type": "acknowledgement",
+          "approverIds": [
+            "LBC",
+            "AMP2",
+            "DSC2"
+          ]
+        },
+        "id": "enviar_juridico"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome - Novo entrante",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail pessoal - Novo entrante",
+        "placeholder": "Insira seu e-mail o e-mail pessoal do novo entrante",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Contratação via",
+        "placeholder": "Insira a empresa de contratação",
+        "id": "contratacao_via",
+        "type": "select",
+        "required": true,
+        "options": [
+          "RIVA Investimentos",
+          "3A Investimentos",
+          "RV Corretora (RVCS)"
+        ]
+      },
+      {
+        "label": "Telefone para contato",
+        "placeholder": "(XX) XXXXX-XXXX",
+        "id": "telefone",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Cargo proposto",
+        "placeholder": "Ex: Líder Comercial, Gerente de Operações",
+        "id": "cargo_proposto",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nome do líder",
+        "placeholder": "Nome do líder responsável",
+        "id": "nome_lider",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Equipe/Time/Eixo/Filial que fará parte",
+        "placeholder": "Ex: Comercial SP, Operações RJ",
+        "id": "equipe",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Data de início prevista",
+        "placeholder": "Insira data de inicio prevista",
+        "id": "data_inicio",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Formulário RespondiApp",
+        "placeholder": "Insira o formulário de entrada",
+        "id": "anexo",
+        "type": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Observações adicionais",
+        "placeholder": "Insira uma observação adicional e data de entrada especificada com hora",
+        "id": "observacoes",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "PF Abaixo de PJ - Código XP",
+        "placeholder": "Insira código XP, somente após PF Abaixo de PJ",
+        "id": "pf_abaixo_pj",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "routingRules": [],
+    "allowedUserIds": [
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "RLF",
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LBC2",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "DFZ2",
+      "DFA",
+      "MPA2",
+      "AMP2",
+      "DSC2",
+      "LHG"
+    ],
+    "slaRules": [],
+    "name": "Cadastro de Novos Entrantes - Associado"
+  },
+  "gphMremgzN3OfnfIATHa": {
+    "icon": "Package",
+    "areaId": "u3entfMNB17iklBOdq5H",
+    "defaultSlaDays": 5,
+    "routingRules": [],
+    "description": "Solicitação de materiais de escritório e suprimentos administrativos. \n\nUtilize a planilha padrão para listar os itens necessários [clique aqui](https://drive.google.com/uc?export=download&id=1LWt8orhux7IS4d4UNkjZocE9PzSECJJu)\n",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Anexo da planilha de suprimentos",
+        "placeholder": "Anexo da planilha de suprimentos",
+        "id": "anexo_planilha",
+        "type": "file",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Observações Adicionais",
+        "placeholder": "Informações complementares sobre a solicitação",
+        "id": "observacoes",
+        "type": "textarea",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Qual seu centro de custo?",
+        "placeholder": "Insira o centro de custo",
+        "id": "centrodecusto",
+        "type": "select",
+        "required": false,
+        "options": [
+          "3ARI-Belo Horizonte",
+          "3ARI-Campinas",
+          "3ARI-Pouso Alegre",
+          "3ARI-Itajubá",
+          "3ARI-Jundiaí",
+          "3ARI-São José dos Campos",
+          "3ARI-Contagem",
+          "3ARI-Varginha",
+          "3ARI-Limeira",
+          "3ARI-São Paulo",
+          "3ARI-Rio de Janeiro",
+          "3ARI-Floripa"
+        ]
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em andamento",
+        "id": "em_andamento"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "ownerEmail": "stefania.otoni@3ainvestimentos.com.br",
+    "allowedUserIds": [
+      "BCS2",
+      "DLE",
+      "DG",
+      "FPA2",
+      "FP2",
+      "GSB",
+      "LGN",
+      "LPM",
+      "LFD3",
+      "MVS2",
+      "PCM",
+      "RNF2",
+      "SDC2",
+      "TFBS2",
+      "FFS",
+      "FLM",
+      "GJO",
+      "IBP",
+      "MRG",
+      "MPO",
+      "RDM",
+      "SCL",
+      "SZH",
+      "TAA",
+      "VAL",
+      "LBC2",
+      "DFZ2",
+      "SMO2",
+      "HSM",
+      "RLF",
+      "JRC",
+      "GOC",
+      "LHG",
+      "MRR2",
+      "MEJ2"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Suprimentos"
+  },
+  "j6DVhDS9mVQXmwDjptNs": {
+    "icon": "Mail",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "defaultSlaDays": 5,
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Solicitação para alterar configurações ou acessos do e-mail XP.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva a alteração necessária no e-mail XP.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Alteração no E-mail XP"
+  },
+  "jyH7H6FCjPMJ2MjCefQN": {
+    "icon": "Edit",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "defaultSlaDays": 5,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Solicitação de alteração cadastral nos bancos de dados da 3A RIVA. Utilize esta solicitação para manter seus dados atualizados. Somente os campos preenchidos serão alterados.",
+    "fields": [
+      {
+        "label": "Nome completo",
+        "placeholder": "",
+        "id": "campo_1",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "CPF",
+        "placeholder": "",
+        "id": "campo_2",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "RG e órgão expedidor",
+        "placeholder": "",
+        "id": "campo_3",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Data de nascimento (DD/MM/AAAA)",
+        "placeholder": "",
+        "id": "campo_4",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Identidade de Gênero",
+        "placeholder": "",
+        "id": "campo_5",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Celular Pessoal. Ex.: (00)00000-0000",
+        "placeholder": "",
+        "id": "campo_6",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nome completo da Mãe",
+        "placeholder": "",
+        "id": "campo_7",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Nome completo do Pai",
+        "placeholder": "",
+        "id": "campo_8",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Estado Civil",
+        "placeholder": "",
+        "id": "campo_9",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Nome completo do cônjuge (caso tenha)",
+        "placeholder": "",
+        "id": "campo_10",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Regime de bens",
+        "placeholder": "",
+        "id": "campo_12",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Filhos: Nome completo e data de nascimento dos filhos (caso tenha)",
+        "placeholder": "",
+        "id": "campo_13",
+        "type": "textarea",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "CEP residencial",
+        "placeholder": "",
+        "id": "campo_14",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Bairro",
+        "placeholder": "",
+        "id": "campo_15",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Endereço completo",
+        "placeholder": "",
+        "id": "campo_16",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Estado",
+        "placeholder": "",
+        "id": "campo_19",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Dados bancários | Banco, agência, número da conta (BANCO INTER)",
+        "placeholder": "",
+        "id": "campo_20",
+        "type": "text",
+        "required": false,
+        "options": []
+      },
+      {
+        "label": "Em caso de emergência quem são as pessoas que deveremos contatar (Nome, grau de proximidade e telefone)",
+        "placeholder": "",
+        "id": "campo_21",
+        "type": "text",
+        "required": false,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "routingRules": [],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Alteração Cadastral"
+  },
+  "q55MFr8p9Tbcbsh6kpm1": {
+    "icon": "Moon",
+    "areaId": "gB7QZh8zrng4ioaGILPX",
+    "defaultSlaDays": 5,
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "description": "Solicitação para férias, declaração de ausência ou compensação de horas",
+    "fields": [
+      {
+        "label": " Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Tipo da solicitação",
+        "placeholder": "Qual o tipo?",
+        "id": "tipo_solicitacao",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Ausência",
+          "Ferias",
+          "Compensação de Horas"
+        ]
+      },
+      {
+        "label": "Data Início ",
+        "placeholder": "Insira a data de início",
+        "id": "data_inicio",
+        "type": "date",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Data do fim",
+        "placeholder": "Insira a data do fim",
+        "id": "data_fim",
+        "type": "date",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Observações Adicionais",
+        "placeholder": "Insira alguma observação",
+        "id": "descricao_detalhada",
+        "type": "text",
+        "required": true,
+        "options": []
+      }
+    ],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "action": {
+          "label": "Ciente - Gente",
+          "type": "acknowledgement",
+          "approverIds": [
+            "DFA"
+          ]
+        },
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "routingRules": [],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Férias / Ausência / Compensação de horas"
+  },
+  "ryj6rF4H2gBJUJiaKe8t": {
+    "icon": "FileCode",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "defaultSlaDays": 5,
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Solicitação para padronizar ou revisar códigos XP conforme as diretrizes da empresa.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "subtitle": "",
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "setor_area",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Código XP",
+        "placeholder": "Insira seu novo código XP",
+        "id": "cod_xp",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Contratação via:",
+        "placeholder": "Insira a empresa contratante; por gentileza, revise essa informação.",
+        "id": "contratacao_via",
+        "type": "select",
+        "required": true,
+        "options": [
+          "3A",
+          "RIVA"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Padronização de E-mail  - Código XP"
+  },
+  "sgL9XCECAOreWgGalI2m": {
+    "icon": "Key",
+    "areaId": "3i5eo3hPQrfWcAtfPkBt",
+    "defaultSlaDays": 5,
+    "ownerEmail": "ti@3ariva.com.br",
+    "description": "Solicitação para redefinir a senha de acesso a sistemas ou e-mails.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Qual ferramenta deseja o reset da senha?",
+        "placeholder": "Selecione a ferramenta",
+        "id": "rese_senha",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Google",
+          "Outlook",
+          "Outros"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Reset de Senha"
+  },
+  "xFcNgbswYXnaB1gxqMvf": {
+    "icon": "Handshake",
+    "areaId": "LDen2yCCXjlVXsWQKREo",
+    "defaultSlaDays": 5,
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "description": "Solicitação para patrocínios, incluindo objetivos, valores e benefícios de contrapartida.",
+    "routingRules": [],
+    "statuses": [
+      {
+        "label": "Solicitação Aberta",
+        "id": "solicitacao_aberta"
+      },
+      {
+        "label": "Em análise",
+        "id": "em_analise"
+      },
+      {
+        "label": "Em execução",
+        "id": "em_execucao"
+      },
+      {
+        "label": "Finalizado",
+        "id": "finalizado"
+      }
+    ],
+    "fields": [
+      {
+        "label": "Nome e Sobrenome",
+        "placeholder": "Insira nome e sobrenome",
+        "id": "nome_sobrenome",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "E-mail - Corporativo",
+        "placeholder": "Insira seu e-mail corporativo",
+        "id": "email",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Setor/Área",
+        "placeholder": "Insira seu Setor/Área",
+        "id": "setor_area",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Nível de criticidade",
+        "placeholder": "Insira o nível de criticidade",
+        "id": "impacto",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Baixo",
+          "Médio",
+          "Alto",
+          "Urgente (Crítico)"
+        ]
+      },
+      {
+        "label": "Descrição Detalhada",
+        "placeholder": "Descreva o objetivo do patrocínio.",
+        "id": "descricao_detalhada",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Hora do patrocínio",
+        "placeholder": "",
+        "id": "hora",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Data do patrocínio",
+        "placeholder": "",
+        "id": "data",
+        "type": "date",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Valor do patrocínio",
+        "placeholder": "",
+        "id": "valor",
+        "type": "text",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Benefícios de Contrapartida do patrocínio",
+        "placeholder": "Exemplos: Inserção da marca em materiais impressos, divulgação em redes sociais, etc.",
+        "id": "beneficios",
+        "type": "textarea",
+        "required": true,
+        "options": []
+      },
+      {
+        "label": "Possui apresentação do patrocínio?",
+        "placeholder": "",
+        "id": "apresentacao",
+        "type": "select",
+        "required": true,
+        "options": [
+          "Sim",
+          "Não"
+        ]
+      }
+    ],
+    "allowedUserIds": [
+      "all"
+    ],
+    "slaRules": [],
+    "name": "Solicitação de Patrocínios"
+  }
+}

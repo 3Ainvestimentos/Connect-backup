@@ -24,16 +24,18 @@ A aplicação consolida diversas funcionalidades essenciais para o dia a dia cor
 ### 2.2. Seções de Conteúdo e Ferramentas
 
 -   **Feed de Notícias (`/news`):** Uma visão completa de todas as notícias e comunicados da empresa, em ordem cronológica.
--   **Solicitações (`/solicitacoes`):** Antiga aba "Workflows", este é o portal onde os colaboradores iniciam processos digitais.
+-   **Solicitações (`/applications`):** Portal onde os colaboradores iniciam processos digitais (workflows).
     -   **Agrupamentos por Área:** Os workflows são organizados em "áreas de negócio" (ex: Financeiro, RH), representadas por botões.
     -   **Lista de Workflows (Modal):** Ao clicar em uma área com múltiplos processos, um modal exibe a lista de workflows disponíveis para seleção.
     -   **Formulário de Submissão (Modal):** Após selecionar um workflow, um formulário dinâmico é apresentado para o preenchimento da solicitação.
     -   **Tabela "Minhas Solicitações":** Uma seção na mesma página que lista todas as solicitações já feitas pelo usuário, permitindo o acompanhamento de status e previsão de conclusão.
 -   **Repositório de Documentos (`/documents`):** Biblioteca centralizada para documentos importantes (políticas, manuais, relatórios), com funcionalidades de busca e filtragem por categoria e tipo.
+-   **Guias (`/guides`):** Guias e FAQ corporativos.
 -   **Labs (`/labs`):** Repositório de vídeos de treinamento, painéis de estudo e outros materiais para desenvolvimento contínuo.
 -   **Loja 3A RIVA (`/store`):** Integração via `iframe` com a loja da NuvemShop, permitindo acesso direto aos produtos da marca.
--   **Chatbot Bob 1.0 (`/chatbot`):** Um assistente virtual com IA (Inteligência Artificial) integrado, capaz de responder a perguntas, buscar informações em documentos da plataforma e executar tarefas simples como resumir conversas.
--   **Business Intelligence (`/bi`):** Página com acesso restrito que exibe um painel de Power BI embarcado, destinado a análises gerenciais.
+-   **Bob (`/chatbot`):** Acesso ao assistente Bob 1.0 via iframe (aplicação externa). O código desta intranet não inclui lógica de IA; a integração é apenas de incorporação.
+-   **Business Intelligence (`/bi`, `/bi-leaders`):** Páginas com acesso restrito que exibem painéis de Power BI embarcados, destinados a análises gerenciais.
+-   **Bob Meet Análises (`/meet-analyses`):** Análises de reuniões (acesso conforme permissão).
 -   **Minhas Tarefas (`/me/tasks`):** Uma caixa de entrada unificada para o colaborador, onde são listadas todas as pendências relacionadas a workflows. A página é dividida em:
     -   **Ações Pendentes:** Solicitações onde a **aprovação**, **ciência** ou **execução** do usuário é necessária para que o processo avance.
     -   **Tarefas Atribuídas:** Solicitações que foram atribuídas diretamente ao usuário para processamento e acompanhamento.
@@ -78,10 +80,6 @@ A aplicação adota uma arquitetura moderna baseada em JavaScript/TypeScript, ut
 -   **Armazenamento de Arquivos:** **Firebase Cloud Storage**. Utilizado para hospedar imagens, vídeos e anexos de workflows.
 -   **Hospedagem:** **Firebase App Hosting**. Plataforma otimizada para hospedar aplicações Next.js.
 
-### 3.3. Funcionalidades de IA (GenAI)
-
--   **Framework de IA:** **Genkit (Google)**. Framework open-source que facilita a integração de modelos de linguagem (LLMs).
--   **Modelos de Linguagem:** **Google Gemini**. É o cérebro por trás do chatbot "Bob", responsável por entender perguntas, gerar respostas e executar tarefas como busca na base de conhecimento.
 
 ---
 
@@ -96,13 +94,16 @@ Esta é uma visão estruturada das páginas e funcionalidades disponíveis.
 └── / (Área Autenticada)
     ├── /dashboard (Painel Inicial)
     ├── /news (Feed de Notícias)
-    ├── /solicitacoes (Portal de início de processos)
+    ├── /applications (Solicitações — portal de início de processos)
     ├── /documents (Repositório de Documentos)
+    ├── /guides (Guias e FAQ)
     ├── /labs (Vídeos e Materiais)
     ├── /rankings (Rankings e Campanhas)
-    ├── /store (Loja 3A RIVA - Embed)
-    ├── /chatbot (Assistente Bob 1.0)
+    ├── /store (Loja 3A RIVA - iframe; link externo também no menu)
+    ├── /chatbot (Bob — assistente externo via iframe)
     ├── /bi (Business Intelligence - Acesso Restrito)
+    ├── /bi-leaders (BI Líderes - Acesso Restrito)
+    ├── /meet-analyses (Bob Meet Análises - Acesso conforme permissão)
     ├── /personal-panel (Painel Pessoal - Acesso Restrito)
     │
     ├── /me/tasks (Minhas Tarefas - Caixa de Entrada Unificada)

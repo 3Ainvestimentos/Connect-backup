@@ -1,0 +1,26 @@
+flowchart TB
+    subgraph Q1["Chamados atuais"]
+        A["Base query<br/>ownerUserId == currentUserId<br/>isArchived == false<br/>statusCategory in [open, in_progress, waiting_action]<br/>order by lastUpdatedAt desc"]
+        B["Filtros internos<br/>hasResponsible == false<br/>hasResponsible == true && hasPendingActions == false<br/>hasPendingActions == true"]
+        C["Indices 1-3<br/>ownerUserId + isArchived + statusCategory + lastUpdatedAt<br/>+ hasResponsible<br/>+ hasPendingActions"]
+    end
+
+    subgraph Q2["Atribuicoes e acoes"]
+        D["Query A<br/>responsibleUserId == currentUserId<br/>isArchived == false<br/>statusCategory in [open, in_progress, waiting_action]<br/>order by lastUpdatedAt desc"]
+        E["Query B<br/>pendingActionRecipientIds array-contains currentUserId<br/>isArchived == false<br/>statusCategory == waiting_action<br/>order by lastUpdatedAt desc"]
+        F["Indices 4-5<br/>responsibleUserId + isArchived + statusCategory + lastUpdatedAt<br/>pendingActionRecipientIds + isArchived + statusCategory + lastUpdatedAt"]
+    end
+
+    subgraph Q3["Concluidas"]
+        G["Base query<br/>operationalParticipantIds array-contains currentUserId<br/>statusCategory in [finalized, archived]<br/>order by closedAt desc"]
+        H["Agrupamento<br/>closedMonthKey = YYYY-MM"]
+        I["Indice 6<br/>operationalParticipantIds + statusCategory + closedAt"]
+    end
+
+    subgraph Q4["Minhas solicitacoes"]
+        J["Base query<br/>requesterUserId == currentUserId<br/>order by submittedAt desc"]
+        K["Agrupamento<br/>submittedMonthKey = YYYY-MM"]
+        L["Indice 7<br/>requesterUserId + submittedAt"]
+    end
+
+    M["Nota MVP<br/>pendingActionCount fica fora do read model usado aqui"]

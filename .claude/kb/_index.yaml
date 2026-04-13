@@ -1,0 +1,25 @@
+# Knowledge Base Index — 3A RIVA Connect
+# Each domain has 3 files: concepts.md, patterns.md, specs.md
+# Updated for current project context
+
+domains:
+  firebase-nextjs:
+    description: "Firebase backend services (Firestore, Auth, Storage, Cloud Functions)"
+    files:
+      - concepts.md    # Security Rules, Data Modeling, Admin SDK vs Client SDK
+      - patterns.md    # Real-time listeners, transactions, batched writes, sequential IDs
+      - specs.md       # Collections schema, Indexes, Storage paths, Firebase config
+
+  react-nextjs:
+    description: "Next.js 15 + React 19 + TypeScript frontend patterns"
+    files:
+      - concepts.md    # App Router, Client Components, Distributed Contexts, Layout Groups
+      - patterns.md    # shadcn/ui integration, Form handling (Zod), Firebase real-time sync
+      - specs.md       # Directory structure, component inventory, Tailwind config, dependencies
+
+  project:
+    description: "Cross-cutting project knowledge for 3A RIVA Connect"
+    files:
+      - concepts.md    # Architecture principles, Context=Logic pattern, Domain boundaries
+      - patterns.md    # Gamification logic, Workflow routing, Opportunity state machine
+      - specs.md       # Environment variables, Deployment (App Hosting), Key dependencies

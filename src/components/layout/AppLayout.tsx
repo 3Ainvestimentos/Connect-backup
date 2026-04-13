@@ -52,12 +52,15 @@ import NotificationFAB from '../fab/NotificationFAB';
 import { useFabMessages } from '@/contexts/FabMessagesContext';
 import { DailyRssModal } from '../rss/DailyRssModal';
 import { findCollaboratorByEmail } from '@/lib/email-utils';
+import { WORKFLOW_MANAGEMENT_ROUTE } from '@/lib/workflows/management/constants';
+import { canAccessWorkflowManagementEntry } from '@/lib/workflows/management/navigation';
 
 
 export const navItems = [
   { href: '/dashboard', label: 'Painel Inicial', icon: Home, external: false, permission: null },
   { href: '/news', label: 'Feed de Notícias', icon: Newspaper, external: false, permission: null },
   { href: '/applications', label: 'Solicitações', icon: Workflow, external: false, permission: null },
+  { href: '/solicitacoes', label: 'Solicitacoes V2', icon: Workflow, external: false, permission: 'canOpenRequestsV2' },
   { href: '/documents', label: 'Documentos', icon: FolderOpen, external: false, permission: null },
   { href: '/labs', label: 'Labs', icon: FlaskConical, external: false, permission: null },
   { href: '/rankings', label: 'Rankings e Campanhas', icon: Award, external: false, permission: 'canViewRankings' },
@@ -68,7 +71,7 @@ export const navItems = [
   { href: '/meet-analyses', label: 'Bob Meet Análises', icon: Video, external: false, permission: 'canViewMeetAnalyses' },
 ];
 
-function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
+export function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onProfileClick: () => void; hasPendingRequests: boolean; hasPendingTasks: boolean; }) {
   const { user, signOut, loading, isAdmin, isSuperAdmin, permissions } = useAuth();
   const { theme, setTheme } = useTheme();
   const { collaborators } = useCollaborators();
@@ -84,11 +87,15 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
   const displayName = currentUserCollaborator?.name || user.displayName;
   const displayEmail = currentUserCollaborator?.email || user.email;
   const displayPhotoUrl = currentUserCollaborator?.photoURL || user.photoURL || undefined;
+  const canSeeWorkflowManagement = canAccessWorkflowManagementEntry(permissions);
+  const hasPendingWorkflowWork = hasPendingRequests || hasPendingTasks;
+  const showLegacyWorkflowLinks = permissions.canManageRequests || permissions.canViewTasks;
 
-  const hasTools = permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
+  const hasTools = permissions.canManageRequestsV2 || permissions.canManageRequests || permissions.canViewTasks || permissions.canViewCRM || permissions.canViewStrategicPanel || permissions.canViewDirectoria;
   const hasAdminPanels =
     permissions.canManageContent ||
     permissions.canManageWorkflows ||
+    permissions.canManageWorkflowsV2 ||
     permissions.canManageTripsBirthdays ||
     permissions.canManageVacation ||
     isSuperAdmin;
@@ -149,28 +156,45 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
         {hasTools && (
             <DropdownMenuGroup>
             <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Ferramentas</DropdownMenuLabel>
-              {permissions.canManageRequests && (
+              {canSeeWorkflowManagement && (
                 <DropdownMenuItem asChild>
-                <Link href="/requests" className={cn(
-                    "cursor-pointer font-body",
-                    hasPendingRequests && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-                    )}>
-                    <Mailbox className="mr-2 h-4 w-4" />
-                    <span>Gestão de Solicitações</span>
-                    </Link>
+                  <Link
+                    href={WORKFLOW_MANAGEMENT_ROUTE}
+                    className={cn(
+                      "cursor-pointer font-body",
+                      hasPendingWorkflowWork &&
+                        "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20",
+                    )}
+                  >
+                    <ListChecks className="mr-2 h-4 w-4" />
+                    <span>Gestao de chamados</span>
+                  </Link>
                 </DropdownMenuItem>
               )}
-            {permissions.canViewTasks && (
-                <DropdownMenuItem asChild>
-                    <Link href="/me/tasks" className={cn(
-                        "cursor-pointer font-body",
-                        hasPendingTasks && "bg-admin-primary/10 text-admin-primary font-bold hover:!bg-admin-primary/20"
-                    )}>
-                        <ListTodo className="mr-2 h-4 w-4" />
-                        <span>Minhas Tarefas/Ações</span>
-                    </Link>
-                </DropdownMenuItem>
-            )}
+              {showLegacyWorkflowLinks ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Atalhos legados durante transicao
+                  </DropdownMenuLabel>
+                  {permissions.canManageRequests && (
+                    <DropdownMenuItem asChild>
+                    <Link href="/requests" className="cursor-pointer font-body">
+                        <Mailbox className="mr-2 h-4 w-4" />
+                        <span>Gestão de Solicitações</span>
+                        </Link>
+                    </DropdownMenuItem>
+                  )}
+                {permissions.canViewTasks && (
+                    <DropdownMenuItem asChild>
+                        <Link href="/me/tasks" className="cursor-pointer font-body">
+                            <ListTodo className="mr-2 h-4 w-4" />
+                            <span>Minhas Tarefas/Ações</span>
+                        </Link>
+                    </DropdownMenuItem>
+                )}
+                </>
+              ) : null}
             {permissions.canViewCRM && (
                 <DropdownMenuItem asChild><Link href="/admin/crm" className="cursor-pointer font-body"><NotebookPen className="mr-2 h-4 w-4" /><span>CRM Interno</span></Link></DropdownMenuItem>
             )}
@@ -192,6 +216,7 @@ function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }: { onPr
                 {permissions.canManageContent && <DropdownMenuItem asChild><Link href="/admin/content" className="cursor-pointer font-body"><Edit className="mr-2 h-4 w-4" /><span>Conteúdo</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/admin/fab-messages" className="cursor-pointer font-body"><MessageSquarePlus className="mr-2 h-4 w-4" /><span>Mensagens FAB</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
+                {permissions.canManageWorkflowsV2 && <DropdownMenuItem asChild><Link href="/admin/request-config" className="cursor-pointer font-body"><Settings className="mr-2 h-4 w-4" /><span>Config. de chamados v2</span></Link></DropdownMenuItem>}
                 {(permissions.canManageTripsBirthdays || permissions.canManageVacation) && <DropdownMenuItem asChild><Link href="/admin/travel-birthdays" className="cursor-pointer font-body"><Plane className="mr-2 h-4 w-4" /><span>Viagens/Férias</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>
@@ -251,7 +276,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hasActiveCampaign = useMemo(() => {
     if (!currentUserCollab) return false;
     const messageForUser = fabMessages.find(msg => msg.userId === currentUserCollab.id3a);
-    return messageForUser && (messageForUser.status === 'pending_cta' || messageForUser.status === 'pending_follow_up');
+    return messageForUser?.status === 'pending_cta';
   }, [fabMessages, currentUserCollab]);
 
 

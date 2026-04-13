@@ -1,0 +1,84 @@
+erDiagram
+    %% Fase 1 fisica: colecoes paralelas no mesmo banco de producao
+    %% workflowTypes_v2 / workflowTypes_v2/{workflowTypeId}/versions/{version} / workflows_v2 / counters/workflowCounter_v2
+    WORKFLOW_TYPES_V2 {
+        string workflowTypeId PK
+        string name
+        string description
+        string icon
+        string areaId
+        string ownerEmail
+        string ownerUserId
+        string[] allowedUserIds
+        boolean active
+        number latestDraftVersion
+        number latestPublishedVersion
+        string createdAt
+        string createdBy
+        string updatedAt
+        string updatedBy
+    }
+
+    WORKFLOW_TYPE_VERSIONS {
+        string workflowTypeId FK
+        number version PK
+        string state
+        string ownerEmailAtPublish
+        number defaultSlaDays
+        array fields
+        string initialStepId
+        string[] stepOrder
+        map stepsById
+        string publishedAt
+        string publishedBy
+    }
+
+    WORKFLOWS_V2 {
+        string firestoreDocId PK
+        string requestId
+        string workflowTypeId FK
+        number workflowVersion FK
+        string workflowName
+        string areaId
+        string ownerEmail
+        string ownerUserId
+        string requesterUserId
+        string requesterName
+        string responsibleUserId
+        string responsibleName
+        object submittedBy
+        string submittedAt
+        string lastUpdatedAt
+        map formData
+        string currentStepId
+        string currentStepName
+        string currentStatusKey
+        string statusCategory
+        object responsible
+        array actionRequests
+        map stepStates
+        array history
+        number slaDays
+        string expectedCompletionAt
+        string finalizedAt
+        string closedAt
+        string archivedAt
+        string submittedMonthKey
+        string closedMonthKey
+        boolean hasResponsible
+        boolean hasPendingActions
+        string[] pendingActionRecipientIds
+        string[] pendingActionTypes
+        string[] operationalParticipantIds
+        boolean isArchived
+    }
+
+    WORKFLOW_COUNTER_V2 {
+        string docPath PK
+        number lastRequestNumber
+    }
+
+    WORKFLOW_TYPES_V2 ||--o{ WORKFLOW_TYPE_VERSIONS : "subcollection versions"
+    WORKFLOW_TYPES_V2 ||--o{ WORKFLOWS_V2 : "type snapshot on open"
+    WORKFLOW_TYPE_VERSIONS ||--o{ WORKFLOWS_V2 : "governs workflowVersion"
+    WORKFLOW_COUNTER_V2 ||--o{ WORKFLOWS_V2 : "allocates requestId"

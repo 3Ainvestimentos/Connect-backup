@@ -1,0 +1,2644 @@
+{
+  "Assinatura de e-mail; Cartão de visita; Cartão de visita digital": {
+    "_id": "03DHTMSfnyRG181gjXO7",
+    "requestId": "0080",
+    "submittedBy": {
+      "userId": "JCO",
+      "userName": "João Victor Cavalcante Ottoni",
+      "userEmail": "joao.ottoni@3ainvestimentos.com.br"
+    },
+    "type": "Assinatura de e-mail; Cartão de visita; Cartão de visita digital",
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "formData": {
+      "impacto": "Médio",
+      "cargo_area": "Assessoria Mesa Institucional",
+      "filial": "Belo Horizonte",
+      "nome_sobrenome": "João Victor Cavalcante Ottoni",
+      "setor_area": "Assessoria - Mesa Institucional ",
+      "email": "joao.ottoni@3ainvestimentos.com.br",
+      "necessario": "Assinatura de E-mail",
+      "descricao_detalhada": "Boa tarde ! Solicito uma confecção de assinatura de e-mail em meu nome.",
+      "telefone": "31996742021"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "João Pedro Pompeu Ulhoa",
+      "id": "JPU"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-09-03T16:09:27-03:00",
+    "history": [
+      {
+        "userId": "JCO",
+        "userName": "João Victor Cavalcante Ottoni",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-03T16:09:27-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "BFG2",
+        "userName": "Barbara Fiche Girao",
+        "status": "em_analise",
+        "timestamp": "2025-09-05T14:16:37-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userName": "João Pedro Pompeu Ulhoa",
+        "userId": "JPU",
+        "status": "em_execucao",
+        "timestamp": "2025-09-05T16:26:22-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "JPU",
+        "userName": "João Pedro Pompeu Ulhoa",
+        "status": "finalizado",
+        "timestamp": "2025-09-12T15:21:55-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-09-12T15:21:55-03:00"
+  },
+  "Espelhamento - Em lote": {
+    "_id": "0C9YwwVpGbIYZFbYkXEN",
+    "requestId": "0573",
+    "submittedBy": {
+      "userId": "HPP2",
+      "userName": "Henrique Póvoa Peixoto",
+      "userEmail": "henrique.peixoto@3ainvestimentos.com.br"
+    },
+    "type": "Espelhamento - Em lote",
+    "status": "solicitacao_aberta",
+    "formData": {
+      "email_lider": "s",
+      "anexo_planilha": "ERRO_UPLOAD: TIMEOUT: Upload do arquivo \"Captura de tela 2025-10-06 125536.png\" excedeu 30 segundos",
+      "nome_sobrenome": "teste path2",
+      "tipo_solicitacao": "Criar um espelhamento",
+      "_uploadErrors": "TIMEOUT: Upload do arquivo \"Captura de tela 2025-10-06 125536.png\" excedeu 30 segundos"
+    },
+    "ownerEmail": "ti@3ariva.com.br",
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2026-01-20T16:54:38-03:00",
+    "history": [
+      {
+        "userId": "HPP2",
+        "userName": "Henrique Póvoa Peixoto",
+        "status": "solicitacao_aberta",
+        "timestamp": "2026-01-20T16:54:38-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "lastUpdatedAt": "2026-01-20T16:54:38-03:00",
+    "viewedBy": []
+  },
+  "Padronização de E-mail  - Código XP": {
+    "_id": "0HtmtQXwvsbnfvNsPhZj",
+    "requestId": "0298",
+    "submittedBy": {
+      "userId": "TOL",
+      "userName": "Tomás Leme",
+      "userEmail": "tomas.leme@3ainvestimentos.com.br"
+    },
+    "type": "Padronização de E-mail  - Código XP",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "cod_xp": "TOMAS.A98728",
+      "nome_sobrenome": "Tomás de Lima Leme",
+      "setor_area": "Assessor Comercial | São Paulo",
+      "email": "tomas.leme@3ainvestimentos.com.br",
+      "contratacao_via": "3A"
+    },
+    "status": "ciente_gestao",
+    "assignee": {
+      "name": "Danilo Freitas Zegrini",
+      "id": "DFZ2"
+    },
+    "actionRequests": {
+      "ciente_gestao": [
+        {
+          "respondedAt": "2025-10-29T12:04:09-03:00",
+          "attachmentUrl": "",
+          "comment": "",
+          "status": "approved",
+          "userId": "MPA2",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "requestedAt": "2025-10-24T13:53:03-03:00"
+        },
+        {
+          "respondedAt": "2025-10-28T11:30:30-03:00",
+          "attachmentUrl": "",
+          "comment": "",
+          "status": "approved",
+          "userId": "DFZ2",
+          "userName": "Danilo Freitas Zegrini",
+          "requestedAt": "2025-10-28T11:29:59-03:00"
+        },
+        {
+          "respondedAt": "2025-10-28T17:52:26-03:00",
+          "attachmentUrl": "",
+          "comment": "",
+          "status": "approved",
+          "userName": "Dalcion Franco Amaral",
+          "userId": "DFA",
+          "requestedAt": "2025-10-28T11:32:21-03:00"
+        },
+        {
+          "respondedAt": "2025-11-12T20:22:19-03:00",
+          "userName": "Fernanda Maria Pinto Adami",
+          "comment": "",
+          "status": "approved",
+          "userId": "FPA2",
+          "attachmentUrl": "",
+          "requestedAt": "2025-10-28T11:32:21-03:00"
+        }
+      ],
+      "em_execucao": [
+        {
+          "respondedAt": "",
+          "userId": "MPA2",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "status": "pending",
+          "requestedAt": "2025-10-24T13:52:40-03:00"
+        }
+      ]
+    },
+    "isArchived": false,
+    "submittedAt": "2025-10-23T13:20:37-03:00",
+    "history": [
+      {
+        "userName": "Tomás Leme",
+        "userId": "TOL",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-23T13:20:37-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_analise",
+        "timestamp": "2025-10-24T09:56:23-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_analise",
+        "timestamp": "2025-10-24T09:57:15-03:00",
+        "notes": "Solicitação atribuída a Danilo Freitas Zegrini."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-24T13:52:40-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-24T13:52:40-03:00",
+        "notes": "Ação de \"Informações Anexadas\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "ciente_gestao",
+        "timestamp": "2025-10-24T13:53:03-03:00",
+        "notes": "Status alterado para \"Ciente - Gestão\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "ciente_gestao",
+        "timestamp": "2025-10-24T13:53:03-03:00",
+        "notes": "Ação de \"Ciente - Gestão\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "ciente_gestao",
+        "timestamp": "2025-10-28T11:29:59-03:00",
+        "notes": "Ação de \"Ciente - Gestão\" solicitada para Danilo Freitas Zegrini."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "ciente_gestao",
+        "timestamp": "2025-10-28T11:30:30-03:00",
+        "notes": "Ação foi Aprovada."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "ciente_gestao",
+        "timestamp": "2025-10-28T11:32:21-03:00",
+        "notes": "Ação de \"Ciente - Gestão\" solicitada para Dalcion Franco Amaral, Fernanda Maria Pinto Adami."
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "ciente_gestao",
+        "timestamp": "2025-10-28T17:52:26-03:00",
+        "notes": "Ação foi Aprovada."
+      },
+      {
+        "userName": "Marcio Peixoto de Almeida Junior",
+        "userId": "MPA2",
+        "status": "ciente_gestao",
+        "timestamp": "2025-10-29T12:04:09-03:00",
+        "notes": "Ação foi Aprovada."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "ciente_gestao",
+        "timestamp": "2025-11-12T20:22:19-03:00",
+        "notes": "Ação foi Aprovada."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-11-12T20:22:19-03:00"
+  },
+  "Solicitação de Suprimentos": {
+    "_id": "0OMkLFgf3zxpAG18Bvot",
+    "requestId": "0261",
+    "submittedBy": {
+      "userId": "SZH",
+      "userName": "Sarita Siqueira Zanardo Hanna",
+      "userEmail": "sarita.hanna@3ariva.com.br"
+    },
+    "type": "Solicitação de Suprimentos",
+    "ownerEmail": "stefania.otoni@3ainvestimentos.com.br",
+    "formData": {
+      "impacto": "Alto",
+      "anexo_planilha": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FFacilities%20e%20Suprimentos%2F0OMkLFgf3zxpAG18Bvot%2F1760471060730-Controle_de_Suprimentos_-_3ARiva_2024_(8).xlsx?alt=media&token=f87f411e-b10d-4302-8d13-b4edcd543ac7",
+      "observacoes": "",
+      "nome_sobrenome": "Sarita Hanna ",
+      "setor_area": "comercial ",
+      "email": "sarita.hanna@rivainvestimentos.com.br",
+      "centrodecusto": "3ARI-Limeira"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Guilherme Oliveira Costa",
+      "id": "GOC"
+    },
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2025-10-14T16:44:20-03:00",
+    "history": [
+      {
+        "userName": "Sarita Siqueira Zanardo Hanna",
+        "userId": "SZH",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-14T16:44:20-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Stefania Marcia Otoni",
+        "userId": "SMO2",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-15T12:01:12-03:00",
+        "notes": "Solicitação atribuída a Guilherme Oliveira Costa."
+      },
+      {
+        "userId": "GOC",
+        "userName": "Guilherme Oliveira Costa",
+        "status": "em_analise",
+        "timestamp": "2025-10-15T14:26:30-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "GOC",
+        "userName": "Guilherme Oliveira Costa",
+        "status": "em_andamento",
+        "timestamp": "2025-10-16T11:30:05-03:00",
+        "notes": "Compra no Cartão 0071. Suprimentos Limeira . Valor: R$274,16. Fornecedor: Supermercado Covabra - Centro de Custo: COM-LIM ."
+      },
+      {
+        "userId": "GOC",
+        "userName": "Guilherme Oliveira Costa",
+        "status": "finalizado",
+        "timestamp": "2025-10-16T11:30:31-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-10-16T11:30:31-03:00"
+  },
+  "Solicitação de Compras": {
+    "_id": "0S3LQegIhIuvCNDjqVcw",
+    "requestId": "0053",
+    "submittedBy": {
+      "userId": "VAL",
+      "userName": "Victor Arcuri Lemos",
+      "userEmail": "victor@3ainvestimentos.com.br"
+    },
+    "type": "Solicitação de Compras",
+    "ownerEmail": "stefania.otoni@3ainvestimentos.com.br",
+    "formData": {
+      "impacto": "Baixo",
+      "nome_sobrenome": "Victor Arcuri Lemos",
+      "motivo": "Para fazer a água quente para a garrafa térmica.",
+      "quantidade": "1",
+      "email": "victor@3ainvestimentos.com.br",
+      "item_compra": "Chaleira elétrica (220V)",
+      "link_produto": "https://produto.mercadolivre.com.br/MLB-5499255580-chaleira-eletrica-jarra-vidro-transparente-18l-110v-ou-220v-_JM?attributes=VOLTAGE%3AMjIwVg%3D%3D&picker=true&searchVariation=189164704725&quantity=1",
+      "centro_custo": "3ARI-Floripa",
+      "anexos": ""
+    },
+    "status": "finalizada",
+    "actionRequests": {
+      "emaprovacao_fin": [
+        {
+          "respondedAt": "",
+          "userId": "LBC2",
+          "userName": "Leonardo Brum Cardoso",
+          "status": "pending",
+          "requestedAt": "2025-08-25T18:06:37-03:00"
+        }
+      ],
+      "em_execucao": [
+        {
+          "respondedAt": "",
+          "userId": "SMO2",
+          "userName": "Stefania Marcia Otoni",
+          "status": "pending",
+          "requestedAt": "2025-08-25T18:06:45-03:00"
+        }
+      ]
+    },
+    "isArchived": true,
+    "submittedAt": "2025-08-25T16:16:34-03:00",
+    "history": [
+      {
+        "userName": "Victor Arcuri Lemos",
+        "userId": "VAL",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-08-25T16:16:34-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "em_analise",
+        "timestamp": "2025-08-25T18:06:33-03:00",
+        "notes": "Valor total: R$76,55 + 27,98 frete. Tempo gasto: 10 minutos. Cartão 0071"
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "emaprovacao_fin",
+        "timestamp": "2025-08-25T18:06:37-03:00",
+        "notes": "Status alterado para \"Em aprovação - FIN\"."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "emaprovacao_fin",
+        "timestamp": "2025-08-25T18:06:37-03:00",
+        "notes": "Ação de \"Aprovar Compra\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "em_execucao",
+        "timestamp": "2025-08-25T18:06:45-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "em_execucao",
+        "timestamp": "2025-08-25T18:06:45-03:00",
+        "notes": "Ação de \"Informações da Compra - Anexada\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "ciencia_solicitante",
+        "timestamp": "2025-08-25T18:06:48-03:00",
+        "notes": "Status alterado para \"Ciência - Solicitante\"."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "finalizada",
+        "timestamp": "2025-08-25T18:06:51-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-08-25T18:06:51-03:00"
+  },
+  "Cadastro de Novos Entrantes - Associado": {
+    "_id": "0UbDGR180fI0JvU5VymD",
+    "requestId": "0375",
+    "submittedBy": {
+      "userId": "DFA",
+      "userName": "Dalcion Franco Amaral",
+      "userEmail": "dalcion.franco@3ainvestimentos.com.br"
+    },
+    "type": "Cadastro de Novos Entrantes - Associado",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "cargo_proposto": "Analista de BI",
+      "nome_lider": "Rebeca Pedras",
+      "observacoes": "Associado sem Ancord. ",
+      "nome_sobrenome": "Philipe Coelho Vannucci de Moraes",
+      "email": "philipe.vanucci@gmail.com",
+      "contratacao_via": "RV Corretora (RVCS)",
+      "telefone": "(31) 99774-2112",
+      "pf_abaixo_pj": "Sem Ancord, area de suporte. ",
+      "data_inicio": "03/11/2025",
+      "equipe": "BI & Perfomance / BH/ BH",
+      "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FGente%20e%20Comunica%C3%A7%C3%A3o%2F0UbDGR180fI0JvU5VymD%2F1762786188170-Respondi___Phillipe.pdf?alt=media&token=d8257979-99a4-42ae-bf91-72a70b124778"
+    },
+    "status": "enviar_financeiro",
+    "assignee": {
+      "name": "Dalcion Franco Amaral",
+      "id": "DFA"
+    },
+    "actionRequests": {
+      "enviar_juridico": [
+        {
+          "respondedAt": "",
+          "userId": "LBC",
+          "userName": "Luanda Beatriz Constantino da Conceição",
+          "status": "pending",
+          "requestedAt": "2025-11-10T12:54:24-03:00"
+        },
+        {
+          "respondedAt": "",
+          "userName": "Alice Monteiro Passos",
+          "userId": "AMP2",
+          "status": "pending",
+          "requestedAt": "2025-11-10T12:54:24-03:00"
+        },
+        {
+          "respondedAt": "",
+          "userId": "BCS2",
+          "userName": "Barbara Costa Silva Matos",
+          "status": "pending",
+          "requestedAt": "2025-11-10T12:54:24-03:00"
+        }
+      ],
+      "enviar_financeiro": [
+        {
+          "respondedAt": "",
+          "userId": "PTC2",
+          "userName": "Pablo Tadeu Costa Soares",
+          "status": "pending",
+          "requestedAt": "2025-11-19T14:57:50-03:00"
+        }
+      ],
+      "enviado_gente": [
+        {
+          "respondedAt": "2025-11-12T20:21:14-03:00",
+          "userId": "FPA2",
+          "comment": "Profissional vindo da Atrio. Mudança de contrato. ",
+          "status": "executed",
+          "userName": "Fernanda Maria Pinto Adami",
+          "attachmentUrl": "",
+          "requestedAt": "2025-11-12T09:37:53-03:00"
+        },
+        {
+          "respondedAt": "",
+          "userName": "Dalcion Franco Amaral",
+          "userId": "DFA",
+          "status": "pending",
+          "requestedAt": "2025-11-12T09:37:53-03:00"
+        }
+      ]
+    },
+    "isArchived": true,
+    "submittedAt": "2025-11-10T11:49:47-03:00",
+    "history": [
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "em_aberto",
+        "timestamp": "2025-11-10T11:49:47-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_aberto",
+        "timestamp": "2025-11-10T12:53:23-03:00",
+        "notes": "Solicitação atribuída a Dalcion Franco Amaral."
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "enviar_juridico",
+        "timestamp": "2025-11-10T12:54:24-03:00",
+        "notes": "Status alterado para \"Enviado ao Jurídico\"."
+      },
+      {
+        "userName": "Dalcion Franco Amaral",
+        "userId": "DFA",
+        "status": "enviar_juridico",
+        "timestamp": "2025-11-10T12:54:24-03:00",
+        "notes": "Ação de \"Validar Documentação anexada / Iniciar processo de alteração\" solicitada automaticamente para 3 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Luanda Beatriz Constantino da Conceição",
+        "userId": "LBC",
+        "status": "enviado_gente",
+        "timestamp": "2025-11-12T09:37:53-03:00",
+        "notes": "Status alterado para \"Enviado ao Time de Gente\"."
+      },
+      {
+        "userId": "LBC",
+        "userName": "Luanda Beatriz Constantino da Conceição",
+        "status": "enviado_gente",
+        "timestamp": "2025-11-12T09:37:53-03:00",
+        "notes": "Ação de \"Ciente - Gente\" solicitada automaticamente para 2 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "enviar_ti",
+        "timestamp": "2025-11-12T20:21:18-03:00",
+        "notes": "Status alterado para \"Enviado ao TI (Acessos)\"."
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "enviar_financeiro",
+        "timestamp": "2025-11-19T14:57:49-03:00",
+        "notes": "Status alterado para \"Enviado ao Financeiro\"."
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "enviar_financeiro",
+        "timestamp": "2025-11-19T14:57:50-03:00",
+        "notes": "Ação de \"Feito\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-11-19T14:57:49-03:00"
+  },
+  "Problemas de Hardware": {
+    "_id": "0buuPj5pAiOF2g0lHtte",
+    "requestId": "0343",
+    "submittedBy": {
+      "userId": "IRM",
+      "userName": "Izabela Ribas Matoso",
+      "userEmail": "izabela.matoso@3ariva.com.br"
+    },
+    "type": "Problemas de Hardware",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "descricao_detalhada": "apenas registrando a solicitação de um adaptador USB-C que já foi entregue pelo Danilo ",
+      "impacto": "Baixo",
+      "nome_sobrenome": "Izabela Matoso ",
+      "setor_area": "Minst",
+      "email": "izabela.matoso@rivainvestimentos.com.br"
+    },
+    "status": "finalizado",
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-11-03T12:55:58-03:00",
+    "history": [
+      {
+        "userId": "IRM",
+        "userName": "Izabela Ribas Matoso",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-11-03T12:55:58-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_analise",
+        "timestamp": "2025-11-04T10:12:50-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-11-04T10:12:55-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "finalizado",
+        "timestamp": "2025-11-04T10:12:58-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-11-04T10:12:58-03:00"
+  },
+  "Cadastro de Novos Entrantes - Demais Áreas ": {
+    "_id": "0xlEbMdSA4rghURr3zxh",
+    "requestId": "0238",
+    "submittedBy": {
+      "userId": "DFA",
+      "userName": "Dalcion Franco Amaral",
+      "userEmail": "dalcion.franco@3ainvestimentos.com.br"
+    },
+    "type": "Cadastro de Novos Entrantes - Demais Áreas ",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "cargo_proposto": "Estagiário de RV",
+      "nome_lider": "Lucas Prado ",
+      "observacoes": "sem ancord",
+      "nome_sobrenome": "João Vitor Belchior ",
+      "email": "joaovitorbelchior48@gmail.com",
+      "contratacao_via": "RIVA Investimentos",
+      "telefone": "(31) 9 9465-6018",
+      "data_inicio": "2025-10-09",
+      "equipe": "Produtos RV - BH",
+      "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FGente%20e%20Comunica%C3%A7%C3%A3o%2F0xlEbMdSA4rghURr3zxh%2F1759960381021-Respondi___JOAO_VITOR.pdf?alt=media&token=cc2f5cfe-c90e-41ff-b18c-8fe209e3d820"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Dalcion Franco Amaral",
+      "id": "DFA"
+    },
+    "actionRequests": {
+      "ciente_fin": [
+        {
+          "respondedAt": "",
+          "userId": "LBC2",
+          "userName": "Leonardo Brum Cardoso",
+          "status": "pending",
+          "requestedAt": "2025-10-09T13:21:01-03:00"
+        }
+      ],
+      "acessos_ti": [
+        {
+          "respondedAt": "2025-10-09T13:20:56-03:00",
+          "userId": "DFZ2",
+          "comment": "joao.belchior@3ainvestimentos.com.br",
+          "status": "executed",
+          "userName": "Danilo Freitas Zegrini",
+          "attachmentUrl": "",
+          "requestedAt": "2025-10-09T10:36:24-03:00"
+        }
+      ]
+    },
+    "isArchived": true,
+    "submittedAt": "2025-10-08T18:53:00-03:00",
+    "history": [
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-08T18:53:00-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_analise",
+        "timestamp": "2025-10-09T10:36:13-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "acessos_ti",
+        "timestamp": "2025-10-09T10:36:24-03:00",
+        "notes": "Status alterado para \"Criar acessos/equipamentos - TI\"."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "acessos_ti",
+        "timestamp": "2025-10-09T10:36:24-03:00",
+        "notes": "Ação de \"Informações de Acesso - Concluído\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "acessos_ti",
+        "timestamp": "2025-10-09T10:36:40-03:00",
+        "notes": "Solicitação atribuída a Dalcion Franco Amaral."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "ciente_fin",
+        "timestamp": "2025-10-09T13:21:01-03:00",
+        "notes": "Status alterado para \"Enviar para financeiro\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "ciente_fin",
+        "timestamp": "2025-10-09T13:21:01-03:00",
+        "notes": "Ação de \"Ciente - Financeiro\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "cadastro_plataformas",
+        "timestamp": "2025-12-18T09:56:12-03:00",
+        "notes": "Status alterado para \"Cadastro de Plataformas - Gente\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "finalizado",
+        "timestamp": "2025-12-18T09:56:16-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-12-18T09:56:16-03:00"
+  },
+  "Alteração de Cargo / Remuneração / Time ou Equipe": {
+    "_id": "0yEeZ65wCncWjepjakoA",
+    "requestId": "0421",
+    "submittedBy": {
+      "userId": "FPA2",
+      "userName": "Fernanda Maria Pinto Adami",
+      "userEmail": "fernanda.adami@3ainvestimentos.com.br"
+    },
+    "type": "Alteração de Cargo / Remuneração / Time ou Equipe",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "cargo_area": "Assistente de RH",
+      "nome_sobrenome": "Fernanda Maria Pinto Adami",
+      "setor_area": "RH",
+      "email": "fernanda.adami@3ainvestimentos.com.br",
+      "nova_equipe": "Gente | RH",
+      "nova_remuneracao": "3500,00",
+      "novo_cargo": "Analista de RH",
+      "descricao_detalhada": "Aprovação em comitê",
+      "nome_sobrenome_colaborador": "Dalcion Franco Amaral",
+      "anexo": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FGente%20e%20Comunica%C3%A7%C3%A3o%2F0yEeZ65wCncWjepjakoA%2F1763496808094-IMAGEM_PROMO%25C3%2587%25C3%2583O.png?alt=media&token=b24a0ca9-4b80-4b09-a682-a5e0351f0456"
+    },
+    "_legacyMigration": {
+      "migrationVersion": "1.1",
+      "migratedAt": "2026-03-12T18:29:50.840588",
+      "placeholderFields": [],
+      "originalType": "AC - Alteração de Cargo / Remuneração / Time ou Equipe"
+    },
+    "status": "finalizado",
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2025-11-18T17:13:27-03:00",
+    "history": [
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-11-18T17:13:27-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-11-18T17:13:27-03:00"
+  },
+  "Arte / Material gráfico": {
+    "_id": "122YCXCFvNzKqOEyPHU4",
+    "requestId": "0075",
+    "submittedBy": {
+      "userId": "JRC",
+      "userName": "Jaqueline Reis",
+      "userEmail": "jaqueline.reis@3ariva.com.br"
+    },
+    "type": "Arte / Material gráfico",
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "formData": {
+      "impacto": "Urgente (Crítico)",
+      "nome_sobrenome": "Jaqueline Reis",
+      "setor_area": "Filial Itajubá",
+      "email": "jaqueline.reis@3ariva.com.br",
+      "objetivo": "Informar aos clientes sobre a mudança de endereço da Filial de Itajubá",
+      "publico_alvo": "Clientes",
+      "descricao_detalhada": "Por gentileza fazer uma arte com a mudança de endereço do NOVO escritório da Filial de Itajubá:\nEndereço novo: Rua Dr. Pereira Cabral, 300 - sala 7\nEdifício Itália - Centro - Itajubá - MG\nCep.: 37.500-013",
+      "imagem_referencia": "",
+      "categoria": "Imagem para Whatsapp",
+      "conteudo_texto": "Mudança de endereço do escritório",
+      "prazo": "",
+      "versoes": "1 versão"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "João Pedro Pompeu Ulhoa",
+      "id": "JPU"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-09-01T17:11:29-03:00",
+    "history": [
+      {
+        "userName": "Jaqueline Reis",
+        "userId": "JRC",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-01T17:11:29-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Barbara Fiche Girao",
+        "userId": "BFG2",
+        "status": "em_analise",
+        "timestamp": "2025-09-03T10:39:41-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "JPU",
+        "userName": "João Pedro Pompeu Ulhoa",
+        "status": "em_execucao",
+        "timestamp": "2025-09-04T14:45:33-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "JPU",
+        "userName": "João Pedro Pompeu Ulhoa",
+        "status": "finalizado",
+        "timestamp": "2025-09-08T11:53:16-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-09-08T11:53:16-03:00"
+  },
+  "Manutenção / Solicitações Gerais": {
+    "_id": "13jOuCAaibfgFv17MBSX",
+    "requestId": "0258",
+    "submittedBy": {
+      "userId": "LFD2",
+      "userName": "Leonardo Franco Duarte Tertuliano",
+      "userEmail": "leonardo.tertuliano@3ainvestimentos.com.br"
+    },
+    "type": "Manutenção / Solicitações Gerais",
+    "ownerEmail": "stefania.otoni@3ainvestimentos.com.br",
+    "formData": {
+      "impacto": "Alto",
+      "descricao_detalhada": "Aqui na Digital, depois da mudança para a outra baia, estamos precisando de uns 3 suportes de monitor com alguns \"pés\" extras, podem nos fornecer por favor?",
+      "nome_sobrenome": "Leonardo Tertuliano",
+      "setor_area": "Digital",
+      "email": "leonardo.tertuliano@3ainvestimentos.com.br",
+      "centrodecusto": "3ARI-Belo Horizonte"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Luis Henrique Dusanek Guedes",
+      "id": "LHG"
+    },
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2025-10-14T09:47:24-03:00",
+    "history": [
+      {
+        "userId": "LFD2",
+        "userName": "Leonardo Franco Duarte Tertuliano",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-14T09:47:24-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-15T12:00:38-03:00",
+        "notes": "Solicitação atribuída a Luis Henrique Dusanek Guedes."
+      },
+      {
+        "userId": "LHG",
+        "userName": "Luis Henrique Dusanek Guedes",
+        "status": "em_analise",
+        "timestamp": "2025-10-15T14:59:30-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "LHG",
+        "userName": "Luis Henrique Dusanek Guedes",
+        "status": "em_andamento",
+        "timestamp": "2025-10-15T14:59:32-03:00",
+        "notes": "Status alterado para \"Em andamento\"."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "finalizado",
+        "timestamp": "2025-10-15T16:23:13-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-10-15T16:23:13-03:00"
+  },
+  "Problemas de Software": {
+    "_id": "1WG2DDKlXkxuL65W3nGQ",
+    "requestId": "0076",
+    "submittedBy": {
+      "userId": "DRF",
+      "userName": "Daniel Resende Ferreira",
+      "userEmail": "daniel.resende@3ainvestimentos.com.br"
+    },
+    "type": "Problemas de Software",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "descricao_detalhada": "Preciso configurar o Phyton no meu PC para mandar saldos",
+      "impacto": "Urgente (Crítico)",
+      "nome_sobrenome": "Daniel Resende Ferreira",
+      "setor_area": "RV",
+      "email": "daniel.resende@3ainvestimentos.com.br"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Luis Henrique Dusanek Guedes",
+      "id": "LHG"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-09-02T09:35:23-03:00",
+    "history": [
+      {
+        "userName": "Daniel Resende Ferreira",
+        "userId": "DRF",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-02T09:35:23-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-02T12:41:43-03:00",
+        "notes": "Solicitação atribuída a Luis Henrique Dusanek Guedes."
+      },
+      {
+        "userName": "Luis Henrique Dusanek Guedes",
+        "userId": "LHG",
+        "status": "em_analise",
+        "timestamp": "2025-09-02T13:50:05-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "LHG",
+        "userName": "Luis Henrique Dusanek Guedes",
+        "status": "em_execucao",
+        "timestamp": "2025-09-03T16:47:58-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "LHG",
+        "userName": "Luis Henrique Dusanek Guedes",
+        "status": "finalizado",
+        "timestamp": "2025-09-03T16:48:03-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-09-03T16:48:03-03:00"
+  },
+  "Revisão de materiais e Apresentações": {
+    "_id": "1WX4y2vH9eQd00WDd3Hw",
+    "requestId": "0498",
+    "submittedBy": {
+      "userId": "SMO2",
+      "userName": "Stefania Marcia Otoni",
+      "userEmail": "stefania.otoni@3ainvestimentos.com.br"
+    },
+    "type": "Revisão de materiais e Apresentações",
+    "status": "em_aberto",
+    "formData": {
+      "observacao": "Apresentação atualizada. Muito obrigada!",
+      "nome_sobrenome": "Stefania Otoni",
+      "area": "ADM",
+      "material": {}
+    },
+    "ownerEmail": "joao.pompeu@3ainvestimentos.com.br",
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-12-29T12:35:22-03:00",
+    "history": [
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "em_aberto",
+        "timestamp": "2025-12-29T12:35:22-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "lastUpdatedAt": "2025-12-29T12:35:22-03:00",
+    "viewedBy": []
+  },
+  "Ações Marketing": {
+    "_id": "1bbnxjQeWpYdvdZPhw24",
+    "requestId": "0310",
+    "submittedBy": {
+      "userId": "LMN",
+      "userName": "Lucas Nogueira Mazzieiro de Carvalho",
+      "userEmail": "lucas.nogueira@3ainvestimentos.com.br"
+    },
+    "type": "Ações Marketing",
+    "status": "solicitacao_aberta",
+    "formData": {},
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "actionRequests": {},
+    "isArchived": true,
+    "history": [
+      {
+        "userId": "LMN",
+        "userName": "Lucas Nogueira Mazzieiro de Carvalho",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-27T13:49:06-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "submittedAt": "2025-10-27T13:49:06-03:00",
+    "lastUpdatedAt": "2025-10-27T13:49:06-03:00",
+    "viewedBy": []
+  },
+  "Espelhamento - Caso Único ": {
+    "_id": "1rVGQ1cQWkJjAOTlPjhP",
+    "requestId": "0474",
+    "submittedBy": {
+      "userId": "PCM",
+      "userName": "Paulo Caus Mesquita",
+      "userEmail": "paulo@3ainvestimentos.com.br"
+    },
+    "type": "Espelhamento - Caso Único ",
+    "status": "solicitacao_aberta",
+    "formData": {
+      "campo_3": "PAULO@3AINVESTIMENTOS.COM.BR",
+      "campo_6": "A99649",
+      "campo_5": "TODOS",
+      "nome_sobrenome": "PAULO CAUS MESQUITA",
+      "tipo_solicitacao": "Criar um espelhamento",
+      "descricao_detalhada": "ATUAÇÃO OPERACIONAL NO TIME CORPORATE - HUB RIVA",
+      "campo_4": "PAULO@3AINVESTIMENTOS.COM.BR"
+    },
+    "ownerEmail": "marcio.peixoto@3ariva.com.br",
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-12-17T10:04:33-03:00",
+    "history": [
+      {
+        "userId": "PCM",
+        "userName": "Paulo Caus Mesquita",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-12-17T10:04:33-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "lastUpdatedAt": "2025-12-17T10:04:33-03:00",
+    "viewedBy": []
+  },
+  "Alteração no E-mail XP": {
+    "_id": "2APBEPHSTjs97FDs18y1",
+    "requestId": "0268",
+    "submittedBy": {
+      "userId": "RND2",
+      "userName": "Rafael Nunes de Filippo",
+      "userEmail": "rafael.nunes@3ariva.com.br"
+    },
+    "type": "Alteração no E-mail XP",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "descricao_detalhada": "Pessoal boa tarde! Tinham desativado meu email gmail, que usava para algumas comunicacoes internas. Poderiam reativar?",
+      "impacto": "Alto",
+      "nome_sobrenome": "Rafael Nunes De Filippo",
+      "setor_area": "Mid",
+      "email": "atendimento98@3ainvestimentos.com.br"
+    },
+    "status": "em_execucao",
+    "assignee": {
+      "name": "Danilo Freitas Zegrini",
+      "id": "DFZ2"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-10-15T17:47:38-03:00",
+    "history": [
+      {
+        "userName": "Rafael Nunes de Filippo",
+        "userId": "RND2",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-15T17:47:38-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_analise",
+        "timestamp": "2025-10-28T11:31:48-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2026-01-09T11:55:08-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2026-01-09T11:55:08-03:00"
+  },
+  "Solicitação Desligamento - Demais áreas (Não comerciais)": {
+    "_id": "2Cto4yAA4mzEV4iavvsD",
+    "requestId": "0242",
+    "submittedBy": {
+      "userId": "LPM",
+      "userName": "Lucas Prado Marques",
+      "userEmail": "lucas@3ainvestimentos.com.br"
+    },
+    "type": "Solicitação Desligamento - Demais áreas (Não comerciais)",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "observacoes": "",
+      "nome_sobrenome": "Lucas Prado Marques ",
+      "setor_area": "MESA RV ",
+      "email": "lucas@3ainvestimentos.com.br",
+      "tipo_cargo": "Demais Áreas",
+      "descricao_detalhada": "Iniciativa própria ",
+      "cargo_desligado": "Estagiário ",
+      "cod_xp": "",
+      "area_desligado": "Mesa RV ",
+      "nome_desligado": "Gabriel Alves ",
+      "tipo_desligamento": "Iniciativa Própria",
+      "data": "2025-10-10"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Dalcion Franco Amaral",
+      "id": "DFA"
+    },
+    "actionRequests": {
+      "desligamento_ti": [
+        {
+          "respondedAt": "2025-10-20T10:10:53-03:00",
+          "userName": "Danilo Freitas Zegrini",
+          "comment": "",
+          "status": "acknowledged",
+          "attachmentUrl": "",
+          "userId": "DFZ2",
+          "requestedAt": "2025-10-17T21:48:02-03:00"
+        }
+      ],
+      "desligamento_gente": [
+        {
+          "respondedAt": "",
+          "userName": "Dalcion Franco Amaral",
+          "userId": "DFA",
+          "status": "pending",
+          "requestedAt": "2025-10-17T21:47:51-03:00"
+        }
+      ],
+      "em_andamento": [
+        {
+          "respondedAt": "2025-10-17T21:47:48-03:00",
+          "attachmentUrl": "",
+          "comment": "",
+          "status": "approved",
+          "userName": "Fernanda Maria Pinto Adami",
+          "userId": "FPA2",
+          "requestedAt": "2025-10-16T14:29:12-03:00"
+        }
+      ],
+      "desligamento_bi": [
+        {
+          "respondedAt": "",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "userId": "MPA2",
+          "status": "pending",
+          "requestedAt": "2025-10-28T17:56:39-03:00"
+        },
+        {
+          "respondedAt": "",
+          "userName": "Rebeca Hadassa Pedras",
+          "userId": "RHP2",
+          "status": "pending",
+          "requestedAt": "2025-10-28T17:56:39-03:00"
+        }
+      ],
+      "enviar_adm": [
+        {
+          "respondedAt": "",
+          "userId": "SMO2",
+          "userName": "Stefania Marcia Otoni",
+          "status": "pending",
+          "requestedAt": "2025-12-09T11:53:33-03:00"
+        }
+      ]
+    },
+    "isArchived": true,
+    "submittedAt": "2025-10-09T14:14:52-03:00",
+    "history": [
+      {
+        "userName": "Lucas Prado Marques",
+        "userId": "LPM",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-09T14:14:52-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_analise",
+        "timestamp": "2025-10-12T08:59:34-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userName": "Dalcion Franco Amaral",
+        "userId": "DFA",
+        "status": "em_andamento",
+        "timestamp": "2025-10-16T14:29:12-03:00",
+        "notes": "Status alterado para \"Em andamento\"."
+      },
+      {
+        "userName": "Dalcion Franco Amaral",
+        "userId": "DFA",
+        "status": "em_andamento",
+        "timestamp": "2025-10-16T14:29:12-03:00",
+        "notes": "Ação de \"Aprovação - Gente\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "desligamento_gente",
+        "timestamp": "2025-10-17T21:47:51-03:00",
+        "notes": "Status alterado para \"Desligamento - Gente\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "desligamento_gente",
+        "timestamp": "2025-10-17T21:47:51-03:00",
+        "notes": "Ação de \"Desligamento - Gente\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "desligamento_ti",
+        "timestamp": "2025-10-17T21:48:02-03:00",
+        "notes": "Status alterado para \"Desligamento - TI\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "desligamento_ti",
+        "timestamp": "2025-10-17T21:48:02-03:00",
+        "notes": "Ação de \"Desligamento - TI\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "desligamento_ti",
+        "timestamp": "2025-10-20T10:10:53-03:00",
+        "notes": "Ação foi Registrada como ciente."
+      },
+      {
+        "userName": "Dalcion Franco Amaral",
+        "userId": "DFA",
+        "status": "desligamento_bi",
+        "timestamp": "2025-10-28T17:56:39-03:00",
+        "notes": "Status alterado para \"Desligamento - BI / Gestão\"."
+      },
+      {
+        "userName": "Dalcion Franco Amaral",
+        "userId": "DFA",
+        "status": "desligamento_bi",
+        "timestamp": "2025-10-28T17:56:39-03:00",
+        "notes": "Ação de \"Desligamento - BI\" solicitada automaticamente para 2 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Rebeca Hadassa Pedras",
+        "userId": "RHP2",
+        "status": "enviar_adm",
+        "timestamp": "2025-12-09T11:53:33-03:00",
+        "notes": "Status alterado para \"Desligamento - ADM\"."
+      },
+      {
+        "userId": "RHP2",
+        "userName": "Rebeca Hadassa Pedras",
+        "status": "enviar_adm",
+        "timestamp": "2025-12-09T11:53:33-03:00",
+        "notes": "Ação de \"Desligamento - ADM\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "SMO2",
+        "userName": "Stefania Marcia Otoni",
+        "status": "finalizado",
+        "timestamp": "2025-12-12T12:20:56-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-12-12T12:20:56-03:00"
+  },
+  "Solicitação de Compra - Equipamento": {
+    "_id": "2P4yiFQeWojlisyXWl4y",
+    "requestId": "0192",
+    "submittedBy": {
+      "userId": "DLE",
+      "userName": "Debora Luiza Exposito Gonçalves",
+      "userEmail": "debora@3ainvestimentos.com.br"
+    },
+    "type": "Solicitação de Compra - Equipamento",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "item_compra_ti": "Teclado",
+      "link_compra_ti": "",
+      "setor_area": "Middle",
+      "nome_completo": "Débora Expósito",
+      "quantiadade_compra_ti": "1",
+      "email": "debora@3ainvestimentos.com.br"
+    },
+    "status": "em_execucao",
+    "assignee": {
+      "name": "Danilo Freitas Zegrini",
+      "id": "DFZ2"
+    },
+    "actionRequests": {
+      "em_execucao": [
+        {
+          "respondedAt": "2025-10-03T15:01:39-03:00",
+          "userName": "Danilo Freitas Zegrini",
+          "comment": "",
+          "status": "approved",
+          "userId": "DFZ2",
+          "attachmentUrl": "",
+          "requestedAt": "2025-10-02T14:46:48-03:00"
+        }
+      ]
+    },
+    "isArchived": false,
+    "submittedAt": "2025-09-30T10:59:54-03:00",
+    "history": [
+      {
+        "userName": "Debora Luiza Exposito Gonçalves",
+        "userId": "DLE",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-30T10:59:54-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_analise",
+        "timestamp": "2025-10-01T09:58:56-03:00",
+        "notes": "Status alterado para \"Em Análise\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:58:58-03:00",
+        "notes": "Status alterado para \"Em aprovação\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:58:58-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:00-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:00-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:02-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:02-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:04-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:04-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:07-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:07-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:09-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:09-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:20-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T09:59:20-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:04-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:04-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:09-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:09-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:14-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:14-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:16-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:16-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:19-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:19-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:21-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:21-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:30-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:30-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T14:12:28-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T14:12:28-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T14:12:31-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T14:12:31-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T18:47:37-03:00",
+        "notes": "Ação foi Aprovada."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T18:47:52-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T18:47:52-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T18:47:57-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T18:47:57-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T18:48:00-03:00",
+        "notes": "Ação foi Aprovada."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-02T14:46:39-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-02T14:46:39-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-02T14:46:43-03:00",
+        "notes": "Ação foi Aprovada."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-02T14:46:48-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-02T14:46:48-03:00",
+        "notes": "Ação de \"Aprovação TI / FIN\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-10-03T15:01:39-03:00",
+        "notes": "Ação foi Aprovada."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-10-03T15:01:39-03:00"
+  },
+  "Problemas de Rede": {
+    "_id": "4jOcPkfEbMfvrGKntinK",
+    "requestId": "0138",
+    "submittedBy": {
+      "userId": "DFZ2",
+      "userName": "Danilo Freitas Zegrini",
+      "userEmail": "ti@3ariva.com.br"
+    },
+    "type": "Problemas de Rede",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "descricao_detalhada": "teste",
+      "impacto": "Alto",
+      "setor_area": "teste",
+      "nome": "teste",
+      "sobrenome": "teste",
+      "email": "teste"
+    },
+    "status": "finalizado",
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2025-09-18T11:33:12-03:00",
+    "history": [
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-18T11:33:12-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_analise",
+        "timestamp": "2025-09-18T14:30:04-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "em_execucao",
+        "timestamp": "2025-09-18T14:30:06-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "finalizado",
+        "timestamp": "2025-09-18T14:30:08-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-09-18T14:30:08-03:00"
+  },
+  "Sugestões 3A RIVA Connect": {
+    "_id": "6XaMx2GEOCEWG8mF53ne",
+    "requestId": "0460",
+    "submittedBy": {
+      "userId": "IRM",
+      "userName": "Izabela Ribas Matoso",
+      "userEmail": "izabela.matoso@3ariva.com.br"
+    },
+    "type": "Sugestões 3A RIVA Connect",
+    "ownerEmail": "matheus@3ainvestimentos.com.br",
+    "formData": {
+      "descricao_detalhada": "BOB RELATORIO DE PERFORMANCE: Time, na mensagem que é gerada automaticamente para enviarmos o fechamento do mes aos clientes, gostaria de sugerir que a mensagem começasse com algo do tipo: Ola, XXXX, tudo bem? Como de costume, segue o fechamento da sua carteira referente ao mes XXX.Facilita bem na hora de enviar a mensagem ao cliente e nao ter que ficar editando cada uma srrsr. obrigada",
+      "nome_sobrenome": "IZABELA MATOSO",
+      "setor_area": "MINST",
+      "email": "izabela.matoso@rivainvestimentos.com.br"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Matheus Vinicius Souza Mattos",
+      "id": "MVS2"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-12-04T12:06:44-03:00",
+    "history": [
+      {
+        "userName": "Izabela Ribas Matoso",
+        "userId": "IRM",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-12-04T12:06:44-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "MVS2",
+        "userName": "Matheus Vinicius Souza Mattos",
+        "status": "em_analise",
+        "timestamp": "2025-12-04T12:10:16-03:00",
+        "notes": "Status alterado para \"Em Análise\"."
+      },
+      {
+        "userId": "MVS2",
+        "userName": "Matheus Vinicius Souza Mattos",
+        "status": "em_andamento",
+        "timestamp": "2025-12-04T12:10:27-03:00",
+        "notes": "Status alterado para \"Em Andamento\"."
+      },
+      {
+        "userName": "Matheus Vinicius Souza Mattos",
+        "userId": "MVS2",
+        "status": "em_andamento",
+        "timestamp": "2025-12-04T12:21:42-03:00",
+        "notes": "Solicitação atribuída a Matheus Vinicius Souza Mattos."
+      },
+      {
+        "userId": "MVS2",
+        "userName": "Matheus Vinicius Souza Mattos",
+        "status": "finalizado",
+        "timestamp": "2025-12-18T15:47:31-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-12-18T15:47:31-03:00"
+  },
+  "Solicitação de Pagamentos ": {
+    "_id": "764PTuSgTvjP1P3dawwF",
+    "requestId": "0637",
+    "submittedBy": {
+      "userId": "VAL",
+      "userName": "Victor Arcuri Lemos",
+      "userEmail": "victor@3ainvestimentos.com.br"
+    },
+    "type": "Solicitação de Pagamentos ",
+    "status": "em_analise",
+    "formData": {},
+    "ownerEmail": "pablo.costa@3ariva.com.br",
+    "actionRequests": {},
+    "isArchived": false,
+    "history": [
+      {
+        "userId": "VAL",
+        "userName": "Victor Arcuri Lemos",
+        "status": "em_analise",
+        "timestamp": "2026-02-20T13:40:35-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "submittedAt": "2026-02-20T13:40:35-03:00",
+    "lastUpdatedAt": "2026-02-20T13:40:35-03:00",
+    "viewedBy": []
+  },
+  "Análise Pré-Desligamento (Acesso líderes)": {
+    "_id": "7hzLRgQzcaVseBsPEEuw",
+    "requestId": "0663",
+    "submittedBy": {
+      "userId": "MRG",
+      "userName": "Mateus Ribeiro Galhardo",
+      "userEmail": "mateus@3ainvestimentos.com.br"
+    },
+    "type": "Análise Pré-Desligamento (Acesso líderes)",
+    "status": "em_analise",
+    "formData": {
+      "observacoes": "Assessor optou por sair da profissão.",
+      "nome_sobrenome": "Mateus Ribeiro Galhardo",
+      "setor_area": "Comercial",
+      "email": "mateus@3ainvestimentos.com.br",
+      "descricao_detalhada": "Leonardo pretende empreender em outra área.",
+      "cargo_desligado": "Assessor de Investimentos",
+      "cod_xp": "A21919",
+      "area_desligado": "Comercial",
+      "nome_desligado": "Leonardo Augusto de Jesus",
+      "tipo_desligamento": "Iniciativa Própria",
+      "data": "03/03/2026"
+    },
+    "ownerEmail": "barbara@3ainvestimentos.com.br",
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2026-03-03T12:15:54-03:00",
+    "history": [
+      {
+        "userId": "MRG",
+        "userName": "Mateus Ribeiro Galhardo",
+        "status": "em_analise",
+        "timestamp": "2026-03-03T12:15:54-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "lastUpdatedAt": "2026-03-03T12:15:54-03:00",
+    "viewedBy": []
+  },
+  "Evento": {
+    "_id": "8d5w9mLHe6hU3GvN1k2z",
+    "requestId": "0625",
+    "submittedBy": {
+      "userId": "DSC2",
+      "userName": "Daphne Silva Clementoni",
+      "userEmail": "daphne.clementoni@3ainvestimentos.com.br"
+    },
+    "type": "Evento",
+    "status": "solicitacao_aberta",
+    "formData": {
+      "impacto": "Médio",
+      "nome_sobrenome": "Daphne Clementoni",
+      "setor_area": "Expansão",
+      "email": "daphne.clementoni@gmail.com",
+      "objetivo": "Impressionar os sócios do outro escritório.",
+      "publico_alvo": "Interno (equipes 3A RIVA)",
+      "descricao_detalhada": "Faremos um café da manhã pois iremos trazer dois sócios fundadores de outro escritório que estamos avançando em um possível M&A. Eles virão ao escritório para conhecer nossa estrutura e nossas áreas! ",
+      "data": "2026-02-23",
+      "nome_evento": "Welcome Coffee - Ville ",
+      "formato": "Café da manhã",
+      "quantidade_pessoas": "5",
+      "horario": "09:00"
+    },
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2026-02-09T16:41:25-03:00",
+    "history": [
+      {
+        "userId": "DSC2",
+        "userName": "Daphne Silva Clementoni",
+        "status": "solicitacao_aberta",
+        "timestamp": "2026-02-09T16:41:25-03:00",
+        "notes": "Solicitação criada."
+      }
+    ],
+    "lastUpdatedAt": "2026-02-09T16:41:25-03:00",
+    "viewedBy": []
+  },
+  "Fale com a GENTE": {
+    "_id": "8tv4qktLGB7dq3q1hapk",
+    "requestId": "0169",
+    "submittedBy": {
+      "userName": "Pablo Tadeu Costa Soares",
+      "userId": "PTC2",
+      "userEmail": "pablo.costa@3ainvestimentos.com.br"
+    },
+    "type": "Fale com a GENTE",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "descricao_detalhada": "Foi aprovada pelo Jameli, na última sexta-feira, 19/09, a promoção do funcionário Danilo Zegrini ao cargo de Analista de TI Júnior, com remuneração bruta de R$ 3.500,00, válida a partir de 1º de outubro de 2025.",
+      "nome_sobrenome": "Pablo Costa",
+      "setor_area": "Financeiro",
+      "email": "pablo.costa@gruporiva.com.br"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Dalcion Franco Amaral",
+      "id": "DFA"
+    },
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2025-09-23T19:24:00-03:00",
+    "history": [
+      {
+        "userId": "PTC2",
+        "userName": "Pablo Tadeu Costa Soares",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-23T19:24:00-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_analise",
+        "timestamp": "2025-09-25T11:26:53-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "em_execucao",
+        "timestamp": "2025-09-25T14:21:35-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "finalizado",
+        "timestamp": "2025-09-29T12:45:04-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-09-29T12:45:04-03:00"
+  },
+  "Comprovação ANCORD": {
+    "_id": "9msa97mHl6g6jEkZGNJr",
+    "requestId": "0216",
+    "submittedBy": {
+      "userId": "TOL",
+      "userName": "Tomás Leme",
+      "userEmail": "tomas.leme@3ainvestimentos.com.br"
+    },
+    "type": "Comprovação ANCORD",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "comprovante_ancord": "https://firebasestorage.googleapis.com/v0/b/a-riva-hub.firebasestorage.app/o/Workflows%2FGente%20e%20Comunica%C3%A7%C3%A3o%2F9msa97mHl6g6jEkZGNJr%2F1759437141795-Credencial_Ancord.pdf?alt=media&token=de522eeb-18ef-4621-8788-73338c603af6",
+      "nome_sobrenome": "Tomás de Lima Leme",
+      "setor_area": "Assessor Comercial | São Paulo",
+      "email": "tomas.leme@3ainvestimentos.com.br",
+      "contratacao_via": "3A",
+      "codigo_xp": ""
+    },
+    "status": "finalizada",
+    "assignee": {
+      "name": "Dalcion Franco Amaral",
+      "id": "DFA"
+    },
+    "actionRequests": {
+      "analise_juridico": [
+        {
+          "respondedAt": "",
+          "userId": "LBC",
+          "userName": "Luanda Beatriz Constantino da Conceição",
+          "status": "pending",
+          "requestedAt": "2025-10-09T10:34:21-03:00"
+        },
+        {
+          "respondedAt": "",
+          "userId": "AMP2",
+          "userName": "Alice Monteiro Passos",
+          "status": "pending",
+          "requestedAt": "2025-10-09T10:34:21-03:00"
+        }
+      ],
+      "em_analise": [
+        {
+          "respondedAt": "",
+          "userName": "Dalcion Franco Amaral",
+          "userId": "DFA",
+          "status": "pending",
+          "requestedAt": "2025-10-06T18:40:31-03:00"
+        }
+      ],
+      "analise_gestao": [
+        {
+          "respondedAt": "2025-10-13T16:52:25-03:00",
+          "userName": "Marcio Peixoto de Almeida Junior",
+          "comment": "",
+          "status": "approved",
+          "userId": "MPA2",
+          "attachmentUrl": "",
+          "requestedAt": "2025-10-09T10:34:31-03:00"
+        }
+      ]
+    },
+    "isArchived": true,
+    "submittedAt": "2025-10-02T17:32:21-03:00",
+    "history": [
+      {
+        "userId": "TOL",
+        "userName": "Tomás Leme",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-02T17:32:21-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_analise",
+        "timestamp": "2025-10-06T18:40:31-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_analise",
+        "timestamp": "2025-10-06T18:40:31-03:00",
+        "notes": "Ação de \"Validar Documentação anexada\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "analise_juridico",
+        "timestamp": "2025-10-09T10:34:21-03:00",
+        "notes": "Status alterado para \"Análise - Jurídico\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "analise_juridico",
+        "timestamp": "2025-10-09T10:34:21-03:00",
+        "notes": "Ação de \"Análise concluída, insira o aceite\" solicitada automaticamente para 2 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "analise_gestao",
+        "timestamp": "2025-10-09T10:34:31-03:00",
+        "notes": "Status alterado para \"Análise - Gestão\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "analise_gestao",
+        "timestamp": "2025-10-09T10:34:31-03:00",
+        "notes": "Ação de \"Análise concluída, insira o aceite\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userName": "Marcio Peixoto de Almeida Junior",
+        "userId": "MPA2",
+        "status": "analise_gestao",
+        "timestamp": "2025-10-13T16:52:25-03:00",
+        "notes": "Ação foi Aprovada."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "finalizada",
+        "timestamp": "2025-12-09T11:49:12-03:00",
+        "notes": "Status alterado para \"Finalizada\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-12-09T11:49:12-03:00"
+  },
+  "Solicitação de Férias / Ausência / Compensação de horas": {
+    "_id": "9o5kIczh5PSIQ7M86hH9",
+    "requestId": "0187",
+    "submittedBy": {
+      "userName": "Rebeca Hadassa Pedras",
+      "userId": "RHP2",
+      "userEmail": "rebeca.hadassa@3ainvestimentos.com.br"
+    },
+    "type": "Solicitação de Férias / Ausência / Compensação de horas",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "descricao_detalhada": "05/01 a 09/01",
+      "data_fim": "",
+      "nome_sobrenome": "Alice de Muylder Oliveira",
+      "setor_area": "Bi ",
+      "email": "alice.oliveira@gruporiva.com.br",
+      "data_inicio": "",
+      "tipo_solicitacao": "Ferias"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Dalcion Franco Amaral",
+      "id": "DFA"
+    },
+    "actionRequests": {
+      "em_execucao": [
+        {
+          "respondedAt": "2025-10-21T12:12:13-03:00",
+          "userId": "DFA",
+          "comment": "",
+          "status": "acknowledged",
+          "userName": "Dalcion Franco Amaral",
+          "attachmentUrl": "",
+          "requestedAt": "2025-10-21T12:12:01-03:00"
+        }
+      ]
+    },
+    "isArchived": true,
+    "submittedAt": "2025-09-29T13:05:46-03:00",
+    "history": [
+      {
+        "userName": "Rebeca Hadassa Pedras",
+        "userId": "RHP2",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-29T13:05:46-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_analise",
+        "timestamp": "2025-10-06T18:41:08-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "em_execucao",
+        "timestamp": "2025-10-21T12:12:01-03:00",
+        "notes": "Estagiária pediu desligamento antes do gozo das férias. "
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "em_execucao",
+        "timestamp": "2025-10-21T12:12:01-03:00",
+        "notes": "Ação de \"Ciente - Gente\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "DFA",
+        "userName": "Dalcion Franco Amaral",
+        "status": "finalizado",
+        "timestamp": "2025-10-21T12:12:14-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-10-21T12:12:14-03:00"
+  },
+  "Solicitação de Abertura de Vaga": {
+    "_id": "C3u7pWhRTEJiLdIz6Hli",
+    "requestId": "0021",
+    "submittedBy": {
+      "userId": "LBC2",
+      "userName": "Leonardo Brum Cardoso",
+      "userEmail": "leonardo@3ainvestimentos.com.br"
+    },
+    "type": "Solicitação de Abertura de Vaga",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "nome_sobrenome": "Leonardo Brum",
+      "setor_area": "financeiro",
+      "email": "leonardo@3ainvestimentos.com",
+      "descricao_vaga": "estagio",
+      "prazo_contratacao": ""
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Mariana Vargas Teixeira",
+      "id": "MVT"
+    },
+    "actionRequests": {
+      "em_execucao": [
+        {
+          "respondedAt": "",
+          "userId": "FPA2",
+          "userName": "Fernanda Maria Pinto Adami",
+          "status": "pending",
+          "requestedAt": "2025-08-20T09:57:09-03:00"
+        }
+      ]
+    },
+    "isArchived": true,
+    "submittedAt": "2025-08-14T16:42:06-03:00",
+    "history": [
+      {
+        "userName": "Leonardo Brum Cardoso",
+        "userId": "LBC2",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-08-14T16:42:06-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Fernanda Maria Pinto Adami",
+        "userId": "FPA2",
+        "status": "em_analise",
+        "timestamp": "2025-08-18T17:06:01-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "MVT",
+        "userName": "Mariana Vargas Teixeira",
+        "status": "em_execucao",
+        "timestamp": "2025-08-20T09:57:09-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "MVT",
+        "userName": "Mariana Vargas Teixeira",
+        "status": "em_execucao",
+        "timestamp": "2025-08-20T09:57:09-03:00",
+        "notes": "Ação de \"Ciente - Gente\" solicitada automaticamente para 1 colaborador(es) pré-definido(s)."
+      },
+      {
+        "userId": "MVT",
+        "userName": "Mariana Vargas Teixeira",
+        "status": "finalizado",
+        "timestamp": "2025-08-20T09:58:29-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-08-20T09:58:29-03:00"
+  },
+  "Reset de Senha": {
+    "_id": "GFMMd9kgIDVEkc8ZqNeb",
+    "requestId": "0190",
+    "submittedBy": {
+      "userId": "APL2",
+      "userName": "Agata Panoutsos Lima",
+      "userEmail": "agata.panoutsos@3ainvestimentos.com.br"
+    },
+    "type": "Reset de Senha",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "nome_sobrenome": "Ágata Panoutsos Lima",
+      "setor_area": "Corporate",
+      "email": "agata.panoutsos@3ainvestimentos.com.br",
+      "rese_senha": "Outros"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Danilo Freitas Zegrini",
+      "id": "DFZ2"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-09-30T09:52:46-03:00",
+    "history": [
+      {
+        "userId": "APL2",
+        "userName": "Agata Panoutsos Lima",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-09-30T09:52:46-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_analise",
+        "timestamp": "2025-10-01T10:20:33-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_execucao",
+        "timestamp": "2025-10-01T10:20:36-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "finalizado",
+        "timestamp": "2025-10-01T10:20:38-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "finalizado",
+        "timestamp": "2025-10-10T14:34:29-03:00",
+        "notes": "Solicitação atribuída a Danilo Freitas Zegrini."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-10-10T14:34:29-03:00"
+  },
+  "Solicitação de Patrocínios": {
+    "_id": "JZf9I9NgsKAnm34U84tz",
+    "requestId": "0211",
+    "submittedBy": {
+      "userId": "FFS",
+      "userName": "Fabiana Fracalossi Serafim",
+      "userEmail": "fabiana.fracalossi@3ariva.com.br"
+    },
+    "type": "Solicitação de Patrocínios",
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "formData": {
+      "impacto": "Urgente (Crítico)",
+      "valor": "675,00",
+      "hora": "09:00 às 13:00",
+      "nome_sobrenome": "Fabiana Fracalossi Serafim",
+      "setor_area": "Comercial",
+      "email": "fabiana.fracalossi@rivainvestimentos.com.br",
+      "apresentacao": "Não",
+      "descricao_detalhada": "Assessora está prospectando reitor da faculdade Anhanguera e a faculdade fará um evento para o dia das crianças, para crianças carentes, com objetivo de arrecadar $$$ para fornecer 45 lanches a um custo de R$ 30,00 cada lanche. Temos verba para este tipo de patrocínio? Podemos fazer a divulgação da nossa marca no dia do evento e a faculdade agradecerá nas mídias sociais.",
+      "data": "2025-10-11",
+      "beneficios": "Divulgação da nossa marca no dia do evento e nas mídias sociais da faculdade e casa social."
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Barbara Fiche Girao",
+      "id": "BFG2"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-10-02T12:25:43-03:00",
+    "history": [
+      {
+        "userId": "FFS",
+        "userName": "Fabiana Fracalossi Serafim",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-02T12:25:43-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "DFZ2",
+        "userName": "Danilo Freitas Zegrini",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-10-10T14:34:16-03:00",
+        "notes": "Solicitação atribuída a Barbara Fiche Girao."
+      },
+      {
+        "userId": "BFG2",
+        "userName": "Barbara Fiche Girao",
+        "status": "em_analise",
+        "timestamp": "2025-10-14T16:47:09-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "BFG2",
+        "userName": "Barbara Fiche Girao",
+        "status": "em_execucao",
+        "timestamp": "2025-10-14T16:47:14-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "BFG2",
+        "userName": "Barbara Fiche Girao",
+        "status": "finalizado",
+        "timestamp": "2025-10-14T16:47:17-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-10-14T16:47:17-03:00"
+  },
+  "Serviços de Plano de Saúde ": {
+    "_id": "Q2x29FP81VxKcF6CeKew",
+    "requestId": "0061",
+    "submittedBy": {
+      "userId": "FP2",
+      "userName": "Flavio Pacelli Ziviani de Oliveira",
+      "userEmail": "flavio.pacelli@3ariva.com.br"
+    },
+    "type": "Serviços de Plano de Saúde ",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "descricao_detalhada": "Pessoal, queria cotar quanto ficaria a inclusão da minha familia no Plano de Seguro do Bradesco. Reforçando: SÓ COTAÇÃO. ",
+      "nome_sobrenome": "Flávio Pacelli",
+      "setor_area": "Produtos / Alocação",
+      "email": "flavio.pacelli@rivainvestimentos.com.br",
+      "tipo_solicitacao": "Inclusão"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Mariana Vargas Teixeira",
+      "id": "MVT"
+    },
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2025-08-27T16:58:13-03:00",
+    "history": [
+      {
+        "userName": "Flavio Pacelli Ziviani de Oliveira",
+        "userId": "FP2",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-08-27T16:58:13-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "em_analise",
+        "timestamp": "2025-08-28T10:35:24-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "finalizado",
+        "timestamp": "2025-08-28T10:35:38-03:00",
+        "notes": "Status alterado para \"Finalizada\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "finalizado",
+        "timestamp": "2025-08-28T10:38:52-03:00",
+        "notes": "Solicitação atribuída a Mariana Vargas Teixeira."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-08-28T10:38:52-03:00"
+  },
+  "Solicitação de Compra - Software/Sistema": {
+    "_id": "UtwSX3vkXfCuDX5ZS3bc",
+    "requestId": "0536",
+    "submittedBy": {
+      "userId": "SMO2",
+      "userName": "Stefania Marcia Otoni",
+      "userEmail": "stefania.otoni@3ainvestimentos.com.br"
+    },
+    "type": "Solicitação de Compra - Software/Sistema",
+    "ownerEmail": "ti@3ariva.com.br",
+    "formData": {
+      "area": "Recepção",
+      "nome": "recepcao@3ariva.com.br",
+      "nome_sobrenome": "Maria Eduarda Jardim/Stefânia Otoni",
+      "descricao": "Trello",
+      "email": "stefania.otoni@3ainvestimentos.com.br",
+      "recorrencia": "Em lote",
+      "motivo": "Instalar o trello no notebook da Maria Eduarda"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Pierre Alves",
+      "id": "PIS"
+    },
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2026-01-13T10:03:07-03:00",
+    "history": [
+      {
+        "userName": "Stefania Marcia Otoni",
+        "userId": "SMO2",
+        "status": "em_analise",
+        "timestamp": "2026-01-13T10:03:07-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userName": "Danilo Freitas Zegrini",
+        "userId": "DFZ2",
+        "status": "em_analise",
+        "timestamp": "2026-01-19T15:44:41-03:00",
+        "notes": "Solicitação atribuída a Pierre Alves."
+      },
+      {
+        "userId": "PIS",
+        "userName": "Pierre Alves",
+        "status": "em_aprovacao",
+        "timestamp": "2026-01-20T11:32:15-03:00",
+        "notes": "Status alterado para \"Em aprovação\"."
+      },
+      {
+        "userId": "PIS",
+        "userName": "Pierre Alves",
+        "status": "finalizado",
+        "timestamp": "2026-01-20T11:32:17-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2026-01-20T11:32:17-03:00"
+  },
+  "Sugestão 3A RIVA Store": {
+    "_id": "iniHdPajTWFwBBE5Kceq",
+    "requestId": "0410",
+    "submittedBy": {
+      "userId": "LHG",
+      "userName": "Luis Henrique Dusanek Guedes",
+      "userEmail": "infra@3ainvestimentos.com.br"
+    },
+    "type": "Sugestão 3A RIVA Store",
+    "ownerEmail": "barbara.fiche@3ainvestimentos.com.br",
+    "formData": {
+      "impacto": "Urgente (Crítico)",
+      "descricao_detalhada": "TESTE",
+      "nome_sobrenome": "TESTE",
+      "setor_area": "TESTE",
+      "email": "TESTE"
+    },
+    "status": "finalizado",
+    "actionRequests": {},
+    "isArchived": false,
+    "submittedAt": "2025-11-11T16:34:43-03:00",
+    "history": [
+      {
+        "userName": "Luis Henrique Dusanek Guedes",
+        "userId": "LHG",
+        "status": "solicitacao_aberta",
+        "timestamp": "2025-11-11T16:34:43-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "BFG2",
+        "userName": "Barbara Fiche Girao",
+        "status": "em_analise",
+        "timestamp": "2025-11-19T16:10:06-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "BFG2",
+        "userName": "Barbara Fiche Girao",
+        "status": "em_execucao",
+        "timestamp": "2025-11-19T16:10:09-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "BFG2",
+        "userName": "Barbara Fiche Girao",
+        "status": "finalizado",
+        "timestamp": "2025-11-19T16:10:13-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2025-11-19T16:10:13-03:00"
+  },
+  "Alteração Cadastral": {
+    "_id": "stPBc4lQNg4mhUCHu0RW",
+    "requestId": "0542",
+    "submittedBy": {
+      "userId": "FKM3",
+      "userName": "Flavia Ker Miranda Ferreira",
+      "userEmail": "flavia.ker@3ainvestimentos.com.br"
+    },
+    "type": "Alteração Cadastral",
+    "ownerEmail": "fernanda.adami@3ainvestimentos.com.br",
+    "formData": {
+      "campo_3": "MG 16.387.642",
+      "campo_1": "Flavia Ker Miranda Ferreira",
+      "campo_14": "30180-061",
+      "campo_9": "Solteira",
+      "campo_16": "Rua Juiz de Fora, 1243 - Apartamento 904",
+      "campo_6": "(31)99292-0405",
+      "campo_21": "Bruno (namorado) +55 31 98877-4030 e/ou  Gilson(pai)+55 31 8768-5265",
+      "campo_8": "Gilson Soares Miranda Ferreira",
+      "campo_5": "Feminino",
+      "campo_7": "Maria Aparecida Ker",
+      "campo_4": "23/11/1993",
+      "campo_15": "Santo Agostinho",
+      "campo_2": "111.816.376-19",
+      "campo_19": "Minas Gerais",
+      "campo_20": "(CONTINUA O MESMO)"
+    },
+    "status": "finalizado",
+    "assignee": {
+      "name": "Dalcion Franco Amaral",
+      "id": "DFA"
+    },
+    "actionRequests": {},
+    "isArchived": true,
+    "submittedAt": "2026-01-14T16:53:37-03:00",
+    "history": [
+      {
+        "userId": "FKM3",
+        "userName": "Flavia Ker Miranda Ferreira",
+        "status": "solicitacao_aberta",
+        "timestamp": "2026-01-14T16:53:37-03:00",
+        "notes": "Solicitação criada."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "em_analise",
+        "timestamp": "2026-01-15T16:43:49-03:00",
+        "notes": "Status alterado para \"Em análise\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "em_execucao",
+        "timestamp": "2026-01-23T20:06:30-03:00",
+        "notes": "Status alterado para \"Em execução\"."
+      },
+      {
+        "userId": "FPA2",
+        "userName": "Fernanda Maria Pinto Adami",
+        "status": "finalizado",
+        "timestamp": "2026-03-11T11:33:45-03:00",
+        "notes": "Status alterado para \"Finalizado\"."
+      }
+    ],
+    "viewedBy": [],
+    "lastUpdatedAt": "2026-03-11T11:33:45-03:00"
+  }
+}

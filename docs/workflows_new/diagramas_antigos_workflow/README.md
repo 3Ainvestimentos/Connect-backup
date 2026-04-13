@@ -1,0 +1,35 @@
+# Diagramas individuais dos workflows
+
+- `Manutenção / Solicitações Gerais` -> `01-manutencao-solicitacoes-gerais.svg`
+- `Solicitação de Compras` -> `02-solicitacao-de-compras.svg`
+- `Solicitação de Suprimentos` -> `03-solicitacao-de-suprimentos.svg`
+- `Solicitação de Pagamentos` -> `04-solicitacao-de-pagamentos.svg`
+- `Alteração Cadastral` -> `05-alteracao-cadastral.svg`
+- `Alteração de Cargo / Remuneração / Time ou Equipe` -> `06-alteracao-de-cargo-remuneracao-time-ou-equipe.svg`
+- `Análise Pré-Desligamento (Acesso líderes)` -> `07-analise-pre-desligamento-acesso-lideres.svg`
+- `Cadastro de Novos Entrantes - Associado` -> `08-cadastro-de-novos-entrantes-associado.svg`
+- `Cadastro de Novos Entrantes - Demais Áreas` -> `09-cadastro-de-novos-entrantes-demais-areas.svg`
+- `Comprovação ANCORD` -> `10-comprovacao-ancord.svg`
+- `Fale com a GENTE` -> `11-fale-com-a-gente.svg`
+- `Serviços de Plano de Saúde` -> `12-servicos-de-plano-de-saude.svg`
+- `Solicitação Desligamento - Demais áreas (Não comerciais)` -> `13-solicitacao-desligamento-demais-areas-nao-comerciais.svg`
+- `Solicitação de Abertura de Vaga` -> `14-solicitacao-de-abertura-de-vaga.svg`
+- `Solicitação de Férias / Ausência / Compensação de horas` -> `15-solicitacao-de-ferias-ausencia-compensacao-de-horas.svg`
+- `Espelhamento - Caso Único` -> `16-espelhamento-caso-unico.svg`
+- `Espelhamento - Em lote` -> `17-espelhamento-em-lote.svg`
+- `Arte / Material gráfico` -> `18-arte-material-grafico.svg`
+- `Assinatura de e-mail; Cartão de visita; Cartão de visita digital` -> `19-assinatura-de-e-mail-cartao-de-visita-cartao-de-visita-digital.svg`
+- `Ações Marketing` -> `20-acoes-marketing.svg`
+- `Evento` -> `21-evento.svg`
+- `Revisão de materiais e Apresentações` -> `22-revisao-de-materiais-e-apresentacoes.svg`
+- `Solicitação de Patrocínios` -> `23-solicitacao-de-patrocinios.svg`
+- `Sugestão 3A RIVA Store` -> `24-sugestao-3a-riva-store.svg`
+- `Alteração no E-mail XP` -> `25-alteracao-no-e-mail-xp.svg`
+- `Padronização de E-mail  - Código XP` -> `26-padronizacao-de-e-mail-codigo-xp.svg`
+- `Problemas de Hardware` -> `27-problemas-de-hardware.svg`
+- `Problemas de Rede` -> `28-problemas-de-rede.svg`
+- `Problemas de Software` -> `29-problemas-de-software.svg`
+- `Reset de Senha` -> `30-reset-de-senha.svg`
+- `Solicitação de Compra - Equipamento` -> `31-solicitacao-de-compra-equipamento.svg`
+- `Solicitação de Compra - Software/Sistema` -> `32-solicitacao-de-compra-software-sistema.svg`
+- `Sugestões 3A RIVA Connect` -> `33-sugestoes-3a-riva-connect.svg`

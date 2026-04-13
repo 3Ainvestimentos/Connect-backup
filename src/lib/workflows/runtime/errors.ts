@@ -1,0 +1,93 @@
+/**
+ * @fileOverview Runtime error codes and a typed error class for the v2 workflow engine.
+ */
+
+export const RuntimeErrorCode = {
+  UNAUTHORIZED: 'UNAUTHORIZED',
+  FORBIDDEN: 'FORBIDDEN',
+  WORKFLOW_TYPE_NOT_FOUND: 'WORKFLOW_TYPE_NOT_FOUND',
+  WORKFLOW_VERSION_NOT_FOUND: 'WORKFLOW_VERSION_NOT_FOUND',
+  WORKFLOW_TYPE_INACTIVE: 'WORKFLOW_TYPE_INACTIVE',
+  PUBLISHED_VERSION_NOT_FOUND: 'PUBLISHED_VERSION_NOT_FOUND',
+  VERSION_NOT_PUBLISHED: 'VERSION_NOT_PUBLISHED',
+  INVALID_PUBLISHED_VERSION: 'INVALID_PUBLISHED_VERSION',
+  DRAFT_CONFLICT: 'DRAFT_CONFLICT',
+  INVALID_DRAFT_PAYLOAD: 'INVALID_DRAFT_PAYLOAD',
+  VERSION_NOT_PUBLISHABLE: 'VERSION_NOT_PUBLISHABLE',
+  VERSION_ALREADY_ACTIVE: 'VERSION_ALREADY_ACTIVE',
+  VERSION_SNAPSHOT_MISSING: 'VERSION_SNAPSHOT_MISSING',
+  INVALID_FORM_DATA: 'INVALID_FORM_DATA',
+  INVALID_UPLOAD_REQUEST: 'INVALID_UPLOAD_REQUEST',
+  INVALID_UPLOAD_TARGET: 'INVALID_UPLOAD_TARGET',
+  COUNTER_NOT_INITIALIZED: 'COUNTER_NOT_INITIALIZED',
+  INVALID_REQUEST_COUNTER: 'INVALID_REQUEST_COUNTER',
+  REQUEST_NOT_FOUND: 'REQUEST_NOT_FOUND',
+  REQUEST_ALREADY_ARCHIVED: 'REQUEST_ALREADY_ARCHIVED',
+  REQUEST_ALREADY_FINALIZED: 'REQUEST_ALREADY_FINALIZED',
+  FINALIZATION_NOT_ALLOWED: 'FINALIZATION_NOT_ALLOWED',
+  INVALID_RESPONSIBLE: 'INVALID_RESPONSIBLE',
+  INVALID_STEP_TRANSITION: 'INVALID_STEP_TRANSITION',
+  ACTION_CONFIGURATION_INVALID: 'ACTION_CONFIGURATION_INVALID',
+  ACTION_REQUEST_ALREADY_OPEN: 'ACTION_REQUEST_ALREADY_OPEN',
+  ACTION_RESPONSE_INVALID: 'ACTION_RESPONSE_INVALID',
+  ACTION_REQUEST_NOT_PENDING: 'ACTION_REQUEST_NOT_PENDING',
+  ACTION_RESPONSE_NOT_ALLOWED: 'ACTION_RESPONSE_NOT_ALLOWED',
+  ACTION_RESPONSE_ALREADY_RECORDED: 'ACTION_RESPONSE_ALREADY_RECORDED',
+  STORAGE_NOT_CONFIGURED: 'STORAGE_NOT_CONFIGURED',
+  UPLOAD_SIGNATURE_FAILED: 'UPLOAD_SIGNATURE_FAILED',
+} as const;
+
+export type RuntimeErrorCodeValue = (typeof RuntimeErrorCode)[keyof typeof RuntimeErrorCode];
+
+/**
+ * A domain-specific error that carries a machine-readable `code` and an HTTP status.
+ */
+export class RuntimeError extends Error {
+  public readonly code: RuntimeErrorCodeValue;
+  public readonly httpStatus: number;
+
+  constructor(code: RuntimeErrorCodeValue, message: string, httpStatus = 400) {
+    super(message);
+    this.name = 'RuntimeError';
+    this.code = code;
+    this.httpStatus = httpStatus;
+  }
+}
+
+/** Map common error codes to HTTP status codes. */
+export function httpStatusForCode(code: RuntimeErrorCodeValue): number {
+  switch (code) {
+    case RuntimeErrorCode.UNAUTHORIZED:
+      return 401;
+    case RuntimeErrorCode.FORBIDDEN:
+    case RuntimeErrorCode.ACTION_RESPONSE_NOT_ALLOWED:
+      return 403;
+    case RuntimeErrorCode.REQUEST_NOT_FOUND:
+    case RuntimeErrorCode.PUBLISHED_VERSION_NOT_FOUND:
+    case RuntimeErrorCode.WORKFLOW_TYPE_NOT_FOUND:
+    case RuntimeErrorCode.WORKFLOW_VERSION_NOT_FOUND:
+      return 404;
+    case RuntimeErrorCode.VERSION_NOT_PUBLISHED:
+    case RuntimeErrorCode.INVALID_UPLOAD_REQUEST:
+    case RuntimeErrorCode.INVALID_UPLOAD_TARGET:
+    case RuntimeErrorCode.ACTION_CONFIGURATION_INVALID:
+    case RuntimeErrorCode.ACTION_RESPONSE_INVALID:
+    case RuntimeErrorCode.ACTION_REQUEST_NOT_PENDING:
+    case RuntimeErrorCode.INVALID_DRAFT_PAYLOAD:
+    case RuntimeErrorCode.VERSION_ALREADY_ACTIVE:
+    case RuntimeErrorCode.VERSION_SNAPSHOT_MISSING:
+      return 400;
+    case RuntimeErrorCode.ACTION_REQUEST_ALREADY_OPEN:
+    case RuntimeErrorCode.ACTION_RESPONSE_ALREADY_RECORDED:
+    case RuntimeErrorCode.DRAFT_CONFLICT:
+    case RuntimeErrorCode.VERSION_NOT_PUBLISHABLE:
+      return 409;
+    case RuntimeErrorCode.COUNTER_NOT_INITIALIZED:
+    case RuntimeErrorCode.INVALID_REQUEST_COUNTER:
+    case RuntimeErrorCode.STORAGE_NOT_CONFIGURED:
+    case RuntimeErrorCode.UPLOAD_SIGNATURE_FAILED:
+      return 500;
+    default:
+      return 400;
+  }
+}

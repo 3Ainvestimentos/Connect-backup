@@ -22,19 +22,12 @@ import os
 import sys
 from typing import Tuple
 
-import firebase_admin
-from firebase_admin import credentials, firestore
+from shared.firestore_client import init_firestore
+from firebase_admin import firestore
 
 COLLECTION = "collaborators"
 FIELD_PATH = "permissions.canViewBI"
 BATCH_LIMIT = 500
-
-
-def init_firestore(project_id: str) -> firestore.firestore.Client:
-    if not firebase_admin._apps:
-        options = {"projectId": project_id}
-        firebase_admin.initialize_app(options=options)
-    return firestore.client()
 
 
 def get_docs_to_update(
@@ -111,8 +104,8 @@ def main() -> None:
     )
     parser.add_argument(
         "--project",
-        required=True,
-        help="Firebase project ID (ex: meu-app-prod).",
+        default="a-riva-hub",
+        help="Firebase project ID (padrao: a-riva-hub).",
     )
     parser.add_argument(
         "--execute",
@@ -123,16 +116,7 @@ def main() -> None:
 
     print(f"\n  Projeto Firebase: {args.project}")
 
-    try:
-        db = init_firestore(args.project)
-    except Exception as err:
-        print(f"\nErro ao conectar ao Firestore: {err}")
-        print(
-            "Verifique sua autenticação. Opções:\n"
-            "  1. gcloud auth application-default login\n"
-            "  2. export GOOGLE_APPLICATION_CREDENTIALS=/caminho/sa.json\n"
-        )
-        sys.exit(1)
+    db = init_firestore(args.project)
 
     to_update, total = get_docs_to_update(db)
 
