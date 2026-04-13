@@ -97,6 +97,7 @@ export function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }:
     permissions.canManageWorkflows ||
     permissions.canManageWorkflowsV2 ||
     permissions.canManageTripsBirthdays ||
+    permissions.canManageVacation ||
     isSuperAdmin;
 
   return (
@@ -216,7 +217,7 @@ export function UserNav({ onProfileClick, hasPendingRequests, hasPendingTasks }:
                 {isSuperAdmin && <DropdownMenuItem asChild><Link href="/admin/fab-messages" className="cursor-pointer font-body"><MessageSquarePlus className="mr-2 h-4 w-4" /><span>Mensagens FAB</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflows && <DropdownMenuItem asChild><Link href="/admin/workflows" className="cursor-pointer font-body"><Workflow className="mr-2 h-4 w-4" /><span>Workflows</span></Link></DropdownMenuItem>}
                 {permissions.canManageWorkflowsV2 && <DropdownMenuItem asChild><Link href="/admin/request-config" className="cursor-pointer font-body"><Settings className="mr-2 h-4 w-4" /><span>Config. de chamados v2</span></Link></DropdownMenuItem>}
-                {permissions.canManageTripsBirthdays && <DropdownMenuItem asChild><Link href="/admin/travel-birthdays" className="cursor-pointer font-body"><Plane className="mr-2 h-4 w-4" /><span>Viagens</span></Link></DropdownMenuItem>}
+                {(permissions.canManageTripsBirthdays || permissions.canManageVacation) && <DropdownMenuItem asChild><Link href="/admin/travel-birthdays" className="cursor-pointer font-body"><Plane className="mr-2 h-4 w-4" /><span>Viagens/Férias</span></Link></DropdownMenuItem>}
                 {isSuperAdmin && (
                   <>
                      <DropdownMenuItem asChild><Link href="/audit" className="cursor-pointer font-body text-destructive focus:bg-destructive/10 focus:text-destructive"><Fingerprint className="mr-2 h-4 w-4" /><span>Auditoria</span></Link></DropdownMenuItem>
@@ -251,6 +252,17 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { setOpen: setSidebarOpen } = useSidebar();
   
   const isFullscreenPage = false;
+  const noZoomRoutes = [
+    '/chatbot',
+    '/admin/crm',
+    '/admin/strategic-panel',
+    '/bi',
+    '/bi-leaders',
+    '/personal-panel',
+    '/rankings',
+    '/store',
+  ];
+  const shouldApplyContentZoom = !noZoomRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
   
   const [isFaqModalOpen, setIsFaqModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -478,8 +490,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </Sidebar>
         )}
         <main className={cn("flex-1", !isFullscreenPage && "md:ml-[var(--sidebar-width-icon)]")}>
-          {children}
-            <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />
+          {shouldApplyContentZoom ? (
+            <div style={{ zoom: "0.85" }}>
+              {children}
+            </div>
+          ) : (
+            children
+          )}
+          <NotificationFAB hasPendingRequests={hasPendingRequests} hasPendingTasks={hasPendingTasks} />
         </main>
       </div>
       <PollTrigger />

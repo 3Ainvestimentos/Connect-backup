@@ -1,20 +1,22 @@
-
 "use client";
 
-import React, { createContext, useContext, ReactNode, useMemo, useEffect, useState } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
-import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, listenToCollection, WithId, getCollection, getSubcollection } from '@/lib/firestore-service';
+import { addDocumentToCollection, updateDocumentInCollection, deleteDocumentFromCollection, WithId, getCollection, getSubcollection } from '@/lib/firestore-service';
 import * as z from 'zod';
 import { useAuth } from './AuthContext';
+import { parseIframeSrcFromInput } from '@/lib/iframe-utils';
 
 export const pollSchema = z.object({
-  question: z.string().min(1, "A pergunta é obrigatória."),
-  type: z.enum(['multiple-choice', 'open-text']).default('multiple-choice'),
+  question: z.string().min(1, "A pergunta ou o Título é obrigatório."),
+  type: z.enum(['multiple-choice', 'open-text', 'iframe']).default('multiple-choice'),
   options: z.array(z.object({ value: z.string().min(1, "A opção não pode ser vazia.") })).optional(),
   allowOtherOption: z.boolean().optional().default(false),
+  iframeSrc: z.string().optional().default(''),
   targetPage: z.string().min(1, "A página alvo é obrigatória."),
   recipientIds: z.array(z.string()).min(1, "Selecione ao menos um destinatário."),
-  isActive: z.boolean().default(true),
+  // Sem .default(true) no resolver: undefined virava "ativa" ao gravar sem o utilizador querer.
+  isActive: z.boolean(),
 }).superRefine((data, ctx) => {
     if (data.type === 'multiple-choice' && (!data.options || data.options.length < 2)) {
       ctx.addIssue({
@@ -23,16 +25,32 @@ export const pollSchema = z.object({
         message: 'São necessárias pelo menos duas opções para o tipo múltipla escolha.',
       });
     }
+    if (data.type === 'iframe') {
+      const parsed = parseIframeSrcFromInput(data.iframeSrc || '');
+      if (!parsed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['iframeSrc'],
+          message: 'Cole uma URL HTTPS válida ou o código completo do iframe (com src).',
+        });
+      }
+    }
 });
 
-export type PollType = WithId<Omit<z.infer<typeof pollSchema>, 'options'> & { options: string[], allowOtherOption?: boolean }>;
+export type PollType = WithId<
+  Omit<z.infer<typeof pollSchema>, 'options' | 'iframeSrc'> & {
+    options: string[];
+    allowOtherOption?: boolean;
+    iframeSrc?: string;
+  }
+>;
 
 export interface PollResponseType {
   id: string;
   userId: string;
   userName: string;
   answer: string;
-  answeredAt: string; // ISO Date String
+  answeredAt: string;
 }
 
 interface PollsContextType {
@@ -57,7 +75,7 @@ export const PollsProvider = ({ children }: { children: ReactNode }) => {
   const { data: polls = [], isFetching: loadingPolls } = useQuery<PollType[]>({
     queryKey: [COLLECTION_NAME],
     queryFn: () => getCollection<PollType>(COLLECTION_NAME),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     enabled: !!user,
   });
 
@@ -103,7 +121,7 @@ export const PollsProvider = ({ children }: { children: ReactNode }) => {
 
   const submitResponseMutation = useMutation<void, Error, { pollId: string; response: Omit<PollResponseType, 'id'> }>({
     mutationFn: ({ pollId, response }) => addDocumentToCollection(`${COLLECTION_NAME}/${pollId}/${RESPONSES_SUBCOLLECTION}`, response),
-    onSuccess: (data, variables) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pollResponses'] });
     },
   });

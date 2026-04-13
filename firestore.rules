@@ -11,51 +11,55 @@ service cloud.firestore {
            'desenvolvedor@3ariva.com.br',
            'dalcion.franco@3ainvestimentos.com.br',
            'ti@3ariva.com.br',
-           'lucas.nogueira@3ainvestimentos.com.br'  // Adicionar aqui
+           'lucas.nogueira@3ainvestimentos.com.br'
          ];
-}
-    
-    // ---- Helper: Normalizar Email (NOVO E NECESSÁRIO) ----
-    // Replica a lógica do seu frontend para normalizar e-mails
+    }
+
+    // ---- Helper: Normalizar Email ----
     function normalizeEmail(email) {
-      // split() e size SÃO válidos
       let parts = email.split('@');
-      
-      // Lógica ternária (if/else em uma linha):
-      // SE ( email tem 2 partes E a parte 2 é '3ariva.com.br' )
-      // ENTÃO ( ? ) retorne 'parte1' + '@3ainvestimentos.com.br'
-      // SENÃO ( : ) retorne o email original
       return parts.size() == 2 && parts[1] == '3ariva.com.br' ?
              parts[0] + '@3ainvestimentos.com.br' :
              email;
     }
 
     // ---- Helper: o usuário está mexendo no próprio registro?
-    // cobre os dois padrões de ID: UID e email
     function isSelf() {
       return request.auth != null &&
              (request.resource.data.authUid == request.auth.uid ||
               normalizeEmail(request.auth.token.email) == normalizeEmail(resource.data.email)
-    );
+      );
+    }
+
+    // ---- Helper: Pode aprovar/reprovar ESTA solicitação ----
+    // Regras do novo fluxo:
+    // - super admin sempre pode
+    // - responsável específico pode apenas quando responsibleUid == auth.uid
+    function canApproveThisRequest() {
+      return request.auth != null &&
+        (
+          isSuperAdmin() ||
+          (
+            resource.data.responsibleUid is string &&
+            resource.data.responsibleUid != "" &&
+            resource.data.responsibleUid == request.auth.uid
+          )
+        );
     }
 
     // =========================
     // systemSettings
     // =========================
     match /systemSettings/{docId} {
-      // público_config é público
       allow read: if docId == 'public_config';
       allow write: if docId == 'public_config' && isSuperAdmin();
 
-      // leitura pública temporária de 'config'
       allow read: if docId == 'config';
       allow write: if docId == 'config' && isSuperAdmin();
 
-      // admin_config: só ler autenticado, ninguém escreve via client
       allow read: if docId == 'admin_config' && request.auth != null;
       allow write: if docId == 'admin_config' && false;
 
-      // keys: só autenticado pode ler/escrever
       allow read: if docId == 'keys' && request.auth != null;
       allow write: if docId == 'keys' && request.auth != null;
     }
@@ -64,21 +68,14 @@ service cloud.firestore {
     // collaborators
     // =========================
     match /collaborators/{userId} {
-      // qualquer logado pode ler
       allow read: if request.auth != null;
 
-      // criar:
-      // - o próprio usuário pode criar/atualizar o próprio doc
-      // - super admin pode criar pra qualquer um
       allow create: if isSelf() || isSuperAdmin();
 
-      // atualizar:
-      // - o próprio usuário OU super admin
-      allow update: if isSuperAdmin() || 
-      (request.auth.uid == resource.data.authUid) || 
+      allow update: if isSuperAdmin() ||
+      (request.auth.uid == resource.data.authUid) ||
       normalizeEmail(request.auth.token.email) == normalizeEmail(resource.data.email);
 
-      // deletar: só super admin
       allow delete: if isSuperAdmin();
     }
 
@@ -86,13 +83,8 @@ service cloud.firestore {
     // collaborator_logs
     // =========================
     match /collaborator_logs/{logId} {
-      // só super admin pode ler logs
       allow read: if isSuperAdmin();
-
-      // qualquer logado pode criar log (ex: registrar login)
       allow create: if request.auth != null;
-
-      // alterar/apagar só super admin
       allow update, delete: if isSuperAdmin();
     }
 
@@ -100,10 +92,7 @@ service cloud.firestore {
     // contacts
     // =========================
     match /contacts/{document=**} {
-      // liberar leitura pros usuários autenticados (necessário pro onSnapshot)
       allow read: if request.auth != null;
-
-      // escrita só por super admin
       allow write: if isSuperAdmin();
     }
 
@@ -145,14 +134,143 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
-    match /leaderTrips/{tripId} {
+    match /leaderTrips/{document=**} {
       allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+
+    // =========================
+    // vacations
+    // =========================
+    match /vacations/{vacationId} {
+      // Leitura: super admin vê tudo; usuário comum vê só as próprias
+      allow read: if request.auth != null
+                  && (
+                    isSuperAdmin()
+                    || resource.data.collaboratorUid == request.auth.uid
+                  );
+
+      // Cria:
+      // - próprio usuário (fluxo manual)
+      // - super admin
+      // - responsável designado via sourceRequestId (fluxo de aprovação)
       allow create: if request.auth != null
-                    && request.resource.data.responsavelUid == request.auth.uid;
+                    && request.resource.data.collaboratorName is string
+                    && request.resource.data.startDate is string
+                    && request.resource.data.endDate is string
+                    && request.resource.data.businessDays is int
+                    && request.resource.data.businessDays > 0
+                    && request.resource.data.createdAt is string
+                    && request.resource.data.updatedAt is string
+                    && (
+                      request.resource.data.collaboratorUid == request.auth.uid
+                      || isSuperAdmin()
+                      || (
+                        request.resource.data.sourceRequestId is string
+                        && exists(/databases/$(database)/documents/vacation_requests/$(request.resource.data.sourceRequestId))
+                        && get(/databases/$(database)/documents/vacation_requests/$(request.resource.data.sourceRequestId)).data.requesterUid == request.resource.data.collaboratorUid
+                        && get(/databases/$(database)/documents/vacation_requests/$(request.resource.data.sourceRequestId)).data.responsibleUid == request.auth.uid
+                      )
+                    );
+
+      // Atualiza/Exclui: somente super admin
+      allow update, delete: if request.auth != null && isSuperAdmin();
+    }
+
+    // =========================
+    // vacation_approvers
+    // =========================
+    // Document ID = UID do colaborador solicitante
+    // Campos esperados: userUid, userName, responsibleUid, responsibleName, ...
+    match /vacation_approvers/{collabUid} {
+      allow read: if request.auth != null;
+      allow write: if isSuperAdmin();
+    }
+
+    // =========================
+    // vacation_requests
+    // =========================
+    match /vacation_requests/{requestId} {
+      // Leitura:
+      // - próprio solicitante
+      // - responsável designado desta solicitação
+      // - super admin
+      allow read: if request.auth != null
+                  && (
+                    resource.data.requesterUid == request.auth.uid
+                    || (
+                      resource.data.responsibleUid is string
+                      && resource.data.responsibleUid != ""
+                      && resource.data.responsibleUid == request.auth.uid
+                    )
+                    || isSuperAdmin()
+                  );
+
+      // Criação: autenticado, somente para si mesmo, sempre pending
+      allow create: if request.auth != null
+                    && request.resource.data.requesterUid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.requesterName is string
+                    && request.resource.data.startDate is string
+                    && request.resource.data.endDate is string
+                    && request.resource.data.businessDays is int
+                    && request.resource.data.businessDays > 0
+                    && request.resource.data.createdAt is string
+                    && request.resource.data.updatedAt is string
+                    && (
+                      !('responsibleUid' in request.resource.data)
+                      || request.resource.data.responsibleUid is string
+                    )
+                    && (
+                      !('responsibleName' in request.resource.data)
+                      || request.resource.data.responsibleName is string
+                    );
+
+      // Atualização A: aprovação/reprovação por responsável designado ou super admin
       allow update: if request.auth != null
-                    && resource.data.responsavelUid == request.auth.uid;
-      allow delete: if request.auth != null
-                    && (resource.data.responsavelUid == request.auth.uid || isSuperAdmin());
+                    && canApproveThisRequest()
+                    && resource.data.status == 'pending'
+                    && request.resource.data.status in ['approved', 'rejected']
+                    && request.resource.data.requesterUid == resource.data.requesterUid
+                    && request.resource.data.requesterName == resource.data.requesterName
+                    && request.resource.data.startDate == resource.data.startDate
+                    && request.resource.data.endDate == resource.data.endDate
+                    && request.resource.data.businessDays == resource.data.businessDays
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.reviewedByUid is string
+                    && request.resource.data.reviewedByName is string
+                    && request.resource.data.reviewedAt is string
+                    && request.resource.data.updatedAt is string
+                    && (
+                      !('requesterArchivedAt' in request.resource.data)
+                      || request.resource.data.requesterArchivedAt == resource.data.requesterArchivedAt
+                    )
+                    && (
+                      !('requesterArchivedByUid' in request.resource.data)
+                      || request.resource.data.requesterArchivedByUid == resource.data.requesterArchivedByUid
+                    );
+
+      // Atualização B: arquivamento de reprovada pelo próprio solicitante
+      allow update: if request.auth != null
+                    && resource.data.requesterUid == request.auth.uid
+                    && resource.data.status == 'rejected'
+                    && (
+                      !('requesterArchivedAt' in resource.data)
+                      || resource.data.requesterArchivedAt == null
+                    )
+                    && request.resource.data.requesterUid == resource.data.requesterUid
+                    && request.resource.data.requesterName == resource.data.requesterName
+                    && request.resource.data.startDate == resource.data.startDate
+                    && request.resource.data.endDate == resource.data.endDate
+                    && request.resource.data.businessDays == resource.data.businessDays
+                    && request.resource.data.status == resource.data.status
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.requesterArchivedAt is string
+                    && request.resource.data.requesterArchivedByUid == request.auth.uid
+                    && request.resource.data.updatedAt is string;
+
+      // Exclusão: somente super admin
+      allow delete: if isSuperAdmin();
     }
 
     match /polls/{pollId}/{document=**} {
@@ -215,12 +333,8 @@ service cloud.firestore {
     // meeting_analyses
     // =========================
     match /meeting_analyses/{analysisId} {
-      // Leitura: apenas se o user_email do documento corresponde ao email do usuário logado
-      // Comparação direta, SEM normalização (conforme especificado)
-      allow read: if request.auth != null && 
+      allow read: if request.auth != null &&
                      resource.data.user_email == request.auth.token.email;
-      
-      // Escrita: apenas super admin (o backend escreve via admin SDK)
       allow write: if isSuperAdmin();
     }
   }

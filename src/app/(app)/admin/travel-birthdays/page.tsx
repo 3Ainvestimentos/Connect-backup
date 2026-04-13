@@ -3,15 +3,71 @@
 import React from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import ManageTripsBirthdays from "@/components/admin/ManageTripsBirthdays";
+import ManageVacations from "@/components/admin/ManageVacations";
+import ManageVacationApprovers from "@/components/admin/ManageVacationApprovers";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function TravelBirthdaysControlPage() {
+  const { permissions, isSuperAdmin } = useAuth();
+  const canViewTrips = permissions.canManageTripsBirthdays;
+  const canViewVacation = permissions.canManageVacation;
+  const canViewControl = isSuperAdmin;
+  const defaultTab = canViewTrips ? "viagens" : "ferias";
+
+  const tabCount = [canViewTrips, canViewVacation, canViewControl].filter(Boolean).length;
+  const showTabs = tabCount > 1;
+  const tabsGridClass =
+    tabCount === 3 ? "grid-cols-3" : tabCount === 2 ? "grid-cols-2" : "grid-cols-1";
+
   return (
     <div className="space-y-6 p-6 md:p-8 admin-panel">
       <PageHeader
-        title="Controle de Viagens"
-        description="Gerencie as viagens dos líderes. O módulo de aniversariantes permanece preparado para ativação."
+        title="Controle de Viagens/Ferias"
+        description="Gerencie viagens dos líderes e seus períodos de férias em uma única área."
       />
-      <ManageTripsBirthdays />
+
+      {showTabs ? (
+        <Tabs defaultValue={defaultTab} className="w-full">
+          <TabsList className={`grid w-full ${tabsGridClass}`}>
+            {canViewTrips && (
+              <TabsTrigger value="viagens">
+                Viagens
+              </TabsTrigger>
+            )}
+            {canViewVacation && (
+              <TabsTrigger value="ferias">
+                Férias
+              </TabsTrigger>
+            )}
+            {canViewControl && (
+              <TabsTrigger value="controle">
+                Controle
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          {canViewTrips && (
+            <TabsContent value="viagens">
+              <ManageTripsBirthdays />
+            </TabsContent>
+          )}
+          {canViewVacation && (
+            <TabsContent value="ferias">
+              <ManageVacations />
+            </TabsContent>
+          )}
+          {canViewControl && (
+            <TabsContent value="controle">
+              <ManageVacationApprovers />
+            </TabsContent>
+          )}
+        </Tabs>
+      ) : canViewVacation ? (
+        <ManageVacations />
+      ) : (
+        <ManageTripsBirthdays />
+      )}
     </div>
   );
 }

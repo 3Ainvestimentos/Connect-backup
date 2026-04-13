@@ -18,18 +18,18 @@ export default function TravelBirthdaysLayout({
     if (!loading) {
       if (!user) {
         router.replace("/login");
-      } else if (!permissions.canManageTripsBirthdays) {
+      } else if (!permissions.canManageTripsBirthdays && !permissions.canManageVacation) {
         router.replace("/dashboard");
       } else {
         setIsAuthorized(true);
       }
     }
-  }, [user, loading, permissions.canManageTripsBirthdays, router]);
+  }, [user, loading, permissions.canManageTripsBirthdays, permissions.canManageVacation, router]);
 
   if (loading || !isAuthorized) {
     return (
       <div className="flex h-[calc(100vh-var(--header-height))] w-full items-center justify-center bg-background">
-        <LoadingSpinner message="Carregando Viagens e Aniversários" />
+        <LoadingSpinner message="Carregando Viagens/Férias" />
       </div>
     );
   }

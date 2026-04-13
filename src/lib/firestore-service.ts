@@ -13,6 +13,12 @@ import type { UploadTaskSnapshot } from "firebase/storage";
 const db = getFirestore(getFirebaseApp());
 
 export type WithId<T> = T & { id: string };
+export type FirestoreQueryFilter = {
+  field: string;
+  operator: '<' | '<=' | '==' | '!=' | '>=' | '>' | 'array-contains' | 'in' | 'array-contains-any' | 'not-in';
+  value: any;
+};
+export type FirestoreOrderBy = { field: string; direction: 'asc' | 'desc' };
 
 interface UploadOptions {
   addLog?: (log: string) => void;
@@ -142,6 +148,51 @@ export const listenToCollection = <T>(
 };
 
 /**
+ * Attaches a real-time listener to a Firestore collection with query filters and ordering.
+ */
+export const listenToCollectionWithQuery = <T>(
+    collectionName: string,
+    onData: (data: WithId<T>[]) => void,
+    onError: (error: Error) => void,
+    filters?: FirestoreQueryFilter[],
+    orderBy?: FirestoreOrderBy[]
+): (() => void) => {
+    try {
+        const collectionRef = collection(db, collectionName);
+        let q: Query = query(collectionRef);
+
+        if (filters && filters.length > 0) {
+            filters.forEach(filter => {
+                q = query(q, where(filter.field, filter.operator, filter.value));
+            });
+        }
+
+        if (orderBy && orderBy.length > 0) {
+            orderBy.forEach(order => {
+                q = query(q, firestoreOrderBy(order.field, order.direction));
+            });
+        }
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const data: WithId<T>[] = [];
+            querySnapshot.forEach((doc) => {
+                data.push({ id: doc.id, ...doc.data() } as WithId<T>);
+            });
+            onData(data);
+        }, (error) => {
+            console.error(`Error listening to collection ${collectionName} with query:`, error);
+            onError(new Error(`Não foi possível ouvir os dados de ${collectionName}.`));
+        });
+
+        return unsubscribe;
+    } catch (error) {
+        console.error(`Error setting up listener with query for ${collectionName}:`, error);
+        onError(new Error(`Falha ao configurar o ouvinte para ${collectionName}.`));
+        return () => {};
+    }
+};
+
+/**
  * Fetches all documents from a specified collection.
  * @param collectionName The name of the collection.
  * @returns A promise that resolves to an array of documents with their IDs.
@@ -170,8 +221,8 @@ export const getCollection = async <T>(collectionName: string): Promise<WithId<T
  */
 export const getCollectionWithQuery = async <T>(
     collectionName: string,
-    filters?: Array<{ field: string; operator: '<' | '<=' | '==' | '!=' | '>=' | '>' | 'array-contains' | 'in' | 'array-contains-any' | 'not-in'; value: any }>,
-    orderBy?: Array<{ field: string; direction: 'asc' | 'desc' }>
+    filters?: FirestoreQueryFilter[],
+    orderBy?: FirestoreOrderBy[]
 ): Promise<WithId<T>[]> => {
     try {
         const collectionRef = collection(db, collectionName);
