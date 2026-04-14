@@ -2,28 +2,33 @@
 
 import * as React from 'react';
 import { useRequesterCatalog, useOpenRequesterWorkflow } from '@/hooks/use-requester-workflows';
+import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 import { WorkflowAreaGrid } from './WorkflowAreaGrid';
 import { WorkflowSelectionModal } from './WorkflowSelectionModal';
 import { WorkflowSubmissionModal } from './WorkflowSubmissionModal';
 import { MyRequestsV2Section } from './MyRequestsV2Section';
-import { MyRequestDetailDialog } from './MyRequestDetailDialog';
+import { RequesterUnifiedRequestDetailDialog } from './RequesterUnifiedRequestDetailDialog';
 import type { RequesterCatalogArea, RequesterCatalogWorkflow } from '@/lib/workflows/requester/catalog-types';
+import type { RequesterUnifiedRequestListItem } from '@/lib/workflows/requester/unified-types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 export function RequestsV2Page() {
   const { data: catalog, isLoading, error } = useRequesterCatalog();
+  const { workflowAreas } = useWorkflowAreas();
   const [selectedArea, setSelectedArea] = React.useState<RequesterCatalogArea | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = React.useState<RequesterCatalogWorkflow | null>(null);
   const [showSelectionModal, setShowSelectionModal] = React.useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = React.useState(false);
-  const [selectedRequestId, setSelectedRequestId] = React.useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = React.useState<RequesterUnifiedRequestListItem | null>(null);
   const [showDetailDialog, setShowDetailDialog] = React.useState(false);
   const { toast } = useToast();
 
+  // `areaLabelById` vem de `useWorkflowAreas()`, e nao do catalogo requester v2.
+  // O catalogo pode nao conter todas as areas legadas nem areas v2 desativadas.
   const areaLabelById = React.useMemo(() => {
-    return new Map((catalog ?? []).map((area) => [area.areaId, area.areaName]));
-  }, [catalog]);
+    return new Map((workflowAreas ?? []).map((area) => [area.id, area.name]));
+  }, [workflowAreas]);
 
   const resetSubmissionFlow = React.useCallback(() => {
     setShowSubmissionModal(false);
@@ -58,8 +63,8 @@ export function RequestsV2Page() {
     setShowSubmissionModal(true);
   };
 
-  const handleSelectRequest = (requestId: number) => {
-    setSelectedRequestId(requestId);
+  const handleSelectRequest = (item: RequesterUnifiedRequestListItem) => {
+    setSelectedItem(item);
     setShowDetailDialog(true);
   };
 
@@ -116,15 +121,15 @@ export function RequestsV2Page() {
         <MyRequestsV2Section onSelectRequest={handleSelectRequest} />
       </div>
 
-      <MyRequestDetailDialog
+      <RequesterUnifiedRequestDetailDialog
         open={showDetailDialog}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
             setShowDetailDialog(false);
-            setSelectedRequestId(null);
+            setSelectedItem(null);
           }
         }}
-        requestId={selectedRequestId}
+        selected={selectedItem}
         areaLabelById={areaLabelById}
       />
     </div>

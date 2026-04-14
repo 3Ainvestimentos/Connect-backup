@@ -40,23 +40,23 @@ export function RequesterRequestSummaryHeader({
             <p className="mt-0.5 text-sm text-muted-foreground">{requesterName ?? '-'}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Data</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{formatTimestamp(submittedAt)}</p>
+            <p className="text-sm font-medium text-foreground">Responsavel</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{responsibleName ?? 'Nao atribuido'}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Tipo</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{workflowName ?? '-'}</p>
+            <p className="text-sm font-medium text-foreground">Aberto em</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{formatTimestamp(submittedAt)}</p>
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">Ultima Atualizacao</p>
             <p className="mt-0.5 text-sm text-muted-foreground">{formatTimestamp(lastUpdatedAt)}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Responsavel</p>
-            <p className="mt-0.5 text-sm text-muted-foreground">{responsibleName ?? 'Nao atribuido'}</p>
+            <p className="text-sm font-medium text-foreground">Tipo</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{workflowName ?? '-'}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-foreground">Aberto em</p>
+            <p className="text-sm font-medium text-foreground">Area</p>
             <p className="mt-0.5 text-sm text-muted-foreground">{openedInLabel}</p>
           </div>
         </div>
