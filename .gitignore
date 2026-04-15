@@ -43,3 +43,6 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+
+# exported local session archive
+docs/workflows_new/sessao-connect-backup-019cf7bc.jsonl
