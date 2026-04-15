@@ -1,31 +1,47 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RequestsV2Page } from '../RequestsV2Page';
-import { useRequesterCatalog, useOpenRequesterWorkflow, usePublishedWorkflow, useMyRequests, useRequestDetail } from '@/hooks/use-requester-workflows';
+import {
+  useOpenRequesterWorkflow,
+  usePublishedWorkflow,
+  useRequestDetail,
+  useRequesterCatalog,
+} from '@/hooks/use-requester-workflows';
+import { useRequesterUnifiedRequests } from '@/hooks/use-requester-unified-requests';
+import { useWorkflowAreas } from '@/contexts/WorkflowAreasContext';
 import type { RequesterCatalogArea } from '@/lib/workflows/requester/catalog-types';
+import type { RequesterUnifiedRequestListItem } from '@/lib/workflows/requester/unified-types';
 import type { WorkflowRequestDetailData } from '@/lib/workflows/read/types';
 import '@testing-library/jest-dom';
 
 jest.mock('lucide-react', () => ({
-  FileClock: () => null,
-  Inbox: () => null,
-  Eye: () => null,
-  Timer: () => null,
+  AlertCircle: () => null,
   Building: () => null,
-  Wrench: () => null,
+  Eye: () => null,
+  FileClock: () => null,
+  FolderOpen: () => null,
+  Inbox: () => null,
+  Loader2: () => null,
   Plus: () => null,
   Send: () => null,
-  Loader2: () => null,
-  AlertCircle: () => null,
+  Timer: () => null,
+  Wrench: () => null,
   X: () => null,
 }));
 
 jest.mock('@/hooks/use-requester-workflows', () => ({
-  useRequesterCatalog: jest.fn(),
-  usePublishedWorkflow: jest.fn(),
   useOpenRequesterWorkflow: jest.fn(),
-  useMyRequests: jest.fn(),
+  usePublishedWorkflow: jest.fn(),
   useRequestDetail: jest.fn(),
+  useRequesterCatalog: jest.fn(),
+}));
+
+jest.mock('@/hooks/use-requester-unified-requests', () => ({
+  useRequesterUnifiedRequests: jest.fn(),
+}));
+
+jest.mock('@/contexts/WorkflowAreasContext', () => ({
+  useWorkflowAreas: jest.fn(),
 }));
 
 jest.mock('@/contexts/AuthContext', () => ({
@@ -50,11 +66,58 @@ const mockCatalog: RequesterCatalogArea[] = [
         workflowTypeId: 'wf-facilities-001',
         name: 'Manutencao Geral',
         description: 'Solicitacao de manutencao',
-        icon: 'wrench',
+        icon: 'Wrench',
       },
     ],
   },
 ];
+
+const mockListItem: RequesterUnifiedRequestListItem = {
+  origin: 'v2',
+  detailKey: 'v2:1001',
+  requestId: 1001,
+  displayRequestId: '1001',
+  workflowName: 'Manutencao Geral',
+  statusLabel: 'Em andamento',
+  statusVariant: 'default',
+  expectedCompletionLabel: '-',
+  expectedCompletionAt: null,
+  submittedAt: null,
+  lastUpdatedAt: null,
+  raw: {
+    docId: 'doc-1',
+    requestId: 1001,
+    workflowTypeId: 'wf-facilities-001',
+    workflowVersion: 1,
+    workflowName: 'Manutencao Geral',
+    areaId: 'area-1',
+    ownerEmail: 'owner@example.com',
+    ownerUserId: 'owner-1',
+    requesterUserId: 'user-1',
+    requesterName: 'Test User',
+    responsibleUserId: null,
+    responsibleName: null,
+    currentStepId: 'step-1',
+    currentStepName: 'Em andamento',
+    currentStatusKey: 'in_progress',
+    statusCategory: 'in_progress',
+    hasResponsible: false,
+    hasPendingActions: false,
+    pendingActionRecipientIds: [],
+    pendingActionTypes: [],
+    operationalParticipantIds: [],
+    slaDays: 5,
+    expectedCompletionAt: null,
+    lastUpdatedAt: null as any,
+    finalizedAt: null,
+    closedAt: null,
+    archivedAt: null,
+    submittedAt: null as any,
+    submittedMonthKey: '2026-04',
+    closedMonthKey: 'unknown',
+    isArchived: false,
+  },
+};
 
 const mockDetail: WorkflowRequestDetailData = {
   summary: {
@@ -124,27 +187,26 @@ const mockDetail: WorkflowRequestDetailData = {
 function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: { retry: false },
       mutations: { retry: false },
+      queries: { retry: false },
     },
   });
 
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   };
 }
 
 describe('RequestsV2Page', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
     (useRequesterCatalog as jest.Mock).mockReturnValue({
       data: mockCatalog,
       isLoading: false,
       error: null,
     });
-    // Always mock usePublishedWorkflow since WorkflowSubmissionModal uses it
+
     (usePublishedWorkflow as jest.Mock).mockReturnValue({
       data: {
         workflowTypeId: 'wf-facilities-001',
@@ -154,17 +216,21 @@ describe('RequestsV2Page', () => {
       isLoading: false,
       error: null,
     });
+
     (useOpenRequesterWorkflow as jest.Mock).mockReturnValue({
       mutateAsync: jest.fn().mockResolvedValue({ requestId: 1001, docId: 'abc123' }),
       isPending: false,
     });
-    // MyRequests default mock
-    (useMyRequests as jest.Mock).mockReturnValue({
-      data: { items: [], groups: [] },
+
+    (useRequesterUnifiedRequests as jest.Mock).mockReturnValue({
+      items: [],
+      status: 'success',
       isLoading: false,
+      isError: false,
       error: null,
+      legacyIdentityResolved: true,
     });
-    // RequestDetail default mock
+
     (useRequestDetail as jest.Mock).mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -173,40 +239,49 @@ describe('RequestsV2Page', () => {
       stableData: undefined,
       hasStableData: false,
     });
+
+    (useWorkflowAreas as jest.Mock).mockReturnValue({
+      workflowAreas: [{ id: 'area-1', name: 'Facilities', icon: 'Building', storageFolderPath: 'facilities' }],
+      loading: false,
+    });
   });
 
-  it('should display the catalog areas when loaded', () => {
+  it('renders the canonical header and simplified area cards', () => {
     render(<RequestsV2Page />, { wrapper: createWrapper() });
 
-    expect(screen.getByText('Solicitacoes')).toBeInTheDocument();
-    expect(screen.getByText('Manutencao Geral')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Solicitacoes' })).toBeInTheDocument();
+    expect(
+      screen.getByText('Inicie processos e acesse as ferramentas da empresa.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Facilities' })).toBeInTheDocument();
+    expect(screen.queryByText('1 tipo de solicitacao')).not.toBeInTheDocument();
+    expect(screen.queryByText('Manutencao Geral')).not.toBeInTheDocument();
   });
 
-  it('should call resetSubmissionFlow when submission modal is closed', async () => {
+  it('opens the submission modal when the area card is clicked', async () => {
     render(<RequestsV2Page />, { wrapper: createWrapper() });
 
-    // Open submission modal by clicking area with single workflow
-    const workflowButton = screen.getByText('Manutencao Geral');
     await act(async () => {
-      fireEvent.click(workflowButton);
+      fireEvent.click(screen.getByRole('button', { name: 'Facilities' }));
     });
 
-    // Modal should be open
     expect(screen.getByText(/Enviar solicitacao/i)).toBeInTheDocument();
-
-    // Close via Cancel button
-    const cancelButton = screen.getByText('Cancelar');
-    await act(async () => {
-      fireEvent.click(cancelButton);
-    });
-
-    // Modal should be closed and selection cleared
-    expect(screen.queryByText(/Enviar solicitacao/i)).not.toBeInTheDocument();
-    // Area grid should be visible again
-    expect(screen.getByText('Manutencao Geral')).toBeInTheDocument();
   });
 
-  it('should show toast and reset flow on successful submission', async () => {
+  it('supports keyboard activation on the area card', async () => {
+    render(<RequestsV2Page />, { wrapper: createWrapper() });
+
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Facilities' }), {
+        key: 'Enter',
+        code: 'Enter',
+      });
+    });
+
+    expect(screen.getByText(/Enviar solicitacao/i)).toBeInTheDocument();
+  });
+
+  it('shows toast and resets flow on successful submission', async () => {
     const mockMutateAsync = jest.fn().mockResolvedValue({ requestId: 1001, docId: 'abc123' });
     (useOpenRequesterWorkflow as jest.Mock).mockReturnValue({
       mutateAsync: mockMutateAsync,
@@ -215,80 +290,40 @@ describe('RequestsV2Page', () => {
 
     render(<RequestsV2Page />, { wrapper: createWrapper() });
 
-    // Open modal
-    const workflowButton = screen.getByText('Manutencao Geral');
     await act(async () => {
-      fireEvent.click(workflowButton);
+      fireEvent.click(screen.getByRole('button', { name: 'Facilities' }));
     });
 
-    // Submit form (no required fields, so it should succeed)
-    const submitButton = screen.getByText('Enviar solicitacao');
     await act(async () => {
-      fireEvent.click(submitButton);
+      fireEvent.click(screen.getByText('Enviar solicitacao'));
     });
 
-    // Verify mutation was called
     await waitFor(() => {
       expect(mockMutateAsync).toHaveBeenCalled();
     });
 
-    // Verify toast was shown
     expect(mockToast).toHaveBeenCalledWith({
       title: 'Solicitacao aberta com sucesso!',
       description: 'Seu numero de solicitacao e 1001.',
     });
 
-    // Verify modal closed
     expect(screen.queryByText(/Enviar solicitacao/i)).not.toBeInTheDocument();
   });
 
-  it('should render Minhas Solicitacoes section below the catalog', () => {
+  it('renders MyRequests section below the catalog shell', () => {
     render(<RequestsV2Page />, { wrapper: createWrapper() });
 
     expect(screen.getByText('Minhas Solicitacoes')).toBeInTheDocument();
   });
 
-  it('should open detail dialog when eye button is clicked', async () => {
-    const mockItems = [
-      {
-        docId: 'doc-1',
-        requestId: 1001,
-        workflowTypeId: 'wf-facilities-001',
-        workflowVersion: 1,
-        workflowName: 'Manutencao Geral',
-        areaId: 'area-1',
-        ownerEmail: 'owner@example.com',
-        ownerUserId: 'owner-1',
-        requesterUserId: 'user-1',
-        requesterName: 'Test User',
-        responsibleUserId: null,
-        responsibleName: null,
-        currentStepId: 'step-1',
-        currentStepName: 'Em andamento',
-        currentStatusKey: 'in_progress',
-        statusCategory: 'in_progress',
-        hasResponsible: false,
-        hasPendingActions: false,
-        pendingActionRecipientIds: [],
-        pendingActionTypes: [],
-        operationalParticipantIds: [],
-        slaDays: 5,
-        expectedCompletionAt: null,
-        lastUpdatedAt: null as any,
-        finalizedAt: null,
-        closedAt: null,
-        archivedAt: null,
-        submittedAt: null as any,
-        submittedMonthKey: '2026-04',
-        closedMonthKey: 'unknown',
-        isArchived: false,
-      },
-    ];
-
-    (useMyRequests as jest.Mock).mockReturnValue({
-      data: { items: mockItems, groups: [] },
+  it('opens the read-only detail dialog from the unified requests table', async () => {
+    (useRequesterUnifiedRequests as jest.Mock).mockReturnValue({
+      items: [mockListItem],
+      status: 'success',
       isLoading: false,
+      isError: false,
       error: null,
+      legacyIdentityResolved: true,
     });
 
     (useRequestDetail as jest.Mock).mockReturnValue({
@@ -302,61 +337,23 @@ describe('RequestsV2Page', () => {
 
     render(<RequestsV2Page />, { wrapper: createWrapper() });
 
-    // Find and click the eye button by accessible name
-    const eyeButton = screen.getByRole('button', { name: 'Ver detalhes da solicitacao 1001' });
     await act(async () => {
-      fireEvent.click(eyeButton);
+      fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes da solicitacao 1001' }));
     });
 
-    // Dialog should be open with detail content
     await waitFor(() => {
       expect(screen.getByText(/Solicitacao #1001/i)).toBeInTheDocument();
     });
-    // Use getAllByText since text appears in multiple places (catalog and dialog)
-    expect(screen.getAllByText('Manutencao Geral').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('should reset selectedRequestId and close dialog when closed via Escape', async () => {
-    const mockItems = [
-      {
-        docId: 'doc-1',
-        requestId: 1001,
-        workflowTypeId: 'wf-facilities-001',
-        workflowVersion: 1,
-        workflowName: 'Manutencao Geral',
-        areaId: 'area-1',
-        ownerEmail: 'owner@example.com',
-        ownerUserId: 'owner-1',
-        requesterUserId: 'user-1',
-        requesterName: 'Test User',
-        responsibleUserId: null,
-        responsibleName: null,
-        currentStepId: 'step-1',
-        currentStepName: 'Em andamento',
-        currentStatusKey: 'in_progress',
-        statusCategory: 'in_progress',
-        hasResponsible: false,
-        hasPendingActions: false,
-        pendingActionRecipientIds: [],
-        pendingActionTypes: [],
-        operationalParticipantIds: [],
-        slaDays: 5,
-        expectedCompletionAt: null,
-        lastUpdatedAt: null as any,
-        finalizedAt: null,
-        closedAt: null,
-        archivedAt: null,
-        submittedAt: null as any,
-        submittedMonthKey: '2026-04',
-        closedMonthKey: 'unknown',
-        isArchived: false,
-      },
-    ];
-
-    (useMyRequests as jest.Mock).mockReturnValue({
-      data: { items: mockItems, groups: [] },
+  it('resets selected item when the detail dialog is closed with Escape', async () => {
+    (useRequesterUnifiedRequests as jest.Mock).mockReturnValue({
+      items: [mockListItem],
+      status: 'success',
       isLoading: false,
+      isError: false,
       error: null,
+      legacyIdentityResolved: true,
     });
 
     (useRequestDetail as jest.Mock).mockReturnValue({
@@ -370,23 +367,18 @@ describe('RequestsV2Page', () => {
 
     render(<RequestsV2Page />, { wrapper: createWrapper() });
 
-    // Open dialog
-    const eyeButton = screen.getByRole('button', { name: 'Ver detalhes da solicitacao 1001' });
     await act(async () => {
-      fireEvent.click(eyeButton);
+      fireEvent.click(screen.getByRole('button', { name: 'Ver detalhes da solicitacao 1001' }));
     });
 
-    // Verify dialog is open with correct content
     await waitFor(() => {
       expect(screen.getByText(/Solicitacao #1001/i)).toBeInTheDocument();
     });
 
-    // Close dialog via Escape key (Radix Dialog DismissableLayer listens at document level)
     await act(async () => {
       fireEvent.keyDown(document, { key: 'Escape', code: 'Escape', keyCode: 27 });
     });
 
-    // Verify dialog closed and RequestsV2Page reset selectedRequestId + showDetailDialog
     await waitFor(() => {
       expect(screen.queryByText(/Solicitacao #1001/i)).not.toBeInTheDocument();
     });

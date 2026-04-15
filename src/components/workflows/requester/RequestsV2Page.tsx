@@ -11,6 +11,8 @@ import { RequesterUnifiedRequestDetailDialog } from './RequesterUnifiedRequestDe
 import type { RequesterCatalogArea, RequesterCatalogWorkflow } from '@/lib/workflows/requester/catalog-types';
 import type { RequesterUnifiedRequestListItem } from '@/lib/workflows/requester/unified-types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Separator } from '@/components/ui/separator';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { useToast } from '@/hooks/use-toast';
 
 export function RequestsV2Page() {
@@ -38,8 +40,8 @@ export function RequestsV2Page() {
 
   const handleSubmissionSuccess = (requestId: number) => {
     toast({
-      title: 'Solicitacao aberta com sucesso!',
-      description: `Seu numero de solicitacao e ${requestId}.`,
+      title: 'Solicitação aberta com sucesso!',
+      description: `Seu numero de solicitação e ${requestId}.`,
     });
 
     resetSubmissionFlow();
@@ -69,35 +71,37 @@ export function RequestsV2Page() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight">Solicitacoes</h1>
-        <p className="text-muted-foreground mt-2">
-          Selecione uma area para abrir sua solicitacao.
-        </p>
+    <div className="space-y-8 p-6 md:p-8">
+      <div>
+        <PageHeader
+          title="Solicitações"
+          description="Inicie processos e acesse as ferramentas da empresa."
+        />
+
+        {isLoading ? (
+          <div className="flex flex-wrap justify-center gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-32 w-48 rounded-lg" />
+            ))}
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
+            <p className="text-sm text-destructive">
+              Nao foi possivel carregar o catalogo de solicitacoes.
+            </p>
+          </div>
+        ) : !catalog || catalog.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              Nenhuma area disponivel no momento.
+            </p>
+          </div>
+        ) : (
+          <WorkflowAreaGrid areas={catalog} onAreaClick={handleAreaClick} />
+        )}
       </div>
 
-      {isLoading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-32 w-full rounded-lg" />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
-          <p className="text-sm text-destructive">
-            Nao foi possivel carregar o catalogo de solicitacoes.
-          </p>
-        </div>
-      ) : !catalog || catalog.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-sm text-muted-foreground">
-            Nenhuma area disponivel no momento.
-          </p>
-        </div>
-      ) : (
-        <WorkflowAreaGrid areas={catalog} onAreaClick={handleAreaClick} />
-      )}
+      <Separator />
 
       <WorkflowSelectionModal
         open={showSelectionModal}
@@ -117,9 +121,7 @@ export function RequestsV2Page() {
         onSuccess={handleSubmissionSuccess}
       />
 
-      <div className="mt-10">
-        <MyRequestsV2Section onSelectRequest={handleSelectRequest} />
-      </div>
+      <MyRequestsV2Section onSelectRequest={handleSelectRequest} />
 
       <RequesterUnifiedRequestDetailDialog
         open={showDetailDialog}

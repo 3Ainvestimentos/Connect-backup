@@ -11,7 +11,7 @@ type WorkflowAreaGridProps = {
 
 export function WorkflowAreaGrid({ areas, onAreaClick }: WorkflowAreaGridProps) {
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="flex flex-wrap justify-center gap-4">
       {areas.map((area) => (
         <WorkflowAreaCard
           key={area.areaId}

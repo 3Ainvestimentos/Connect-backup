@@ -12,11 +12,10 @@ type WorkflowAreaCardProps = {
 
 export function WorkflowAreaCard({ area, onClick }: WorkflowAreaCardProps) {
   const Icon = getIcon(area.areaIcon || 'FolderOpen');
-  const workflowCount = area.workflows.length;
 
   return (
     <Card
-      className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-md"
+      className="flex h-32 w-48 cursor-pointer items-center justify-center transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -27,35 +26,9 @@ export function WorkflowAreaCard({ area, onClick }: WorkflowAreaCardProps) {
         }
       }}
     >
-      <CardContent className="flex flex-col gap-4 p-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
-            <Icon className="h-6 w-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold leading-none">{area.areaName}</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {workflowCount === 1
-                ? '1 tipo de solicitacao'
-                : `${workflowCount} tipos de solicitacao`}
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          {area.workflows.slice(0, 3).map((wf) => (
-            <span
-              key={wf.workflowTypeId}
-              className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground"
-            >
-              {wf.name}
-            </span>
-          ))}
-          {area.workflows.length > 3 && (
-            <span className="rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground">
-              +{area.workflows.length - 3} mais
-            </span>
-          )}
-        </div>
+      <CardContent className="flex h-full w-full flex-col items-center justify-center p-4 text-center">
+        <Icon className="mb-2 h-7 w-7 text-muted-foreground" />
+        <h3 className="font-body text-sm font-semibold text-card-foreground">{area.areaName}</h3>
       </CardContent>
     </Card>
   );

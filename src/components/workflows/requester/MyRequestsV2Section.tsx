@@ -19,7 +19,7 @@ export function MyRequestsV2Section({ onSelectRequest }: MyRequestsV2SectionProp
   const { items, status } = useRequesterUnifiedRequests();
 
   const header = (
-    <CardHeader>
+    <CardHeader className="pb-4">
       <CardTitle className="flex items-center gap-2">
         <FileClock className="h-6 w-6" />
         Minhas Solicitacoes
@@ -61,7 +61,7 @@ export function MyRequestsV2Section({ onSelectRequest }: MyRequestsV2SectionProp
   return (
     <Card>
       {header}
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 pt-0">
         {status === 'partial' ? (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
