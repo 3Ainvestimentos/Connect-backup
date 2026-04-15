@@ -271,7 +271,11 @@ export function WorkflowSubmissionModal({
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isBusy}>
+              <Button
+                type="submit"
+                disabled={isBusy}
+                className="bg-admin-primary hover:bg-admin-primary/90"
+              >
                 {isBusy ? 'Enviando...' : 'Enviar solicitacao'}
               </Button>
             </DialogFooter>
