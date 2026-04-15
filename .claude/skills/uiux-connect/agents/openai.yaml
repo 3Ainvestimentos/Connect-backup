@@ -1,0 +1,7 @@
+interface:
+  display_name: "UiUx-Connect"
+  short_description: "Canon visual do Connect para build e audit."
+  default_prompt: "Use $uiux-connect para construir ou auditar esta tela conforme o padrão visual do Connect."
+
+policy:
+  allow_implicit_invocation: true
