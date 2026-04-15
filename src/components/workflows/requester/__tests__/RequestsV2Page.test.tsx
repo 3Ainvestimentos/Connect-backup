@@ -72,6 +72,28 @@ const mockCatalog: RequesterCatalogArea[] = [
   },
 ];
 
+const mockMultiWorkflowCatalog: RequesterCatalogArea[] = [
+  {
+    areaId: 'area-2',
+    areaName: 'Gente e Comunicacao',
+    areaIcon: 'Building',
+    workflows: [
+      {
+        workflowTypeId: 'wf-gente-001',
+        name: 'Alteracao Cadastral',
+        description: 'Solicitacao de alteracao cadastral nos bancos de dados da 3A RIVA.',
+        icon: 'Wrench',
+      },
+      {
+        workflowTypeId: 'wf-gente-002',
+        name: 'Fale com a GENTE',
+        description: 'Fale com a GENTE',
+        icon: 'Plus',
+      },
+    ],
+  },
+];
+
 const mockListItem: RequesterUnifiedRequestListItem = {
   origin: 'v2',
   detailKey: 'v2:1001',
@@ -249,7 +271,7 @@ describe('RequestsV2Page', () => {
   it('renders the canonical header and simplified area cards', () => {
     render(<RequestsV2Page />, { wrapper: createWrapper() });
 
-    expect(screen.getByRole('heading', { name: 'Solicitacoes' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Solicitações' })).toBeInTheDocument();
     expect(
       screen.getByText('Inicie processos e acesse as ferramentas da empresa.')
     ).toBeInTheDocument();
@@ -266,6 +288,29 @@ describe('RequestsV2Page', () => {
     });
 
     expect(screen.getByText(/Enviar solicitacao/i)).toBeInTheDocument();
+  });
+
+  it('opens the workflow selection modal for areas with multiple workflows', async () => {
+    (useRequesterCatalog as jest.Mock).mockReturnValue({
+      data: mockMultiWorkflowCatalog,
+      isLoading: false,
+      error: null,
+    });
+
+    render(<RequestsV2Page />, { wrapper: createWrapper() });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Gente e Comunicacao' }));
+    });
+
+    expect(
+      screen.getByRole('heading', { name: 'Gente e Comunicacao' })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('Selecione um dos processos abaixo para iniciar uma nova solicitacao.')
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Alteracao Cadastral' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Fale com a GENTE' })).toBeInTheDocument();
   });
 
   it('supports keyboard activation on the area card', async () => {
@@ -303,8 +348,8 @@ describe('RequestsV2Page', () => {
     });
 
     expect(mockToast).toHaveBeenCalledWith({
-      title: 'Solicitacao aberta com sucesso!',
-      description: 'Seu numero de solicitacao e 1001.',
+      title: 'Solicitação aberta com sucesso!',
+      description: 'Seu numero de solicitação e 1001.',
     });
 
     expect(screen.queryByText(/Enviar solicitacao/i)).not.toBeInTheDocument();
