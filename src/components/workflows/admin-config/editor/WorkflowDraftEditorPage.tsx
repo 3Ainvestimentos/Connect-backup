@@ -290,10 +290,6 @@ export function WorkflowDraftEditorPage({
   };
 
   useEffect(() => {
-    if (!draftQuery.data) {
-      return;
-    }
-
     onShellStateChange?.({
       submitDraft: () => submitDraftRef.current(),
       publishVersion: () => publishVersionRef.current(),
@@ -301,6 +297,7 @@ export function WorkflowDraftEditorPage({
       isPublishing: publishMutation.isPending,
       canPublish,
       isReadOnly,
+      isHydrated: Boolean(draftQuery.data),
     });
   }, [
     canPublish,
@@ -409,6 +406,7 @@ export function WorkflowDraftEditorPage({
             void publishMutation.mutateAsync();
           }}
           readOnly={isReadOnly}
+          showPublishAction={!embedded && !hidePrimaryActions}
         />
       </form>
     </FormProvider>

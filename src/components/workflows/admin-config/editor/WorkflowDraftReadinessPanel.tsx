@@ -13,6 +13,7 @@ export function WorkflowDraftReadinessPanel({
   hasUnsavedChanges,
   onPublish,
   readOnly = false,
+  showPublishAction = true,
 }: {
   issues: WorkflowDraftReadiness;
   canPublish: boolean;
@@ -20,6 +21,7 @@ export function WorkflowDraftReadinessPanel({
   hasUnsavedChanges: boolean;
   onPublish: () => void;
   readOnly?: boolean;
+  showPublishAction?: boolean;
 }) {
   const blockingIssues = issues.filter((issue) => issue.severity === 'blocking');
   const warnings = issues.filter((issue) => issue.severity !== 'blocking');
@@ -39,10 +41,12 @@ export function WorkflowDraftReadinessPanel({
                 : 'A versao esta pronta para publicacao.'}
           </p>
         </div>
-        <Button type="button" onClick={onPublish} disabled={readOnly || !canPublish || isPublishing || hasUnsavedChanges}>
-          {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
-          Publicar versao
-        </Button>
+        {showPublishAction ? (
+          <Button type="button" onClick={onPublish} disabled={readOnly || !canPublish || isPublishing || hasUnsavedChanges}>
+            {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Rocket className="mr-2 h-4 w-4" />}
+            Publicar versao
+          </Button>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-3">
         {issues.length === 0 ? (

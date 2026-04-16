@@ -62,4 +62,5 @@ export type WorkflowDraftEditorShellState = {
   isPublishing: boolean;
   canPublish: boolean;
   isReadOnly: boolean;
+  isHydrated: boolean;
 };

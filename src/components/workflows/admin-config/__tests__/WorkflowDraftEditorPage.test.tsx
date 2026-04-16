@@ -188,6 +188,20 @@ describe('WorkflowDraftEditorPage', () => {
     expect((screen.getByRole('button', { name: /Publicar versao/i }) as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it('hides the readiness publish CTA when embedded with hidden primary actions', () => {
+    render(
+      <WorkflowDraftEditorPage
+        workflowTypeId="facilities_manutencao"
+        version={1}
+        embedded
+        hidePrimaryActions
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Publicar versao/i })).toBeNull();
+    expect(screen.getByText('Defina ao menos uma etapa antes de publicar.')).toBeTruthy();
+  });
+
   it('submits the save action', async () => {
     const user = userEvent.setup();
     mockSaveWorkflowDraft.mockResolvedValue({ savedAt: '2026-04-08T18:00:00.000Z', publishReadiness: [] });
@@ -278,5 +292,25 @@ describe('WorkflowDraftEditorPage', () => {
     // Chamada inicial (form limpo, modo edit):
     expect(onDirtyStateChange).toHaveBeenCalled();
     expect(onDirtyStateChange).toHaveBeenCalledWith({ isDirty: false, isReadOnly: false });
+  });
+
+  it('propaga shell state com hidratacao quando os dados estao resolvidos', () => {
+    const onShellStateChange = jest.fn();
+
+    render(
+      <WorkflowDraftEditorPage
+        workflowTypeId="facilities_manutencao"
+        version={1}
+        onShellStateChange={onShellStateChange}
+      />,
+    );
+
+    expect(onShellStateChange).toHaveBeenCalled();
+    expect(onShellStateChange).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        isHydrated: true,
+        isReadOnly: false,
+      }),
+    );
   });
 });

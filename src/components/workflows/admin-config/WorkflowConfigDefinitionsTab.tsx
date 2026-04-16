@@ -22,16 +22,28 @@ import { CheckCircle2, Loader2, PenSquare, PlusCircle, Rocket, Sparkles } from '
 import { CreateWorkflowAreaDialog } from './CreateWorkflowAreaDialog';
 import { CreateWorkflowTypeDialog } from './CreateWorkflowTypeDialog';
 
-function badgeVariantForStatus(status: WorkflowConfigVersionUiStatus): 'default' | 'secondary' | 'outline' {
-  if (status === 'Publicada') {
-    return 'default';
-  }
-
+function badgeVariantForStatus(status: WorkflowConfigVersionUiStatus): 'secondary' | 'outline' {
   if (status === 'Inativa') {
     return 'secondary';
   }
 
   return 'outline';
+}
+
+function badgeClassNameForStatus(status: WorkflowConfigVersionUiStatus): string | undefined {
+  if (status === 'Publicada') {
+    return 'border-slate-700 bg-slate-800 text-white hover:bg-slate-800';
+  }
+
+  return undefined;
+}
+
+function publishedVersionBadgeClassName(hasPublishedVersion: boolean): string | undefined {
+  if (!hasPublishedVersion) {
+    return undefined;
+  }
+
+  return 'border-slate-700 bg-slate-800 text-white hover:bg-slate-800';
 }
 
 function SummaryCard({
@@ -220,149 +232,177 @@ export function WorkflowConfigDefinitionsTab({
                       </CardContent>
                     </Card>
                   ) : (
-                    area.types.map((workflowType) => {
-                      const draftVersion = workflowType.versions.find((version) => version.state === 'draft') ?? null;
+                    <Accordion type="multiple" className="space-y-3">
+                      {area.types.map((workflowType) => {
+                        const draftVersion = workflowType.versions.find((version) => version.state === 'draft') ?? null;
 
-                      return (
-                        <Card key={workflowType.workflowTypeId} className="border-border/70">
-                          <CardHeader className="space-y-4">
-                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                              <div className="space-y-3">
-                                <div className="space-y-1">
-                                  <CardTitle className="text-lg">{workflowType.name}</CardTitle>
-                                  <p className="text-sm text-muted-foreground">
-                                    {workflowType.description || 'Sem descricao cadastrada.'}
-                                  </p>
-                                </div>
-                                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                                  <span>Owner: {workflowType.ownerEmail || 'Nao informado'}</span>
-                                  <span>{workflowType.versionCount} versoes registradas</span>
-                                  <span>{workflowType.active ? 'Tipo ativo' : 'Tipo inativo'}</span>
-                                </div>
-                              </div>
-                              <div className="flex flex-col gap-2 lg:items-end">
-                                <Badge variant={workflowType.hasPublishedVersion ? 'default' : 'outline'}>
-                                  {workflowType.publishedVersionLabel}
-                                </Badge>
-                                {draftVersion ? (
-                                  <Button
-                                    size="sm"
-                                    className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
-                                    onClick={() => onOpenEditor(workflowType.workflowTypeId, draftVersion.version)}
-                                  >
-                                    <PenSquare className="mr-2 h-4 w-4" />
-                                    Editar rascunho
-                                  </Button>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleCreateDraft(workflowType.workflowTypeId)}
-                                    disabled={openingDraftFor === workflowType.workflowTypeId}
-                                  >
-                                    {openingDraftFor === workflowType.workflowTypeId ? (
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <PlusCircle className="mr-2 h-4 w-4" />
-                                    )}
-                                    Nova versao draft
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            {workflowType.versions.length === 0 ? (
-                              <p className="text-sm text-muted-foreground">
-                                Nenhuma versao encontrada para este workflow type.
-                              </p>
-                            ) : (
-                              <div className="space-y-3">
-                                {workflowType.versions.map((version) => (
-                                  <div
-                                    key={`${workflowType.workflowTypeId}-v${version.version}`}
-                                    className="rounded-lg border border-border/70 bg-card p-4"
-                                  >
-                                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                                      <div className="space-y-2">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <span className="text-sm font-semibold">v{version.version}</span>
-                                          <Badge variant={badgeVariantForStatus(version.uiStatus)}>
-                                            {version.uiStatus}
-                                          </Badge>
-                                          {version.isActivePublished ? <Badge variant="default">Ativa</Badge> : null}
-                                        </div>
-                                        <p className="text-sm text-muted-foreground">
-                                          {version.stepCount} etapas, {version.fieldCount} campos
-                                        </p>
-                                        {version.lastTransitionAt ? (
-                                          <p className="text-xs text-muted-foreground">
-                                            Ultima transicao em {version.lastTransitionAt}
-                                          </p>
-                                        ) : (
-                                          <p className="text-xs text-muted-foreground">
-                                            Nenhuma transicao registrada ainda.
-                                          </p>
-                                        )}
-                                        {version.hasBlockingIssues && version.state === 'draft' ? (
-                                          <p className="text-xs font-medium text-amber-700">
-                                            Este rascunho possui bloqueios e nao pode ser publicado ainda.
-                                          </p>
-                                        ) : null}
-                                      </div>
-                                      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-                                        <Button
-                                          size="sm"
-                                          variant="outline"
-                                          onClick={() => onOpenEditor(workflowType.workflowTypeId, version.version)}
-                                        >
-                                          <PenSquare className="mr-2 h-4 w-4" />
-                                          {version.state === 'draft' ? 'Editar' : 'Ver versao'}
-                                        </Button>
-                                        {version.canPublish ? (
-                                          <Button
-                                            size="sm"
-                                            className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
-                                            onClick={() => handlePublishVersion(workflowType.workflowTypeId, version.version)}
-                                            disabled={
-                                              transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:publish`
-                                            }
-                                          >
-                                            {transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:publish` ? (
-                                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                              <Rocket className="mr-2 h-4 w-4" />
-                                            )}
-                                            Publicar
-                                          </Button>
-                                        ) : null}
-                                        {version.canActivate ? (
-                                          <Button
-                                            size="sm"
-                                            variant="secondary"
-                                            onClick={() => handleActivateVersion(workflowType.workflowTypeId, version.version)}
-                                            disabled={
-                                              transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:activate`
-                                            }
-                                          >
-                                            {transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:activate` ? (
-                                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                                            )}
-                                            Ativar
-                                          </Button>
-                                        ) : null}
-                                      </div>
+                        return (
+                          <AccordionItem
+                            key={workflowType.workflowTypeId}
+                            value={workflowType.workflowTypeId}
+                            className="overflow-hidden rounded-lg border border-border/70 bg-card"
+                          >
+                            <CardHeader className="gap-4">
+                              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <AccordionTrigger className="min-w-0 flex-1 rounded-md py-0 text-left hover:no-underline">
+                                  <div className="flex min-w-0 flex-1 flex-col items-start gap-3 pr-4 text-left">
+                                    <div className="space-y-1">
+                                      <CardTitle className="text-lg">{workflowType.name}</CardTitle>
+                                      <p className="text-sm text-muted-foreground">
+                                        {workflowType.description || 'Sem descricao cadastrada.'}
+                                      </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <Badge
+                                        variant="outline"
+                                        className={publishedVersionBadgeClassName(workflowType.hasPublishedVersion)}
+                                      >
+                                        {workflowType.publishedVersionLabel}
+                                      </Badge>
+                                      <Badge variant="secondary">{workflowType.versionCount} versoes</Badge>
+                                      <Badge variant={workflowType.active ? 'outline' : 'secondary'}>
+                                        {workflowType.active ? 'Tipo ativo' : 'Tipo inativo'}
+                                      </Badge>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                                      <span>Owner: {workflowType.ownerEmail || 'Nao informado'}</span>
+                                      <span>Expanda para consultar versoes e acoes</span>
                                     </div>
                                   </div>
-                                ))}
+                                </AccordionTrigger>
+                                <div className="flex shrink-0 flex-col gap-2 lg:items-end">
+                                  {draftVersion ? (
+                                    <Button
+                                      size="sm"
+                                      className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
+                                      onClick={() => onOpenEditor(workflowType.workflowTypeId, draftVersion.version)}
+                                    >
+                                      <PenSquare className="mr-2 h-4 w-4" />
+                                      Editar rascunho
+                                    </Button>
+                                  ) : (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleCreateDraft(workflowType.workflowTypeId)}
+                                      disabled={openingDraftFor === workflowType.workflowTypeId}
+                                    >
+                                      {openingDraftFor === workflowType.workflowTypeId ? (
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      ) : (
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                      )}
+                                      Nova versao draft
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      );
-                    })
+                            </CardHeader>
+                            <AccordionContent>
+                              <CardContent className="pt-0">
+                                {workflowType.versions.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground">
+                                    Nenhuma versao encontrada para este workflow type.
+                                  </p>
+                                ) : (
+                                  <div className="space-y-3">
+                                    {workflowType.versions.map((version) => (
+                                      <div
+                                        key={`${workflowType.workflowTypeId}-v${version.version}`}
+                                        className="rounded-lg border border-border/70 bg-card p-4"
+                                      >
+                                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                          <div className="space-y-2">
+                                            <div className="flex flex-wrap items-center gap-2">
+                                              <span className="text-sm font-semibold">v{version.version}</span>
+                                              <Badge
+                                                variant={badgeVariantForStatus(version.uiStatus)}
+                                                className={badgeClassNameForStatus(version.uiStatus)}
+                                              >
+                                                {version.uiStatus}
+                                              </Badge>
+                                              {version.isActivePublished ? (
+                                                <Badge
+                                                  variant="outline"
+                                                  className="border-emerald-200 bg-emerald-100 text-emerald-800 hover:bg-emerald-100"
+                                                >
+                                                  Ativa
+                                                </Badge>
+                                              ) : null}
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                              {version.stepCount} etapas, {version.fieldCount} campos
+                                            </p>
+                                            {version.lastTransitionAt ? (
+                                              <p className="text-xs text-muted-foreground">
+                                                Ultima transicao em {version.lastTransitionAt}
+                                              </p>
+                                            ) : (
+                                              <p className="text-xs text-muted-foreground">
+                                                Nenhuma transicao registrada ainda.
+                                              </p>
+                                            )}
+                                            {version.hasBlockingIssues && version.state === 'draft' ? (
+                                              <p className="text-xs font-medium text-amber-700">
+                                                Este rascunho possui bloqueios e nao pode ser publicado ainda.
+                                              </p>
+                                            ) : null}
+                                          </div>
+                                          <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => onOpenEditor(workflowType.workflowTypeId, version.version)}
+                                            >
+                                              <PenSquare className="mr-2 h-4 w-4" />
+                                              {version.state === 'draft' ? 'Editar' : 'Ver versao'}
+                                            </Button>
+                                            {version.canPublish ? (
+                                              <Button
+                                                size="sm"
+                                                className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
+                                                onClick={() => handlePublishVersion(workflowType.workflowTypeId, version.version)}
+                                                disabled={
+                                                  transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:publish`
+                                                }
+                                              >
+                                                {transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:publish` ? (
+                                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                  <Rocket className="mr-2 h-4 w-4" />
+                                                )}
+                                                Publicar
+                                              </Button>
+                                            ) : null}
+                                            {version.canActivate ? (
+                                              <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                onClick={() => handleActivateVersion(workflowType.workflowTypeId, version.version)}
+                                                disabled={
+                                                  transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:activate`
+                                                }
+                                              >
+                                                {transitioningVersion === `${workflowType.workflowTypeId}:${version.version}:activate` ? (
+                                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                ) : (
+                                                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                                                )}
+                                                Ativar
+                                              </Button>
+                                            ) : null}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </CardContent>
+                            </AccordionContent>
+                          </AccordionItem>
+                        );
+                      })}
+                    </Accordion>
                   )}
                 </AccordionContent>
               </AccordionItem>

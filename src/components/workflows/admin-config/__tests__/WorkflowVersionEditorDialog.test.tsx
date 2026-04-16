@@ -12,6 +12,7 @@ type EditorMockProps = {
     isPublishing: boolean;
     canPublish: boolean;
     isReadOnly: boolean;
+    isHydrated: boolean;
   }) => void;
 };
 
@@ -32,6 +33,7 @@ jest.mock('../editor/WorkflowDraftEditorPage', () => ({
         isPublishing: false,
         canPublish: true,
         isReadOnly: false,
+        isHydrated: true,
       });
     }, [onDirtyStateChange, onShellStateChange]);
 
@@ -62,6 +64,7 @@ describe('WorkflowVersionEditorDialog', () => {
           isPublishing: false,
           canPublish: true,
           isReadOnly: false,
+          isHydrated: true,
         });
       }, [onDirtyStateChange, onShellStateChange]);
 
@@ -111,6 +114,23 @@ describe('WorkflowVersionEditorDialog', () => {
     expect(mockPublishVersion).not.toHaveBeenCalled();
   });
 
+  it('keeps the editable footer hidden until the shell is hydrated', () => {
+    editorMock.WorkflowDraftEditorPage.mockImplementation(() => <div>Editor body</div>);
+
+    render(
+      <WorkflowVersionEditorDialog
+        workflowTypeId="facilities_manutencao"
+        version={2}
+        open
+        onClose={jest.fn()}
+        onRefresh={jest.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Salvar rascunho/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Publicar versao/i })).toBeNull();
+  });
+
   it('fecha quando dirty e confirmacao e aceita', async () => {
     const user = userEvent.setup();
     const onClose = jest.fn();
@@ -143,6 +163,7 @@ describe('WorkflowVersionEditorDialog', () => {
           isPublishing: false,
           canPublish: false,
           isReadOnly: true,
+          isHydrated: true,
         });
       }, [onDirtyStateChange, onShellStateChange]);
 

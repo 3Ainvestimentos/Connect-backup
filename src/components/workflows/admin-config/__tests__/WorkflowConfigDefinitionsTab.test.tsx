@@ -77,8 +77,8 @@ function buildCatalog(): WorkflowConfigCatalogData {
               {
                 version: 1,
                 state: 'published',
-                uiStatus: 'Inativa',
-                derivedStatus: 'Inativa',
+                uiStatus: 'Publicada',
+                derivedStatus: 'Publicada',
                 isActivePublished: false,
                 canPublish: false,
                 canActivate: true,
@@ -125,7 +125,7 @@ describe('WorkflowConfigDefinitionsTab', () => {
     activateWorkflowVersion.mockResolvedValue({});
   });
 
-  it('renders publish and activate CTAs for eligible versions', async () => {
+  it('renders workflow types collapsed by default and preserves publish and activate CTAs', async () => {
     const user = userEvent.setup();
     const onRefresh = jest.fn();
     const onOpenEditor = jest.fn();
@@ -133,7 +133,13 @@ describe('WorkflowConfigDefinitionsTab', () => {
     render(<WorkflowConfigDefinitionsTab catalog={buildCatalog()} onRefresh={onRefresh} onOpenEditor={onOpenEditor} />);
 
     await user.click(screen.getByRole('button', { name: /Facilities/i }));
+    expect(screen.queryByText(/v1/i)).toBeNull();
+    expect(screen.getByText('v2 publicada')).toHaveClass('bg-slate-800');
+    expect(screen.queryByText('Publicada')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: /Manutencao/i }));
     expect(screen.queryByText(/state=/i)).toBeNull();
+    expect(screen.getByText('Publicada')).toHaveClass('bg-slate-800');
     await user.click(screen.getByRole('button', { name: /^Publicar$/i }));
     await user.click(screen.getByRole('button', { name: /^Ativar$/i }));
 

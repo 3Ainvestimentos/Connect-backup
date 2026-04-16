@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
@@ -14,6 +14,7 @@ const INITIAL_SHELL_STATE: WorkflowDraftEditorShellState = {
   isPublishing: false,
   canPublish: false,
   isReadOnly: false,
+  isHydrated: false,
 };
 
 export function WorkflowVersionEditorDialog({
@@ -35,6 +36,18 @@ export function WorkflowVersionEditorDialog({
   });
   const [shellState, setShellState] = useState<WorkflowDraftEditorShellState>(INITIAL_SHELL_STATE);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setDirtyState({
+      isDirty: false,
+      isReadOnly: true,
+    });
+    setShellState(INITIAL_SHELL_STATE);
+  }, [open, version, workflowTypeId]);
+
   const requestClose = useCallback(() => {
     if (
       !dirtyState.isReadOnly &&
@@ -47,6 +60,7 @@ export function WorkflowVersionEditorDialog({
     onClose();
     return true;
   }, [dirtyState.isDirty, dirtyState.isReadOnly, onClose]);
+  const showEditableFooter = shellState.isHydrated && !shellState.isReadOnly;
 
   return (
     <Dialog
@@ -100,7 +114,7 @@ export function WorkflowVersionEditorDialog({
             onShellStateChange={setShellState}
           />
         </div>
-        {!shellState.isReadOnly ? (
+        {showEditableFooter ? (
           <div className="border-t bg-background px-6 py-3">
             <div className="flex flex-wrap justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => requestClose()}>

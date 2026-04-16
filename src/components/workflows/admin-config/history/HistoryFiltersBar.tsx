@@ -11,6 +11,7 @@ type HistoryFiltersBarProps = {
   disabled?: boolean;
   onChange: (filters: AdminHistoryFilters) => void;
   onClear: () => void;
+  onApply: () => void;
 };
 
 function updateFilter(
@@ -30,6 +31,7 @@ export function HistoryFiltersBar({
   disabled = false,
   onChange,
   onClear,
+  onApply,
 }: HistoryFiltersBarProps) {
   return (
     <div className="space-y-4">
@@ -158,9 +160,17 @@ export function HistoryFiltersBar({
         </label>
       </div>
 
-      <div className="flex justify-end">
-        <Button variant="outline" onClick={onClear} disabled={disabled}>
-          Limpar filtros
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button type="button" variant="outline" onClick={onClear} disabled={disabled}>
+          Limpar
+        </Button>
+        <Button
+          type="button"
+          className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
+          onClick={onApply}
+          disabled={disabled}
+        >
+          Aplicar filtros
         </Button>
       </div>
     </div>

@@ -136,11 +136,19 @@ function buildDefaultValues(): WorkflowDraftFormValues {
 
 function renderSection(readOnly = false) {
   function ActionTypeValue() {
-    const value = useWatch<WorkflowDraftFormValues>({
+    const type = useWatch<WorkflowDraftFormValues>({
       name: 'steps.0.action.type',
     }) as string | undefined;
+    const label = useWatch<WorkflowDraftFormValues>({
+      name: 'steps.0.action.label',
+    }) as string | undefined;
 
-    return <div data-testid="action-type">{value}</div>;
+    return (
+      <>
+        <div data-testid="action-type">{type}</div>
+        <div data-testid="action-label">{label}</div>
+      </>
+    );
   }
 
   function Harness() {
@@ -166,13 +174,52 @@ describe('WorkflowDraftStepsSection', () => {
     renderSection();
 
     await user.click(screen.getByRole('combobox'));
-    expect(screen.getByRole('option', { name: 'Aprovacao' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'Ciencia' })).toBeTruthy();
-    expect(screen.getByRole('option', { name: 'Execucao' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Aprovação' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Ciência' })).toBeTruthy();
+    expect(screen.getByRole('option', { name: 'Execução' })).toBeTruthy();
 
-    await user.click(screen.getByRole('option', { name: 'Ciencia' }));
+    await user.click(screen.getByRole('option', { name: 'Ciência' }));
 
     expect(screen.getByTestId('action-type')).toHaveTextContent('acknowledgement');
+  });
+
+  it('uses the friendly default label when creating an action from none', async () => {
+    const user = userEvent.setup();
+
+    function Harness() {
+      const form = useForm<WorkflowDraftFormValues>({
+        defaultValues: {
+          ...buildDefaultValues(),
+          steps: [
+            {
+              stepId: 'review',
+              stepName: 'Revisao',
+              statusKey: 'em_revisao',
+              kind: 'work',
+              action: undefined,
+            },
+          ],
+        },
+      });
+      const label = useWatch<WorkflowDraftFormValues>({
+        control: form.control,
+        name: 'steps.0.action.label',
+      });
+
+      return (
+        <FormProvider {...form}>
+          <WorkflowDraftStepsSection collaborators={collaborators} />
+          <div data-testid="action-label">{String(label ?? '')}</div>
+        </FormProvider>
+      );
+    }
+
+    render(<Harness />);
+
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Aprovação' }));
+
+    expect(screen.getByTestId('action-label')).toHaveTextContent('Ação');
   });
 
   it('keeps the footer CTA disabled in read-only mode', () => {

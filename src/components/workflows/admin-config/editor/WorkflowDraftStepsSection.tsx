@@ -13,11 +13,12 @@ import type { WorkflowDraftFormValues } from './types';
 import { WorkflowActionApproverPicker } from './WorkflowActionApproverPicker';
 
 const actionTypes = ['none', 'approval', 'acknowledgement', 'execution'] as const;
+const DEFAULT_ACTION_LABEL = 'Ação';
 const actionTypeLabels: Record<(typeof actionTypes)[number], string> = {
-  none: 'Nenhuma acao',
-  approval: 'Aprovacao',
-  acknowledgement: 'Ciencia',
-  execution: 'Execucao',
+  none: 'Nenhuma ação',
+  approval: 'Aprovação',
+  acknowledgement: 'Ciência',
+  execution: 'Execução',
 };
 
 export function WorkflowDraftStepsSection({
@@ -85,7 +86,7 @@ export function WorkflowDraftStepsSection({
 
                 <div className="grid gap-4 md:grid-cols-1">
                   <div className="space-y-2">
-                    <Label>Acao</Label>
+                    <Label>Ação</Label>
                     <Select
                       value={actionType}
                       disabled={readOnly}
@@ -95,17 +96,22 @@ export function WorkflowDraftStepsSection({
                           return;
                         }
 
+                        const currentAction = step?.action;
+
                         setValue(
                           `steps.${index}.action`,
                           {
                             type: value as Exclude<typeof actionTypes[number], 'none'>,
-                            label: 'Acao',
-                            approvers: [],
-                            unresolvedApproverIds: [],
-                            commentRequired: false,
-                            attachmentRequired: false,
-                            commentPlaceholder: '',
-                            attachmentPlaceholder: '',
+                            label:
+                              currentAction?.label.trim()
+                                ? currentAction.label
+                                : DEFAULT_ACTION_LABEL,
+                            approvers: currentAction?.approvers ?? [],
+                            unresolvedApproverIds: currentAction?.unresolvedApproverIds ?? [],
+                            commentRequired: currentAction?.commentRequired ?? false,
+                            attachmentRequired: currentAction?.attachmentRequired ?? false,
+                            commentPlaceholder: currentAction?.commentPlaceholder ?? '',
+                            attachmentPlaceholder: currentAction?.attachmentPlaceholder ?? '',
                           },
                           { shouldDirty: true },
                         );
@@ -128,7 +134,7 @@ export function WorkflowDraftStepsSection({
                 {step?.action ? (
                   <div className="space-y-3 rounded-md bg-muted/30 p-4">
                     <div className="space-y-2">
-                      <Label>Rotulo da acao</Label>
+                      <Label>Rótulo da ação</Label>
                       <Input disabled={readOnly} {...register(`steps.${index}.action.label`)} />
                     </div>
 
@@ -155,7 +161,7 @@ export function WorkflowDraftStepsSection({
                             setValue(`steps.${index}.action.commentRequired`, checked === true, { shouldDirty: true })
                           }
                         />
-                        Comentario obrigatorio
+                        Comentário obrigatório
                       </label>
                       <label className="flex items-center gap-2 text-sm">
                         <Checkbox

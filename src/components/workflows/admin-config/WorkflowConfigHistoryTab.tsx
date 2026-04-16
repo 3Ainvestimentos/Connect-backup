@@ -75,10 +75,19 @@ function buildEmptyStateCopy(data: AdminHistoryListData | undefined, activeFilte
 export function WorkflowConfigHistoryTab() {
   const { user } = useAuth();
   const [filters, setFilters] = React.useState<AdminHistoryFilters>(INITIAL_FILTERS);
+  const [draftFilters, setDraftFilters] = React.useState<AdminHistoryFilters>(INITIAL_FILTERS);
   const [selectedItem, setSelectedItem] = React.useState<SelectedHistoryItem>(null);
   const [filtersOpen, setFiltersOpen] = React.useState(false);
   const activeFilters = hasActiveFilters(filters);
   const activeFilterCount = countActiveFilters(filters);
+
+  React.useEffect(() => {
+    if (!filtersOpen) {
+      return;
+    }
+
+    setDraftFilters(filters);
+  }, [filters, filtersOpen]);
 
   const historyQuery = useQuery({
     queryKey: ['workflow-config-admin', user?.uid, 'history', filters],
@@ -146,16 +155,20 @@ export function WorkflowConfigHistoryTab() {
                 <div className="space-y-1">
                   <h2 className="text-sm font-semibold text-foreground">Filtros da consulta</h2>
                   <p className="text-xs text-muted-foreground">
-                    Ajuste o recorte do historico. As alteracoes sao aplicadas imediatamente.
+                    Ajuste o recorte do historico e confirme quando quiser atualizar a consulta.
                   </p>
                 </div>
 
                 <HistoryFiltersBar
-                  filters={filters}
+                  filters={draftFilters}
                   filterOptions={historyQuery.data?.filterOptions}
                   disabled={historyQuery.isLoading}
-                  onChange={setFilters}
-                  onClear={() => setFilters(INITIAL_FILTERS)}
+                  onChange={setDraftFilters}
+                  onClear={() => setDraftFilters(INITIAL_FILTERS)}
+                  onApply={() => {
+                    setFilters(draftFilters);
+                    setFiltersOpen(false);
+                  }}
                 />
               </PopoverContent>
             </Popover>

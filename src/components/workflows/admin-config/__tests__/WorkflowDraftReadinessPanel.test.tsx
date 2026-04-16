@@ -77,4 +77,27 @@ describe('WorkflowDraftReadinessPanel', () => {
     expect((screen.getByRole('button', { name: /Publicar versao/i }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText('Salve o rascunho atual antes de publicar esta versao.')).toBeTruthy();
   });
+
+  it('keeps the panel informative when the publish CTA is hidden', () => {
+    render(
+      <WorkflowDraftReadinessPanel
+        issues={[
+          {
+            code: 'WARN_1',
+            category: 'general',
+            severity: 'warning',
+            message: 'Aviso de exemplo.',
+          },
+        ]}
+        canPublish={true}
+        isPublishing={false}
+        hasUnsavedChanges={false}
+        onPublish={jest.fn()}
+        showPublishAction={false}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /Publicar versao/i })).toBeNull();
+    expect(screen.getByText('Aviso de exemplo.')).toBeTruthy();
+  });
 });

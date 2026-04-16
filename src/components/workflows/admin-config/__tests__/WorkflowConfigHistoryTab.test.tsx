@@ -249,12 +249,18 @@ describe('WorkflowConfigHistoryTab', () => {
     expect(screen.queryByText('Ativar')).toBeNull();
   });
 
-  it('filters the grid by origin', async () => {
+  it('only applies the origin filter after confirmation', async () => {
     const user = userEvent.setup();
 
     render(<WorkflowConfigHistoryTab />);
     await user.click(screen.getByRole('button', { name: /Abrir filtros do historico/i }));
     await user.selectOptions(screen.getByLabelText('Origem'), 'legacy');
+
+    expect(screen.getAllByText('Workflow legado').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Manutencao').length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /Abrir filtros do historico/i })).not.toHaveTextContent('1');
+
+    await user.click(screen.getByRole('button', { name: /Aplicar filtros/i }));
 
     expect(screen.getAllByText('Workflow legado').length).toBeGreaterThan(0);
     expect(screen.queryByRole('cell', { name: 'Manutencao' })).toBeNull();
@@ -293,12 +299,16 @@ describe('WorkflowConfigHistoryTab', () => {
     expect(screen.getAllByText('Manutencao').length).toBeGreaterThan(0);
   });
 
-  it('changes the empty state when filters are active', async () => {
+  it('changes the empty state only after applying draft filters', async () => {
     const user = userEvent.setup();
 
     render(<WorkflowConfigHistoryTab />);
     await user.click(screen.getByRole('button', { name: /Abrir filtros do historico/i }));
     await user.type(screen.getByLabelText('Busca'), 'nao existe');
+
+    expect(screen.queryByText('Nenhum resultado para os filtros aplicados')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: /Aplicar filtros/i }));
 
     expect(screen.getByText('Nenhum resultado para os filtros aplicados')).toBeTruthy();
   });
