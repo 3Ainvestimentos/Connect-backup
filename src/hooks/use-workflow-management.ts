@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import {
+  advanceManagementRequest,
   archiveManagementRequest,
   assignManagementResponsible,
   finalizeManagementRequest,
@@ -17,6 +18,7 @@ import {
 import { managementKeys } from '@/lib/workflows/management/query-keys';
 import { uploadWorkflowActionResponseFile } from '@/lib/workflows/upload/client';
 import type {
+  WorkflowManagementAdvanceInput,
   WorkflowManagementArchiveInput,
   WorkflowManagementAssignResponsibleInput,
   WorkflowManagementFinalizeInput,
@@ -116,6 +118,15 @@ export function useWorkflowManagement(
     onSuccess: async (_, variables) => invalidateOperationalQueries(variables.requestId),
   });
 
+  const advanceMutation = useMutation({
+    mutationFn: (payload: WorkflowManagementAdvanceInput) =>
+      advanceManagementRequest(user!, {
+        ...payload,
+        actorName,
+      }),
+    onSuccess: async (_, variables) => invalidateOperationalQueries(variables.requestId),
+  });
+
   const archiveMutation = useMutation({
     mutationFn: (payload: WorkflowManagementArchiveInput) =>
       archiveManagementRequest(user!, {
@@ -175,6 +186,7 @@ export function useWorkflowManagement(
     refetchActiveTab,
     refetchDetail,
     assignMutation,
+    advanceMutation,
     finalizeMutation,
     archiveMutation,
     requestActionMutation,

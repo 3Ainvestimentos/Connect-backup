@@ -69,6 +69,7 @@ const mockDetail: WorkflowRequestDetailData = {
   },
   permissions: {
     canAssign: true,
+    canAdvance: false,
     canFinalize: true,
     canArchive: false,
     canRequestAction: false,
@@ -224,12 +225,11 @@ describe('MyRequestDetailDialog', () => {
 
     // Verify all 6 summary fields present
     expect(screen.getByText('Solicitante')).toBeInTheDocument();
-    expect(screen.getByText('Data')).toBeInTheDocument();
+    expect(screen.getByText('Aberto em')).toBeInTheDocument();
     expect(screen.getByText('Tipo')).toBeInTheDocument();
     expect(screen.getByText('Manutencao Geral')).toBeInTheDocument();
     expect(screen.getByText('Ultima Atualizacao')).toBeInTheDocument();
     expect(screen.getByText('Responsavel')).toBeInTheDocument();
-    expect(screen.getByText('Aberto em')).toBeInTheDocument();
     // openedInLabel should be resolved from areaLabelById
     expect(screen.getByText('Facilities')).toBeInTheDocument();
     expect(screen.getByText('10/04/2026 as 11:30')).toBeInTheDocument();
@@ -322,6 +322,7 @@ describe('MyRequestDetailDialog', () => {
       ...mockDetail,
       permissions: {
         canAssign: true,
+        canAdvance: false,
         canFinalize: true,
         canArchive: true,
         canRequestAction: true,

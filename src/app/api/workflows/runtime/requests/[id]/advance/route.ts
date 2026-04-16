@@ -8,7 +8,29 @@
 import { NextResponse } from 'next/server';
 import { authenticateManagementV2Actor } from '@/lib/workflows/runtime/permission-auth';
 import { advanceStep } from '@/lib/workflows/runtime/use-cases/advance-step';
-import { RuntimeError } from '@/lib/workflows/runtime/errors';
+import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+async function parseBody(request: Request): Promise<{ actorName?: string }> {
+  let body: unknown;
+
+  try {
+    body = await request.json();
+  } catch {
+    throw new RuntimeError(RuntimeErrorCode.INVALID_FORM_DATA, 'Body invalido.', 400);
+  }
+
+  if (!isObject(body)) {
+    throw new RuntimeError(RuntimeErrorCode.INVALID_FORM_DATA, 'Body invalido.', 400);
+  }
+
+  return {
+    actorName: typeof body.actorName === 'string' ? body.actorName : undefined,
+  };
+}
 
 export async function POST(
   request: Request,
@@ -27,8 +49,7 @@ export async function POST(
     const { actor } = await authenticateManagementV2Actor(request);
 
     // --- Parse body ---
-    const body = await request.json();
-    const { actorName } = body;
+    const body = await parseBody(request);
 
     // --- Execute use case ---
     const result = await advanceStep({

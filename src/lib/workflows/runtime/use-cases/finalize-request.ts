@@ -11,6 +11,7 @@
 
 import { Timestamp } from 'firebase-admin/firestore';
 import { assertCanFinalize } from '../authz';
+import { getRequestContinuationState } from '../continuation';
 import { findFinalStep, finalizeStepStates } from '../engine';
 import { RuntimeError, RuntimeErrorCode } from '../errors';
 import { buildHistoryEntry } from '../history';
@@ -68,6 +69,19 @@ export async function finalizeRequest(input: FinalizeRequestInput): Promise<Fina
       RuntimeErrorCode.PUBLISHED_VERSION_NOT_FOUND,
       'Versao publicada nao encontrada para o chamado.',
       404,
+    );
+  }
+
+  const continuation = getRequestContinuationState(request, version);
+  if (!continuation.canFinalizeByState) {
+    throw new RuntimeError(
+      RuntimeErrorCode.FINALIZATION_NOT_ALLOWED,
+      continuation.hasPendingAction
+        ? 'Nao e possivel finalizar o chamado enquanto existem actions pendentes na etapa atual.'
+        : continuation.requiresCompletedActionBatch && !continuation.hasCompletedActionBatch
+          ? 'A etapa atual exige action concluida antes de finalizar o chamado.'
+          : 'O chamado ainda possui etapa operacional intermediaria antes da etapa final.',
+      409,
     );
   }
 

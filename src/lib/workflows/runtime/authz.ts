@@ -5,6 +5,14 @@
 import { RuntimeError, RuntimeErrorCode } from './errors';
 import type { WorkflowRequestV2, WorkflowTypeV2 } from './types';
 
+export function canOperateCurrentStep(
+  ownerUserId: string,
+  responsibleUserId: string | null,
+  actorUserId: string,
+): boolean {
+  return actorUserId === ownerUserId || (responsibleUserId != null && actorUserId === responsibleUserId);
+}
+
 /**
  * Validates that the user is allowed to open a request for the given workflow type.
  *
@@ -60,10 +68,7 @@ export function assertCanFinalize(
   responsibleUserId: string | null,
   actorUserId: string,
 ): void {
-  const isOwner = actorUserId === ownerUserId;
-  const isResponsible = responsibleUserId != null && actorUserId === responsibleUserId;
-
-  if (!isOwner && !isResponsible) {
+  if (!canOperateCurrentStep(ownerUserId, responsibleUserId, actorUserId)) {
     throw new RuntimeError(
       RuntimeErrorCode.FINALIZATION_NOT_ALLOWED,
       'Apenas o responsavel atual ou o owner podem finalizar o chamado.',
@@ -80,10 +85,7 @@ export function assertCanRequestAction(
   responsibleUserId: string | null,
   actorUserId: string,
 ): void {
-  const isOwner = actorUserId === ownerUserId;
-  const isResponsible = responsibleUserId != null && actorUserId === responsibleUserId;
-
-  if (!isOwner && !isResponsible) {
+  if (!canOperateCurrentStep(ownerUserId, responsibleUserId, actorUserId)) {
     throw new RuntimeError(
       RuntimeErrorCode.FORBIDDEN,
       'Apenas o responsavel atual ou o owner podem solicitar a action desta etapa.',

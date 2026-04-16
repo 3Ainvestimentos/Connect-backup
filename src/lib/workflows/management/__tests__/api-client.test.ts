@@ -1,6 +1,9 @@
 /** @jest-environment node */
 
-import { getManagementRequestDetail } from '@/lib/workflows/management/api-client';
+import {
+  advanceManagementRequest,
+  getManagementRequestDetail,
+} from '@/lib/workflows/management/api-client';
 
 describe('workflow management api client', () => {
   const user = {
@@ -53,6 +56,7 @@ describe('workflow management api client', () => {
           },
           permissions: {
             canAssign: false,
+            canAdvance: true,
             canFinalize: true,
             canArchive: false,
             canRequestAction: false,
@@ -117,5 +121,37 @@ describe('workflow management api client', () => {
     expect(detail.action.state).toBe('completed');
     expect(detail.action.batchId).toBe('act_batch_2');
     expect(detail.action.completedAt).toEqual(new Date('2024-04-02T12:00:00.000Z'));
+    expect(detail.permissions.canAdvance).toBe(true);
+  });
+
+  it('calls the official runtime advance route through the management client', async () => {
+    jest.mocked(global.fetch).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        ok: true,
+        data: {
+          docId: 'doc-advance-1',
+          requestId: 812,
+        },
+      }),
+    } as Response);
+
+    const result = await advanceManagementRequest(user as never, {
+      requestId: 812,
+      actorName: 'Owner',
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/workflows/runtime/requests/812/advance',
+      expect.objectContaining({
+        method: 'POST',
+        cache: 'no-store',
+      }),
+    );
+    expect(result).toEqual({
+      docId: 'doc-advance-1',
+      requestId: 812,
+    });
   });
 });

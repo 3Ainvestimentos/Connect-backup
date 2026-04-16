@@ -98,4 +98,26 @@ describe('advance route', () => {
     });
     expect(advanceStep).not.toHaveBeenCalled();
   });
+
+  it('returns 400 when body is invalid json', async () => {
+    const response = await POST(
+      new Request('http://localhost/api/workflows/runtime/requests/123/advance', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer valid-token',
+          'Content-Type': 'application/json',
+        },
+        body: '{invalid-json',
+      }),
+      { params: Promise.resolve({ id: '123' }) },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      ok: false,
+      code: RuntimeErrorCode.INVALID_FORM_DATA,
+      message: 'Body invalido.',
+    });
+    expect(advanceStep).not.toHaveBeenCalled();
+  });
 });

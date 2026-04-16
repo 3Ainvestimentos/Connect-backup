@@ -1,9 +1,11 @@
 import { assertCanReadRequest } from '@/lib/workflows/runtime/authz';
 import {
   describeCurrentStepAction,
+  findPendingActionForActor,
   getDisplayActionBatchEntriesForCurrentStep,
-  hasAnyActionBatchForCurrentStep,
 } from '@/lib/workflows/runtime/action-helpers';
+import { canOperateCurrentStep } from '@/lib/workflows/runtime/authz';
+import { getRequestContinuationState } from '@/lib/workflows/runtime/continuation';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
 import {
   getWorkflowRequestByRequestId,
@@ -90,22 +92,22 @@ function buildDetailPermissions(
   actorUserId: string,
 ): WorkflowRequestDetailPermissions {
   const isOwner = request.ownerUserId === actorUserId;
-  const isResponsible =
-    request.responsibleUserId != null && request.responsibleUserId === actorUserId;
-  const actionDescription = describeCurrentStepAction(version, request);
-  const pendingActionForActor = (request.actionRequests ?? []).some(
-    (entry) =>
-      entry.stepId === request.currentStepId &&
-      entry.recipientUserId === actorUserId &&
-      entry.status === 'pending',
+  const canOperate = canOperateCurrentStep(
+    request.ownerUserId,
+    request.responsibleUserId,
+    actorUserId,
   );
+  const actionDescription = describeCurrentStepAction(version, request);
+  const continuation = getRequestContinuationState(request, version);
+  const pendingActionForActor = findPendingActionForActor(request, actorUserId);
   const canRequestAction =
+    canOperate &&
     request.statusCategory === 'in_progress' &&
-    isResponsible &&
+    continuation.currentStepIsActive &&
     actionDescription.available &&
     !actionDescription.configurationError &&
-    !hasAnyActionBatchForCurrentStep(request);
-  const canRespondAction = pendingActionForActor;
+    !continuation.hasAnyActionBatch;
+  const canRespondAction = Boolean(pendingActionForActor);
 
   return {
     canAssign:
@@ -113,8 +115,8 @@ function buildDetailPermissions(
       request.statusCategory !== 'waiting_action' &&
       request.statusCategory !== 'finalized' &&
       request.statusCategory !== 'archived',
-    canFinalize:
-      (isOwner || isResponsible) && request.statusCategory === 'in_progress',
+    canAdvance: canOperate && continuation.canAdvanceByState,
+    canFinalize: canOperate && continuation.canFinalizeByState,
     canArchive:
       isOwner && request.statusCategory === 'finalized' && !request.isArchived,
     canRequestAction,
@@ -125,6 +127,7 @@ function buildDetailPermissions(
 function buildAdminDetailPermissions(): WorkflowRequestDetailPermissions {
   return {
     canAssign: false,
+    canAdvance: false,
     canFinalize: false,
     canArchive: false,
     canRequestAction: false,

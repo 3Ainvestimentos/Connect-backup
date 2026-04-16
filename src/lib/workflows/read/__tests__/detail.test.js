@@ -174,9 +174,10 @@ describe('workflow request detail composer', () => {
     );
     expect(detail.permissions).toEqual({
       canAssign: true,
-      canFinalize: true,
+      canAdvance: false,
+      canFinalize: false,
       canArchive: false,
-      canRequestAction: false,
+      canRequestAction: true,
       canRespondAction: false,
     });
     expect(detail.formData.fields).toEqual([
@@ -221,7 +222,7 @@ describe('workflow request detail composer', () => {
       attachmentRequired: true,
       commentPlaceholder: 'Descreva o que foi executado',
       attachmentPlaceholder: 'Envie a evidencia',
-      canRequest: false,
+      canRequest: true,
       canRespond: false,
       requestedAt: null,
       completedAt: null,
@@ -280,6 +281,7 @@ describe('workflow request detail composer', () => {
 
     expect(detail.permissions).toEqual({
       canAssign: false,
+      canAdvance: false,
       canFinalize: false,
       canArchive: false,
       canRequestAction: false,
@@ -375,6 +377,8 @@ describe('workflow request detail composer', () => {
     });
 
     expect(detail.permissions.canRequestAction).toBe(false);
+    expect(detail.permissions.canAdvance).toBe(false);
+    expect(detail.permissions.canFinalize).toBe(true);
     expect(detail.action).toEqual(
       expect.objectContaining({
         state: 'completed',
@@ -393,6 +397,35 @@ describe('workflow request detail composer', () => {
         ],
       }),
     );
+  });
+
+  it('libera advance apenas quando a etapa atual pode continuar para outra work step', () => {
+    const detail = buildWorkflowRequestDetail({
+      docId: 'doc-4',
+      request: buildRequest({
+        currentStepId: 'analise',
+        currentStepName: 'Analise',
+        currentStatusKey: 'analise',
+        responsibleUserId: 'RESP1',
+        stepStates: {
+          abertura: 'completed',
+          analise: 'active',
+          execucao: 'pending',
+          encerramento: 'pending',
+        },
+      }),
+      version: buildVersion(),
+      actorUserId: 'RESP1',
+    });
+
+    expect(detail.permissions).toEqual({
+      canAssign: false,
+      canAdvance: true,
+      canFinalize: false,
+      canArchive: false,
+      canRequestAction: false,
+      canRespondAction: false,
+    });
   });
 
   it('usa a workflowVersion congelada no request ao buscar o detalhe', async () => {

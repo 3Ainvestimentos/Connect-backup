@@ -177,6 +177,7 @@ const mockDetail: WorkflowRequestDetailData = {
   },
   permissions: {
     canAssign: false,
+    canAdvance: false,
     canFinalize: false,
     canArchive: false,
     canRequestAction: false,

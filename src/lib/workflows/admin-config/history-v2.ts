@@ -109,6 +109,7 @@ export async function getAdminV2HistoryDetail(
 
   const permissions = {
     canAssign: false as const,
+    canAdvance: false as const,
     canFinalize: false as const,
     canArchive: false as const,
     canRequestAction: false as const,

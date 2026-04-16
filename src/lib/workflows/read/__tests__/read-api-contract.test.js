@@ -4,6 +4,11 @@ jest.mock('@/lib/workflows/runtime/auth-helpers', () => ({
   authenticateRuntimeActor: jest.fn(),
 }));
 
+jest.mock('@/lib/workflows/runtime/permission-auth', () => ({
+  authenticateManagementV2Actor: jest.fn(),
+  authenticateRequesterV2Actor: jest.fn(),
+}));
+
 jest.mock('@/lib/workflows/read/bootstrap', () => ({
   buildWorkflowManagementBootstrap: jest.fn(),
 }));
@@ -22,6 +27,8 @@ jest.mock('@/lib/workflows/read/queries', () => ({
 
 const { RuntimeError, RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const { authenticateRuntimeActor } = require('@/lib/workflows/runtime/auth-helpers');
+const { authenticateManagementV2Actor } = require('@/lib/workflows/runtime/permission-auth');
+const { authenticateRequesterV2Actor } = require('@/lib/workflows/runtime/permission-auth');
 const { buildWorkflowManagementBootstrap } = require('@/lib/workflows/read/bootstrap');
 const { getWorkflowRequestDetail } = require('@/lib/workflows/read/detail');
 const {
@@ -89,6 +96,7 @@ function buildDetail(overrides = {}) {
     summary: buildSummary(),
     permissions: {
       canAssign: false,
+      canAdvance: false,
       canFinalize: true,
       canArchive: false,
       canRequestAction: false,
@@ -168,6 +176,14 @@ describe('workflow read API contract', () => {
     jest.clearAllMocks();
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     authenticateRuntimeActor.mockResolvedValue({
+      decodedToken: { uid: 'firebase-uid-1' },
+      actor: buildActor(),
+    });
+    authenticateManagementV2Actor.mockResolvedValue({
+      decodedToken: { uid: 'firebase-uid-1' },
+      actor: buildActor(),
+    });
+    authenticateRequesterV2Actor.mockResolvedValue({
       decodedToken: { uid: 'firebase-uid-1' },
       actor: buildActor(),
     });
@@ -288,6 +304,7 @@ describe('workflow read API contract', () => {
         summary: expect.objectContaining({ requestId: 800 }),
         permissions: {
           canAssign: false,
+          canAdvance: false,
           canFinalize: true,
           canArchive: false,
           canRequestAction: false,
@@ -440,6 +457,12 @@ describe('workflow read API contract', () => {
     authenticateRuntimeActor.mockRejectedValue(
       new RuntimeError(RuntimeErrorCode.UNAUTHORIZED, 'Token nao fornecido.', 401),
     );
+    authenticateManagementV2Actor.mockRejectedValue(
+      new RuntimeError(RuntimeErrorCode.UNAUTHORIZED, 'Token nao fornecido.', 401),
+    );
+    authenticateRequesterV2Actor.mockRejectedValue(
+      new RuntimeError(RuntimeErrorCode.UNAUTHORIZED, 'Token nao fornecido.', 401),
+    );
 
     const response = await getMine(
       new Request('http://localhost/api/workflows/read/mine'),
@@ -456,6 +479,8 @@ describe('workflow read API contract', () => {
 
   it('retorna 500 quando authenticateRuntimeActor lanca erro de infraestrutura', async () => {
     authenticateRuntimeActor.mockRejectedValue(new Error('ECONNREFUSED'));
+    authenticateManagementV2Actor.mockRejectedValue(new Error('ECONNREFUSED'));
+    authenticateRequesterV2Actor.mockRejectedValue(new Error('ECONNREFUSED'));
 
     const response = await getAssignments(
       new Request('http://localhost/api/workflows/read/assignments', {

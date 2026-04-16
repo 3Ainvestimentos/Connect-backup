@@ -1,5 +1,6 @@
 import type { User } from 'firebase/auth';
 import type {
+  WorkflowManagementAdvanceInput,
   WorkflowManagementArchiveInput,
   WorkflowManagementRequestActionDetail,
   WorkflowManagementRequestActionInput,
@@ -264,6 +265,7 @@ function normalizePermissions(input: unknown): WorkflowManagementRequestDetailPe
 
   return {
     canAssign: asBoolean(permissions.canAssign),
+    canAdvance: asBoolean(permissions.canAdvance),
     canFinalize: asBoolean(permissions.canFinalize),
     canArchive: asBoolean(permissions.canArchive),
     canRequestAction: asBoolean(permissions.canRequestAction),
@@ -623,6 +625,24 @@ export async function finalizeManagementRequest(
   const data = await authenticatedManagementFetch<unknown>(
     user,
     `/api/workflows/runtime/requests/${payload.requestId}/finalize`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        actorName: payload.actorName,
+      }),
+    },
+  );
+
+  return normalizeMutationResult(data);
+}
+
+export async function advanceManagementRequest(
+  user: User,
+  payload: WorkflowManagementAdvanceInput,
+): Promise<WorkflowManagementMutationResult> {
+  const data = await authenticatedManagementFetch<unknown>(
+    user,
+    `/api/workflows/runtime/requests/${payload.requestId}/advance`,
     {
       method: 'POST',
       body: JSON.stringify({

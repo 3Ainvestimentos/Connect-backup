@@ -133,6 +133,7 @@ export type WorkflowManagementBootstrapData = {
 
 export type WorkflowRequestDetailPermissions = {
   canAssign: boolean;
+  canAdvance: boolean;
   canFinalize: boolean;
   canArchive: boolean;
   canRequestAction: boolean;

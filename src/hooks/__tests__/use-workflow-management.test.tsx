@@ -18,6 +18,7 @@ jest.mock('@/lib/workflows/management/api-client', () => ({
   getManagementCompleted: jest.fn(),
   getManagementRequestDetail: jest.fn(),
   assignManagementResponsible: jest.fn(),
+  advanceManagementRequest: jest.fn(),
   finalizeManagementRequest: jest.fn(),
   archiveManagementRequest: jest.fn(),
   requestManagementAction: jest.fn(),
@@ -83,6 +84,9 @@ describe('useWorkflowManagement', () => {
       requestId: 812,
       responsibleUserId: 'RESP2',
       responsibleName: 'Novo Responsavel',
+    });
+    await result.current.advanceMutation.mutateAsync({
+      requestId: 812,
     });
     await result.current.finalizeMutation.mutateAsync({
       requestId: 812,

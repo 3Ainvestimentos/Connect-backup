@@ -536,6 +536,7 @@ describe('workflow runtime use cases', () => {
         },
       }),
     });
+    repo.getWorkflowVersion.mockResolvedValue(buildWorkflowVersion());
 
     await expect(
       advanceStep({
@@ -549,8 +550,55 @@ describe('workflow runtime use cases', () => {
       }),
     );
 
-    expect(repo.getWorkflowVersion).not.toHaveBeenCalled();
     expect(repo.updateWorkflowRequestWithHistory).not.toHaveBeenCalled();
+  });
+
+  it('bloqueia advance-step quando a etapa exige action concluida mas nenhum batch foi respondido', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-advance-action-required',
+      data: buildRequest({
+        requestId: 21,
+        ownerUserId: 'owner-1',
+        responsibleUserId: 'resp-1',
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        actionRequests: [],
+        stepStates: {
+          stp_open: 'completed',
+          stp_work: 'active',
+          stp_review: 'pending',
+          stp_final: 'pending',
+        },
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        stepOrder: ['stp_open', 'stp_work', 'stp_review', 'stp_final'],
+        stepsById: {
+          ...buildWorkflowVersion().stepsById,
+          stp_review: {
+            stepId: 'stp_review',
+            stepName: 'Triagem',
+            statusKey: 'triagem',
+            kind: 'work',
+          },
+        },
+      }),
+    );
+
+    await expect(
+      advanceStep({
+        requestId: 21,
+        actorUserId: 'resp-1',
+        actorName: 'Responsavel',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.INVALID_STEP_TRANSITION,
+        message: 'A etapa atual exige action concluida antes de avancar o chamado.',
+      }),
+    );
   });
 
   it('abre requestAction para todos os approverIds e entra em waiting_action', async () => {
@@ -1226,6 +1274,15 @@ describe('workflow runtime use cases', () => {
     repo.getWorkflowVersion.mockResolvedValue(
       buildWorkflowVersion({
         workflowTypeId: 'facilities_solicitacao_compras',
+        stepsById: {
+          ...buildWorkflowVersion().stepsById,
+          stp_work: {
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          },
+        },
       }),
     );
 
@@ -1272,7 +1329,19 @@ describe('workflow runtime use cases', () => {
         },
       }),
     });
-    repo.getWorkflowVersion.mockResolvedValue(buildWorkflowVersion());
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        stepsById: {
+          ...buildWorkflowVersion().stepsById,
+          stp_work: {
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          },
+        },
+      }),
+    );
 
     await finalizeRequest({
       requestId: 31,
@@ -1290,6 +1359,67 @@ describe('workflow runtime use cases', () => {
         action: 'request_finalized',
       }),
     );
+  });
+
+  it('rejeita finalize-request quando ainda existe etapa intermediaria antes da final', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-finalize-intermediate',
+      data: buildRequest({
+        requestId: 34,
+        ownerUserId: 'owner-1',
+        responsibleUserId: 'resp-1',
+        statusCategory: 'in_progress',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        stepStates: {
+          stp_open: 'completed',
+          stp_work: 'active',
+          stp_review: 'pending',
+          stp_final: 'pending',
+        },
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        stepOrder: ['stp_open', 'stp_work', 'stp_review', 'stp_final'],
+        stepsById: {
+          stp_open: {
+            stepId: 'stp_open',
+            stepName: 'Solicitação Aberta',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          },
+          stp_work: {
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          },
+          stp_review: {
+            stepId: 'stp_review',
+            stepName: 'Triagem',
+            statusKey: 'triagem',
+            kind: 'work',
+          },
+        },
+      }),
+    );
+
+    await expect(
+      finalizeRequest({
+        requestId: 34,
+        actorUserId: 'resp-1',
+        actorName: 'Responsavel',
+      }),
+    ).rejects.toEqual(
+      expect.objectContaining({
+        code: RuntimeErrorCode.FINALIZATION_NOT_ALLOWED,
+        message: 'O chamado ainda possui etapa operacional intermediaria antes da etapa final.',
+      }),
+    );
+
+    expect(repo.updateWorkflowRequestWithHistory).not.toHaveBeenCalled();
   });
 
   it('rejeita finalize-request por terceiro nao autorizado', async () => {

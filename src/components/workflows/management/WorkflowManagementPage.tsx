@@ -68,6 +68,7 @@ export function WorkflowManagementPage() {
     refetchActiveTab,
     refetchDetail,
     assignMutation,
+    advanceMutation,
     finalizeMutation,
     archiveMutation,
     requestActionMutation,
@@ -339,6 +340,28 @@ export function WorkflowManagementPage() {
                 throw error;
               }
             }}
+            onAdvance={async (summary) => {
+              try {
+                const result = await advanceMutation.mutateAsync({
+                  requestId: summary.requestId,
+                });
+                toast({
+                  title: 'Etapa avancada',
+                  description: `Chamado #${result.requestId} avancou para a proxima etapa.`,
+                });
+                return result;
+              } catch (error) {
+                toast({
+                  title: 'Falha ao avancar etapa',
+                  description: resolveErrorMessage(
+                    error,
+                    'Nao foi possivel avancar este chamado para a proxima etapa.',
+                  ),
+                  variant: 'destructive',
+                });
+                throw error;
+              }
+            }}
             onFinalize={async (summary) => {
               try {
                 const result = await finalizeMutation.mutateAsync({
@@ -433,6 +456,7 @@ export function WorkflowManagementPage() {
               }
             }}
             isAssigning={assignMutation.isPending}
+            isAdvancing={advanceMutation.isPending}
             isFinalizing={finalizeMutation.isPending}
             isArchiving={archiveMutation.isPending}
             isRequestingAction={requestActionMutation.isPending}

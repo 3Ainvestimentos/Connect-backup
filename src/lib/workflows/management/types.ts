@@ -100,6 +100,7 @@ export type WorkflowManagementCompletedData = {
 
 export type WorkflowManagementRequestDetailPermissions = {
   canAssign: boolean;
+  canAdvance: boolean;
   canFinalize: boolean;
   canArchive: boolean;
   canRequestAction: boolean;
@@ -219,6 +220,11 @@ export type WorkflowManagementAssignResponsibleInput = {
 };
 
 export type WorkflowManagementFinalizeInput = {
+  requestId: number;
+  actorName?: string;
+};
+
+export type WorkflowManagementAdvanceInput = {
   requestId: number;
   actorName?: string;
 };

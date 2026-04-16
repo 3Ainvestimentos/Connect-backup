@@ -9,9 +9,10 @@
 
 import { Timestamp } from 'firebase-admin/firestore';
 import { assertCanAdvance, advanceStepStates } from '../engine';
+import { canOperateCurrentStep } from '../authz';
+import { getRequestContinuationState } from '../continuation';
 import { RuntimeError, RuntimeErrorCode } from '../errors';
 import { buildHistoryEntry } from '../history';
-import { getPendingActionEntriesForCurrentStep } from '../read-model';
 import { buildAdvanceReadModelUpdate } from '../read-model';
 import * as repo from '../repository';
 import type { StatusCategory } from '../types';
@@ -43,13 +44,6 @@ export async function advanceStep(input: AdvanceStepInput): Promise<AdvanceStepR
 
   const { docId, data: request } = result;
 
-  if (getPendingActionEntriesForCurrentStep(request).length > 0) {
-    throw new RuntimeError(
-      RuntimeErrorCode.INVALID_STEP_TRANSITION,
-      'Nao e possivel avancar o chamado enquanto existem actions pendentes na etapa atual.',
-    );
-  }
-
   // Guard: must be in_progress
   if (request.statusCategory !== 'in_progress') {
     throw new RuntimeError(
@@ -67,9 +61,7 @@ export async function advanceStep(input: AdvanceStepInput): Promise<AdvanceStepR
   }
 
   // Authorization: responsible or owner
-  const isOwner = input.actorUserId === request.ownerUserId;
-  const isResponsible = request.responsibleUserId != null && input.actorUserId === request.responsibleUserId;
-  if (!isOwner && !isResponsible) {
+  if (!canOperateCurrentStep(request.ownerUserId, request.responsibleUserId, input.actorUserId)) {
     throw new RuntimeError(
       RuntimeErrorCode.FORBIDDEN,
       'Apenas o responsavel ou o owner podem avancar o chamado.',
@@ -84,6 +76,19 @@ export async function advanceStep(input: AdvanceStepInput): Promise<AdvanceStepR
       RuntimeErrorCode.PUBLISHED_VERSION_NOT_FOUND,
       'Versao publicada nao encontrada para o chamado.',
       404,
+    );
+  }
+
+  const continuation = getRequestContinuationState(request, version);
+  if (!continuation.canAdvanceByState) {
+    throw new RuntimeError(
+      RuntimeErrorCode.INVALID_STEP_TRANSITION,
+      continuation.hasPendingAction
+        ? 'Nao e possivel avancar o chamado enquanto existem actions pendentes na etapa atual.'
+        : continuation.requiresCompletedActionBatch && !continuation.hasCompletedActionBatch
+          ? 'A etapa atual exige action concluida antes de avancar o chamado.'
+          : 'A proxima etapa e a etapa final. Use finalize-request para concluir o chamado.',
+      409,
     );
   }
 

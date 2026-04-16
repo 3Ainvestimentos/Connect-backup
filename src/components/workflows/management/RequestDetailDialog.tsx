@@ -49,6 +49,7 @@ type RequestDetailDialogProps = {
   onOpenChange: (open: boolean) => void;
   onRetry?: () => void;
   onAssign: (summary: WorkflowManagementRequestSummary, collaborator: Collaborator) => Promise<unknown>;
+  onAdvance: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
   onFinalize: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
   onArchive: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
   onRequestAction: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
@@ -61,6 +62,7 @@ type RequestDetailDialogProps = {
     },
   ) => Promise<unknown>;
   isAssigning?: boolean;
+  isAdvancing?: boolean;
   isFinalizing?: boolean;
   isArchiving?: boolean;
   isRequestingAction?: boolean;
@@ -87,11 +89,13 @@ export function RequestDetailDialog({
   onOpenChange,
   onRetry,
   onAssign,
+  onAdvance,
   onFinalize,
   onArchive,
   onRequestAction,
   onRespondAction,
   isAssigning = false,
+  isAdvancing = false,
   isFinalizing = false,
   isArchiving = false,
   isRequestingAction = false,
@@ -123,10 +127,12 @@ export function RequestDetailDialog({
   const presentation = summary ? deriveManagementRequestPresentation(summary) : null;
   const slaLabel = summary ? getManagementSlaLabel(summary.slaState) : null;
   const canShowAssignForm = permissions?.canAssign === true;
+  const canShowAdvance = permissions?.canAdvance === true;
   const canShowFinalize = permissions?.canFinalize === true;
   const canShowArchive = permissions?.canArchive === true;
   const hasOperationalAction =
     canShowAssignForm ||
+    canShowAdvance ||
     canShowFinalize ||
     canShowArchive ||
     detail?.action.available === true ||
@@ -148,6 +154,14 @@ export function RequestDetailDialog({
     }
 
     await onFinalize(summary);
+  };
+
+  const handleAdvance = async () => {
+    if (!summary) {
+      return;
+    }
+
+    await onAdvance(summary);
   };
 
   const handleArchive = async () => {
@@ -341,6 +355,11 @@ export function RequestDetailDialog({
         </ScrollArea>
 
         <DialogFooter className="border-t px-6 py-4">
+          {canShowAdvance ? (
+            <Button type="button" onClick={handleAdvance} disabled={isAdvancing}>
+              {isAdvancing ? 'Avancando...' : 'Avancar etapa'}
+            </Button>
+          ) : null}
           {canShowFinalize ? (
             <Button type="button" variant="secondary" onClick={handleFinalize} disabled={isFinalizing}>
               {isFinalizing ? 'Finalizando...' : 'Finalizar'}

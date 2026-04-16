@@ -61,6 +61,7 @@ function buildDetail(overrides: Partial<Parameters<typeof RequestDetailDialog>[0
     },
     permissions: {
       canAssign: true,
+      canAdvance: false,
       canFinalize: true,
       canArchive: false,
       canRequestAction: false,
@@ -152,6 +153,7 @@ describe('RequestDetailDialog', () => {
         collaborators={[]}
         onOpenChange={() => {}}
         onAssign={async () => {}}
+        onAdvance={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
         onRequestAction={async () => {}}
@@ -175,6 +177,7 @@ describe('RequestDetailDialog', () => {
         onRetry={onRetry}
         onOpenChange={() => {}}
         onAssign={async () => {}}
+        onAdvance={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
         onRequestAction={async () => {}}
@@ -199,6 +202,7 @@ describe('RequestDetailDialog', () => {
         onRetry={onRetry}
         onOpenChange={() => {}}
         onAssign={async () => {}}
+        onAdvance={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
         onRequestAction={async () => {}}
@@ -232,6 +236,7 @@ describe('RequestDetailDialog', () => {
             permissions: {
               canManageWorkflows: false,
               canManageRequests: false,
+              canManageVacation: false,
               canManageContent: false,
               canManageTripsBirthdays: false,
               canViewTasks: false,
@@ -248,6 +253,7 @@ describe('RequestDetailDialog', () => {
         ]}
         onOpenChange={() => {}}
         onAssign={async () => {}}
+        onAdvance={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
         onRequestAction={async () => {}}
@@ -276,6 +282,7 @@ describe('RequestDetailDialog', () => {
         detail={buildDetail({
           permissions: {
             canAssign: false,
+            canAdvance: false,
             canFinalize: false,
             canArchive: false,
             canRequestAction: true,
@@ -301,6 +308,7 @@ describe('RequestDetailDialog', () => {
         collaborators={[]}
         onOpenChange={() => {}}
         onAssign={async () => {}}
+        onAdvance={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
         onRequestAction={async () => {}}
@@ -323,6 +331,7 @@ describe('RequestDetailDialog', () => {
         detail={buildDetail({
           permissions: {
             canAssign: false,
+            canAdvance: false,
             canFinalize: true,
             canArchive: false,
             canRequestAction: false,
@@ -353,6 +362,7 @@ describe('RequestDetailDialog', () => {
         collaborators={[]}
         onOpenChange={() => {}}
         onAssign={async () => {}}
+        onAdvance={async () => {}}
         onFinalize={async () => {}}
         onArchive={async () => {}}
         onRequestAction={async () => {}}
@@ -364,5 +374,48 @@ describe('RequestDetailDialog', () => {
     expect(screen.getByText('Execucao concluida')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Abrir anexo da resposta' })).toBeTruthy();
     expect(screen.queryByText('Responder action')).toBeNull();
+  });
+
+  it('renders the advance CTA and hides finalize when only canAdvance is true', async () => {
+    const user = userEvent.setup();
+    const onAdvance = jest.fn();
+
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildDetail({
+          permissions: {
+            canAssign: false,
+            canAdvance: true,
+            canFinalize: false,
+            canArchive: false,
+            canRequestAction: false,
+            canRespondAction: false,
+          },
+          action: {
+            ...buildDetail().action,
+            available: false,
+            label: null,
+            type: null,
+          },
+        })}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={onAdvance}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Avancar etapa' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Finalizar' })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Avancar etapa' }));
+
+    expect(onAdvance).toHaveBeenCalledTimes(1);
   });
 });
