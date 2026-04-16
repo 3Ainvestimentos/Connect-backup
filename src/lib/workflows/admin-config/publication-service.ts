@@ -62,16 +62,16 @@ export async function publishDraftVersion(input: PublishDraftInput): Promise<Wor
       throw new RuntimeError(RuntimeErrorCode.INVALID_DRAFT_PAYLOAD, 'A publicacao so aceita versoes draft.', 422);
     }
 
-    const canonicalVersion = canonicalizeVersionSteps(version);
     const issues = evaluatePublishability({
       workflowType: root,
-      version: canonicalVersion,
+      version,
       collaborators,
     });
     const blockingIssues = issues.filter((issue) => issue.severity === 'blocking');
     if (blockingIssues.length > 0) {
       throw new VersionNotPublishableError(blockingIssues);
     }
+    const canonicalVersion = canonicalizeVersionSteps(version);
 
     const draftSnapshot = version.draftConfig?.workflowType;
     if (!draftSnapshot) {

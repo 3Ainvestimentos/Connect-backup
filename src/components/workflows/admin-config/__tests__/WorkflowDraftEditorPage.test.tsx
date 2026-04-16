@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { saveWorkflowDraft } from '@/lib/workflows/admin-config/api-client';
 
 jest.mock('@/contexts/AuthContext', () => ({
   useAuth: jest.fn(),
@@ -15,6 +16,22 @@ jest.mock('@/hooks/use-toast', () => ({
 jest.mock('@tanstack/react-query', () => ({
   useQuery: jest.fn(),
   useMutation: jest.fn(),
+}));
+
+jest.mock('@/lib/workflows/admin-config/api-client', () => ({
+  WorkflowConfigApiError: class WorkflowConfigApiError extends Error {
+    code: string;
+    httpStatus: number;
+
+    constructor(code: string, message: string, httpStatus: number) {
+      super(message);
+      this.code = code;
+      this.httpStatus = httpStatus;
+    }
+  },
+  fetchWorkflowDraftEditor: jest.fn(),
+  publishWorkflowVersion: jest.fn(),
+  saveWorkflowDraft: jest.fn(),
 }));
 
 jest.mock('next/navigation', () => ({
@@ -54,6 +71,7 @@ const { WorkflowDraftEditorPage } = require('../editor/WorkflowDraftEditorPage')
 const mockUseAuth = useAuth as jest.MockedFunction<typeof useAuth>;
 const mockUseQuery = useQuery as jest.MockedFunction<typeof useQuery>;
 const mockUseMutation = useMutation as jest.MockedFunction<typeof useMutation>;
+const mockSaveWorkflowDraft = saveWorkflowDraft as jest.MockedFunction<typeof saveWorkflowDraft>;
 
 function buildDraftPayload() {
   return {
@@ -83,7 +101,37 @@ function buildDraftPayload() {
         preview: 'Acesso publico para todos os colaboradores',
       },
       fields: [],
-      steps: [],
+      steps: [
+        {
+          stepId: 'start',
+          stepName: 'Inicio',
+          statusKey: 'solicitacao_aberta',
+          kind: 'start',
+        },
+        {
+          stepId: 'work',
+          stepName: 'Execucao',
+          statusKey: 'em_andamento',
+          kind: 'work',
+          action: {
+            type: 'approval',
+            label: 'Aprovar',
+            approvers: [
+              {
+                collaboratorDocId: 'collab-apr1',
+                userId: 'APR1',
+                name: 'Ana Paula',
+                email: 'ana.paula@3ariva.com.br',
+              },
+            ],
+            unresolvedApproverIds: [],
+            commentRequired: false,
+            attachmentRequired: false,
+            commentPlaceholder: '',
+            attachmentPlaceholder: '',
+          },
+        },
+      ],
       initialStepId: '',
       publishReadiness: [
         {
@@ -124,6 +172,10 @@ describe('WorkflowDraftEditorPage', () => {
       mutateAsync: jest.fn().mockResolvedValue({ savedAt: '2026-04-08T18:00:00.000Z', publishReadiness: [] }),
       isPending: false,
     } as unknown as ReturnType<typeof useMutation>);
+    mockSaveWorkflowDraft.mockResolvedValue({
+      savedAt: '2026-04-08T18:00:00.000Z',
+      publishReadiness: [],
+    });
   });
 
   it('renders the editor shell and readiness issues', () => {
@@ -138,17 +190,59 @@ describe('WorkflowDraftEditorPage', () => {
 
   it('submits the save action', async () => {
     const user = userEvent.setup();
-    const mutateAsync = jest.fn().mockResolvedValue({ savedAt: '2026-04-08T18:00:00.000Z', publishReadiness: [] });
-    mockUseMutation.mockReturnValue({
-      mutateAsync,
-      isPending: false,
-    } as unknown as ReturnType<typeof useMutation>);
+    mockSaveWorkflowDraft.mockResolvedValue({ savedAt: '2026-04-08T18:00:00.000Z', publishReadiness: [] });
+    mockUseMutation.mockImplementation((options: unknown) => {
+      const config = options as { mutationFn?: (values?: unknown) => Promise<unknown> };
+      return {
+        mutateAsync: (values?: unknown) => {
+          if (config.mutationFn) {
+            return config.mutationFn(values);
+          }
+
+          return Promise.resolve(undefined);
+        },
+        isPending: false,
+      } as unknown as ReturnType<typeof useMutation>;
+    });
 
     render(<WorkflowDraftEditorPage workflowTypeId="facilities_manutencao" version={1} />);
 
     await user.click(screen.getByRole('button', { name: /Salvar rascunho/i }));
 
-    expect(mutateAsync).toHaveBeenCalledTimes(1);
+    expect(mockSaveWorkflowDraft).toHaveBeenCalledTimes(1);
+    expect(mockSaveWorkflowDraft).toHaveBeenCalledWith(
+      expect.objectContaining({ uid: 'firebase-uid-1' }),
+      'facilities_manutencao',
+      1,
+      expect.objectContaining({
+        general: expect.any(Object),
+        access: expect.any(Object),
+        fields: expect.any(Array),
+        steps: expect.any(Array),
+      }),
+    );
+    expect(mockSaveWorkflowDraft.mock.calls[0][3]).not.toHaveProperty('initialStepId');
+    expect(mockSaveWorkflowDraft.mock.calls[0][3].steps).toEqual([
+      {
+        stepId: 'start',
+        stepName: 'Inicio',
+        action: undefined,
+      },
+      {
+        stepId: 'work',
+        stepName: 'Execucao',
+        action: {
+          type: 'approval',
+          label: 'Aprovar',
+          approverCollaboratorDocIds: ['collab-apr1'],
+          unresolvedApproverIds: [],
+          commentRequired: false,
+          attachmentRequired: false,
+          commentPlaceholder: '',
+          attachmentPlaceholder: '',
+        },
+      },
+    ]);
   });
 
   it('exibe badge "Somente leitura" e desabilita salvar quando mode e read-only', () => {

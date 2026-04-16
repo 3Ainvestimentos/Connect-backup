@@ -29,7 +29,6 @@ export type WorkflowDraftFormValues = {
   };
   fields: VersionFieldDef[];
   steps: WorkflowDraftEditorStep[];
-  initialStepId: string;
 };
 
 export type WorkflowDraftEditorLookups = {

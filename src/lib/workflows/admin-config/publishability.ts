@@ -4,7 +4,7 @@ import type {
   WorkflowTypeV2,
   WorkflowVersionV2,
 } from '@/lib/workflows/runtime/types';
-import { canonicalizeVersionSteps } from './canonical-step-semantics';
+import { canonicalizeVersionSteps, inspectVersionStepOrder } from './canonical-step-semantics';
 import type { DraftReadinessIssue, WorkflowConfigOwnerLookup, WorkflowConfigVersionUiStatus } from './types';
 
 type PublishabilityInput = {
@@ -121,12 +121,11 @@ export function evaluatePublishability(input: PublishabilityInput): DraftReadine
   }
 
   const issues: DraftReadinessIssue[] = [];
-  const canonicalVersion = canonicalizeVersionSteps(input.version);
   const snapshot = normalizeSnapshot(input.version.draftConfig?.workflowType);
   const fields = Array.isArray(input.version.fields) ? input.version.fields : [];
-  const stepOrder = Array.isArray(canonicalVersion.stepOrder) ? canonicalVersion.stepOrder : [];
-  const stepsById = canonicalVersion.stepsById || {};
-  const steps = cloneDraftSteps(canonicalVersion);
+  const stepInspection = inspectVersionStepOrder(input.version);
+  const stepOrder = stepInspection.stepOrder;
+  const stepsById = input.version.stepsById || {};
 
   if (snapshot.name === '') {
     pushIssue(issues, {
@@ -212,46 +211,6 @@ export function evaluatePublishability(input: PublishabilityInput): DraftReadine
     });
   }
 
-  if (trim(canonicalVersion.initialStepId) === '' || !stepsById[canonicalVersion.initialStepId]) {
-    pushIssue(issues, {
-      code: 'INVALID_INITIAL_STEP',
-      category: 'steps',
-      message: 'A etapa inicial canonica precisa apontar para a primeira etapa existente.',
-      path: 'initialStepId',
-    });
-  }
-
-  const startSteps = steps.filter((step) => step.kind === 'start');
-  const finalSteps = steps.filter((step) => step.kind === 'final');
-  const workSteps = steps.filter((step) => step.kind === 'work');
-
-  if (startSteps.length === 0) {
-    pushIssue(issues, {
-      code: 'MISSING_START_STEP',
-      category: 'steps',
-      message: 'Defina uma etapa inicial do tipo start antes de publicar.',
-      path: 'steps',
-    });
-  }
-
-  if (startSteps.length > 1) {
-    pushIssue(issues, {
-      code: 'MULTIPLE_START_STEPS',
-      category: 'steps',
-      message: 'Existe mais de uma etapa marcada como start.',
-      path: 'steps',
-    });
-  }
-
-  if (finalSteps.length === 0) {
-    pushIssue(issues, {
-      code: 'MISSING_FINAL_STEP',
-      category: 'steps',
-      message: 'Defina uma etapa final antes de publicar.',
-      path: 'steps',
-    });
-  }
-
   if (stepOrder.length > 0 && stepOrder.length < 3) {
     pushIssue(issues, {
       code: 'INSUFFICIENT_STEPS',
@@ -261,16 +220,7 @@ export function evaluatePublishability(input: PublishabilityInput): DraftReadine
     });
   }
 
-  if (stepOrder.length >= 3 && workSteps.length === 0) {
-    pushIssue(issues, {
-      code: 'MISSING_WORK_STEP',
-      category: 'steps',
-      message: 'Defina ao menos uma etapa intermediaria antes de publicar.',
-      path: 'steps',
-    });
-  }
-
-  if (hasDuplicateValues(stepOrder)) {
+  if (stepInspection.duplicateStepIds.length > 0) {
     pushIssue(issues, {
       code: 'DUPLICATE_STEP_ORDER',
       category: 'steps',
@@ -279,7 +229,7 @@ export function evaluatePublishability(input: PublishabilityInput): DraftReadine
     });
   }
 
-  if (stepOrder.some((stepId) => !stepsById[stepId])) {
+  if (stepInspection.missingStepIds.length > 0) {
     pushIssue(issues, {
       code: 'STEP_ORDER_REFERENCES_UNKNOWN_STEP',
       category: 'steps',
@@ -288,40 +238,12 @@ export function evaluatePublishability(input: PublishabilityInput): DraftReadine
     });
   }
 
-  if (stepOrder.length >= 1) {
-    const firstStep = steps[0];
-    if (!firstStep || firstStep.kind !== 'start' || trim(firstStep.statusKey) !== 'solicitacao_aberta') {
-      pushIssue(issues, {
-        code: 'INVALID_START_STEP',
-        category: 'steps',
-        message: 'A primeira etapa precisa seguir o canon de abertura do chamado.',
-        path: 'steps.0',
-      });
-    }
+  if (!stepInspection.isStructurallyValid) {
+    return issues;
   }
 
-  if (stepOrder.length >= 2) {
-    const lastStep = steps[steps.length - 1];
-    if (!lastStep || lastStep.kind !== 'final' || trim(lastStep.statusKey) !== 'finalizado') {
-      pushIssue(issues, {
-        code: 'INVALID_FINAL_STEP',
-        category: 'steps',
-        message: 'A ultima etapa precisa seguir o canon de encerramento do chamado.',
-        path: `steps.${Math.max(steps.length - 1, 0)}`,
-      });
-    }
-  }
-
-  steps.slice(1, -1).forEach((step, index) => {
-    if (step.kind !== 'work' || trim(step.statusKey) !== 'em_andamento') {
-      pushIssue(issues, {
-        code: 'INVALID_INTERMEDIATE_STEP',
-        category: 'steps',
-        message: 'As etapas intermediarias precisam seguir o canon operacional em andamento.',
-        path: `steps.${index + 1}`,
-      });
-    }
-  });
+  const canonicalVersion = canonicalizeVersionSteps(input.version);
+  const steps = cloneDraftSteps(canonicalVersion);
 
   steps.forEach((step, index) => {
     const approverIds =

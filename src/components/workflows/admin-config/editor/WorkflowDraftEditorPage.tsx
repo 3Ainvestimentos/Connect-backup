@@ -47,7 +47,6 @@ function buildDefaultValues(): WorkflowDraftFormValues {
     },
     fields: [],
     steps: [],
-    initialStepId: '',
   };
 }
 
@@ -96,7 +95,6 @@ export function WorkflowDraftEditorPage({
       access: draftQuery.data.draft.access,
       fields: draftQuery.data.draft.fields,
       steps: draftQuery.data.draft.steps,
-      initialStepId: draftQuery.data.draft.initialStepId,
     });
   }, [draftQuery.data, form]);
 
@@ -191,7 +189,8 @@ export function WorkflowDraftEditorPage({
         },
         fields: values.fields,
         steps: values.steps.map((step) => ({
-          ...step,
+          stepId: step.stepId,
+          stepName: step.stepName,
           action: step.action
             ? {
                 type: step.action.type,
@@ -205,7 +204,6 @@ export function WorkflowDraftEditorPage({
               }
             : undefined,
         })),
-        initialStepId: values.initialStepId,
       };
 
       return saveWorkflowDraft(user, workflowTypeId, version, payload);
@@ -223,7 +221,6 @@ export function WorkflowDraftEditorPage({
           access: refreshed.data.draft.access,
           fields: refreshed.data.draft.fields,
           steps: refreshed.data.draft.steps,
-          initialStepId: refreshed.data.draft.initialStepId,
         });
       }
     },

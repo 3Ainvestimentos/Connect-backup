@@ -286,7 +286,6 @@ function parseSaveWorkflowDraftInput(input: SaveWorkflowDraftInput): SaveWorkflo
     },
     fields: parseDraftFields(payload.fields),
     steps: parseSaveDraftSteps(payload.steps),
-    initialStepId: readString(payload.initialStepId, 'initialStepId invalido.', ''),
   };
 }
 

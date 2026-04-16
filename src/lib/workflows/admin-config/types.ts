@@ -233,7 +233,6 @@ export type SaveWorkflowDraftInput = {
       };
     }
   >;
-  initialStepId: string;
 };
 
 export type SaveWorkflowDraftResult = {

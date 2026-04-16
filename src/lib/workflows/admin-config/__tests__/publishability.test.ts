@@ -70,6 +70,7 @@ describe('publishability helpers', () => {
       version: buildDraftVersion({
         stepsById: {
           start: { stepId: 'start', stepName: 'Inicio', statusKey: 'inicio', kind: 'start' },
+          work: { stepId: 'work', stepName: 'Triagem', statusKey: 'em_andamento', kind: 'work' },
           final: {
             stepId: 'final',
             stepName: 'Fim',
@@ -116,7 +117,53 @@ describe('publishability helpers', () => {
     expect(issues).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'INSUFFICIENT_STEPS', severity: 'blocking' }),
-        expect.objectContaining({ code: 'INVALID_INTERMEDIATE_STEP', severity: 'blocking' }),
+        expect.objectContaining({ code: 'INVALID_INTERMEDIATE_STEP' }),
+      ]),
+    );
+  });
+
+  it('explicita ids ausentes em stepOrder sem healing silencioso', () => {
+    const issues = evaluatePublishability({
+      workflowType: { latestPublishedVersion: 2 },
+      version: buildDraftVersion({
+        initialStepId: 'legacy-start',
+        stepOrder: ['start', 'missing', 'final'],
+        stepsById: {
+          start: { stepId: 'start', stepName: 'Inicio', statusKey: 'x', kind: 'final' },
+          final: { stepId: 'final', stepName: 'Fim', statusKey: 'y', kind: 'start' },
+        },
+      }),
+      collaborators: buildCollaborators(),
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'STEP_ORDER_REFERENCES_UNKNOWN_STEP', severity: 'blocking' }),
+      ]),
+    );
+    expect(issues).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'INVALID_INITIAL_STEP' })]),
+    );
+  });
+
+  it('explicita ids duplicados em stepOrder sem checks canonicos mortos', () => {
+    const issues = evaluatePublishability({
+      workflowType: { latestPublishedVersion: 2 },
+      version: buildDraftVersion({
+        stepOrder: ['start', 'work', 'work', 'final'],
+      }),
+      collaborators: buildCollaborators(),
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'DUPLICATE_STEP_ORDER', severity: 'blocking' }),
+      ]),
+    );
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'MULTIPLE_START_STEPS' }),
+        expect.objectContaining({ code: 'INVALID_FINAL_STEP' }),
       ]),
     );
   });

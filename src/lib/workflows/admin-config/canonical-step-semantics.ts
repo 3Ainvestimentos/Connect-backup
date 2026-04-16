@@ -16,6 +16,14 @@ export type CanonicalizedStepsResult = {
   initialStepId: string;
 };
 
+export type VersionStepOrderInspection = {
+  stepOrder: string[];
+  orderedExistingSteps: StepDef[];
+  missingStepIds: string[];
+  duplicateStepIds: string[];
+  isStructurallyValid: boolean;
+};
+
 export function deriveCanonicalSemantics(index: number, total: number): CanonicalSemantics {
   if (index === 0) {
     return {
@@ -64,23 +72,76 @@ export function canonicalizeSteps(steps: MinimalStep[]): CanonicalizedStepsResul
   };
 }
 
+function cloneStepDef(step: StepDef): StepDef {
+  return {
+    ...step,
+    action: step.action
+      ? {
+          ...step.action,
+          approverIds: Array.isArray(step.action.approverIds) ? [...step.action.approverIds] : [],
+        }
+      : undefined,
+  };
+}
+
+export function inspectVersionStepOrder<
+  TVersion extends Pick<WorkflowVersionV2, 'stepOrder' | 'stepsById'>,
+>(version: TVersion): VersionStepOrderInspection {
+  const stepOrder = Array.isArray(version.stepOrder) ? [...version.stepOrder] : [];
+  const stepsById = version.stepsById || {};
+  const seenStepIds = new Set<string>();
+  const duplicateStepIds = new Set<string>();
+  const missingStepIds = new Set<string>();
+  const orderedExistingSteps: StepDef[] = [];
+
+  stepOrder.forEach((stepId) => {
+    if (seenStepIds.has(stepId)) {
+      duplicateStepIds.add(stepId);
+    } else {
+      seenStepIds.add(stepId);
+    }
+
+    const step = stepsById[stepId];
+    if (!step) {
+      missingStepIds.add(stepId);
+      return;
+    }
+
+    orderedExistingSteps.push(cloneStepDef(step));
+  });
+
+  return {
+    stepOrder,
+    orderedExistingSteps,
+    missingStepIds: Array.from(missingStepIds),
+    duplicateStepIds: Array.from(duplicateStepIds),
+    isStructurallyValid: missingStepIds.size === 0 && duplicateStepIds.size === 0,
+  };
+}
+
 export function canonicalizeVersionSteps<
   TVersion extends Pick<WorkflowVersionV2, 'stepOrder' | 'stepsById' | 'initialStepId'>,
 >(version: TVersion): TVersion {
-  const orderedSteps = (version.stepOrder || [])
-    .map((stepId) => version.stepsById?.[stepId])
-    .filter((step): step is StepDef => Boolean(step))
-    .map((step) => ({
+  const inspection = inspectVersionStepOrder(version);
+
+  if (!inspection.isStructurallyValid) {
+    return {
+      ...version,
+      initialStepId: version.initialStepId,
+      stepOrder: inspection.stepOrder,
+      stepsById: Object.fromEntries(
+        Object.entries(version.stepsById || {}).map(([stepId, step]) => [stepId, cloneStepDef(step)]),
+      ),
+    };
+  }
+
+  const canonical = canonicalizeSteps(
+    inspection.orderedExistingSteps.map((step) => ({
       stepId: step.stepId,
       stepName: step.stepName,
-      action: step.action
-        ? {
-            ...step.action,
-            approverIds: Array.isArray(step.action.approverIds) ? [...step.action.approverIds] : [],
-          }
-        : undefined,
-    }));
-  const canonical = canonicalizeSteps(orderedSteps);
+      action: step.action,
+    })),
+  );
 
   return {
     ...version,

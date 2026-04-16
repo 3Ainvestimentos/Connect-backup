@@ -212,7 +212,6 @@ describe('draft-repository safeguards', () => {
             },
           },
         ],
-        initialStepId: '',
       }),
     ).rejects.toMatchObject({
       code: RuntimeErrorCode.INVALID_DRAFT_PAYLOAD,
@@ -445,7 +444,6 @@ describe('draft-repository safeguards', () => {
           kind: 'work',
         },
       ],
-      initialStepId: 'legacy-open',
     });
 
     expect(transactionUpdateMock).toHaveBeenCalledWith(
@@ -554,7 +552,6 @@ describe('draft-repository safeguards', () => {
             },
           },
         ],
-        initialStepId: '',
       }),
     ).rejects.toMatchObject({
       code: RuntimeErrorCode.INVALID_DRAFT_PAYLOAD,
