@@ -1,16 +1,17 @@
 import { Trash2 } from 'lucide-react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { deriveCanonicalSemantics } from '@/lib/workflows/admin-config/canonical-step-semantics';
 import type { WorkflowConfigCollaboratorLookup } from '@/lib/workflows/admin-config/types';
 import type { WorkflowDraftFormValues } from './types';
 import { WorkflowActionApproverPicker } from './WorkflowActionApproverPicker';
 
-const stepKinds = ['start', 'work', 'final'] as const;
 const actionTypes = ['none', 'approval', 'acknowledgement', 'execution'] as const;
 
 export function WorkflowDraftStepsSection({
@@ -26,12 +27,15 @@ export function WorkflowDraftStepsSection({
     name: 'steps',
   });
   const values = watch('steps');
-  const initialStepId = watch('initialStepId');
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base">Etapas</CardTitle>
+        <div className="space-y-1">
+          <CardTitle className="text-base">Etapas</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            O sistema deriva automaticamente a etapa inicial, intermediaria e final pela ordem visual.
+          </p>
+        </div>
         <Button
           type="button"
           variant="outline"
@@ -42,7 +46,7 @@ export function WorkflowDraftStepsSection({
               stepId: '',
               stepName: '',
               statusKey: '',
-              kind: fields.length === 0 ? 'start' : 'work',
+              kind: 'work',
               action: undefined,
             })
           }
@@ -56,6 +60,7 @@ export function WorkflowDraftStepsSection({
         ) : (
           fields.map((field, index) => {
             const step = values?.[index];
+            const semantics = deriveCanonicalSemantics(index, fields.length);
             const actionType = step?.action?.type || 'none';
             const selectedApprovers = step?.action?.approvers || [];
             const unresolvedApproverIds = step?.action?.unresolvedApproverIds || [];
@@ -64,8 +69,11 @@ export function WorkflowDraftStepsSection({
               <div key={field.id} className="space-y-3 rounded-md border p-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium">Etapa {index + 1}</p>
-                    <p className="text-xs text-muted-foreground">ID tecnico gerado automaticamente no save.</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">Etapa {index + 1}</p>
+                      <Badge variant="outline">{semantics.roleLabel}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{semantics.roleDescription}</p>
                   </div>
                   <Button type="button" variant="ghost" size="icon" disabled={readOnly} onClick={() => remove(index)}>
                     <Trash2 className="h-4 w-4" />
@@ -78,33 +86,15 @@ export function WorkflowDraftStepsSection({
                     <Input disabled={readOnly} {...register(`steps.${index}.stepName`)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Status key</Label>
-                    <Input disabled={readOnly} {...register(`steps.${index}.statusKey`)} />
+                    <Label>Semantica derivada</Label>
+                    <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-muted-foreground">
+                      <span className="font-medium text-foreground">{semantics.kind}</span>
+                      {` • ${semantics.statusKey}`}
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Kind</Label>
-                    <Select
-                      value={step?.kind || 'work'}
-                      disabled={readOnly}
-                      onValueChange={(value) =>
-                        setValue(`steps.${index}.kind`, value as WorkflowDraftFormValues['steps'][number]['kind'])
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {stepKinds.map((kind) => (
-                          <SelectItem key={kind} value={kind}>
-                            {kind}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="grid gap-4 md:grid-cols-1">
                   <div className="space-y-2">
                     <Label>Acao</Label>
                     <Select
@@ -193,19 +183,6 @@ export function WorkflowDraftStepsSection({
                     </div>
                   </div>
                 ) : null}
-
-                <label className="flex items-center gap-2 rounded-md border p-3 text-sm">
-                  <Checkbox
-                    checked={initialStepId === step?.stepId && Boolean(step?.stepId)}
-                    disabled={readOnly}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setValue('initialStepId', step?.stepId || '', { shouldDirty: true });
-                      }
-                    }}
-                  />
-                  Usar como etapa inicial
-                </label>
               </div>
             );
           })

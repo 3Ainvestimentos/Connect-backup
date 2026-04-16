@@ -49,8 +49,8 @@ export function findFinalStep(version: WorkflowVersionV2): StepDef | null {
 }
 
 /**
- * Finds the in-progress step (kind === 'work') from the version definition.
- * In the pilot, there is exactly one 'work' step.
+ * Finds the first in-progress step (kind === 'work') from the version definition.
+ * Multiple work steps are allowed; the first one is the assignment target.
  */
 export function findWorkStep(version: WorkflowVersionV2): StepDef | null {
   for (const stepId of version.stepOrder) {

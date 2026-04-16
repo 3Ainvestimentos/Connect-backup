@@ -5,12 +5,12 @@ import { sanitizeStoragePath } from '@/lib/path-sanitizer';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
 import type {
   StepDef,
-  StepKind,
   VersionFieldDef,
   WorkflowTypeV2,
   WorkflowVersionV2,
 } from '@/lib/workflows/runtime/types';
 import { appendNumericSuffix, buildAreaId, buildFieldId, buildStatusKey, buildWorkflowTypeId } from './id-generation';
+import { canonicalizeSteps } from './canonical-step-semantics';
 import { buildAccessPreview, normalizeAllowedUserIds } from './draft-readiness';
 import {
   listWorkflowConfigAreas,
@@ -757,14 +757,6 @@ function normalizeFieldType(value: string | undefined): VersionFieldDef['type'] 
   return 'text';
 }
 
-function normalizeStepKind(value: string | undefined): StepKind {
-  if (value === 'start' || value === 'work' || value === 'final') {
-    return value;
-  }
-
-  return 'work';
-}
-
 function normalizeFields(
   input: Array<Partial<VersionFieldDef>>,
   current: VersionFieldDef[],
@@ -818,53 +810,49 @@ function normalizeFields(
 async function normalizeSteps(
   input: SaveWorkflowDraftInput['steps'],
   current: StepDef[],
-): Promise<{ steps: StepDef[]; stepsById: Record<string, StepDef>; stepOrder: string[] }> {
+): Promise<{ steps: StepDef[]; stepsById: Record<string, StepDef>; stepOrder: string[]; initialStepId: string }> {
   const existingIds = new Set(current.map((step) => step.stepId));
   const usedIds = new Set<string>();
-  const steps = await Promise.all(input.map(async (step, index) => {
-    const providedId = (step.stepId || '').trim();
-    let stepId = providedId && existingIds.has(providedId) ? providedId : '';
+  const normalizedSteps = await Promise.all(
+    input.map(async (step, index) => {
+      const providedId = (step.stepId || '').trim();
+      let stepId = providedId && existingIds.has(providedId) ? providedId : '';
 
-    if (!stepId) {
-      const statusBase = buildStatusKey(step.stepName?.trim() || `etapa_${index + 1}`);
-      let suffix = 1;
-      stepId = `stp_${statusBase}`;
-      while (usedIds.has(stepId) || existingIds.has(stepId)) {
-        suffix += 1;
-        stepId = `stp_${statusBase}_${suffix}`;
+      if (!stepId) {
+        const statusBase = buildStatusKey(step.stepName?.trim() || `etapa_${index + 1}`);
+        let suffix = 1;
+        stepId = `stp_${statusBase}`;
+        while (usedIds.has(stepId) || existingIds.has(stepId)) {
+          suffix += 1;
+          stepId = `stp_${statusBase}_${suffix}`;
+        }
       }
-    }
 
-    usedIds.add(stepId);
+      usedIds.add(stepId);
 
-    const actionType = step.action?.type;
-    const action =
-      actionType === 'approval' || actionType === 'acknowledgement' || actionType === 'execution'
-        ? {
-            type: actionType,
-            label: (step.action?.label || '').trim() || 'Acao',
-            approverIds: await resolveCollaboratorDocIdsToApproverIds(step.action?.approverCollaboratorDocIds),
-            commentRequired: step.action?.commentRequired === true,
-            attachmentRequired: step.action?.attachmentRequired === true,
-            commentPlaceholder: (step.action?.commentPlaceholder || '').trim(),
-            attachmentPlaceholder: (step.action?.attachmentPlaceholder || '').trim(),
-          }
-        : undefined;
+      const actionType = step.action?.type;
+      const action =
+        actionType === 'approval' || actionType === 'acknowledgement' || actionType === 'execution'
+          ? {
+              type: actionType,
+              label: (step.action?.label || '').trim() || 'Acao',
+              approverIds: await resolveCollaboratorDocIdsToApproverIds(step.action?.approverCollaboratorDocIds),
+              commentRequired: step.action?.commentRequired === true,
+              attachmentRequired: step.action?.attachmentRequired === true,
+              commentPlaceholder: (step.action?.commentPlaceholder || '').trim(),
+              attachmentPlaceholder: (step.action?.attachmentPlaceholder || '').trim(),
+            }
+          : undefined;
 
-    return {
-      stepId,
-      stepName: (step.stepName || '').trim(),
-      statusKey: buildStatusKey(step.statusKey?.trim() || step.stepName?.trim() || `status_${index + 1}`),
-      kind: normalizeStepKind(step.kind),
-      ...(action ? { action } : {}),
-    } satisfies StepDef;
-  }));
+      return {
+        stepId,
+        stepName: (step.stepName || '').trim(),
+        ...(action ? { action } : {}),
+      };
+    }),
+  );
 
-  return {
-    steps,
-    stepsById: Object.fromEntries(steps.map((step) => [step.stepId, step])),
-    stepOrder: steps.map((step) => step.stepId),
-  };
+  return canonicalizeSteps(normalizedSteps);
 }
 
 async function loadWorkflowVersion(workflowTypeId: string, version: number) {
@@ -1029,12 +1017,10 @@ export async function saveWorkflowDraft(
   const fields = normalizeFields(parsedInput.fields || [], workflowVersion.fields || []);
   const normalizedAccess = normalizeAllowedUserIds(parsedInput.access.mode, parsedInput.access.allowedUserIds || []);
   const allowedUserIds = parsedInput.access.mode === 'all' ? ['all'] : normalizedAccess;
-  const { steps, stepsById, stepOrder } = await normalizeSteps(
+  const { stepsById, stepOrder, initialStepId } = await normalizeSteps(
     parsedInput.steps || [],
     normalizeRuntimeSteps(workflowVersion),
   );
-  const initialStepId =
-    stepOrder.includes(parsedInput.initialStepId) ? parsedInput.initialStepId : stepOrder[0] || '';
 
   const general: WorkflowDraftEditorGeneral = {
     name: parsedInput.general.name.trim(),

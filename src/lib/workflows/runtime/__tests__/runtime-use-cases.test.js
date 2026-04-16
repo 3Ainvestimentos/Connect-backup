@@ -136,6 +136,64 @@ describe('workflow runtime use cases', () => {
     );
   });
 
+  it('usa a primeira etapa work quando a versao publicada possui varias intermediarias', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-1',
+      data: buildRequest(),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        stepOrder: ['stp_open', 'stp_triage', 'stp_exec', 'stp_final'],
+        stepsById: {
+          stp_open: {
+            stepId: 'stp_open',
+            stepName: 'Solicitação Aberta',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          },
+          stp_triage: {
+            stepId: 'stp_triage',
+            stepName: 'Triagem',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          },
+          stp_exec: {
+            stepId: 'stp_exec',
+            stepName: 'Execução',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          },
+          stp_final: {
+            stepId: 'stp_final',
+            stepName: 'Finalizado',
+            statusKey: 'finalizado',
+            kind: 'final',
+          },
+        },
+      }),
+    );
+
+    await assignResponsible({
+      requestId: 12,
+      responsibleUserId: 'resp-1',
+      responsibleName: 'Responsável',
+      actorUserId: 'SMO2',
+      actorName: 'Owner',
+    });
+
+    expect(repo.updateWorkflowRequestWithHistory).toHaveBeenCalledWith(
+      'doc-1',
+      expect.objectContaining({
+        currentStepId: 'stp_triage',
+        currentStepName: 'Triagem',
+        currentStatusKey: 'em_andamento',
+        'stepStates.stp_open': 'completed',
+        'stepStates.stp_triage': 'active',
+      }),
+      expect.any(Object),
+    );
+  });
+
   it('falha a primeira atribuição se a versão publicada não puder ser resolvida', async () => {
     repo.getWorkflowRequestByRequestId.mockResolvedValue({
       docId: 'doc-1',

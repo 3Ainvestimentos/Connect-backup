@@ -23,14 +23,20 @@ function buildDraftVersion(overrides = {}) {
     defaultSlaDays: 5,
     fields: [{ id: 'impacto', type: 'text' }],
     initialStepId: 'start',
-    stepOrder: ['start', 'final'],
+    stepOrder: ['start', 'work', 'final'],
     stepsById: {
-      start: { stepId: 'start', stepName: 'Inicio', statusKey: 'inicio', kind: 'start' },
+      start: { stepId: 'start', stepName: 'Inicio', statusKey: 'inicio', kind: 'work' },
+      work: {
+        stepId: 'work',
+        stepName: 'Triagem',
+        statusKey: 'qualquer_coisa',
+        kind: 'final',
+      },
       final: {
         stepId: 'final',
         stepName: 'Fim',
-        statusKey: 'fim',
-        kind: 'final',
+        statusKey: 'duplicado',
+        kind: 'start',
         action: { type: 'approval', label: 'Aprovar', approverIds: ['APR1'] },
       },
     },
@@ -79,6 +85,58 @@ describe('publishability helpers', () => {
     expect(issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ code: 'DUPLICATE_ACTION_APPROVER', severity: 'blocking' }),
+      ]),
+    );
+  });
+
+  it('permite statusKey repetido nas etapas intermediarias quando o canon e satisfeito', () => {
+    const issues = evaluatePublishability({
+      workflowType: { latestPublishedVersion: 2 },
+      version: buildDraftVersion({
+        stepOrder: ['start', 'work_1', 'work_2', 'final'],
+        stepsById: {
+          start: { stepId: 'start', stepName: 'Inicio', statusKey: 'duplicado', kind: 'final' },
+          work_1: { stepId: 'work_1', stepName: 'Triagem', statusKey: 'duplicado', kind: 'start' },
+          work_2: { stepId: 'work_2', stepName: 'Execucao', statusKey: 'duplicado', kind: 'final' },
+          final: {
+            stepId: 'final',
+            stepName: 'Fim',
+            statusKey: 'duplicado',
+            kind: 'work',
+            action: { type: 'approval', label: 'Aprovar', approverIds: ['APR1'] },
+          },
+        },
+      }),
+      collaborators: buildCollaborators(),
+    });
+
+    expect(issues).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ code: 'DUPLICATE_STATUS_KEY' })]),
+    );
+    expect(issues).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'INSUFFICIENT_STEPS', severity: 'blocking' }),
+        expect.objectContaining({ code: 'INVALID_INTERMEDIATE_STEP', severity: 'blocking' }),
+      ]),
+    );
+  });
+
+  it('bloqueia publicacao quando o draft tem menos de 3 etapas', () => {
+    const issues = evaluatePublishability({
+      workflowType: { latestPublishedVersion: 2 },
+      version: buildDraftVersion({
+        stepOrder: ['start', 'final'],
+        stepsById: {
+          start: { stepId: 'start', stepName: 'Inicio', statusKey: 'inicio', kind: 'start' },
+          final: { stepId: 'final', stepName: 'Fim', statusKey: 'fim', kind: 'final' },
+        },
+      }),
+      collaborators: buildCollaborators(),
+    });
+
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ code: 'INSUFFICIENT_STEPS', severity: 'blocking' }),
       ]),
     );
   });

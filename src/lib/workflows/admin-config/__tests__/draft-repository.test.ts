@@ -359,6 +359,124 @@ describe('draft-repository safeguards', () => {
     expect(savedDraft.stepsById.stp_open).not.toHaveProperty('action');
   });
 
+  it('recalcula statusKey, kind e initialStepId pela ordem ao salvar draft', async () => {
+    directGetMock.mockImplementation(async (path: string) => {
+      if (path === 'workflowTypes_v2/facilities_manutencao') {
+        return {
+          exists: true,
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            name: 'Manutencao',
+            description: 'Chamados prediais',
+            icon: 'Wrench',
+            areaId: 'facilities',
+            ownerEmail: 'owner@3ariva.com.br',
+            ownerUserId: 'SMO2',
+            allowedUserIds: ['all'],
+            active: true,
+            latestPublishedVersion: null,
+          }),
+        };
+      }
+      if (path === 'workflowTypes_v2/facilities_manutencao/versions/1') {
+        return {
+          exists: true,
+          ref: makeDocRef(path),
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            version: 1,
+            state: 'draft',
+            ownerEmailAtPublish: 'owner@3ariva.com.br',
+            defaultSlaDays: 5,
+            fields: [],
+            initialStepId: 'legacy-initial',
+            stepOrder: ['legacy-open', 'legacy-final'],
+            stepsById: {
+              'legacy-open': {
+                stepId: 'legacy-open',
+                stepName: 'Inicio legado',
+                statusKey: 'nao_importa',
+                kind: 'final',
+              },
+              'legacy-final': {
+                stepId: 'legacy-final',
+                stepName: 'Fim legado',
+                statusKey: 'nao_importa',
+                kind: 'start',
+              },
+            },
+            publishedAt: null,
+          }),
+        };
+      }
+      if (path === 'workflowAreas/facilities') {
+        return { exists: true, data: () => ({ name: 'Facilities' }) };
+      }
+      return { exists: false, data: () => undefined };
+    });
+
+    await saveWorkflowDraft('facilities_manutencao', 1, {
+      general: {
+        name: 'Manutencao',
+        description: 'Chamados prediais',
+        icon: 'Wrench',
+        ownerUserId: 'SMO2',
+        defaultSlaDays: 5,
+        activeOnPublish: true,
+      },
+      access: { mode: 'all', allowedUserIds: ['all'] },
+      fields: [],
+      steps: [
+        {
+          stepId: 'legacy-final',
+          stepName: 'Abertura',
+          statusKey: 'manual_1',
+          kind: 'final',
+        },
+        {
+          stepId: 'legacy-open',
+          stepName: 'Execucao',
+          statusKey: 'manual_2',
+          kind: 'start',
+        },
+        {
+          stepName: 'Encerramento',
+          statusKey: 'manual_3',
+          kind: 'work',
+        },
+      ],
+      initialStepId: 'legacy-open',
+    });
+
+    expect(transactionUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'workflowTypes_v2/facilities_manutencao/versions/1' }),
+      expect.objectContaining({
+        initialStepId: 'legacy-final',
+        stepOrder: ['legacy-final', 'legacy-open', 'stp_encerramento'],
+        stepsById: {
+          'legacy-final': expect.objectContaining({
+            stepId: 'legacy-final',
+            stepName: 'Abertura',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          }),
+          'legacy-open': expect.objectContaining({
+            stepId: 'legacy-open',
+            stepName: 'Execucao',
+            statusKey: 'em_andamento',
+            kind: 'work',
+          }),
+          stp_encerramento: expect.objectContaining({
+            stepId: 'stp_encerramento',
+            stepName: 'Encerramento',
+            statusKey: 'finalizado',
+            kind: 'final',
+          }),
+        },
+      }),
+    );
+  });
+
   it('resolveCollaboratorDocIdsToApproverIds rejeita 422 quando collaboratorDoc nao encontrado', async () => {
     // Arrange: workflowType + version draft devem existir para saveWorkflowDraft chegar ate
     // o normalizeSteps. Colaborador apr1 existe, ghost nao.

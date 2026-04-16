@@ -2,6 +2,7 @@ import { Timestamp, getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
 import type { WorkflowTypeV2, WorkflowVersionV2 } from '@/lib/workflows/runtime/types';
+import { canonicalizeVersionSteps } from './canonical-step-semantics';
 import type { DraftReadinessIssue, WorkflowVersionTransitionResult } from './types';
 import {
   buildWorkflowTypeSnapshot,
@@ -61,9 +62,10 @@ export async function publishDraftVersion(input: PublishDraftInput): Promise<Wor
       throw new RuntimeError(RuntimeErrorCode.INVALID_DRAFT_PAYLOAD, 'A publicacao so aceita versoes draft.', 422);
     }
 
+    const canonicalVersion = canonicalizeVersionSteps(version);
     const issues = evaluatePublishability({
       workflowType: root,
-      version,
+      version: canonicalVersion,
       collaborators,
     });
     const blockingIssues = issues.filter((issue) => issue.severity === 'blocking');
@@ -88,6 +90,9 @@ export async function publishDraftVersion(input: PublishDraftInput): Promise<Wor
 
     tx.update(versionRef, {
       state: 'published',
+      initialStepId: canonicalVersion.initialStepId,
+      stepOrder: canonicalVersion.stepOrder,
+      stepsById: canonicalVersion.stepsById,
       publishedAt: version.publishedAt ?? now,
       publishedByUserId: input.actorUserId,
       publishedByName: input.actorName,
