@@ -30,7 +30,6 @@ import {
   ManagementPanelSkeleton,
 } from './ManagementAsyncState';
 import type {
-  ManagementAssignmentsSubtab,
   ManagementCurrentQueueFilter,
   ManagementTabId,
   WorkflowManagementFilters,
@@ -128,6 +127,13 @@ export function WorkflowManagementPage() {
       ),
     [canViewCurrentQueue],
   );
+  const tabsGridClassName = React.useMemo(() => {
+    if (visibleTabs.length === 2) {
+      return 'grid-cols-1 sm:grid-cols-2';
+    }
+
+    return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3';
+  }, [visibleTabs.length]);
   const hasActiveFilters = React.useMemo(
     () => hasManagementActiveFilters(viewState.filters),
     [viewState.filters],
@@ -185,18 +191,26 @@ export function WorkflowManagementPage() {
             <Tabs
               value={viewState.activeTab}
               onValueChange={(value) => updateViewState({ activeTab: value as ManagementTabId })}
-              className="space-y-4"
+              className="space-y-0"
             >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-xl bg-muted/70 p-1 lg:w-auto">
-                  {visibleTabs.map((tab) => (
-                    <TabsTrigger key={tab.tab} value={tab.tab} className="px-4 py-2">
-                      {tab.title}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+              <TabsList
+                className={`grid h-auto w-full gap-2 rounded-xl bg-muted/70 p-1 ${tabsGridClassName}`}
+              >
+                {visibleTabs.map((tab) => (
+                  <TabsTrigger
+                    key={tab.tab}
+                    value={tab.tab}
+                    className="w-full px-4 py-2 text-center"
+                  >
+                    {tab.title}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
 
-                <div className="flex w-full justify-end lg:w-auto">
+            <div className="flex flex-col gap-4">
+              <div className="flex w-full justify-end">
+                <div className="w-full lg:w-auto">
                   <ManagementToolbar
                     bootstrap={bootstrapQuery.data}
                     filters={viewState.filters}
@@ -205,38 +219,31 @@ export function WorkflowManagementPage() {
                   />
                 </div>
               </div>
-            </Tabs>
 
-            {activeFilterChips.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {activeFilterChips.map((chip) => (
-                  <Badge
-                    key={chip.key}
-                    variant="outline"
-                    className="border-admin-primary/20 bg-admin-primary/5 text-admin-primary"
+              {activeFilterChips.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {activeFilterChips.map((chip) => (
+                    <Badge
+                      key={chip.key}
+                      variant="outline"
+                      className="border-admin-primary/20 bg-admin-primary/5 text-admin-primary"
+                    >
+                      {chip.label}
+                    </Badge>
+                  ))}
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateViewState({ filters: {} })}
+                    className="h-8 px-2 text-admin-primary hover:bg-admin-primary/10 hover:text-admin-primary"
                   >
-                    {chip.label}
-                  </Badge>
-                ))}
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => updateViewState({ filters: {} })}
-                  className="h-8 px-2 text-admin-primary hover:bg-admin-primary/10 hover:text-admin-primary"
-                >
-                  Limpar filtros
-                </Button>
-              </div>
-            ) : null}
-
-            {!canViewCurrentQueue ? (
-              <div className="rounded-xl border border-dashed border-border/70 bg-muted/30 p-4 text-sm text-muted-foreground">
-                A aba `Chamados atuais` exige ownership explicito. Seu perfil continua com acesso
-                operacional a `Atribuicoes e acoes` e `Concluidas`.
-              </div>
-            ) : null}
+                    Limpar filtros
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           </section>
 
           {viewState.activeTab === 'current' && canViewCurrentQueue ? (
@@ -268,9 +275,6 @@ export function WorkflowManagementPage() {
                 assignmentsQuery.error
                   ? resolveErrorMessage(assignmentsQuery.error, getManagementTabErrorMessage('assignments'))
                   : undefined
-              }
-              onSubtabChange={(subtab: ManagementAssignmentsSubtab) =>
-                updateViewState({ activeTab: 'assignments', assignmentsSubtab: subtab })
               }
               onRetry={handleRetryActiveTab}
               onOpenRequest={setSelectedRequestId}

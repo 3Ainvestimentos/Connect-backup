@@ -145,22 +145,28 @@ describe('WorkflowManagementPage', () => {
 
     render(<WorkflowManagementPage />);
 
+    const tabsList = screen.getByRole('tablist');
+
     expect(screen.queryByRole('tab', { name: 'Chamados atuais' })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Atribuicoes e acoes' })).toBeTruthy();
     expect(
-      screen.getByText(
-        'A aba `Chamados atuais` exige ownership explicito. Seu perfil continua com acesso operacional a `Atribuicoes e acoes` e `Concluidas`.',
-      ),
-    ).toBeTruthy();
+      screen.queryByText(/A aba `Chamados atuais` exige ownership explicito\./),
+    ).toBeNull();
+    expect(tabsList.className).toContain('sm:grid-cols-2');
+    expect(tabsList.className).not.toContain('lg:grid-cols-3');
   });
 
-  it('renders assignments subtabs and syncs the URL when switching the main tab', async () => {
+  it('renders the main tabs in a full-width shell and syncs the URL when switching tabs', async () => {
     const user = userEvent.setup();
 
     render(<WorkflowManagementPage />);
 
-    expect(screen.getByRole('tab', { name: 'Atribuidos a mim' })).toBeTruthy();
-    expect(screen.getByRole('tab', { name: 'Acoes pendentes para mim' })).toBeTruthy();
+    const tabsList = screen.getByRole('tablist');
+    expect(tabsList.className).toContain('w-full');
+    expect(tabsList.className).toContain('grid');
+    expect(screen.getByRole('heading', { name: 'Acoes pendentes para mim' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Atribuidos a mim' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Abrir filtros' })).toBeTruthy();
 
     await user.click(screen.getByRole('tab', { name: 'Concluidas' }));
 
@@ -231,7 +237,7 @@ describe('WorkflowManagementPage', () => {
 
     render(<WorkflowManagementPage />);
 
-    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    await user.click(screen.getAllByRole('button', { name: 'Tentar novamente' })[0]);
 
     expect(refetchActiveTab).toHaveBeenCalledTimes(1);
   });
