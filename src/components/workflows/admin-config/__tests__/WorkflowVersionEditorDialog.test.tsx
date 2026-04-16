@@ -1,24 +1,42 @@
 import * as React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { WorkflowVersionEditorDialog } from '../WorkflowVersionEditorDialog';
 
-jest.mock('../editor/WorkflowDraftEditorPage', () => ({
-  WorkflowDraftEditorPage: jest.fn(
-    ({
-      onDirtyStateChange,
-    }: {
-      onDirtyStateChange?: (state: { isDirty: boolean; isReadOnly: boolean }) => void;
-    }) => {
-      React.useEffect(() => {
-        onDirtyStateChange?.({
-          isDirty: true,
-          isReadOnly: false,
-        });
-      }, [onDirtyStateChange]);
+type EditorMockProps = {
+  onDirtyStateChange?: (state: { isDirty: boolean; isReadOnly: boolean }) => void;
+  onShellStateChange?: (state: {
+    submitDraft: () => void;
+    publishVersion: () => void;
+    isSaving: boolean;
+    isPublishing: boolean;
+    canPublish: boolean;
+    isReadOnly: boolean;
+  }) => void;
+};
 
-      return <div>Editor body</div>;
-    },
-  ),
+const mockSubmitDraft = jest.fn();
+const mockPublishVersion = jest.fn();
+
+jest.mock('../editor/WorkflowDraftEditorPage', () => ({
+  WorkflowDraftEditorPage: jest.fn(({ onDirtyStateChange, onShellStateChange }: EditorMockProps) => {
+    React.useEffect(() => {
+      onDirtyStateChange?.({
+        isDirty: true,
+        isReadOnly: false,
+      });
+      onShellStateChange?.({
+        submitDraft: mockSubmitDraft,
+        publishVersion: mockPublishVersion,
+        isSaving: false,
+        isPublishing: false,
+        canPublish: true,
+        isReadOnly: false,
+      });
+    }, [onDirtyStateChange, onShellStateChange]);
+
+    return <div>Editor body</div>;
+  }),
 }));
 
 const editorMock = jest.requireMock('../editor/WorkflowDraftEditorPage') as {
@@ -28,24 +46,27 @@ const editorMock = jest.requireMock('../editor/WorkflowDraftEditorPage') as {
 describe('WorkflowVersionEditorDialog', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reaplica implementacao default (dirty + edit) apos o clearAllMocks
-    // para nao quebrar os testes que dependem do comportamento base.
-    editorMock.WorkflowDraftEditorPage.mockImplementation(
-      ({
-        onDirtyStateChange,
-      }: {
-        onDirtyStateChange?: (state: { isDirty: boolean; isReadOnly: boolean }) => void;
-      }) => {
-        React.useEffect(() => {
-          onDirtyStateChange?.({
-            isDirty: true,
-            isReadOnly: false,
-          });
-        }, [onDirtyStateChange]);
+    mockSubmitDraft.mockReset();
+    mockPublishVersion.mockReset();
 
-        return <div>Editor body</div>;
-      },
-    );
+    editorMock.WorkflowDraftEditorPage.mockImplementation(({ onDirtyStateChange, onShellStateChange }: EditorMockProps) => {
+      React.useEffect(() => {
+        onDirtyStateChange?.({
+          isDirty: true,
+          isReadOnly: false,
+        });
+        onShellStateChange?.({
+          submitDraft: mockSubmitDraft,
+          publishVersion: mockPublishVersion,
+          isSaving: false,
+          isPublishing: false,
+          canPublish: true,
+          isReadOnly: false,
+        });
+      }, [onDirtyStateChange, onShellStateChange]);
+
+      return <div>Editor body</div>;
+    });
   });
 
   it('does not close on escape when there are unsaved changes and confirmation is rejected', () => {
@@ -68,7 +89,30 @@ describe('WorkflowVersionEditorDialog', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it('fecha quando dirty e confirmacao e aceita', () => {
+  it('renders the close button and fixed footer actions in edit mode', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <WorkflowVersionEditorDialog
+        workflowTypeId="facilities_manutencao"
+        version={2}
+        open
+        onClose={jest.fn()}
+        onRefresh={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('button', { name: 'Fechar editor' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Salvar rascunho/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Publicar versao/i })).toBeDisabled();
+
+    await user.click(screen.getByRole('button', { name: /Salvar rascunho/i }));
+    expect(mockSubmitDraft).toHaveBeenCalledTimes(1);
+    expect(mockPublishVersion).not.toHaveBeenCalled();
+  });
+
+  it('fecha quando dirty e confirmacao e aceita', async () => {
+    const user = userEvent.setup();
     const onClose = jest.fn();
     jest.spyOn(window, 'confirm').mockReturnValue(true);
 
@@ -82,27 +126,30 @@ describe('WorkflowVersionEditorDialog', () => {
       />,
     );
 
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    await user.click(screen.getByRole('button', { name: 'Fechar editor' }));
 
     expect(window.confirm).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('fecha sem confirmacao quando modo read-only', () => {
-    // Sobrescreve o mock do editor para emitir isReadOnly: true.
-    editorMock.WorkflowDraftEditorPage.mockImplementation(
-      ({
-        onDirtyStateChange,
-      }: {
-        onDirtyStateChange?: (state: { isDirty: boolean; isReadOnly: boolean }) => void;
-      }) => {
-        React.useEffect(() => {
-          onDirtyStateChange?.({ isDirty: true, isReadOnly: true });
-        }, [onDirtyStateChange]);
-        return <div>Editor body (read-only)</div>;
-      },
-    );
+  it('hides the footer in read-only mode and closes without confirmation', async () => {
+    editorMock.WorkflowDraftEditorPage.mockImplementation(({ onDirtyStateChange, onShellStateChange }: EditorMockProps) => {
+      React.useEffect(() => {
+        onDirtyStateChange?.({ isDirty: true, isReadOnly: true });
+        onShellStateChange?.({
+          submitDraft: mockSubmitDraft,
+          publishVersion: mockPublishVersion,
+          isSaving: false,
+          isPublishing: false,
+          canPublish: false,
+          isReadOnly: true,
+        });
+      }, [onDirtyStateChange, onShellStateChange]);
 
+      return <div>Editor body (read-only)</div>;
+    });
+
+    const user = userEvent.setup();
     const onClose = jest.fn();
     const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
 
@@ -116,7 +163,10 @@ describe('WorkflowVersionEditorDialog', () => {
       />,
     );
 
-    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: /Salvar rascunho/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Publicar versao/i })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Fechar editor' }));
 
     expect(confirmSpy).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);

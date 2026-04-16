@@ -20,27 +20,8 @@ export function WorkflowDraftFieldsSection({ readOnly = false }: { readOnly?: bo
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle className="text-base">Campos do formulario</CardTitle>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={readOnly}
-          onClick={() =>
-            append({
-              id: '',
-              label: '',
-              type: 'text',
-              required: false,
-              order: fields.length + 1,
-              placeholder: '',
-              options: [],
-            })
-          }
-        >
-          Adicionar campo
-        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.length === 0 ? (
@@ -117,6 +98,28 @@ export function WorkflowDraftFieldsSection({ readOnly = false }: { readOnly?: bo
             </div>
           ))
         )}
+
+        <div className="flex justify-end border-t pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={readOnly}
+            onClick={() =>
+              append({
+                id: '',
+                label: '',
+                type: 'text',
+                required: false,
+                order: fields.length + 1,
+                placeholder: '',
+                options: [],
+              })
+            }
+          >
+            Adicionar campo
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

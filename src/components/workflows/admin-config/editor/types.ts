@@ -54,3 +54,12 @@ export type WorkflowDraftDirtyState = {
   isDirty: boolean;
   isReadOnly: boolean;
 };
+
+export type WorkflowDraftEditorShellState = {
+  submitDraft: () => void;
+  publishVersion: () => void;
+  isSaving: boolean;
+  isPublishing: boolean;
+  canPublish: boolean;
+  isReadOnly: boolean;
+};

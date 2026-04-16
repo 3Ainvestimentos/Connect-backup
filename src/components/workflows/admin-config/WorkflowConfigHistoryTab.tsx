@@ -2,11 +2,13 @@
 
 import * as React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, RefreshCcw } from 'lucide-react';
+import { AlertCircle, Filter, RefreshCcw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   fetchWorkflowConfigHistory,
@@ -18,6 +20,7 @@ import type {
   AdminHistoryListData,
   AdminHistoryOrigin,
 } from '@/lib/workflows/admin-config/types';
+import { cn } from '@/lib/utils';
 import { HistoryDetailDialog } from './history/HistoryDetailDialog';
 import { HistoryFiltersBar } from './history/HistoryFiltersBar';
 import { HistoryGrid } from './history/HistoryGrid';
@@ -32,16 +35,20 @@ const INITIAL_FILTERS: AdminHistoryFilters = {
 };
 
 function hasActiveFilters(filters: AdminHistoryFilters): boolean {
-  return Boolean(
-    filters.origin ||
-      filters.areaId ||
-      filters.workflowTypeId ||
-      filters.statusCategory ||
-      filters.ownerUserId ||
-      filters.periodFrom ||
-      filters.periodTo ||
-      filters.query,
-  );
+  return countActiveFilters(filters) > 0;
+}
+
+function countActiveFilters(filters: AdminHistoryFilters): number {
+  return [
+    filters.origin,
+    filters.areaId,
+    filters.workflowTypeId,
+    filters.statusCategory,
+    filters.ownerUserId,
+    filters.periodFrom,
+    filters.periodTo,
+    filters.query,
+  ].filter(Boolean).length;
 }
 
 function buildEmptyStateCopy(data: AdminHistoryListData | undefined, activeFilters: boolean) {
@@ -69,7 +76,9 @@ export function WorkflowConfigHistoryTab() {
   const { user } = useAuth();
   const [filters, setFilters] = React.useState<AdminHistoryFilters>(INITIAL_FILTERS);
   const [selectedItem, setSelectedItem] = React.useState<SelectedHistoryItem>(null);
+  const [filtersOpen, setFiltersOpen] = React.useState(false);
   const activeFilters = hasActiveFilters(filters);
+  const activeFilterCount = countActiveFilters(filters);
 
   const historyQuery = useQuery({
     queryKey: ['workflow-config-admin', user?.uid, 'history', filters],
@@ -103,20 +112,54 @@ export function WorkflowConfigHistoryTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader className="space-y-4">
-          <div className="space-y-1">
-            <CardTitle>Historico Geral</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Consulta unificada de chamados `Legado + V2` em modo estritamente somente leitura.
-            </p>
-          </div>
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-1">
+              <CardTitle>Historico Geral</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Consulta unificada de chamados `Legado + V2` em modo estritamente somente leitura.
+              </p>
+            </div>
+            <Popover open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  aria-label="Abrir filtros do historico"
+                  className={cn(
+                    'w-full justify-between gap-3 border-border/70 bg-background/95 md:w-auto',
+                    activeFilters &&
+                      'border-admin-primary/30 bg-admin-primary/10 text-admin-primary hover:bg-admin-primary/15 hover:text-admin-primary',
+                  )}
+                >
+                  <span className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filtros
+                  </span>
+                  {activeFilterCount > 0 ? (
+                    <Badge className="bg-admin-primary text-primary-foreground hover:bg-admin-primary">
+                      {activeFilterCount}
+                    </Badge>
+                  ) : null}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[min(92vw,30rem)] space-y-4 p-4">
+                <div className="space-y-1">
+                  <h2 className="text-sm font-semibold text-foreground">Filtros da consulta</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Ajuste o recorte do historico. As alteracoes sao aplicadas imediatamente.
+                  </p>
+                </div>
 
-          <HistoryFiltersBar
-            filters={filters}
-            filterOptions={historyQuery.data?.filterOptions}
-            disabled={historyQuery.isLoading}
-            onChange={setFilters}
-            onClear={() => setFilters(INITIAL_FILTERS)}
-          />
+                <HistoryFiltersBar
+                  filters={filters}
+                  filterOptions={historyQuery.data?.filterOptions}
+                  disabled={historyQuery.isLoading}
+                  onChange={setFilters}
+                  onClear={() => setFilters(INITIAL_FILTERS)}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardHeader>
 
         <CardContent className="space-y-4">

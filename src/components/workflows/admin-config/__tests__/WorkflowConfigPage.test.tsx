@@ -226,7 +226,8 @@ describe('WorkflowConfigPage', () => {
 
     expect(screen.getByText('Manutencao')).toBeTruthy();
     expect(screen.getByText('v2 publicada')).toBeTruthy();
-    expect(screen.getAllByText('state=published')).toHaveLength(2);
+    expect(screen.queryByText(/state=published/i)).toBeNull();
+    expect(screen.getByText('Ultima transicao em 2026-04-03T15:30:00.000Z')).toBeTruthy();
   });
 
   it('opens the editor modal from deep-link search params', async () => {

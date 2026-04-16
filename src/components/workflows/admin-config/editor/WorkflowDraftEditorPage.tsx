@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -25,7 +25,11 @@ import { WorkflowDraftFieldsSection } from './WorkflowDraftFieldsSection';
 import { WorkflowDraftGeneralSection } from './WorkflowDraftGeneralSection';
 import { WorkflowDraftReadinessPanel } from './WorkflowDraftReadinessPanel';
 import { WorkflowDraftStepsSection } from './WorkflowDraftStepsSection';
-import type { WorkflowDraftDirtyState, WorkflowDraftFormValues } from './types';
+import type {
+  WorkflowDraftDirtyState,
+  WorkflowDraftEditorShellState,
+  WorkflowDraftFormValues,
+} from './types';
 
 function buildDefaultValues(): WorkflowDraftFormValues {
   return {
@@ -56,14 +60,18 @@ export function WorkflowDraftEditorPage({
   onClose,
   onRefresh,
   embedded = false,
+  hidePrimaryActions = false,
   onDirtyStateChange,
+  onShellStateChange,
 }: {
   workflowTypeId: string;
   version: number;
   onClose?: () => void;
   onRefresh?: () => void;
   embedded?: boolean;
+  hidePrimaryActions?: boolean;
   onDirtyStateChange?: (state: WorkflowDraftDirtyState) => void;
+  onShellStateChange?: (state: WorkflowDraftEditorShellState) => void;
 }) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -262,6 +270,46 @@ export function WorkflowDraftEditorPage({
     () => draftQuery.data?.draft.publishReadiness || [],
     [draftQuery.data?.draft.publishReadiness],
   );
+  const canPublish =
+    draftQuery.data?.draft.canPublish === true && !publishMutation.isPending && !saveMutation.isPending && !form.formState.isDirty;
+  const submitDraftRef = useRef<() => void>(() => {});
+  const publishVersionRef = useRef<() => void>(() => {});
+
+  submitDraftRef.current = () => {
+    void form.handleSubmit(async (values) => {
+      if (!isReadOnly) {
+        await saveMutation.mutateAsync(values);
+      }
+    })();
+  };
+
+  publishVersionRef.current = () => {
+    if (!isReadOnly) {
+      void publishMutation.mutateAsync();
+    }
+  };
+
+  useEffect(() => {
+    if (!draftQuery.data) {
+      return;
+    }
+
+    onShellStateChange?.({
+      submitDraft: () => submitDraftRef.current(),
+      publishVersion: () => publishVersionRef.current(),
+      isSaving: saveMutation.isPending,
+      isPublishing: publishMutation.isPending,
+      canPublish,
+      isReadOnly,
+    });
+  }, [
+    canPublish,
+    draftQuery.data,
+    isReadOnly,
+    onShellStateChange,
+    publishMutation.isPending,
+    saveMutation.isPending,
+  ]);
 
   if (draftQuery.isLoading) {
     return (
@@ -304,7 +352,7 @@ export function WorkflowDraftEditorPage({
               ? 'Visualizacao somente leitura da versao publicada dentro do mesmo shell administrativo.'
               : 'Edite configuracao geral, acesso, campos e etapas sem afetar a versao publicada.'
           }
-          actions={
+          actions={!hidePrimaryActions ? (
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="outline" onClick={handleClose}>
                 {embedded ? <X className="mr-2 h-4 w-4" /> : <ArrowLeft className="mr-2 h-4 w-4" />}
@@ -326,7 +374,7 @@ export function WorkflowDraftEditorPage({
                 </Button>
               )}
             </div>
-          }
+          ) : undefined}
         />
 
         <div className="flex flex-wrap items-center gap-3">

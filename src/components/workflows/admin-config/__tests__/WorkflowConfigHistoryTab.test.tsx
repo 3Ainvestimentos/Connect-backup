@@ -253,10 +253,12 @@ describe('WorkflowConfigHistoryTab', () => {
     const user = userEvent.setup();
 
     render(<WorkflowConfigHistoryTab />);
+    await user.click(screen.getByRole('button', { name: /Abrir filtros do historico/i }));
     await user.selectOptions(screen.getByLabelText('Origem'), 'legacy');
 
     expect(screen.getAllByText('Workflow legado').length).toBeGreaterThan(0);
     expect(screen.queryByRole('cell', { name: 'Manutencao' })).toBeNull();
+    expect(screen.getByRole('button', { name: /Abrir filtros do historico/i })).toHaveTextContent('1');
   });
 
   it('shows partial degradation without blocking the table', () => {
@@ -295,6 +297,7 @@ describe('WorkflowConfigHistoryTab', () => {
     const user = userEvent.setup();
 
     render(<WorkflowConfigHistoryTab />);
+    await user.click(screen.getByRole('button', { name: /Abrir filtros do historico/i }));
     await user.type(screen.getByLabelText('Busca'), 'nao existe');
 
     expect(screen.getByText('Nenhum resultado para os filtros aplicados')).toBeTruthy();

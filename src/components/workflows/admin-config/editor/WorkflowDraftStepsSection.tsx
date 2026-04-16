@@ -13,6 +13,12 @@ import type { WorkflowDraftFormValues } from './types';
 import { WorkflowActionApproverPicker } from './WorkflowActionApproverPicker';
 
 const actionTypes = ['none', 'approval', 'acknowledgement', 'execution'] as const;
+const actionTypeLabels: Record<(typeof actionTypes)[number], string> = {
+  none: 'Nenhuma acao',
+  approval: 'Aprovacao',
+  acknowledgement: 'Ciencia',
+  execution: 'Execucao',
+};
 
 export function WorkflowDraftStepsSection({
   collaborators,
@@ -29,30 +35,13 @@ export function WorkflowDraftStepsSection({
   const values = watch('steps');
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <div className="space-y-1">
           <CardTitle className="text-base">Etapas</CardTitle>
           <p className="text-sm text-muted-foreground">
             O sistema deriva automaticamente a etapa inicial, intermediaria e final pela ordem visual.
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={readOnly}
-          onClick={() =>
-            append({
-              stepId: '',
-              stepName: '',
-              statusKey: '',
-              kind: 'work',
-              action: undefined,
-            })
-          }
-        >
-          Adicionar etapa
-        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.length === 0 ? (
@@ -128,7 +117,7 @@ export function WorkflowDraftStepsSection({
                       <SelectContent>
                         {actionTypes.map((item) => (
                           <SelectItem key={item} value={item}>
-                            {item}
+                            {actionTypeLabels[item]}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -187,6 +176,26 @@ export function WorkflowDraftStepsSection({
             );
           })
         )}
+
+        <div className="flex justify-end border-t pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={readOnly}
+            onClick={() =>
+              append({
+                stepId: '',
+                stepName: '',
+                statusKey: '',
+                kind: 'work',
+                action: undefined,
+              })
+            }
+          >
+            Adicionar etapa
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

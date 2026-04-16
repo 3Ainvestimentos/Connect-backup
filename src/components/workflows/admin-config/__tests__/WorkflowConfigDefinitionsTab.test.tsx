@@ -133,6 +133,7 @@ describe('WorkflowConfigDefinitionsTab', () => {
     render(<WorkflowConfigDefinitionsTab catalog={buildCatalog()} onRefresh={onRefresh} onOpenEditor={onOpenEditor} />);
 
     await user.click(screen.getByRole('button', { name: /Facilities/i }));
+    expect(screen.queryByText(/state=/i)).toBeNull();
     await user.click(screen.getByRole('button', { name: /^Publicar$/i }));
     await user.click(screen.getByRole('button', { name: /^Ativar$/i }));
 

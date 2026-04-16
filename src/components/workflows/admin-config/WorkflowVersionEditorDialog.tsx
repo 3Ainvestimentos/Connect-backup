@@ -1,9 +1,20 @@
 "use client";
 
 import { useCallback, useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { WorkflowDraftEditorPage } from './editor/WorkflowDraftEditorPage';
-import type { WorkflowDraftDirtyState } from './editor/types';
+import type { WorkflowDraftDirtyState, WorkflowDraftEditorShellState } from './editor/types';
+
+const INITIAL_SHELL_STATE: WorkflowDraftEditorShellState = {
+  submitDraft: () => {},
+  publishVersion: () => {},
+  isSaving: false,
+  isPublishing: false,
+  canPublish: false,
+  isReadOnly: false,
+};
 
 export function WorkflowVersionEditorDialog({
   workflowTypeId,
@@ -22,6 +33,7 @@ export function WorkflowVersionEditorDialog({
     isDirty: false,
     isReadOnly: false,
   });
+  const [shellState, setShellState] = useState<WorkflowDraftEditorShellState>(INITIAL_SHELL_STATE);
 
   const requestClose = useCallback(() => {
     if (
@@ -56,12 +68,26 @@ export function WorkflowVersionEditorDialog({
           requestClose();
         }}
       >
-        <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle>Editor de versao</DialogTitle>
-          <DialogDescription>
-            Ajuste ou consulte a configuracao sem sair da tela de definicoes.
-          </DialogDescription>
-        </DialogHeader>
+        <div className="flex items-start justify-between gap-4 border-b px-6 py-4">
+          <div className="space-y-1">
+            <DialogTitle>Editor de versao</DialogTitle>
+            <DialogDescription>
+              Ajuste ou consulte a configuracao sem sair da tela de definicoes.
+            </DialogDescription>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="shrink-0 hover:bg-muted"
+            aria-label="Fechar editor"
+            onClick={() => {
+              requestClose();
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
           <WorkflowDraftEditorPage
             workflowTypeId={workflowTypeId}
@@ -69,9 +95,38 @@ export function WorkflowVersionEditorDialog({
             onClose={onClose}
             onRefresh={onRefresh}
             embedded
+            hidePrimaryActions
             onDirtyStateChange={setDirtyState}
+            onShellStateChange={setShellState}
           />
         </div>
+        {!shellState.isReadOnly ? (
+          <div className="border-t bg-background px-6 py-3">
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => requestClose()}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
+                disabled={shellState.isSaving}
+                onClick={shellState.submitDraft}
+              >
+                {shellState.isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Salvar rascunho
+              </Button>
+              <Button
+                type="button"
+                className="bg-admin-primary text-primary-foreground hover:bg-admin-primary/90"
+                disabled={!shellState.canPublish || shellState.isPublishing || dirtyState.isDirty}
+                onClick={shellState.publishVersion}
+              >
+                {shellState.isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Publicar versao
+              </Button>
+            </div>
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
