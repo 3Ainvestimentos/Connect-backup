@@ -148,9 +148,9 @@ describe('WorkflowManagementPage', () => {
     const tabsList = screen.getByRole('tablist');
 
     expect(screen.queryByRole('tab', { name: 'Chamados atuais' })).toBeNull();
-    expect(screen.getByRole('tab', { name: 'Atribuicoes e acoes' })).toBeTruthy();
+    expect(screen.getByRole('tab', { name: 'Atribuições e ações' })).toBeTruthy();
     expect(
-      screen.queryByText(/A aba `Chamados atuais` exige ownership explicito\./),
+      screen.queryByText(/A aba `Chamados atuais` exige ownership explícito\./),
     ).toBeNull();
     expect(tabsList.className).toContain('sm:grid-cols-2');
     expect(tabsList.className).not.toContain('lg:grid-cols-3');
@@ -164,11 +164,11 @@ describe('WorkflowManagementPage', () => {
     const tabsList = screen.getByRole('tablist');
     expect(tabsList.className).toContain('w-full');
     expect(tabsList.className).toContain('grid');
-    expect(screen.getByRole('heading', { name: 'Acoes pendentes para mim' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Atribuidos a mim' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Ações pendentes para mim' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Atribuídos a mim' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Abrir filtros' })).toBeTruthy();
 
-    await user.click(screen.getByRole('tab', { name: 'Concluidas' }));
+    await user.click(screen.getByRole('tab', { name: 'Concluídas' }));
 
     expect(mockReplace).toHaveBeenCalledWith('/gestao-de-chamados?tab=completed', {
       scroll: false,
@@ -183,11 +183,11 @@ describe('WorkflowManagementPage', () => {
 
     render(<WorkflowManagementPage />);
 
-    const completedTab = screen.getByRole('tab', { name: 'Concluidas' });
+    const completedTab = screen.getByRole('tab', { name: 'Concluídas' });
     expect(completedTab.getAttribute('data-state')).toBe('active');
     expect(screen.getByText('Chamado: #801')).toBeTruthy();
     expect(screen.getByText('Solicitante: Alice')).toBeTruthy();
-    expect(screen.queryByText('Convivio controlado com superficies legadas')).toBeNull();
+    expect(screen.queryByText('Convívio controlado com superfícies legadas')).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Abrir filtros' }));
 
@@ -217,7 +217,7 @@ describe('WorkflowManagementPage', () => {
 
     render(<WorkflowManagementPage />);
 
-    expect(screen.getByText('Carregando superficie oficial')).toBeTruthy();
+    expect(screen.getByText('Carregando superfície oficial')).toBeTruthy();
     expect(screen.getByTestId('management-panel-skeleton')).toBeTruthy();
   });
 

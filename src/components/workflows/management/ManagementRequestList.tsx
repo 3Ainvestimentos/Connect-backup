@@ -46,10 +46,10 @@ export function ManagementRequestList({
 
                 <div className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-2 xl:grid-cols-3">
                   <p>Solicitante: {item.requesterName || '-'}</p>
-                  <p>Responsavel: {item.responsibleName || 'Nao atribuido'}</p>
+                  <p>Responsável: {item.responsibleName || 'Não atribuído'}</p>
                   <p>Etapa atual: {item.currentStepName || '-'}</p>
                   <p>Aberto em: {formatManagementDate(item.submittedAt)}</p>
-                  <p>Ultima atualizacao: {formatManagementDate(item.lastUpdatedAt)}</p>
+                  <p>Última atualização: {formatManagementDate(item.lastUpdatedAt)}</p>
                   <p>Owner: {item.ownerEmail || '-'}</p>
                 </div>
               </div>

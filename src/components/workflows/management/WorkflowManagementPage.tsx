@@ -163,9 +163,9 @@ export function WorkflowManagementPage() {
       {bootstrapQuery.isLoading && !bootstrapQuery.data ? (
         <Card className="border-border/70">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-lg">Carregando superficie oficial</CardTitle>
+            <CardTitle className="text-lg">Carregando superfície oficial</CardTitle>
             <CardDescription>
-              Bootstrap, ownership e filtros oficiais estao sendo resolvidos.
+              Bootstrap, ownership e filtros oficiais estão sendo resolvidos.
             </CardDescription>
           </CardHeader>
           <CardContent>

@@ -98,7 +98,7 @@ describe('workflow management presentation helpers', () => {
     ).toEqual({
       title: 'Nenhum chamado concluido neste escopo',
       description:
-        'Concluidos e arquivados aparecem aqui assim que houver historico dentro do seu recorte operacional.',
+        'Concluídos e arquivados aparecem aqui assim que houver histórico dentro do seu recorte operacional.',
     });
   });
 });

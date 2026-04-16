@@ -190,7 +190,7 @@ export function getManagementEmptyStateCopy({
     return {
       title: 'Nenhum chamado na fila atual',
       description:
-        'Quando surgirem itens neste escopo operacional, eles aparecerao aqui.',
+        'Quando surgirem itens neste escopo operacional, eles aparecerão aqui.',
     };
   }
 
@@ -198,14 +198,14 @@ export function getManagementEmptyStateCopy({
     return {
       title: 'Nenhum chamado concluido neste escopo',
       description:
-        'Concluidos e arquivados aparecem aqui assim que houver historico dentro do seu recorte operacional.',
+        'Concluídos e arquivados aparecem aqui assim que houver histórico dentro do seu recorte operacional.',
     };
   }
 
   return {
-    title: 'Nenhuma atribuicao ou acao pendente',
+    title: 'Nenhuma atribuição ou ação pendente',
     description:
-      'Quando algum fluxo depender de voce ou for atribuido ao seu usuario, ele aparecera aqui.',
+      'Quando algum fluxo depender de você ou for atribuído ao seu usuário, ele aparecerá aqui.',
   };
 }
 
@@ -218,7 +218,7 @@ export function getManagementTabErrorMessage(activeTab: ManagementTabId): string
     return 'Falha ao carregar a lista de concluidas.';
   }
 
-  return 'Falha ao carregar atribuicoes e acoes.';
+  return 'Falha ao carregar atribuições e ações.';
 }
 
 export function getManagementCurrentFilterLabel(filter: ManagementCurrentQueueFilter): string {
@@ -251,7 +251,7 @@ export function getManagementProgressStateLabel(
   state: WorkflowManagementRequestProgressItem['state'],
 ): string {
   if (state === 'completed') {
-    return 'Concluida';
+    return 'Concluída';
   }
 
   if (state === 'active') {
@@ -333,21 +333,21 @@ export function deriveManagementRequestPresentation(
 
   if (item.statusCategory === 'finalized') {
     return {
-      label: 'Concluido',
+      label: 'Concluído',
       badgeVariant: 'secondary',
     };
   }
 
   if (item.statusCategory === 'waiting_action') {
     return {
-      label: 'Aguardando acao',
+      label: 'Aguardando ação',
       badgeVariant: 'outline',
     };
   }
 
   if (item.statusCategory === 'open' && !item.hasResponsible) {
     return {
-      label: 'Aguardando atribuicao',
+      label: 'Aguardando atribuição',
       badgeVariant: 'destructive',
     };
   }

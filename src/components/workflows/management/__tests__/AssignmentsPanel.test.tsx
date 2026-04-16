@@ -65,8 +65,8 @@ describe('AssignmentsPanel', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Acoes pendentes para mim' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Atribuidos a mim' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Ações pendentes para mim' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Atribuídos a mim' })).toBeTruthy();
     expect(screen.getByText('Chamado #201')).toBeTruthy();
     expect(screen.getByText('Chamado #202')).toBeTruthy();
   });
@@ -82,8 +82,8 @@ describe('AssignmentsPanel', () => {
       />,
     );
 
-    const assignedHeading = screen.getByRole('heading', { name: 'Atribuidos a mim' });
-    const pendingHeading = screen.getByRole('heading', { name: 'Acoes pendentes para mim' });
+    const assignedHeading = screen.getByRole('heading', { name: 'Atribuídos a mim' });
+    const pendingHeading = screen.getByRole('heading', { name: 'Ações pendentes para mim' });
 
     expect(
       assignedHeading.compareDocumentPosition(pendingHeading) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -102,10 +102,10 @@ describe('AssignmentsPanel', () => {
     );
 
     expect(
-      screen.getByText('Nenhuma acao pendente corresponde aos filtros aplicados no recorte atual.'),
+      screen.getByText('Nenhuma ação pendente corresponde aos filtros aplicados no recorte atual.'),
     ).toBeTruthy();
     expect(
-      screen.getByText('Nenhum chamado atribuido corresponde aos filtros aplicados no recorte atual.'),
+      screen.getByText('Nenhum chamado atribuído corresponde aos filtros aplicados no recorte atual.'),
     ).toBeTruthy();
   });
 });

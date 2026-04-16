@@ -8,9 +8,9 @@ import type {
 } from './types';
 
 export const WORKFLOW_MANAGEMENT_ROUTE = '/gestao-de-chamados';
-export const WORKFLOW_MANAGEMENT_TITLE = 'Gestao de chamados';
+export const WORKFLOW_MANAGEMENT_TITLE = 'Gestão de chamados';
 export const WORKFLOW_MANAGEMENT_DESCRIPTION =
-  'Painel oficial da operacao para acompanhar chamados atuais, atribuicoes em andamento e historico concluido no mesmo fluxo.';
+  'Painel oficial da operação para acompanhar chamados atuais, atribuições em andamento e histórico concluído no mesmo fluxo.';
 
 export const MANAGEMENT_DEFAULT_TAB: ManagementTabId = 'assignments';
 export const MANAGEMENT_DEFAULT_ASSIGNMENTS_SUBTAB: ManagementAssignmentsSubtab = 'assigned';
@@ -20,17 +20,17 @@ export const MANAGEMENT_TAB_DEFINITIONS: readonly ManagementTabDefinition[] = [
   {
     tab: 'current',
     title: 'Chamados atuais',
-    description: 'Fila do owner governada por ownership explicito.',
+    description: 'Fila do owner governada por ownership explícito.',
   },
   {
     tab: 'assignments',
-    title: 'Atribuicoes e acoes',
-    description: 'Separacao explicita entre atribuicoes e acoes pendentes.',
+    title: 'Atribuições e ações',
+    description: 'Separação explícita entre atribuições e ações pendentes.',
   },
   {
     tab: 'completed',
-    title: 'Concluidas',
-    description: 'Historico operacional agrupado por fechamento.',
+    title: 'Concluídas',
+    description: 'Histórico operacional agrupado por fechamento.',
   },
 ];
 
@@ -38,19 +38,19 @@ export const MANAGEMENT_ASSIGNMENTS_SUBTAB_DEFINITIONS: readonly ManagementAssig
   [
     {
       tab: 'assigned',
-      title: 'Atribuidos a mim',
+      title: 'Atribuídos a mim',
     },
     {
       tab: 'pending',
-      title: 'Acoes pendentes para mim',
+      title: 'Ações pendentes para mim',
     },
   ];
 
 export const MANAGEMENT_CURRENT_FILTER_LABELS: Record<ManagementCurrentQueueFilter, string> = {
   all: 'Todos',
-  waiting_assignment: 'Aguardando atribuicao',
+  waiting_assignment: 'Aguardando atribuição',
   in_progress: 'Em andamento',
-  waiting_action: 'Aguardando acao',
+  waiting_action: 'Aguardando ação',
 };
 
 export const MANAGEMENT_SLA_LABELS: Record<ManagementSlaState, string> = {

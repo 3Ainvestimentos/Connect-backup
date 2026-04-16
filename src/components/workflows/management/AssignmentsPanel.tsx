@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type {
   ManagementAssignmentsSubtab,
   WorkflowManagementAssignmentsData,
@@ -41,24 +41,24 @@ export function AssignmentsPanel({
   const sections: AssignmentSectionConfig[] = [
     {
       key: 'pending',
-      title: 'Acoes pendentes para mim',
-      description: 'Aprovacoes, ciencias e execucoes que aguardam sua resposta operacional.',
-      emptyTitle: 'Nenhuma acao pendente para voce',
+      title: 'Ações pendentes para mim',
+      description: 'Aprovações, ciências e execuções que aguardam sua resposta operacional.',
+      emptyTitle: 'Nenhuma ação pendente para você',
       emptyDescription:
-        'Quando algum fluxo depender da sua resposta, ele aparecera nesta secao.',
+        'Quando algum fluxo depender da sua resposta, ele aparecerá nesta seção.',
       filteredEmptyDescription:
-        'Nenhuma acao pendente corresponde aos filtros aplicados no recorte atual.',
+        'Nenhuma ação pendente corresponde aos filtros aplicados no recorte atual.',
       items: data?.pendingActionItems ?? [],
     },
     {
       key: 'assigned',
-      title: 'Atribuidos a mim',
-      description: 'Chamados atribuidos ao seu usuario para tratamento e acompanhamento.',
-      emptyTitle: 'Nenhum chamado atribuido a voce',
+      title: 'Atribuídos a mim',
+      description: 'Chamados atribuídos ao seu usuário para tratamento e acompanhamento.',
+      emptyTitle: 'Nenhum chamado atribuído a você',
       emptyDescription:
-        'Quando um owner atribuir um item ao seu usuario, ele aparecera nesta secao.',
+        'Quando um owner atribuir um item ao seu usuário, ele aparecerá nesta seção.',
       filteredEmptyDescription:
-        'Nenhum chamado atribuido corresponde aos filtros aplicados no recorte atual.',
+        'Nenhum chamado atribuído corresponde aos filtros aplicados no recorte atual.',
       items: data?.assignedItems ?? [],
     },
   ];
@@ -69,11 +69,7 @@ export function AssignmentsPanel({
     <Card className="border-border/70">
       <CardHeader className="gap-2">
         <div className="space-y-1">
-          <CardTitle>Atribuicoes e acoes</CardTitle>
-          <CardDescription>
-            As duas filas operacionais ficam visiveis na mesma leitura, com estados independentes
-            por secao e compatibilidade com links legados.
-          </CardDescription>
+          <CardTitle>Atribuições e ações</CardTitle>
         </div>
       </CardHeader>
 
