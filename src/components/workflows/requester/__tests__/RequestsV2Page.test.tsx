@@ -388,7 +388,7 @@ describe('RequestsV2Page', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Solicitacao #1001/i)).toBeInTheDocument();
+      expect(screen.getByText(/Solicitação #1001/i)).toBeInTheDocument();
     });
   });
 
@@ -418,7 +418,7 @@ describe('RequestsV2Page', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/Solicitacao #1001/i)).toBeInTheDocument();
+      expect(screen.getByText(/Solicitação #1001/i)).toBeInTheDocument();
     });
 
     await act(async () => {
@@ -426,7 +426,7 @@ describe('RequestsV2Page', () => {
     });
 
     await waitFor(() => {
-      expect(screen.queryByText(/Solicitacao #1001/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Solicitação #1001/i)).not.toBeInTheDocument();
     });
   });
 });
