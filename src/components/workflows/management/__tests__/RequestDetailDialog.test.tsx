@@ -261,6 +261,9 @@ describe('RequestDetailDialog', () => {
       />,
     );
 
+    expect(screen.getByRole('heading', { name: 'Resumo do chamado' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Administracao do chamado' })).toBeTruthy();
+    expect(screen.getByText('Estado atual e proximo passo')).toBeTruthy();
     expect(screen.getByText('Dados enviados')).toBeTruthy();
     expect(screen.getByText('Anexos')).toBeTruthy();
     expect(screen.getByText('Timeline')).toBeTruthy();
@@ -270,7 +273,8 @@ describe('RequestDetailDialog', () => {
       'https://example.com/planilha.pdf',
     );
     expect(screen.getByRole('button', { name: 'Reatribuir responsavel' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Finalizar' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Finalizar chamado' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Finalizar' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
   });
 
@@ -316,6 +320,8 @@ describe('RequestDetailDialog', () => {
       />,
     );
 
+    expect(screen.getByRole('heading', { name: 'Action da etapa' })).toBeTruthy();
+    expect(screen.getByText('Aguardando sua resposta')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Solicitar Aprovar etapa' })).toBeTruthy();
     expect(screen.getByText('Responder action')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Aprovar' })).toBeTruthy();
@@ -374,6 +380,8 @@ describe('RequestDetailDialog', () => {
     expect(screen.getByText('Execucao concluida')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Abrir anexo da resposta' })).toBeTruthy();
     expect(screen.queryByText('Responder action')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Finalizar chamado' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Finalizar' })).toBeNull();
   });
 
   it('renders the advance CTA and hides finalize when only canAdvance is true', async () => {
@@ -412,10 +420,86 @@ describe('RequestDetailDialog', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Avancar etapa' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Finalizar chamado' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Finalizar' })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Avancar etapa' }));
 
     expect(onAdvance).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the footer close-only even when a primary CTA exists in the body', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildDetail({
+          permissions: {
+            canAssign: false,
+            canAdvance: true,
+            canFinalize: false,
+            canArchive: false,
+            canRequestAction: false,
+            canRespondAction: false,
+          },
+          action: {
+            ...buildDetail().action,
+            available: false,
+            label: null,
+            type: null,
+          },
+        })}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    const allButtons = screen.getAllByRole('button').map((button) => button.textContent);
+
+    expect(allButtons.filter((label) => label === 'Fechar')).toHaveLength(1);
+    expect(allButtons.filter((label) => label === 'Avancar etapa')).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
+  });
+
+  it('does not render the action zone when the payload exposes no action and no configuration error', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildDetail({
+          permissions: {
+            canAssign: false,
+            canAdvance: false,
+            canFinalize: false,
+            canArchive: false,
+            canRequestAction: false,
+            canRespondAction: false,
+          },
+          action: {
+            ...buildDetail().action,
+            available: false,
+            configurationError: null,
+            label: null,
+            type: null,
+          },
+        })}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Action da etapa' })).toBeNull();
   });
 });

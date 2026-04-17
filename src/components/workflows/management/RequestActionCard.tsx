@@ -12,6 +12,7 @@ import type {
   WorkflowManagementRequestDetailData,
   WorkflowManagementRequestSummary,
 } from '@/lib/workflows/management/types';
+import { cn } from '@/lib/utils';
 
 type RespondActionPayload = {
   response: 'approved' | 'rejected' | 'acknowledged' | 'executed';
@@ -29,6 +30,7 @@ type RequestActionCardProps = {
   ) => Promise<unknown>;
   isRequestingAction?: boolean;
   isRespondingAction?: boolean;
+  variant?: 'default' | 'primary';
 };
 
 function resolveRecipientLabel(
@@ -76,6 +78,7 @@ export function RequestActionCard({
   onRespondAction,
   isRequestingAction = false,
   isRespondingAction = false,
+  variant = 'default',
 }: RequestActionCardProps) {
   const { summary, action } = detail;
   const [comment, setComment] = React.useState('');
@@ -110,7 +113,13 @@ export function RequestActionCard({
   };
 
   return (
-    <div className="rounded-lg border p-4">
+    <div
+      data-variant={variant}
+      className={cn(
+        'rounded-lg border p-4',
+        variant === 'primary' ? 'border-admin-primary/25 bg-admin-primary/5 shadow-sm' : 'bg-background',
+      )}
+    >
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1">
           <p className="text-sm font-medium text-foreground">

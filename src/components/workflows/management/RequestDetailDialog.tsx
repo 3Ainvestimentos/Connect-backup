@@ -12,15 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   deriveManagementRequestPresentation,
@@ -32,10 +24,13 @@ import type {
   WorkflowManagementRequestDetailData,
   WorkflowManagementRequestSummary,
 } from '@/lib/workflows/management/types';
+import { buildRequestOperationalViewModel } from '@/lib/workflows/management/request-detail-view-model';
 import { ManagementAsyncState, ManagementErrorState } from './ManagementAsyncState';
+import { RequestAdministrativePanel } from './RequestAdministrativePanel';
 import { RequestActionCard } from './RequestActionCard';
 import { RequestAttachments } from './RequestAttachments';
 import { RequestFormData } from './RequestFormData';
+import { RequestOperationalHero } from './RequestOperationalHero';
 import { RequestProgress } from './RequestProgress';
 import { RequestTimeline } from './RequestTimeline';
 
@@ -126,19 +121,9 @@ export function RequestDetailDialog({
   const permissions = detail?.permissions;
   const presentation = summary ? deriveManagementRequestPresentation(summary) : null;
   const slaLabel = summary ? getManagementSlaLabel(summary.slaState) : null;
-  const canShowAssignForm = permissions?.canAssign === true;
-  const canShowAdvance = permissions?.canAdvance === true;
-  const canShowFinalize = permissions?.canFinalize === true;
-  const canShowArchive = permissions?.canArchive === true;
-  const hasOperationalAction =
-    canShowAssignForm ||
-    canShowAdvance ||
-    canShowFinalize ||
-    canShowArchive ||
-    detail?.action.available === true ||
-    Boolean(detail?.action.configurationError);
   const blockingErrorMessage = detail ? undefined : errorMessage;
   const hasNonBlockingError = Boolean(detail && errorMessage);
+  const viewModel = detail ? buildRequestOperationalViewModel(detail) : null;
 
   const handleAssign = async () => {
     if (!summary || !selectedResponsible) {
@@ -174,8 +159,8 @@ export function RequestDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] max-w-5xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 py-5">
+      <DialogContent className="flex h-[min(92vh,calc(100vh-2rem))] max-w-6xl flex-col overflow-hidden p-0">
+        <DialogHeader className="shrink-0 border-b px-6 py-5">
           <DialogTitle>Chamado #{summary?.requestId ?? requestId}</DialogTitle>
           <DialogDescription>
             {summary
@@ -184,192 +169,157 @@ export function RequestDetailDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[calc(92vh-146px)]">
-          <div className="space-y-6 px-6 py-5">
-            <ManagementAsyncState
-              isLoading={isLoading && !detail}
-              errorMessage={blockingErrorMessage}
-              errorTitle="Falha ao carregar o detalhe"
-              isEmpty={!detail}
-              emptyTitle="Detalhe indisponivel no momento"
-              emptyDescription="Reabra o chamado ou tente novamente para recarregar o contexto operacional."
-              onRetry={onRetry}
-              loadingContent={<LoadingState />}
-            >
-              {detail ? (
-                <>
-                  {hasNonBlockingError ? (
-                    <ManagementErrorState
-                      title="Falha ao atualizar o detalhe"
-                      message={errorMessage!}
-                      onRetry={onRetry}
-                    />
-                  ) : null}
+        <div className="min-h-0 flex-1">
+          <ScrollArea className="h-full">
+            <div className="space-y-6 px-6 py-5">
+              <ManagementAsyncState
+                isLoading={isLoading && !detail}
+                errorMessage={blockingErrorMessage}
+                errorTitle="Falha ao carregar o detalhe"
+                isEmpty={!detail}
+                emptyTitle="Detalhe indisponivel no momento"
+                emptyDescription="Reabra o chamado ou tente novamente para recarregar o contexto operacional."
+                onRetry={onRetry}
+                loadingContent={<LoadingState />}
+              >
+                {detail && viewModel ? (
+                  <>
+                    {hasNonBlockingError ? (
+                      <ManagementErrorState
+                        title="Falha ao atualizar o detalhe"
+                        message={errorMessage!}
+                        onRetry={onRetry}
+                      />
+                    ) : null}
 
-                  <div className="space-y-4 rounded-lg border bg-muted/20 p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {presentation ? (
-                        <Badge variant={presentation.badgeVariant}>{presentation.label}</Badge>
-                      ) : null}
-                      <Badge variant="outline">{summary?.workflowName || summary?.workflowTypeId}</Badge>
-                      <Badge variant="outline">Workflow {summary?.workflowVersion}</Badge>
-                      {summary?.hasPendingActions ? (
-                        <Badge variant="outline">Ha acoes pendentes</Badge>
-                      ) : null}
-                      {slaLabel ? (
-                        <Badge variant={getManagementSlaBadgeVariant(summary?.slaState)}>
-                          SLA: {slaLabel}
-                        </Badge>
-                      ) : null}
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Solicitante</p>
-                        <p className="text-muted-foreground">{summary?.requesterName || '-'}</p>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Responsavel</p>
-                        <p className="text-muted-foreground">
-                          {summary?.responsibleName || 'Nao atribuido'}
-                        </p>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Aberto em</p>
-                        <p className="text-muted-foreground">
-                          {formatManagementDate(summary?.submittedAt ?? null)}
-                        </p>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Ultima atualizacao</p>
-                        <p className="text-muted-foreground">
-                          {formatManagementDate(summary?.lastUpdatedAt ?? null)}
-                        </p>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Finalizado em</p>
-                        <p className="text-muted-foreground">
-                          {formatManagementDate(summary?.finalizedAt ?? null)}
-                        </p>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Arquivado em</p>
-                        <p className="text-muted-foreground">
-                          {formatManagementDate(summary?.archivedAt ?? null)}
-                        </p>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Area</p>
-                        <p className="text-muted-foreground">{summary?.areaId || '-'}</p>
-                      </div>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium text-foreground">Owner</p>
-                        <p className="text-muted-foreground">{summary?.ownerEmail || '-'}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {canShowAssignForm ? (
-                    <div className="rounded-lg border p-4">
+                    <section className="space-y-4 rounded-xl border bg-muted/20 p-4" aria-labelledby="request-summary-title">
                       <div className="space-y-1">
-                        <p className="text-sm font-medium text-foreground">
-                          {summary?.hasResponsible ? 'Reatribuir responsavel' : 'Atribuir responsavel'}
-                        </p>
+                        <h2 id="request-summary-title" className="text-sm font-semibold text-foreground">
+                          Resumo do chamado
+                        </h2>
                         <p className="text-sm text-muted-foreground">
-                          Selecione um colaborador carregado pela sessao autenticada.
+                          Contexto principal, identificacao e metadados oficiais do chamado.
                         </p>
                       </div>
 
-                      <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-end">
-                        <div className="min-w-0 flex-1 space-y-2">
-                          <Label htmlFor="management-responsible-select">Responsavel</Label>
-                          <Select
-                            value={selectedResponsibleId}
-                            onValueChange={setSelectedResponsibleId}
-                          >
-                            <SelectTrigger id="management-responsible-select" aria-label="Responsavel">
-                              <SelectValue placeholder="Selecione um colaborador" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {sortedCollaborators.map((collaborator) => (
-                                <SelectItem key={collaborator.id3a} value={collaborator.id3a}>
-                                  {collaborator.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {presentation ? <Badge variant={presentation.badgeVariant}>{presentation.label}</Badge> : null}
+                        <Badge variant="outline">{summary?.workflowName || summary?.workflowTypeId}</Badge>
+                        <Badge variant="outline">Workflow {summary?.workflowVersion}</Badge>
+                        {summary?.hasPendingActions ? (
+                          <Badge variant="outline">Ha acoes pendentes</Badge>
+                        ) : null}
+                        {slaLabel ? (
+                          <Badge variant={getManagementSlaBadgeVariant(summary?.slaState)}>
+                            SLA: {slaLabel}
+                          </Badge>
+                        ) : null}
+                      </div>
 
-                        <Button
-                          type="button"
-                          onClick={handleAssign}
-                          disabled={
-                            !selectedResponsible ||
-                            selectedResponsible.id3a === summary?.responsibleUserId ||
-                            isAssigning
-                          }
-                        >
-                          {isAssigning
-                            ? 'Salvando...'
-                            : summary?.hasResponsible
-                              ? 'Reatribuir responsavel'
-                              : 'Atribuir responsavel'}
-                        </Button>
+                      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Solicitante</p>
+                          <p className="text-muted-foreground">{summary?.requesterName || '-'}</p>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Responsavel</p>
+                          <p className="text-muted-foreground">{summary?.responsibleName || 'Nao atribuido'}</p>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Aberto em</p>
+                          <p className="text-muted-foreground">
+                            {formatManagementDate(summary?.submittedAt ?? null)}
+                          </p>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Ultima atualizacao</p>
+                          <p className="text-muted-foreground">
+                            {formatManagementDate(summary?.lastUpdatedAt ?? null)}
+                          </p>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Finalizado em</p>
+                          <p className="text-muted-foreground">
+                            {formatManagementDate(summary?.finalizedAt ?? null)}
+                          </p>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Arquivado em</p>
+                          <p className="text-muted-foreground">
+                            {formatManagementDate(summary?.archivedAt ?? null)}
+                          </p>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Area</p>
+                          <p className="text-muted-foreground">{summary?.areaId || '-'}</p>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                          <p className="font-medium text-foreground">Owner</p>
+                          <p className="text-muted-foreground">{summary?.ownerEmail || '-'}</p>
+                        </div>
+                      </div>
+                    </section>
+
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.95fr)]">
+                      <div className="space-y-6">
+                        <RequestOperationalHero
+                          detail={detail}
+                          viewModel={viewModel}
+                          onAdvance={handleAdvance}
+                          onFinalize={handleFinalize}
+                          isAdvancing={isAdvancing}
+                          isFinalizing={isFinalizing}
+                        />
+
+                        {viewModel.shouldRenderActionZone ? (
+                          <section className="space-y-3" aria-labelledby="request-action-zone-title">
+                            <div className="space-y-1">
+                              <h2 id="request-action-zone-title" className="text-sm font-semibold text-foreground">
+                                Action da etapa
+                              </h2>
+                              <p className="text-sm text-muted-foreground">
+                                A superficie oficial de requestAction/respondAction continua neste bloco.
+                              </p>
+                            </div>
+                            <RequestActionCard
+                              detail={detail}
+                              collaborators={collaborators}
+                              onRequestAction={onRequestAction}
+                              onRespondAction={onRespondAction}
+                              isRequestingAction={isRequestingAction}
+                              isRespondingAction={isRespondingAction}
+                              variant={viewModel.showActionZoneAsPrimary ? 'primary' : 'default'}
+                            />
+                          </section>
+                        ) : null}
+
+                        <RequestAdministrativePanel
+                          detail={detail}
+                          collaborators={sortedCollaborators}
+                          selectedResponsibleId={selectedResponsibleId}
+                          onResponsibleChange={setSelectedResponsibleId}
+                          onAssign={handleAssign}
+                          onArchive={handleArchive}
+                          isAssigning={isAssigning}
+                          isArchiving={isArchiving}
+                        />
+                      </div>
+
+                      <div className="space-y-6">
+                        <RequestProgress progress={detail.progress} />
+                        <RequestTimeline timeline={detail.timeline} />
+                        <RequestFormData formData={detail.formData} />
+                        <RequestAttachments attachments={detail.attachments} />
                       </div>
                     </div>
-                  ) : null}
+                  </>
+                ) : null}
+              </ManagementAsyncState>
+            </div>
+          </ScrollArea>
+        </div>
 
-                  {detail ? (
-                    <RequestActionCard
-                      detail={detail}
-                      collaborators={collaborators}
-                      onRequestAction={onRequestAction}
-                      onRespondAction={onRespondAction}
-                      isRequestingAction={isRequestingAction}
-                      isRespondingAction={isRespondingAction}
-                    />
-                  ) : null}
-
-                  {!hasOperationalAction ? (
-                    <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                      Nenhuma acao operacional disponivel para o estado atual e para as permissoes
-                      do ator autenticado.
-                    </div>
-                  ) : null}
-
-                  <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                    <div className="space-y-6">
-                      <RequestProgress progress={detail.progress} />
-                      <RequestAttachments attachments={detail.attachments} />
-                    </div>
-
-                    <div className="space-y-6">
-                      <RequestFormData formData={detail.formData} />
-                      <RequestTimeline timeline={detail.timeline} />
-                    </div>
-                  </div>
-                </>
-              ) : null}
-            </ManagementAsyncState>
-          </div>
-        </ScrollArea>
-
-        <DialogFooter className="border-t px-6 py-4">
-          {canShowAdvance ? (
-            <Button type="button" onClick={handleAdvance} disabled={isAdvancing}>
-              {isAdvancing ? 'Avancando...' : 'Avancar etapa'}
-            </Button>
-          ) : null}
-          {canShowFinalize ? (
-            <Button type="button" variant="secondary" onClick={handleFinalize} disabled={isFinalizing}>
-              {isFinalizing ? 'Finalizando...' : 'Finalizar'}
-            </Button>
-          ) : null}
-          {canShowArchive ? (
-            <Button type="button" variant="outline" onClick={handleArchive} disabled={isArchiving}>
-              {isArchiving ? 'Arquivando...' : 'Arquivar'}
-            </Button>
-          ) : null}
+        <DialogFooter className="shrink-0 border-t px-6 py-4">
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Fechar
           </Button>
