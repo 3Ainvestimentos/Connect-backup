@@ -272,6 +272,105 @@ describe('RequestDetailDialog', () => {
     expect(screen.queryByRole('heading', { name: 'Action da etapa' })).toBeNull();
   });
 
+  it('shows finalized read-only copy without exposing archive when canArchive is false', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildManagementRequestDetailFixture({
+          summary: {
+            statusCategory: 'finalized',
+            finalizedAt: new Date('2026-04-12T10:00:00Z'),
+          },
+          permissions: {
+            canArchive: false,
+          },
+          action: {
+            available: false,
+          },
+        })}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    expect(screen.getByText('Chamado concluido')).toBeTruthy();
+    expect(screen.getByText(/permanece disponivel apenas para consulta/i)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Administracao do chamado' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Action da etapa' })).toBeNull();
+  });
+
+  it('shows assigning busy state in the administrative panel', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildManagementRequestDetailFixture({
+          permissions: {
+            canAssign: true,
+          },
+          action: {
+            available: false,
+          },
+        })}
+        collaborators={[collaborator]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+        isAssigning
+      />,
+    );
+
+    const assigningButton = screen.getByRole('button', { name: 'Salvando...' });
+    expect(assigningButton).toBeDisabled();
+    expect(assigningButton).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('shows archiving busy state in the administrative panel', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildManagementRequestDetailFixture({
+          summary: {
+            statusCategory: 'finalized',
+            finalizedAt: new Date('2026-04-12T10:00:00Z'),
+          },
+          permissions: {
+            canArchive: true,
+          },
+          action: {
+            available: false,
+          },
+        })}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+        isArchiving
+      />,
+    );
+
+    const archivingButton = screen.getByRole('button', { name: 'Arquivando...' });
+    expect(archivingButton).toBeDisabled();
+    expect(archivingButton).toHaveAttribute('aria-disabled', 'true');
+  });
+
   it('keeps archived requests strictly read-only with no operational CTA', () => {
     render(
       <RequestDetailDialog

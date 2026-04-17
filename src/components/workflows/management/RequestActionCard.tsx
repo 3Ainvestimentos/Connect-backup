@@ -101,15 +101,23 @@ export function RequestActionCard({
   const effectiveComment = comment.trim();
 
   const handleRequestAction = async () => {
-    await onRequestAction(summary);
+    try {
+      await onRequestAction(summary);
+    } catch {
+      // The page-level handler already emits the destructive toast.
+    }
   };
 
   const handleRespondAction = async (response: RespondActionPayload['response']) => {
-    await onRespondAction(summary, {
-      response,
-      ...(effectiveComment ? { comment: effectiveComment } : {}),
-      ...(attachmentFile ? { attachmentFile } : {}),
-    });
+    try {
+      await onRespondAction(summary, {
+        response,
+        ...(effectiveComment ? { comment: effectiveComment } : {}),
+        ...(attachmentFile ? { attachmentFile } : {}),
+      });
+    } catch {
+      // The page-level handler already emits the destructive toast.
+    }
   };
 
   return (

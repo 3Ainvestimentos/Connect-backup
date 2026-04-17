@@ -107,6 +107,30 @@ describe('buildRequestOperationalViewModel', () => {
     expect(result.primaryAction).toBeNull();
   });
 
+  it('returns finalized read-only copy even when archiving is not allowed', () => {
+    const result = buildRequestOperationalViewModel(
+      buildManagementRequestDetailFixture({
+        summary: {
+          statusCategory: 'finalized',
+          finalizedAt: new Date('2026-04-12T10:00:00Z'),
+        },
+        permissions: {
+          canArchive: false,
+        },
+        action: {
+          available: false,
+        },
+      }),
+    );
+
+    expect(result.tone).toBe('read-only');
+    expect(result.title).toBe('Chamado concluido');
+    expect(result.description).toContain('apenas para consulta');
+    expect(result.statusNote).toContain('Nenhuma nova acao operacional');
+    expect(result.primaryAction).toBeNull();
+    expect(result.showActionZoneAsPrimary).toBe(false);
+  });
+
   it('returns archived read-only copy without operational CTA', () => {
     const result = buildRequestOperationalViewModel(
       buildManagementRequestDetailFixture({

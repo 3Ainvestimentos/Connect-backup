@@ -2,7 +2,7 @@
 
 > Generated: 2026-04-17
 > Source: DESIGN_BUILD3_REFATORACAO_MODAL_OPERACIONAL_GESTAO_CHAMADOS.md
-> Status: COMPLETE
+> Status: COMPLETE + COMPLEMENTARY_FIXES
 
 ## 1. Summary
 
@@ -14,6 +14,16 @@
 | Files Created | 2 |
 | Files Modified | 8 |
 | Lines Added | ~610 |
+
+## 1.1 Complementary Build 3 Closure
+
+Em 2026-04-17, uma rodada complementar pequena fechou os tres gaps remanescentes previstos no `DEFINE_CORRECOES_COMPLEMENTARES_BUILD3_MODAL_OPERACIONAL_GESTAO_CHAMADOS.md`:
+
+- `buildRequestOperationalViewModel(...)` agora reconhece qualquer `summary.statusCategory === 'finalized'` como estado terminal, mesmo com `canArchive = false`;
+- `RequestDetailDialog.test.tsx` passou a cobrir explicitamente os busy states administrativos `Salvando...` e `Arquivando...`;
+- `WorkflowManagementPage.test.tsx` passou a provar toast destrutivo e permanencia do dialog aberto em falha de `assign`, `advance`, `requestAction`, `respondAction`, `finalize` e `archive`.
+
+Esta rodada nao alterou contratos de runtime, endpoints, schemas nem ownership de handlers da pagina.
 
 ## 2. Execution Timeline
 
@@ -72,12 +82,23 @@
 ```
 **Verification:** executado via Jest dirigido.
 
+### Complementary fixes
+```ts
+- `request-detail-view-model.ts`: desacopla `finalized` de `permissions.canArchive` e preserva `canArchive` apenas como gate administrativo
+- `WorkflowManagementPage.tsx`: preserva toast destrutivo e policy de dialog aberto em erro sem repropagar a rejeicao para a superficie chamadora
+- `request-detail-view-model.test.ts`: adiciona regressao para `finalized + !canArchive`
+- `RequestDetailDialog.test.tsx`: adiciona cobertura para `finalized + !canArchive`, `isAssigning` e `isArchiving`
+- `WorkflowManagementPage.test.tsx`: adiciona matriz de erro com toast destrutivo e dialog aberto para `assign`, `advance`, `requestAction`, `respondAction`, `finalize` e `archive`
+```
+**Verification:** executado via Jest dirigido na rodada complementar.
+
 ## 4. Verification Results
 
 ### Automated Checks
 | Check | Result |
 |-------|--------|
 | `npm test -- --runInBand src/lib/workflows/management/__tests__/request-detail-view-model.test.ts src/components/workflows/management/__tests__/RequestActionCard.test.tsx src/components/workflows/management/__tests__/RequestDetailDialog.test.tsx src/components/workflows/management/__tests__/WorkflowManagementPage.test.tsx` | Pass |
+| `npm test -- --runInBand src/lib/workflows/management/__tests__/request-detail-view-model.test.ts src/components/workflows/management/__tests__/RequestDetailDialog.test.tsx src/components/workflows/management/__tests__/WorkflowManagementPage.test.tsx` | Pass |
 | `npm run typecheck` | Fail por erros preexistentes fora do escopo; patch do Build 3 permaneceu validado pela suite dirigida |
 
 ### Integration Checks

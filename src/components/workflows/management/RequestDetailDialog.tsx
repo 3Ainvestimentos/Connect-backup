@@ -130,7 +130,11 @@ export function RequestDetailDialog({
       return;
     }
 
-    await onAssign(summary, selectedResponsible);
+    try {
+      await onAssign(summary, selectedResponsible);
+    } catch {
+      // The page-level handler already emits the destructive toast.
+    }
   };
 
   const handleFinalize = async () => {
@@ -138,7 +142,11 @@ export function RequestDetailDialog({
       return;
     }
 
-    await onFinalize(summary);
+    try {
+      await onFinalize(summary);
+    } catch {
+      // The page-level handler already emits the destructive toast.
+    }
   };
 
   const handleAdvance = async () => {
@@ -146,7 +154,11 @@ export function RequestDetailDialog({
       return;
     }
 
-    await onAdvance(summary);
+    try {
+      await onAdvance(summary);
+    } catch {
+      // The page-level handler already emits the destructive toast.
+    }
   };
 
   const handleArchive = async () => {
@@ -154,7 +166,11 @@ export function RequestDetailDialog({
       return;
     }
 
-    await onArchive(summary);
+    try {
+      await onArchive(summary);
+    } catch {
+      // The page-level handler already emits the destructive toast.
+    }
   };
 
   return (

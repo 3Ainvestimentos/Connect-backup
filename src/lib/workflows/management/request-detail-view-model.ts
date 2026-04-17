@@ -91,13 +91,17 @@ export function buildRequestOperationalViewModel(
     };
   }
 
-  if (summary.statusCategory === 'finalized' && permissions.canArchive) {
+  if (summary.statusCategory === 'finalized') {
     return {
       tone: 'read-only',
       title: 'Chamado concluido',
-      description: 'O fluxo operacional foi encerrado e restam apenas acoes administrativas autorizadas.',
+      description: permissions.canArchive
+        ? 'O fluxo operacional foi encerrado e restam apenas acoes administrativas autorizadas.'
+        : 'O fluxo operacional foi encerrado e este chamado permanece disponivel apenas para consulta.',
       highlightLabel: 'Conclusao registrada',
-      statusNote: 'Use o arquivamento apenas quando for necessario retirar o chamado da fila ativa.',
+      statusNote: permissions.canArchive
+        ? 'Use o arquivamento apenas quando for necessario retirar o chamado da fila ativa.'
+        : 'Nenhuma nova acao operacional ou administrativa adicional esta disponivel para o ator autenticado.',
       showActionZoneAsPrimary: false,
       shouldRenderActionZone,
       primaryAction: null,
