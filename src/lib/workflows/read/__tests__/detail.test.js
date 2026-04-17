@@ -193,8 +193,8 @@ describe('workflow request detail composer', () => {
       canRespondAction: false,
     });
     expect(detail.formData.fields).toEqual([
-      expect.objectContaining({ fieldId: 'periodo', label: 'Periodo' }),
-      expect.objectContaining({ fieldId: 'nome_sobrenome', label: 'Nome e Sobrenome' }),
+      expect.objectContaining({ fieldId: 'periodo', label: 'Periodo', order: 1 }),
+      expect.objectContaining({ fieldId: 'nome_sobrenome', label: 'Nome e Sobrenome', order: 2 }),
     ]);
     expect(detail.formData.fields.find((field) => field.fieldId === 'anexo_planilha')).toBeUndefined();
     expect(detail.formData.extraFields).toEqual([
@@ -205,6 +205,7 @@ describe('workflow request detail composer', () => {
         fieldId: 'anexo_planilha',
         label: 'Anexo da planilha',
         url: 'https://storage.googleapis.com/example/planilha.pdf',
+        order: 3,
       },
     ]);
     expect(detail.progress).toEqual(
@@ -285,6 +286,40 @@ describe('workflow request detail composer', () => {
       recipients: [],
       configurationError: null,
     });
+  });
+
+  it('expoe anexos de formulario quando o requester salva upload no formato canonico com fileUrl', () => {
+    const detail = buildWorkflowRequestDetail({
+      docId: 'doc-file-object',
+      request: buildRequest({
+        formData: {
+          nome_sobrenome: 'Lucas Nogueira',
+          periodo: { from: '2026-04-02', to: '2026-04-05' },
+          anexo_planilha: {
+            fileUrl: 'https://firebasestorage.googleapis.com/v0/b/example/o/planilha.pdf?alt=media&token=abc',
+            storagePath:
+              'Workflows/workflows_v2/uploads/form_field/facilities_suprimentos/anexo_planilha/2026-04/upl_123-planilha.pdf',
+            uploadId: 'upl_123',
+            fileName: 'planilha.pdf',
+            contentType: 'application/pdf',
+          },
+        },
+      }),
+      version: buildVersion(),
+      actorUserId: 'SMO2',
+      areaLabel: 'Facilities',
+    });
+
+    expect(detail.formData.fields.find((field) => field.fieldId === 'anexo_planilha')).toBeUndefined();
+    expect(detail.attachments).toEqual([
+      {
+        fieldId: 'anexo_planilha',
+        label: 'Anexo da planilha',
+        url: 'https://firebasestorage.googleapis.com/v0/b/example/o/planilha.pdf?alt=media&token=abc',
+        fileName: 'planilha.pdf',
+        order: 3,
+      },
+    ]);
   });
 
   it('expoe batch pendente de action com permissoes de resposta e timeline nova', () => {

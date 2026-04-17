@@ -296,6 +296,7 @@ function normalizeDetailField(input: unknown): WorkflowManagementRequestDetailFi
         ? type
         : 'text',
     value: field.value,
+    ...(typeof field.order === 'number' ? { order: field.order } : {}),
   };
 }
 
@@ -315,6 +316,10 @@ function normalizeAttachment(input: unknown): WorkflowManagementRequestAttachmen
     fieldId: asString(attachment.fieldId),
     label: asString(attachment.label),
     url: asString(attachment.url),
+    ...(typeof attachment.fileName === 'string' && attachment.fileName.trim() !== ''
+      ? { fileName: attachment.fileName }
+      : {}),
+    ...(typeof attachment.order === 'number' ? { order: attachment.order } : {}),
   };
 }
 

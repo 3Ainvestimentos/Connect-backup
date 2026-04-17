@@ -146,6 +146,7 @@ export type WorkflowRequestDetailField = {
   label: string;
   type: VersionFieldType;
   value: unknown;
+  order?: number;
 };
 
 export type WorkflowRequestDetailExtraField = {
@@ -157,6 +158,8 @@ export type WorkflowRequestAttachment = {
   fieldId: string;
   label: string;
   url: string;
+  fileName?: string;
+  order?: number;
 };
 
 export type WorkflowRequestProgressItem = {

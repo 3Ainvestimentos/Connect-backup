@@ -153,15 +153,15 @@ describe('RequestDetailDialog', () => {
     expect(screen.getByRole('heading', { name: 'Historico por etapa' })).toBeTruthy();
     expect(screen.getByText('Estado atual e proximo passo')).toBeTruthy();
     expect(screen.getByText('Dados enviados')).toBeTruthy();
-    expect(screen.getByText('Anexos da abertura')).toBeTruthy();
+    expect(screen.queryByText('Anexos da abertura')).toBeNull();
     expect(screen.getByText('Lucas Nogueira')).toBeTruthy();
     expect(screen.getByText('Facilities')).toBeTruthy();
+    const submittedLabels = screen.getAllByText(/Nome e Sobrenome|Anexo da planilha/).map((node) => node.textContent);
+    expect(submittedLabels).toEqual(['Nome e Sobrenome', 'Anexo da planilha']);
     expect(screen.getByRole('link', { name: 'Ver anexo' }).getAttribute('href')).toBe(
       'https://example.com/planilha.pdf',
     );
-    expect(screen.getByRole('link', { name: 'Baixar anexo' }).getAttribute('href')).toBe(
-      'https://example.com/planilha.pdf',
-    );
+    expect(screen.queryByRole('link', { name: 'Baixar anexo' })).toBeNull();
     expect(screen.getByRole('button', { name: 'Reatribuir responsavel' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Finalizar chamado' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();

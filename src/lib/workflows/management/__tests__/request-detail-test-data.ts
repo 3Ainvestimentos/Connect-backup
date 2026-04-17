@@ -64,6 +64,7 @@ export function buildManagementRequestDetailFixture(
           label: 'Nome e Sobrenome',
           type: 'text',
           value: 'Lucas Nogueira',
+          order: 1,
         },
       ],
       extraFields: [{ key: 'observacao_extra', value: 'Urgente' }],
@@ -73,6 +74,8 @@ export function buildManagementRequestDetailFixture(
         fieldId: 'anexo_planilha',
         label: 'Anexo da planilha',
         url: 'https://example.com/planilha.pdf',
+        fileName: 'planilha.pdf',
+        order: 2,
       },
     ],
     progress: {

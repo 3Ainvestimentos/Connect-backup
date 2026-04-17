@@ -113,6 +113,7 @@ export type WorkflowManagementRequestDetailField = {
   label: string;
   type: 'text' | 'textarea' | 'select' | 'date' | 'date-range' | 'file';
   value: unknown;
+  order?: number;
 };
 
 export type WorkflowManagementRequestDetailExtraField = {
@@ -124,6 +125,8 @@ export type WorkflowManagementRequestAttachment = {
   fieldId: string;
   label: string;
   url: string;
+  fileName?: string;
+  order?: number;
 };
 
 export type WorkflowManagementRequestProgressItem = {

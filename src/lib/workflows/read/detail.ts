@@ -85,6 +85,29 @@ function isValidAttachmentUrl(value: string): boolean {
   }
 }
 
+function extractAttachmentUrl(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    return normalized !== '' && isValidAttachmentUrl(normalized) ? normalized : null;
+  }
+
+  if (!isPlainRecord(value)) {
+    return null;
+  }
+
+  const fileUrl = typeof value.fileUrl === 'string' ? value.fileUrl.trim() : '';
+  return fileUrl !== '' && isValidAttachmentUrl(fileUrl) ? fileUrl : null;
+}
+
+function extractAttachmentFileName(value: unknown): string | undefined {
+  if (!isPlainRecord(value)) {
+    return undefined;
+  }
+
+  const fileName = typeof value.fileName === 'string' ? value.fileName.trim() : '';
+  return fileName !== '' ? fileName : undefined;
+}
+
 function sortVersionFields(fields: VersionFieldDef[]): VersionFieldDef[] {
   return [...fields].sort((left, right) => left.order - right.order);
 }
@@ -163,6 +186,7 @@ function buildDetailFormData(
       label: field.label,
       type: field.type,
       value,
+      order: field.order,
     });
 
     return accumulator;
@@ -195,15 +219,17 @@ function buildDetailAttachments(
       return accumulator;
     }
 
-    const value = formData[field.id];
-    if (typeof value !== 'string' || value.trim() === '' || !isValidAttachmentUrl(value)) {
+    const url = extractAttachmentUrl(formData[field.id]);
+    if (!url) {
       return accumulator;
     }
 
     accumulator.push({
       fieldId: field.id,
       label: field.label,
-      url: value,
+      url,
+      ...(extractAttachmentFileName(formData[field.id]) ? { fileName: extractAttachmentFileName(formData[field.id]) } : {}),
+      order: field.order,
     });
 
     return accumulator;

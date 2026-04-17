@@ -9,6 +9,23 @@ type RequestSubmittedDataSectionProps = {
   attachments: WorkflowManagementRequestDetailData['attachments'];
 };
 
+type SubmittedDataItem =
+  | {
+      kind: 'field';
+      key: string;
+      label: string;
+      order: number;
+      value: string;
+    }
+  | {
+      kind: 'attachment';
+      key: string;
+      label: string;
+      order: number;
+      url: string;
+      fileName: string;
+    };
+
 function getAttachmentFileName(url: string): string {
   const rawName = url.split('/').pop()?.split('?')[0] ?? 'Arquivo';
 
@@ -26,6 +43,23 @@ export function RequestSubmittedDataSection({
   const hasFields = formData.fields.length > 0;
   const hasExtraFields = formData.extraFields.length > 0;
   const hasAttachments = attachments.length > 0;
+  const submittedItems: SubmittedDataItem[] = [
+    ...formData.fields.map((field, index) => ({
+      kind: 'field' as const,
+      key: `field:${field.fieldId}:${index}`,
+      label: field.label,
+      order: field.order ?? index,
+      value: formatManagementDetailValue(field),
+    })),
+    ...attachments.map((attachment, index) => ({
+      kind: 'attachment' as const,
+      key: `attachment:${attachment.fieldId}:${index}`,
+      label: attachment.label,
+      order: attachment.order ?? formData.fields.length + index,
+      url: attachment.url,
+      fileName: attachment.fileName || getAttachmentFileName(attachment.url),
+    })),
+  ].sort((left, right) => left.order - right.order);
 
   return (
     <section className="space-y-4" aria-labelledby="request-submitted-data-title">
@@ -44,17 +78,37 @@ export function RequestSubmittedDataSection({
         </div>
       ) : null}
 
-      {hasFields ? (
+      {submittedItems.length > 0 ? (
         <div className="space-y-3">
           <p className="text-sm font-medium text-foreground">Campos enviados</p>
-          {formData.fields.map((field) => (
-            <div key={field.fieldId} className="rounded-lg border bg-background p-3">
-              <p className="text-sm font-medium text-foreground">{field.label}</p>
-              <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted-foreground">
-                {formatManagementDetailValue(field)}
-              </p>
-            </div>
-          ))}
+          {submittedItems.map((item) =>
+            item.kind === 'field' ? (
+              <div key={item.key} className="rounded-lg border bg-background p-3">
+                <p className="text-sm font-medium text-foreground">{item.label}</p>
+                <p className="mt-1 whitespace-pre-wrap break-words text-sm text-muted-foreground">
+                  {item.value}
+                </p>
+              </div>
+            ) : (
+              <div
+                key={item.key}
+                className="flex flex-col gap-3 rounded-lg border bg-background p-3 md:flex-row md:items-center md:justify-between"
+              >
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.fileName}</p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild type="button" variant="outline" size="sm">
+                    <a href={item.url} target="_blank" rel="noopener noreferrer">
+                      Ver anexo
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            ),
+          )}
         </div>
       ) : null}
 
@@ -74,43 +128,6 @@ export function RequestSubmittedDataSection({
         </div>
       ) : null}
 
-      {hasAttachments ? (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Anexos da abertura</p>
-            <p className="text-sm text-muted-foreground">
-              Estes anexos pertencem a submissao inicial, nao ao historico operacional da etapa.
-            </p>
-          </div>
-
-          {attachments.map((attachment) => (
-            <div
-              key={attachment.fieldId}
-              className="flex flex-col gap-3 rounded-lg border bg-background p-3 md:flex-row md:items-center md:justify-between"
-            >
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-foreground">{attachment.label}</p>
-                <p className="text-xs text-muted-foreground">
-                  {getAttachmentFileName(attachment.url)}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button asChild type="button" variant="outline" size="sm">
-                  <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                    Ver anexo
-                  </a>
-                </Button>
-                <Button asChild type="button" variant="outline" size="sm">
-                  <a href={attachment.url} download>
-                    Baixar anexo
-                  </a>
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : null}
     </section>
   );
 }

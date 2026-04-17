@@ -16,13 +16,14 @@ describe('RequestSubmittedDataSection', () => {
     expect(screen.getByRole('heading', { name: 'Dados enviados' })).toBeTruthy();
     expect(screen.getByText('Campos enviados')).toBeTruthy();
     expect(screen.getByText('Campos extras')).toBeTruthy();
-    expect(screen.getByText('Anexos da abertura')).toBeTruthy();
+    expect(screen.queryByText('Anexos da abertura')).toBeNull();
+    const fieldLabels = screen.getAllByText(/Nome e Sobrenome|Anexo da planilha/).map((node) => node.textContent);
+    expect(fieldLabels).toEqual(['Nome e Sobrenome', 'Anexo da planilha']);
+    expect(screen.getByText('planilha.pdf')).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Ver anexo' }).getAttribute('href')).toBe(
       'https://example.com/planilha.pdf',
     );
-    expect(screen.getByRole('link', { name: 'Baixar anexo' }).getAttribute('href')).toBe(
-      'https://example.com/planilha.pdf',
-    );
+    expect(screen.queryByRole('link', { name: 'Baixar anexo' })).toBeNull();
   });
 
   it('renders the empty state when the submission has no visible data', () => {
