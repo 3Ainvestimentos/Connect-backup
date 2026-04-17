@@ -1,9 +1,5 @@
-import type { BadgeProps } from '@/components/ui/badge';
 import {
-  deriveManagementRequestPresentation,
   formatManagementDate,
-  getManagementSlaBadgeVariant,
-  getManagementSlaLabel,
 } from './presentation';
 import type { WorkflowManagementRequestDetailData } from './types';
 
@@ -29,11 +25,6 @@ export type RequestOperationalViewModel = {
   primaryAction: RequestOperationalPrimaryAction | null;
 };
 
-export type RequestDetailShellBadge = {
-  label: string;
-  variant: BadgeProps['variant'];
-};
-
 export type RequestDetailShellSummaryItem = {
   label: string;
   value: string;
@@ -43,9 +34,7 @@ export type RequestDetailShellViewModel = {
   operational: RequestOperationalViewModel;
   header: {
     title: string;
-    subtitle: string;
     description: string;
-    badges: RequestDetailShellBadge[];
   };
   summary: {
     areaLabel: string;
@@ -166,45 +155,16 @@ function getSummaryAreaLabel(detail: WorkflowManagementRequestDetailData): strin
   return detail.summary.areaLabel?.trim() || detail.summary.areaId || '-';
 }
 
-function buildHeaderBadges(
-  detail: WorkflowManagementRequestDetailData,
-  operational: RequestOperationalViewModel,
-): RequestDetailShellBadge[] {
-  const presentation = deriveManagementRequestPresentation(detail.summary);
-  const badges: RequestDetailShellBadge[] = [
-    { label: presentation.label, variant: presentation.badgeVariant },
-    { label: detail.summary.currentStepName, variant: 'outline' },
-  ];
-
-  if (operational.highlightLabel) {
-    badges.push({ label: operational.highlightLabel, variant: 'outline' });
-  }
-
-  if (detail.summary.hasPendingActions) {
-    badges.push({ label: 'Ha acoes pendentes', variant: 'outline' });
-  }
-
-  const slaLabel = getManagementSlaLabel(detail.summary.slaState);
-  if (slaLabel) {
-    badges.push({
-      label: `SLA: ${slaLabel}`,
-      variant: getManagementSlaBadgeVariant(detail.summary.slaState),
-    });
-  }
-
-  return badges;
-}
-
 function buildSummaryMetaItems(detail: WorkflowManagementRequestDetailData): RequestDetailShellSummaryItem[] {
   return [
     { label: 'Solicitante', value: detail.summary.requesterName || '-' },
+    { label: 'Finalizado em', value: formatManagementDate(detail.summary.finalizedAt) },
     { label: 'Responsavel', value: detail.summary.responsibleName || 'Nao atribuido' },
+    { label: 'Arquivado em', value: formatManagementDate(detail.summary.archivedAt) },
+    { label: 'Aberto em', value: formatManagementDate(detail.summary.submittedAt) },
     { label: 'Area', value: getSummaryAreaLabel(detail) },
     { label: 'Owner', value: detail.summary.ownerEmail || '-' },
-    { label: 'Aberto em', value: formatManagementDate(detail.summary.submittedAt) },
     { label: 'Ultima atualizacao', value: formatManagementDate(detail.summary.lastUpdatedAt) },
-    { label: 'Finalizado em', value: formatManagementDate(detail.summary.finalizedAt) },
-    { label: 'Arquivado em', value: formatManagementDate(detail.summary.archivedAt) },
   ];
 }
 
@@ -233,10 +193,9 @@ function resolveCurrentActionPrimaryMode(
 
 function buildHeaderDescription(
   detail: WorkflowManagementRequestDetailData,
-  operational: RequestOperationalViewModel,
 ): string {
   const workflowLabel = detail.summary.workflowName || detail.summary.workflowTypeId;
-  return `${workflowLabel} • etapa atual ${detail.summary.currentStepName}. ${operational.description}`;
+  return `${workflowLabel} • Em Etapa: ${detail.summary.currentStepName}.`;
 }
 
 export function buildRequestDetailShellViewModel(
@@ -248,9 +207,7 @@ export function buildRequestDetailShellViewModel(
     operational,
     header: {
       title: `Chamado #${detail.summary.requestId}`,
-      subtitle: detail.summary.workflowName || detail.summary.workflowTypeId || '-',
-      description: buildHeaderDescription(detail, operational),
-      badges: buildHeaderBadges(detail, operational),
+      description: buildHeaderDescription(detail),
     },
     summary: {
       areaLabel: getSummaryAreaLabel(detail),

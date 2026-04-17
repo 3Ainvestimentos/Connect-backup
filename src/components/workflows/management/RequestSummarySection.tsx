@@ -9,7 +9,7 @@ type RequestSummarySectionProps = {
 export function RequestSummarySection({ summary }: RequestSummarySectionProps) {
   return (
     <section
-      className="space-y-4 rounded-xl border bg-muted/20 p-4"
+      className="h-full space-y-4 rounded-xl border bg-muted/20 p-4"
       aria-labelledby="request-summary-title"
     >
       <div className="space-y-1">
@@ -21,11 +21,11 @@ export function RequestSummarySection({ summary }: RequestSummarySectionProps) {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
         {summary.metaItems.map((item) => (
-          <div key={item.label} className="space-y-1 text-sm">
+          <div key={item.label} className="min-w-0 space-y-1 text-sm">
             <p className="font-medium text-foreground">{item.label}</p>
-            <p className="text-muted-foreground">{item.value}</p>
+            <p className="break-words text-muted-foreground [overflow-wrap:anywhere]">{item.value}</p>
           </div>
         ))}
       </div>

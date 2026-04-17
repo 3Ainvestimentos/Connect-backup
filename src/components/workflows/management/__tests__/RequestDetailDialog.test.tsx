@@ -271,7 +271,7 @@ describe('RequestDetailDialog', () => {
     );
 
     expect(screen.getByText('Chamado concluido')).toBeTruthy();
-    expect(screen.getAllByText(/restam apenas acoes administrativas autorizadas/i)).toHaveLength(2);
+    expect(screen.getByText(/restam apenas acoes administrativas autorizadas/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Arquivar' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Action da etapa' })).toBeNull();
   });
@@ -305,7 +305,7 @@ describe('RequestDetailDialog', () => {
     );
 
     expect(screen.getByText('Chamado concluido')).toBeTruthy();
-    expect(screen.getAllByText(/permanece disponivel apenas para consulta/i)).toHaveLength(2);
+    expect(screen.getByText(/permanece disponivel apenas para consulta/i)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Administracao do chamado' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Action da etapa' })).toBeNull();
@@ -402,7 +402,7 @@ describe('RequestDetailDialog', () => {
     );
 
     expect(screen.getByText('Chamado arquivado')).toBeTruthy();
-    expect(screen.getAllByText(/apenas para consulta/i)).toHaveLength(2);
+    expect(screen.getByText(/apenas para consulta/i)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Avancar etapa' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Finalizar chamado' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();

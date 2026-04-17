@@ -204,95 +204,98 @@ export function RequestDetailDialog({
                       />
                     ) : null}
 
-                    <RequestSummarySection summary={shellViewModel.summary} />
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] xl:items-start">
+                      <RequestSummarySection summary={shellViewModel.summary} />
 
-                    <section className="space-y-4" aria-labelledby="request-current-action-title">
-                      <div className="space-y-1">
-                        <h2 id="request-current-action-title" className="text-sm font-semibold text-foreground">
-                          Acao atual
-                        </h2>
-                        <p className="text-sm text-muted-foreground">
-                          Proximo passo do fluxo, action da etapa e administracao reunidos numa unica macrozona.
-                        </p>
-                      </div>
+                      <section className="space-y-4" aria-labelledby="request-current-action-title">
+                        <div className="space-y-1">
+                          <h2 id="request-current-action-title" className="text-sm font-semibold text-foreground">
+                            Acao atual
+                          </h2>
+                          <p className="text-sm text-muted-foreground">
+                            Proximo passo do fluxo, action da etapa e administracao reunidos numa unica macrozona.
+                          </p>
+                        </div>
 
-                      <div className="space-y-4 rounded-xl border bg-background p-4">
+                        <div className="space-y-4 rounded-xl border bg-background p-4">
                         {shellViewModel.currentAction.primaryMode === 'admin' ? (
                           <RequestAdministrativePanel
                             detail={detail}
-                            collaborators={sortedCollaborators}
-                            selectedResponsibleId={selectedResponsibleId}
-                            onResponsibleChange={setSelectedResponsibleId}
-                            onAssign={handleAssign}
-                            onArchive={handleArchive}
-                            isAssigning={isAssigning}
-                            isArchiving={isArchiving}
-                            variant="elevated"
-                          />
-                        ) : null}
+                              collaborators={sortedCollaborators}
+                              selectedResponsibleId={selectedResponsibleId}
+                              onResponsibleChange={setSelectedResponsibleId}
+                              onAssign={handleAssign}
+                              onArchive={handleArchive}
+                              isAssigning={isAssigning}
+                              isArchiving={isArchiving}
+                              variant="elevated"
+                            />
+                          ) : null}
 
                         <RequestOperationalHero
-                          detail={detail}
                           viewModel={shellViewModel.operational}
                           onAdvance={handleAdvance}
                           onFinalize={handleFinalize}
-                          isAdvancing={isAdvancing}
-                          isFinalizing={isFinalizing}
-                        />
-
-                        {shellViewModel.currentAction.shouldRenderActionCard ? (
-                          <section className="space-y-3" aria-labelledby="request-action-zone-title">
-                            <div className="space-y-1">
-                              <h3 id="request-action-zone-title" className="text-sm font-semibold text-foreground">
-                                Action da etapa
-                              </h3>
-                              <p className="text-sm text-muted-foreground">
-                                Superficie oficial de requestAction/respondAction dentro da etapa atual.
-                              </p>
-                            </div>
-                            <RequestActionCard
-                              detail={detail}
-                              collaborators={collaborators}
-                              onRequestAction={onRequestAction}
-                              onRespondAction={onRespondAction}
-                              isRequestingAction={isRequestingAction}
-                              isRespondingAction={isRespondingAction}
-                              variant={
-                                shellViewModel.currentAction.primaryMode === 'action-card'
-                                  ? 'primary'
-                                  : 'default'
-                              }
-                            />
-                          </section>
-                        ) : null}
-
-                        {shellViewModel.currentAction.shouldRenderAdminPanel &&
-                        shellViewModel.currentAction.primaryMode !== 'admin' ? (
-                          <RequestAdministrativePanel
-                            detail={detail}
-                            collaborators={sortedCollaborators}
-                            selectedResponsibleId={selectedResponsibleId}
-                            onResponsibleChange={setSelectedResponsibleId}
-                            onAssign={handleAssign}
-                            onArchive={handleArchive}
-                            isAssigning={isAssigning}
-                            isArchiving={isArchiving}
+                            isAdvancing={isAdvancing}
+                            isFinalizing={isFinalizing}
                           />
-                        ) : null}
-                      </div>
-                    </section>
 
-                    <RequestStepHistorySection
-                      stepsHistory={detail.stepsHistory}
-                      progress={detail.progress}
-                      timeline={detail.timeline}
-                      hasLegacyFallback={shellViewModel.history.hasLegacyFallback}
-                    />
+                          {shellViewModel.currentAction.shouldRenderActionCard ? (
+                            <section className="space-y-3" aria-labelledby="request-action-zone-title">
+                              <div className="space-y-1">
+                                <h3 id="request-action-zone-title" className="text-sm font-semibold text-foreground">
+                                  Action da etapa
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                  Superficie oficial de requestAction/respondAction dentro da etapa atual.
+                                </p>
+                              </div>
+                              <RequestActionCard
+                                detail={detail}
+                                collaborators={collaborators}
+                                onRequestAction={onRequestAction}
+                                onRespondAction={onRespondAction}
+                                isRequestingAction={isRequestingAction}
+                                isRespondingAction={isRespondingAction}
+                                variant={
+                                  shellViewModel.currentAction.primaryMode === 'action-card'
+                                    ? 'primary'
+                                    : 'default'
+                                }
+                              />
+                            </section>
+                          ) : null}
 
-                    <RequestSubmittedDataSection
-                      formData={detail.formData}
-                      attachments={detail.attachments}
-                    />
+                          {shellViewModel.currentAction.shouldRenderAdminPanel &&
+                          shellViewModel.currentAction.primaryMode !== 'admin' ? (
+                            <RequestAdministrativePanel
+                              detail={detail}
+                              collaborators={sortedCollaborators}
+                              selectedResponsibleId={selectedResponsibleId}
+                              onResponsibleChange={setSelectedResponsibleId}
+                              onAssign={handleAssign}
+                              onArchive={handleArchive}
+                              isAssigning={isAssigning}
+                              isArchiving={isArchiving}
+                            />
+                          ) : null}
+                        </div>
+                      </section>
+                    </div>
+
+                    <div className="grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:items-start">
+                      <RequestStepHistorySection
+                        stepsHistory={detail.stepsHistory}
+                        progress={detail.progress}
+                        timeline={detail.timeline}
+                        hasLegacyFallback={shellViewModel.history.hasLegacyFallback}
+                      />
+
+                      <RequestSubmittedDataSection
+                        formData={detail.formData}
+                        attachments={detail.attachments}
+                      />
+                    </div>
                   </>
                 ) : null}
               </ManagementAsyncState>
