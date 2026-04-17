@@ -59,28 +59,58 @@ function buildCompletedAtByStepId(detail: RequesterUnifiedRequestDetail): Map<st
   return completedAtByStepId;
 }
 
+function resolveRequestOpenedDate(detail: RequesterUnifiedRequestDetail): Date | null {
+  if (detail.origin !== 'v2') {
+    return null;
+  }
+
+  for (const item of detail.timeline) {
+    if (item.action === 'request_opened' && item.timestamp) {
+      return item.timestamp;
+    }
+  }
+
+  return null;
+}
+
+function resolveDateForFirstStep(
+  requestOpenedDate: Date | null,
+  submittedAt: Date | null,
+): Date | null {
+  return requestOpenedDate ?? submittedAt ?? null;
+}
+
 export function buildRequesterHistory(
   detail: RequesterUnifiedRequestDetail,
 ): RequesterHistoryItem[] {
   if (detail.origin === 'v2') {
     const progressItems = detail.progress?.items ?? [];
     const completedAtByStepId = buildCompletedAtByStepId(detail);
+    const requestOpenedDate = resolveRequestOpenedDate(detail);
 
     return [...progressItems]
-      .map((item, index) => ({
+      .map((item, index) => ({ item, index }))
+      .sort(
+        (left, right) =>
+          (left.item.order ?? Number.POSITIVE_INFINITY) -
+            (right.item.order ?? Number.POSITIVE_INFINITY) || left.index - right.index,
+      )
+      .map(({ item, index }, sortedIndex) => ({
         id: `v2:${detail.detailKey}:${item.stepId}:${index}`,
         title: item.stepName?.trim() || '-',
         stateLabel: getManagementProgressStateLabel(item.state),
         occurredAt:
           item.state === 'completed'
-            ? completedAtByStepId.get(item.stepId) ?? null
+            ? completedAtByStepId.get(item.stepId) ??
+              (sortedIndex === 0
+                ? resolveDateForFirstStep(requestOpenedDate, detail.summary.submittedAt)
+                : null)
             : null,
         dateVisibility: 'only-when-present' as const,
         isCurrent: item.isCurrent,
         source: 'progress' as const,
         sortOrder: item.order ?? index,
-      }))
-      .sort((left, right) => left.sortOrder - right.sortOrder);
+      }));
   }
 
   return detail.timeline

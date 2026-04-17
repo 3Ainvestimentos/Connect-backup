@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RequesterUnifiedRequestDetailDialog } from '../RequesterUnifiedRequestDetailDialog';
 import { useRequestDetail } from '@/hooks/use-requester-workflows';
@@ -163,6 +164,25 @@ const detailV2: WorkflowRequestDetailData = {
   ],
 };
 
+function makeDetailV2(overrides?: {
+  submittedAt?: WorkflowRequestDetailData['summary']['submittedAt'];
+  progressItems?: WorkflowRequestDetailData['progress']['items'];
+  timeline?: WorkflowRequestDetailData['timeline'];
+}) {
+  return {
+    ...detailV2,
+    summary: {
+      ...detailV2.summary,
+      submittedAt: overrides?.submittedAt ?? detailV2.summary.submittedAt,
+    },
+    progress: {
+      ...detailV2.progress,
+      items: overrides?.progressItems ?? detailV2.progress.items,
+    },
+    timeline: overrides?.timeline ?? detailV2.timeline,
+  } satisfies WorkflowRequestDetailData;
+}
+
 const selectedLegacy: RequesterUnifiedLegacyListItem = {
   origin: 'legacy',
   detailKey: 'legacy:legacy-req-001',
@@ -256,5 +276,177 @@ describe('RequesterUnifiedRequestDetailDialog', () => {
     expect(pendingItem.compareDocumentPosition(inProgressItem)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
+  });
+
+  it('renders a blocking alert for v2 when the detail request fails without stable data', () => {
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('boom'),
+      isError: true,
+      stableData: undefined,
+      hasStableData: false,
+    });
+
+    render(
+      <RequesterUnifiedRequestDetailDialog
+        open
+        onOpenChange={jest.fn()}
+        selected={selectedV2}
+        areaLabelById={areaLabelById}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(
+      screen.getByText('Não foi possível carregar os detalhes desta solicitação.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Histórico')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dados enviados')).not.toBeInTheDocument();
+  });
+
+  it('closes the dialog when the user clicks the close button', async () => {
+    const user = userEvent.setup();
+    const onOpenChange = jest.fn();
+
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: detailV2,
+      isLoading: false,
+      error: null,
+      isError: false,
+      stableData: detailV2,
+      hasStableData: true,
+    });
+
+    render(
+      <RequesterUnifiedRequestDetailDialog
+        open
+        onOpenChange={onOpenChange}
+        selected={selectedV2}
+        areaLabelById={areaLabelById}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('renders the first step date from request_opened fallback when no step_completed match exists', () => {
+    const detail = makeDetailV2({
+      timeline: [
+        {
+          action: 'request_opened',
+          label: 'Evento técnico',
+          timestamp: {
+            toDate: () => new Date('2026-04-11T10:00:00.000Z'),
+          },
+          userId: 'user-1',
+          userName: 'Test User',
+        },
+      ],
+      progressItems: [
+        {
+          stepId: 'step-1',
+          stepName: 'Abertura',
+          statusKey: 'completed',
+          kind: 'start',
+          order: 1,
+          state: 'completed',
+          isCurrent: false,
+        },
+        {
+          stepId: 'step-2',
+          stepName: 'Execução',
+          statusKey: 'in_progress',
+          kind: 'work',
+          order: 2,
+          state: 'active',
+          isCurrent: true,
+        },
+      ],
+    });
+
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: detail,
+      isLoading: false,
+      error: null,
+      isError: false,
+      stableData: detail,
+      hasStableData: true,
+    });
+
+    render(
+      <RequesterUnifiedRequestDetailDialog
+        open
+        onOpenChange={jest.fn()}
+        selected={selectedV2}
+        areaLabelById={areaLabelById}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByText(/11\/04\/2026/)).toBeInTheDocument();
+    expect(screen.queryByText('Evento técnico')).not.toBeInTheDocument();
+  });
+
+  it('does not render any placeholder date for a non-initial completed step without a step_completed match', () => {
+    const detail = makeDetailV2({
+      timeline: [
+        {
+          action: 'request_opened',
+          label: 'Evento técnico',
+          timestamp: {
+            toDate: () => new Date('2026-04-11T10:00:00.000Z'),
+          },
+          userId: 'user-1',
+          userName: 'Test User',
+        },
+      ],
+      progressItems: [
+        {
+          stepId: 'step-1',
+          stepName: 'Abertura',
+          statusKey: 'in_progress',
+          kind: 'start',
+          order: 1,
+          state: 'active',
+          isCurrent: true,
+        },
+        {
+          stepId: 'step-2',
+          stepName: 'Execução',
+          statusKey: 'completed',
+          kind: 'work',
+          order: 2,
+          state: 'completed',
+          isCurrent: false,
+        },
+      ],
+    });
+
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: detail,
+      isLoading: false,
+      error: null,
+      isError: false,
+      stableData: detail,
+      hasStableData: true,
+    });
+
+    render(
+      <RequesterUnifiedRequestDetailDialog
+        open
+        onOpenChange={jest.fn()}
+        selected={selectedV2}
+        areaLabelById={areaLabelById}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByText('Execução')).toBeInTheDocument();
+    expect(screen.queryByText('Sem data')).not.toBeInTheDocument();
+    expect(screen.queryByText(/11\/04\/2026/)).not.toBeInTheDocument();
   });
 });
