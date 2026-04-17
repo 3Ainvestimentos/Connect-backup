@@ -71,9 +71,11 @@ export function MyRequestDetailDialog({ open, onOpenChange, requestId, areaLabel
   const detail = stableData ?? data;
   const isBlockingError = isError && !hasStableData;
   const isNonBlockingError = isError && hasStableData;
+  const serverAreaLabel = detail?.summary.areaLabel?.trim();
+  const mappedAreaLabel = detail ? areaLabelById?.get(detail.summary.areaId) : undefined;
 
   const openedInLabel = detail
-    ? (areaLabelById?.get(detail.summary.areaId) ?? detail.summary.areaId ?? '-')
+    ? (serverAreaLabel || mappedAreaLabel || detail.summary.areaId || '-')
     : '-';
 
   const handleOpenChange = (nextOpen: boolean) => {

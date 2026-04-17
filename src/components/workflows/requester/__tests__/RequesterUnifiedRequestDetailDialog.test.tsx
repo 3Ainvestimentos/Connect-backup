@@ -49,6 +49,7 @@ const selectedV2: RequesterUnifiedV2ListItem = {
     workflowVersion: 1,
     workflowName: 'Manutenção Geral',
     areaId: 'area-1',
+    areaLabel: 'Facilities',
     ownerEmail: 'owner@example.com',
     ownerUserId: 'owner-1',
     requesterUserId: 'user-1',
@@ -168,12 +169,14 @@ function makeDetailV2(overrides?: {
   submittedAt?: WorkflowRequestDetailData['summary']['submittedAt'];
   progressItems?: WorkflowRequestDetailData['progress']['items'];
   timeline?: WorkflowRequestDetailData['timeline'];
+  areaLabel?: WorkflowRequestDetailData['summary']['areaLabel'];
 }) {
   return {
     ...detailV2,
     summary: {
       ...detailV2.summary,
       submittedAt: overrides?.submittedAt ?? detailV2.summary.submittedAt,
+      areaLabel: overrides?.areaLabel ?? detailV2.summary.areaLabel,
     },
     progress: {
       ...detailV2.progress,
@@ -242,6 +245,32 @@ describe('RequesterUnifiedRequestDetailDialog', () => {
     expect(screen.queryByText('Timeline')).not.toBeInTheDocument();
     expect(screen.queryByText('Progresso')).not.toBeInTheDocument();
     expect(screen.queryByText('Evento técnico')).not.toBeInTheDocument();
+  });
+
+  it('prefers summary.areaLabel over areaLabelById when adapting the v2 detail', () => {
+    const detail = makeDetailV2({ areaLabel: 'Facilities Oficial' });
+    const emptyMap = new Map<string, string>();
+
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: detail,
+      isLoading: false,
+      error: null,
+      isError: false,
+      stableData: detail,
+      hasStableData: true,
+    });
+
+    render(
+      <RequesterUnifiedRequestDetailDialog
+        open
+        onOpenChange={jest.fn()}
+        selected={selectedV2}
+        areaLabelById={emptyMap}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    expect(screen.getByText('Facilities Oficial')).toBeInTheDocument();
   });
 
   it('renders legacy history with oldest item first and PT-BR labels', () => {

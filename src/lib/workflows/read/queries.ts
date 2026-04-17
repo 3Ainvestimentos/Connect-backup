@@ -30,6 +30,7 @@ import {
 
 const WORKFLOW_TYPES_COLLECTION = 'workflowTypes_v2';
 const WORKFLOWS_COLLECTION = 'workflows_v2';
+const WORKFLOW_AREAS_COLLECTION = 'workflowAreas';
 
 function getDb(): Firestore {
   return getFirestore(getFirebaseAdminApp());
@@ -73,6 +74,10 @@ export function mapWorkflowRequestToReadSummary(
     isArchived: data.isArchived,
   };
 }
+
+type WorkflowAreaDocument = {
+  name?: string;
+};
 
 function mapWorkflowReadSummary(doc: QueryDocumentSnapshot): WorkflowReadSummary {
   return mapWorkflowRequestToReadSummary(doc.id, doc.data() as WorkflowRequestV2);
@@ -245,6 +250,24 @@ async function queryExactWorkflowRequest(requestId: number): Promise<WorkflowRea
   return enrichWorkflowReadSummaryWithSlaState(
     mapWorkflowRequestToReadSummary(result.docId, result.data),
   );
+}
+
+export async function getWorkflowAreaLabel(
+  areaId: string,
+  db: Firestore = getDb(),
+): Promise<string> {
+  const normalizedAreaId = areaId.trim();
+  if (!normalizedAreaId) {
+    return areaId;
+  }
+
+  const snapshot = await db.collection(WORKFLOW_AREAS_COLLECTION).doc(normalizedAreaId).get();
+  if (!snapshot.exists) {
+    return normalizedAreaId;
+  }
+
+  const data = snapshot.data() as WorkflowAreaDocument;
+  return data.name?.trim() || normalizedAreaId;
 }
 
 export async function queryScopedCurrentQueue(

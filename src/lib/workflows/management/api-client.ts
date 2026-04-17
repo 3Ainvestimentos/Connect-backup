@@ -19,6 +19,9 @@ import type {
   WorkflowManagementRequestDetailField,
   WorkflowManagementRequestDetailPermissions,
   WorkflowManagementRequestProgressItem,
+  WorkflowManagementRequestStepActionResponse,
+  WorkflowManagementRequestStepEvent,
+  WorkflowManagementRequestStepHistoryItem,
   WorkflowManagementRequestSummary,
   WorkflowManagementRequestTimelineItem,
   WorkflowManagementFinalizeInput,
@@ -165,6 +168,9 @@ function normalizeRequestSummary(input: unknown): WorkflowManagementRequestSumma
     workflowVersion: asNumber(item.workflowVersion),
     workflowName: asString(item.workflowName),
     areaId: asString(item.areaId),
+    ...(typeof item.areaLabel === 'string' && item.areaLabel.trim() !== ''
+      ? { areaLabel: item.areaLabel }
+      : {}),
     ownerEmail: asString(item.ownerEmail),
     ownerUserId: asString(item.ownerUserId),
     requesterUserId: asString(item.requesterUserId),
@@ -314,19 +320,14 @@ function normalizeAttachment(input: unknown): WorkflowManagementRequestAttachmen
 
 function normalizeProgressItem(input: unknown): WorkflowManagementRequestProgressItem {
   const item = isObject(input) ? input : {};
-  const kind = asString(item.kind);
-  const state = asString(item.state);
 
   return {
     stepId: asString(item.stepId),
     stepName: asString(item.stepName),
     statusKey: asString(item.statusKey),
-    kind: kind === 'start' || kind === 'work' || kind === 'final' ? kind : 'work',
+    kind: normalizeStepKind(item.kind),
     order: asNumber(item.order),
-    state:
-      state === 'pending' || state === 'active' || state === 'completed' || state === 'skipped'
-        ? state
-        : 'pending',
+    state: normalizeStepState(item.state),
     isCurrent: asBoolean(item.isCurrent),
   };
 }
@@ -385,35 +386,91 @@ function normalizeActionDetail(input: unknown): WorkflowManagementRequestActionD
     requestedByUserId: asNullableString(detail.requestedByUserId),
     requestedByName: asNullableString(detail.requestedByName),
     recipients: Array.isArray(detail.recipients)
-      ? detail.recipients.map((recipient) => {
-          const item = isObject(recipient) ? recipient : {};
-          const status = asString(item.status);
-
-          return {
-            actionRequestId: asString(item.actionRequestId),
-            recipientUserId: asString(item.recipientUserId),
-            status:
-              status === 'pending' ||
-              status === 'approved' ||
-              status === 'rejected' ||
-              status === 'acknowledged' ||
-              status === 'executed'
-                ? status
-                : 'pending',
-            respondedAt: normalizeTimestamp(item.respondedAt),
-            respondedByUserId: asNullableString(item.respondedByUserId),
-            respondedByName: asNullableString(item.respondedByName),
-            ...(typeof item.responseComment === 'string' && item.responseComment.trim() !== ''
-              ? { responseComment: item.responseComment }
-              : {}),
-            ...(typeof item.responseAttachmentUrl === 'string' &&
-            item.responseAttachmentUrl.trim() !== ''
-              ? { responseAttachmentUrl: item.responseAttachmentUrl }
-              : {}),
-          };
-        })
+      ? detail.recipients.map(normalizeHistoryAction)
       : [],
     configurationError: asNullableString(detail.configurationError),
+  };
+}
+
+function normalizeActionRequestStatus(
+  input: unknown,
+): WorkflowManagementRequestStepActionResponse['status'] {
+  const status = asString(input);
+
+  return status === 'pending' ||
+    status === 'approved' ||
+    status === 'rejected' ||
+    status === 'acknowledged' ||
+    status === 'executed'
+    ? status
+    : 'pending';
+}
+
+function normalizeStepKind(input: unknown): WorkflowManagementRequestStepHistoryItem['kind'] {
+  const kind = asString(input);
+  return kind === 'start' || kind === 'work' || kind === 'final' ? kind : 'work';
+}
+
+function normalizeStepState(input: unknown): WorkflowManagementRequestStepHistoryItem['state'] {
+  const state = asString(input);
+  return state === 'pending' || state === 'active' || state === 'completed' || state === 'skipped'
+    ? state
+    : 'pending';
+}
+
+function normalizeHistoryAction(
+  input: unknown,
+): WorkflowManagementRequestActionDetail['recipients'][number] {
+  const item = isObject(input) ? input : {};
+
+  return {
+    actionRequestId: asString(item.actionRequestId),
+    recipientUserId: asString(item.recipientUserId),
+    status: normalizeActionRequestStatus(item.status),
+    respondedAt: normalizeTimestamp(item.respondedAt),
+    respondedByUserId: asNullableString(item.respondedByUserId),
+    respondedByName: asNullableString(item.respondedByName),
+    ...(typeof item.responseComment === 'string' && item.responseComment.trim() !== ''
+      ? { responseComment: item.responseComment }
+      : {}),
+    ...(typeof item.responseAttachmentUrl === 'string' &&
+    item.responseAttachmentUrl.trim() !== ''
+      ? { responseAttachmentUrl: item.responseAttachmentUrl }
+      : {}),
+  };
+}
+
+function normalizeStepHistoryEvent(input: unknown): WorkflowManagementRequestStepEvent {
+  const item = isObject(input) ? input : {};
+  return {
+    action: normalizeTimelineItem(item).action,
+    label: asString(item.label),
+    timestamp: normalizeTimestamp(item.timestamp),
+    userId: asString(item.userId),
+    userName: asString(item.userName),
+  };
+}
+
+function normalizeStepHistoryActionResponse(
+  input: unknown,
+): WorkflowManagementRequestStepActionResponse {
+  return normalizeHistoryAction(input);
+}
+
+function normalizeStepHistoryItem(input: unknown): WorkflowManagementRequestStepHistoryItem {
+  const item = isObject(input) ? input : {};
+
+  return {
+    stepId: asString(item.stepId),
+    stepName: asString(item.stepName),
+    kind: normalizeStepKind(item.kind),
+    order: asNumber(item.order),
+    state: normalizeStepState(item.state),
+    isCurrent: asBoolean(item.isCurrent),
+    events: Array.isArray(item.events) ? item.events.map(normalizeStepHistoryEvent) : [],
+    actionResponses: Array.isArray(item.actionResponses)
+      ? item.actionResponses.map(normalizeStepHistoryActionResponse)
+      : [],
   };
 }
 
@@ -526,6 +583,9 @@ function normalizeRequestDetailData(input: unknown): WorkflowManagementRequestDe
     },
     action: normalizeActionDetail(data.action),
     timeline: Array.isArray(data.timeline) ? data.timeline.map(normalizeTimelineItem) : [],
+    stepsHistory: Array.isArray(data.stepsHistory)
+      ? data.stepsHistory.map(normalizeStepHistoryItem)
+      : undefined,
   };
 }
 

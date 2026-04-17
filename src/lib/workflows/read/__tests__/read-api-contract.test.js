@@ -62,6 +62,7 @@ function buildSummary(overrides = {}) {
     workflowVersion: 1,
     workflowName: 'Facilities',
     areaId: 'area-1',
+    areaLabel: 'Facilities',
     ownerEmail: 'owner@3ariva.com.br',
     ownerUserId: 'SMO2',
     requesterUserId: 'REQ1',
@@ -163,6 +164,26 @@ function buildDetail(overrides = {}) {
         userId: 'REQ1',
         userName: 'Requester',
         details: {},
+      },
+    ],
+    stepsHistory: [
+      {
+        stepId: 'stp_open',
+        stepName: 'Aberto',
+        kind: 'start',
+        order: 1,
+        state: 'completed',
+        isCurrent: false,
+        events: [
+          {
+            action: 'request_opened',
+            label: 'Solicitacao aberta',
+            timestamp: { seconds: 1, nanoseconds: 0 },
+            userId: 'REQ1',
+            userName: 'Requester',
+          },
+        ],
+        actionResponses: [],
       },
     ],
     ...overrides,
@@ -301,7 +322,12 @@ describe('workflow read API contract', () => {
     await expect(response.json()).resolves.toEqual({
       ok: true,
       data: expect.objectContaining({
-        summary: expect.objectContaining({ requestId: 800 }),
+        summary: expect.objectContaining({ requestId: 800, areaLabel: 'Facilities' }),
+        stepsHistory: [
+          expect.objectContaining({
+            stepId: 'stp_open',
+          }),
+        ],
         permissions: {
           canAssign: false,
           canAdvance: false,

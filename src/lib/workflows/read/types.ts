@@ -27,6 +27,7 @@ export type WorkflowReadMonthField = 'closedMonthKey' | 'submittedMonthKey';
 export type WorkflowReadSummary = {
   docId: string;
   slaState?: WorkflowReadSlaState;
+  areaLabel?: string;
 } & Pick<
   WorkflowRequestV2,
   | 'requestId'
@@ -188,6 +189,36 @@ export type WorkflowRequestActionRecipientDetail = {
   responseAttachmentUrl?: string;
 };
 
+export type WorkflowRequestStepEvent = {
+  action: HistoryAction;
+  label: string;
+  timestamp: TimestampLike;
+  userId: string;
+  userName: string;
+};
+
+export type WorkflowRequestStepActionResponse = {
+  actionRequestId: string;
+  recipientUserId: string;
+  status: WorkflowActionRequestStatus;
+  respondedAt: TimestampLike;
+  respondedByUserId: string | null;
+  respondedByName: string | null;
+  responseComment?: string;
+  responseAttachmentUrl?: string;
+};
+
+export type WorkflowRequestStepHistoryItem = {
+  stepId: string;
+  stepName: string;
+  kind: StepKind;
+  order: number;
+  state: StepState;
+  isCurrent: boolean;
+  events: WorkflowRequestStepEvent[];
+  actionResponses: WorkflowRequestStepActionResponse[];
+};
+
 export type WorkflowRequestActionState = 'idle' | 'pending' | 'completed';
 
 export type WorkflowRequestActionDetail = {
@@ -226,6 +257,7 @@ export type WorkflowRequestDetailData = {
   };
   action: WorkflowRequestActionDetail;
   timeline: WorkflowRequestTimelineItem[];
+  stepsHistory?: WorkflowRequestStepHistoryItem[];
 };
 
 export type ReadSuccess<T> = {

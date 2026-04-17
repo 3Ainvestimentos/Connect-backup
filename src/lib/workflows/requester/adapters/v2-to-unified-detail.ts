@@ -49,10 +49,9 @@ export function v2ReadDetailToUnifiedDetail(
   detail: WorkflowRequestDetailData,
   areaLabelById?: Map<string, string>,
 ): RequesterUnifiedV2Detail {
-  const openedInLabel =
-    areaLabelById?.get(detail.summary.areaId) ??
-    detail.summary.areaId ??
-    '-';
+  const serverAreaLabel = detail.summary.areaLabel?.trim();
+  const mappedAreaLabel = areaLabelById?.get(detail.summary.areaId);
+  const openedInLabel = serverAreaLabel || mappedAreaLabel || detail.summary.areaId || '-';
 
   const statusLabel =
     detail.summary.currentStepName?.trim() ||

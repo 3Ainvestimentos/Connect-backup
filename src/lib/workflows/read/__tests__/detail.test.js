@@ -5,6 +5,14 @@ jest.mock('@/lib/workflows/runtime/repository', () => ({
   getWorkflowVersion: jest.fn(),
 }));
 
+jest.mock('@/lib/workflows/read/queries', () => {
+  const actual = jest.requireActual('@/lib/workflows/read/queries');
+  return {
+    ...actual,
+    getWorkflowAreaLabel: jest.fn(),
+  };
+});
+
 const { RuntimeErrorCode } = require('@/lib/workflows/runtime/errors');
 const {
   buildWorkflowRequestDetail,
@@ -14,6 +22,7 @@ const {
   getWorkflowRequestByRequestId,
   getWorkflowVersion,
 } = require('@/lib/workflows/runtime/repository');
+const { getWorkflowAreaLabel } = require('@/lib/workflows/read/queries');
 
 function buildRequest(overrides = {}) {
   return {
@@ -155,6 +164,7 @@ function buildVersion(overrides = {}) {
 describe('workflow request detail composer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getWorkflowAreaLabel.mockResolvedValue('Facilities');
   });
 
   it('compoe formData, attachments, progress, timeline e permissions sem inflar o summary', () => {
@@ -163,6 +173,7 @@ describe('workflow request detail composer', () => {
       request: buildRequest(),
       version: buildVersion(),
       actorUserId: 'SMO2',
+      areaLabel: 'Facilities',
     });
 
     expect(detail.summary).toEqual(
@@ -170,6 +181,7 @@ describe('workflow request detail composer', () => {
         docId: 'doc-1',
         requestId: 812,
         workflowVersion: 3,
+        areaLabel: 'Facilities',
       }),
     );
     expect(detail.permissions).toEqual({
@@ -211,6 +223,48 @@ describe('workflow request detail composer', () => {
         action: 'entered_step',
         label: 'Entrada em etapa',
       }),
+    ]);
+    expect(detail.stepsHistory).toEqual([
+      {
+        stepId: 'abertura',
+        stepName: 'Abertura',
+        kind: 'start',
+        order: 1,
+        state: 'completed',
+        isCurrent: false,
+        events: [],
+        actionResponses: [],
+      },
+      {
+        stepId: 'analise',
+        stepName: 'Analise',
+        kind: 'work',
+        order: 2,
+        state: 'completed',
+        isCurrent: false,
+        events: [],
+        actionResponses: [],
+      },
+      {
+        stepId: 'execucao',
+        stepName: 'Execucao',
+        kind: 'work',
+        order: 3,
+        state: 'active',
+        isCurrent: true,
+        events: [],
+        actionResponses: [],
+      },
+      {
+        stepId: 'encerramento',
+        stepName: 'Encerramento',
+        kind: 'final',
+        order: 4,
+        state: 'pending',
+        isCurrent: false,
+        events: [],
+        actionResponses: [],
+      },
     ]);
     expect(detail.action).toEqual({
       available: true,
@@ -272,6 +326,7 @@ describe('workflow request detail composer', () => {
             timestamp: { seconds: 4, nanoseconds: 0 },
             userId: 'RESP_EXEC',
             userName: 'Responsavel Execucao',
+            details: { stepId: 'execucao' },
           },
         ],
       }),
@@ -313,6 +368,23 @@ describe('workflow request detail composer', () => {
         label: 'Action solicitada',
       }),
     ]);
+    expect(detail.stepsHistory.find((item) => item.stepId === 'execucao')).toEqual(
+      expect.objectContaining({
+        events: [
+          expect.objectContaining({
+            action: 'action_requested',
+            label: 'Action solicitada',
+          }),
+        ],
+        actionResponses: [
+          expect.objectContaining({
+            actionRequestId: 'act_req_1',
+            recipientUserId: 'EXEC2',
+            status: 'pending',
+          }),
+        ],
+      }),
+    );
   });
 
   it('mantem visivel o ultimo batch encerrado da etapa atual como completed', () => {
@@ -397,6 +469,90 @@ describe('workflow request detail composer', () => {
         ],
       }),
     );
+    expect(detail.stepsHistory.find((item) => item.stepId === 'analise')).toEqual(
+      expect.objectContaining({
+        actionResponses: [
+          expect.objectContaining({
+            actionRequestId: 'act_req_old',
+            status: 'approved',
+          }),
+        ],
+      }),
+    );
+    expect(detail.stepsHistory.find((item) => item.stepId === 'execucao')).toEqual(
+      expect.objectContaining({
+        actionResponses: [
+          expect.objectContaining({
+            actionRequestId: 'act_req_2',
+            status: 'executed',
+            responseAttachmentUrl: 'https://storage.googleapis.com/example/comprovante.pdf',
+          }),
+        ],
+      }),
+    );
+  });
+
+  it('nao redistribui eventos sem details.stepId e preserva visibilidade restrita de anexos de resposta', () => {
+    const detail = buildWorkflowRequestDetail({
+      docId: 'doc-5',
+      request: buildRequest({
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_hidden',
+            actionBatchId: 'act_batch_hidden',
+            stepId: 'execucao',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            type: 'execution',
+            label: 'Executar atividade',
+            recipientUserId: 'EXEC2',
+            requestedByUserId: 'RESP1',
+            requestedByName: 'Responsavel',
+            requestedAt: { seconds: 5, nanoseconds: 0 },
+            status: 'executed',
+            respondedAt: { seconds: 6, nanoseconds: 0 },
+            respondedByUserId: 'EXEC2',
+            respondedByName: 'Executor',
+            responseAttachment: {
+              fileName: 'sigiloso.pdf',
+              contentType: 'application/pdf',
+              fileUrl: 'https://storage.googleapis.com/example/sigiloso.pdf',
+              storagePath: 'Workflows/workflows_v2/uploads/action_response/example.pdf',
+            },
+          },
+        ],
+        history: [
+          {
+            action: 'request_opened',
+            timestamp: { seconds: 1, nanoseconds: 0 },
+            userId: 'REQ1',
+            userName: 'Requester',
+          },
+          {
+            action: 'action_requested',
+            timestamp: { seconds: 4, nanoseconds: 0 },
+            userId: 'RESP1',
+            userName: 'Responsavel',
+            details: {},
+          },
+        ],
+      }),
+      version: buildVersion(),
+      actorUserId: 'OUTRO_ATOR',
+      areaLabel: 'Facilities',
+    });
+
+    expect(detail.timeline).toHaveLength(2);
+    expect(detail.stepsHistory.find((item) => item.stepId === 'execucao')).toEqual(
+      expect.objectContaining({
+        events: [],
+        actionResponses: [
+          expect.not.objectContaining({
+            responseAttachmentUrl: 'https://storage.googleapis.com/example/sigiloso.pdf',
+          }),
+        ],
+      }),
+    );
   });
 
   it('libera advance apenas quando a etapa atual pode continuar para outra work step', () => {
@@ -438,7 +594,9 @@ describe('workflow request detail composer', () => {
     const detail = await getWorkflowRequestDetail(812, 'REQ1');
 
     expect(getWorkflowVersion).toHaveBeenCalledWith('facilities_suprimentos', 3);
+    expect(getWorkflowAreaLabel).toHaveBeenCalledWith('facilities');
     expect(detail.summary.requestId).toBe(812);
+    expect(detail.summary.areaLabel).toBe('Facilities');
   });
 
   it('rejeita leitura para outsider fora do escopo operacional', async () => {

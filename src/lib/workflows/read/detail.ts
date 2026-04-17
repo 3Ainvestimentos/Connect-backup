@@ -21,7 +21,7 @@ import type {
   WorkflowVersionV2,
 } from '@/lib/workflows/runtime/types';
 import { enrichWorkflowReadSummaryWithSlaState, normalizeReadTimestamp } from './filters';
-import { mapWorkflowRequestToReadSummary } from './queries';
+import { getWorkflowAreaLabel, mapWorkflowRequestToReadSummary } from './queries';
 import type {
   TimestampLike,
   WorkflowRequestAttachment,
@@ -31,6 +31,9 @@ import type {
   WorkflowRequestDetailField,
   WorkflowRequestDetailPermissions,
   WorkflowRequestProgressItem,
+  WorkflowRequestStepActionResponse,
+  WorkflowRequestStepEvent,
+  WorkflowRequestStepHistoryItem,
   WorkflowRequestTimelineItem,
 } from './types';
 
@@ -267,6 +270,21 @@ function buildDetailTimeline(history: HistoryEntry[]): WorkflowRequestTimelineIt
     }));
 }
 
+function buildDetailSummary(
+  docId: string,
+  request: WorkflowRequestV2,
+  areaLabel?: string | null,
+) {
+  const base = enrichWorkflowReadSummaryWithSlaState(
+    mapWorkflowRequestToReadSummary(docId, request),
+  );
+
+  return {
+    ...base,
+    areaLabel: areaLabel?.trim() || base.areaId,
+  };
+}
+
 function buildActionRecipients(entries: WorkflowActionRequest[], actorUserId: string, request: WorkflowRequestV2) {
   const canSeeResponseAttachment =
     actorUserId === request.ownerUserId ||
@@ -287,6 +305,67 @@ function buildActionRecipients(entries: WorkflowActionRequest[], actorUserId: st
     entry.responseAttachment.fileUrl.trim() !== ''
       ? { responseAttachmentUrl: entry.responseAttachment.fileUrl }
       : {}),
+    }));
+}
+
+function mapHistoryEntryToStepEvent(entry: HistoryEntry): WorkflowRequestStepEvent {
+  return {
+    action: entry.action,
+    label: TIMELINE_LABELS[entry.action] ?? entry.action,
+    timestamp: entry.timestamp,
+    userId: entry.userId,
+    userName: entry.userName,
+  };
+}
+
+function mapActionRequestToStepResponse(
+  entry: WorkflowActionRequest,
+  actorUserId: string,
+  request: WorkflowRequestV2,
+): WorkflowRequestStepActionResponse {
+  const canSeeResponseAttachment =
+    actorUserId === request.ownerUserId ||
+    (request.responsibleUserId != null && actorUserId === request.responsibleUserId);
+
+  return {
+    actionRequestId: entry.actionRequestId,
+    recipientUserId: entry.recipientUserId,
+    status: entry.status,
+    respondedAt: entry.respondedAt ?? null,
+    respondedByUserId: entry.respondedByUserId ?? null,
+    respondedByName: entry.respondedByName ?? null,
+    ...(typeof entry.responseComment === 'string' && entry.responseComment.trim() !== ''
+      ? { responseComment: entry.responseComment }
+      : {}),
+    ...(canSeeResponseAttachment &&
+    typeof entry.responseAttachment?.fileUrl === 'string' &&
+    entry.responseAttachment.fileUrl.trim() !== ''
+      ? { responseAttachmentUrl: entry.responseAttachment.fileUrl }
+      : {}),
+  };
+}
+
+function buildDetailStepsHistory(
+  request: WorkflowRequestV2,
+  progressItems: WorkflowRequestProgressItem[],
+  actorUserId: string,
+): WorkflowRequestStepHistoryItem[] {
+  const history = request.history ?? [];
+  const actionRequests = request.actionRequests ?? [];
+
+  return progressItems.map((item) => ({
+    stepId: item.stepId,
+    stepName: item.stepName,
+    kind: item.kind,
+    order: item.order,
+    state: item.state,
+    isCurrent: item.isCurrent,
+    events: history
+      .filter((entry) => entry.details?.stepId === item.stepId)
+      .map(mapHistoryEntryToStepEvent),
+    actionResponses: actionRequests
+      .filter((entry) => entry.stepId === item.stepId)
+      .map((entry) => mapActionRequestToStepResponse(entry, actorUserId, request)),
   }));
 }
 
@@ -440,20 +519,21 @@ export function buildWorkflowRequestDetail(input: {
   request: WorkflowRequestV2;
   version: WorkflowVersionV2;
   actorUserId: string;
+  areaLabel?: string | null;
 }): WorkflowRequestDetailData {
-  const { docId, request, version, actorUserId } = input;
+  const { docId, request, version, actorUserId, areaLabel } = input;
   const permissions = buildDetailPermissions(request, version, actorUserId);
+  const progress = buildDetailProgress(request, version);
 
   return {
-    summary: enrichWorkflowReadSummaryWithSlaState(
-      mapWorkflowRequestToReadSummary(docId, request),
-    ),
+    summary: buildDetailSummary(docId, request, areaLabel),
     permissions,
     formData: buildDetailFormData(request.formData ?? {}, version),
     attachments: buildDetailAttachments(request.formData ?? {}, version),
-    progress: buildDetailProgress(request, version),
+    progress,
     action: buildDetailAction(request, version, permissions, actorUserId),
     timeline: buildDetailTimeline(request.history ?? []),
+    stepsHistory: buildDetailStepsHistory(request, progress.items, actorUserId),
   };
 }
 
@@ -501,10 +581,13 @@ export async function getWorkflowRequestDetail(
     );
   }
 
+  const areaLabel = await getWorkflowAreaLabel(request.areaId);
+
   return buildWorkflowRequestDetail({
     docId: requestEntry.docId,
     request,
     version,
     actorUserId,
+    areaLabel,
   });
 }

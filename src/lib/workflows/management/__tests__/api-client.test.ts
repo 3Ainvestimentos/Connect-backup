@@ -34,6 +34,7 @@ describe('workflow management api client', () => {
             workflowVersion: 3,
             workflowName: 'Solicitacao de Suprimentos',
             areaId: 'facilities',
+            areaLabel: 'Facilities',
             ownerEmail: 'owner@3ariva.com.br',
             ownerUserId: 'SMO2',
             requesterUserId: 'REQ1',
@@ -104,6 +105,37 @@ describe('workflow management api client', () => {
             configurationError: null,
           },
           timeline: [],
+          stepsHistory: [
+            {
+              stepId: 'execucao',
+              stepName: 'Execucao',
+              kind: 'work',
+              order: 3,
+              state: 'active',
+              isCurrent: true,
+              events: [
+                {
+                  action: 'action_requested',
+                  label: 'Action solicitada',
+                  timestamp: { seconds: 1712048400, nanoseconds: 0 },
+                  userId: 'RESP1',
+                  userName: 'Responsavel',
+                },
+              ],
+              actionResponses: [
+                {
+                  actionRequestId: 'act_req_2',
+                  recipientUserId: 'RESP1',
+                  status: 'executed',
+                  respondedAt: { seconds: 1712059200, nanoseconds: 0 },
+                  respondedByUserId: 'RESP1',
+                  respondedByName: 'Responsavel',
+                  responseComment: 'Execucao concluida',
+                  responseAttachmentUrl: 'https://example.com/comprovante.pdf',
+                },
+              ],
+            },
+          ],
         },
       }),
     } as Response);
@@ -122,6 +154,25 @@ describe('workflow management api client', () => {
     expect(detail.action.batchId).toBe('act_batch_2');
     expect(detail.action.completedAt).toEqual(new Date('2024-04-02T12:00:00.000Z'));
     expect(detail.permissions.canAdvance).toBe(true);
+    expect(detail.summary.areaLabel).toBe('Facilities');
+    expect(detail.stepsHistory).toEqual([
+      expect.objectContaining({
+        stepId: 'execucao',
+        events: [
+          expect.objectContaining({
+            action: 'action_requested',
+            timestamp: new Date('2024-04-02T09:00:00.000Z'),
+          }),
+        ],
+        actionResponses: [
+          expect.objectContaining({
+            actionRequestId: 'act_req_2',
+            respondedAt: new Date('2024-04-02T12:00:00.000Z'),
+            responseAttachmentUrl: 'https://example.com/comprovante.pdf',
+          }),
+        ],
+      }),
+    ]);
   });
 
   it('calls the official runtime advance route through the management client', async () => {

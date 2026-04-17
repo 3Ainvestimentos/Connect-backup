@@ -41,6 +41,7 @@ const mockDetail: WorkflowRequestDetailData = {
     workflowVersion: 1,
     workflowName: 'Manutencao Geral',
     areaId: 'facilities',
+    areaLabel: 'Facilities',
     ownerEmail: 'owner@example.com',
     ownerUserId: 'owner-1',
     requesterUserId: 'user-1',
@@ -417,6 +418,33 @@ describe('MyRequestDetailDialog', () => {
 
   it('should fallback to areaId when areaLabelById does not have the area', () => {
     const emptyMap = new Map<string, string>();
+    const detailWithoutAreaLabel: WorkflowRequestDetailData = {
+      ...mockDetail,
+      summary: {
+        ...mockDetail.summary,
+        areaLabel: undefined,
+      },
+    };
+    (useRequestDetail as jest.Mock).mockReturnValue({
+      data: detailWithoutAreaLabel,
+      isLoading: false,
+      error: null,
+      isError: false,
+      stableData: detailWithoutAreaLabel,
+      hasStableData: true,
+    });
+
+    render(
+      <MyRequestDetailDialog open onOpenChange={jest.fn()} requestId={1001} areaLabelById={emptyMap} />,
+      { wrapper: createWrapper() },
+    );
+
+    // Should fallback to raw areaId
+    expect(screen.getByText('facilities')).toBeInTheDocument();
+  });
+
+  it('should prefer summary.areaLabel when areaLabelById does not have the area', () => {
+    const emptyMap = new Map<string, string>();
     (useRequestDetail as jest.Mock).mockReturnValue({
       data: mockDetail,
       isLoading: false,
@@ -431,7 +459,6 @@ describe('MyRequestDetailDialog', () => {
       { wrapper: createWrapper() },
     );
 
-    // Should fallback to raw areaId
-    expect(screen.getByText('facilities')).toBeInTheDocument();
+    expect(screen.getByText('Facilities')).toBeInTheDocument();
   });
 });

@@ -50,6 +50,7 @@ export type WorkflowManagementRequestSummary = {
   workflowVersion: number;
   workflowName: string;
   areaId: string;
+  areaLabel?: string;
   ownerEmail: string;
   ownerUserId: string;
   requesterUserId: string;
@@ -167,6 +168,36 @@ export type WorkflowManagementRequestActionRecipient = {
   responseAttachmentUrl?: string;
 };
 
+export type WorkflowManagementRequestStepEvent = {
+  action: WorkflowManagementRequestTimelineItem['action'];
+  label: string;
+  timestamp: Date | null;
+  userId: string;
+  userName: string;
+};
+
+export type WorkflowManagementRequestStepActionResponse = {
+  actionRequestId: string;
+  recipientUserId: string;
+  status: WorkflowManagementRequestActionRecipient['status'];
+  respondedAt: Date | null;
+  respondedByUserId: string | null;
+  respondedByName: string | null;
+  responseComment?: string;
+  responseAttachmentUrl?: string;
+};
+
+export type WorkflowManagementRequestStepHistoryItem = {
+  stepId: string;
+  stepName: string;
+  kind: WorkflowManagementRequestProgressItem['kind'];
+  order: number;
+  state: WorkflowManagementRequestProgressItem['state'];
+  isCurrent: boolean;
+  events: WorkflowManagementRequestStepEvent[];
+  actionResponses: WorkflowManagementRequestStepActionResponse[];
+};
+
 export type WorkflowManagementRequestActionState = 'idle' | 'pending' | 'completed';
 
 export type WorkflowManagementRequestActionDetail = {
@@ -205,6 +236,7 @@ export type WorkflowManagementRequestDetailData = {
   };
   action: WorkflowManagementRequestActionDetail;
   timeline: WorkflowManagementRequestTimelineItem[];
+  stepsHistory?: WorkflowManagementRequestStepHistoryItem[];
 };
 
 export type WorkflowManagementMutationResult = {
