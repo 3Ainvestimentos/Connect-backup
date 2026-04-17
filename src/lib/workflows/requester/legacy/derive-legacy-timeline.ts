@@ -24,6 +24,8 @@ export function deriveLegacyTimeline(
       const normalizedTimestamp = timestamp && Number.isNaN(timestamp.getTime()) ? null : timestamp;
 
       return {
+        action: null,
+        details: null,
         label,
         timestamp: normalizedTimestamp,
         userName: log.userName,

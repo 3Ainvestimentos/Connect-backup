@@ -65,11 +65,11 @@ const selectedV2: RequesterUnifiedV2ListItem = {
     operationalParticipantIds: [],
     slaDays: 5,
     expectedCompletionAt: null,
-    lastUpdatedAt: null as any,
+    lastUpdatedAt: null,
     finalizedAt: null,
     closedAt: null,
     archivedAt: null,
-    submittedAt: null as any,
+    submittedAt: null,
     submittedMonthKey: '2026-04',
     closedMonthKey: 'unknown',
     isArchived: false,
@@ -150,6 +150,16 @@ const detailV2: WorkflowRequestDetailData = {
       userId: 'user-1',
       userName: 'Test User',
     },
+    {
+      action: 'step_completed',
+      label: 'Execução técnica',
+      timestamp: {
+        toDate: () => new Date('2026-04-12T15:00:00.000Z'),
+      },
+      userId: 'user-2',
+      userName: 'Sistema',
+      details: { stepId: 'step-1' },
+    },
   ],
 };
 
@@ -206,7 +216,9 @@ describe('RequesterUnifiedRequestDetailDialog', () => {
     expect(screen.getByText('Trocar lâmpada')).toBeInTheDocument();
     expect(screen.getByText('Execução')).toBeInTheDocument();
     expect(screen.getByText('Atual')).toBeInTheDocument();
+    expect(screen.getByText(/12\/04\/2026/)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Abrir anexo' })).toBeInTheDocument();
+    expect(screen.queryByText('Sem data')).not.toBeInTheDocument();
     expect(screen.queryByText('Timeline')).not.toBeInTheDocument();
     expect(screen.queryByText('Progresso')).not.toBeInTheDocument();
     expect(screen.queryByText('Evento técnico')).not.toBeInTheDocument();

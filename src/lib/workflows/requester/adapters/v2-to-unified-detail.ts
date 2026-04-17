@@ -36,9 +36,11 @@ function adaptTimeline(
   timeline: WorkflowRequestTimelineItem[],
 ): RequesterUnifiedRequestDetailTimelineItem[] {
   return timeline.map((item) => ({
+    action: item.action,
     label: item.label,
     timestamp: normalizeReadTimestamp(item.timestamp),
     userName: item.userName,
+    details: item.details ?? null,
     notes: item.details ? JSON.stringify(item.details, null, 2) : undefined,
   }));
 }

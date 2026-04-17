@@ -1,4 +1,5 @@
 import type { WorkflowReadSummary, WorkflowRequestDetailData } from '@/lib/workflows/read/types';
+import type { WorkflowRequestTimelineItem } from '@/lib/workflows/read/types';
 import type { WorkflowRequest } from '@/contexts/WorkflowsContext';
 import type { WorkflowDefinition } from '@/contexts/ApplicationsContext';
 import type { WorkflowArea } from '@/contexts/WorkflowAreasContext';
@@ -84,6 +85,8 @@ export interface RequesterUnifiedRequestDetailTimelineItem {
   label: string;
   timestamp: Date | null;
   userName: string;
+  action: WorkflowRequestTimelineItem['action'] | null;
+  details: Record<string, unknown> | null;
   notes?: string;
 }
 

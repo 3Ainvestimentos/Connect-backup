@@ -26,6 +26,22 @@ describe('buildRequesterHistory', () => {
           label: 'Evento granular que não deve aparecer',
           timestamp: new Date('2026-04-11T10:00:00.000Z'),
           userName: 'Sistema',
+          action: 'request_opened',
+          details: null,
+        },
+        {
+          label: 'Etapa concluída',
+          timestamp: new Date('2026-04-12T14:45:00.000Z'),
+          userName: 'Sistema',
+          action: 'step_completed',
+          details: { stepId: 'step-1' },
+        },
+        {
+          label: 'Etapa concluída novamente',
+          timestamp: new Date('2026-04-12T15:00:00.000Z'),
+          userName: 'Sistema',
+          action: 'step_completed',
+          details: { stepId: 'step-1' },
         },
       ],
       progress: {
@@ -62,18 +78,26 @@ describe('buildRequesterHistory', () => {
           },
         ],
       },
-      raw: {} as any,
+      raw: {} as RequesterUnifiedRequestDetail['raw'],
     } satisfies RequesterUnifiedRequestDetail;
 
     const history = buildRequesterHistory(detail);
 
     expect(history.map((item) => item.title)).toEqual(['Abertura', 'Execução', 'Conclusão']);
     expect(history.map((item) => item.source)).toEqual(['progress', 'progress', 'progress']);
+    expect(history.map((item) => item.dateVisibility)).toEqual([
+      'only-when-present',
+      'only-when-present',
+      'only-when-present',
+    ]);
+    expect(history[0].occurredAt?.toISOString()).toBe('2026-04-12T15:00:00.000Z');
     expect(history[1]).toMatchObject({
       title: 'Execução',
       stateLabel: 'Atual',
       isCurrent: true,
+      occurredAt: null,
     });
+    expect(history[2].occurredAt).toBeNull();
   });
 
   it('derives legacy history from timeline ordered by timestamp', () => {
@@ -89,11 +113,13 @@ describe('buildRequesterHistory', () => {
     expect(history[0]).toMatchObject({
       title: 'Pendente',
       actorName: 'Joao Silva',
+      dateVisibility: 'always',
       source: 'timeline',
     });
     expect(history[1]).toMatchObject({
       title: 'Em Andamento',
       actorName: 'Maria Santos',
+      dateVisibility: 'always',
       notesText: 'Solicitacao em analise',
       source: 'timeline',
     });
