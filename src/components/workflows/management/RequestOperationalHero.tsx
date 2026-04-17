@@ -107,12 +107,24 @@ export function RequestOperationalHero({
           {viewModel.primaryAction ? (
             <div className="flex flex-wrap justify-end gap-3 border-t pt-4">
               {viewModel.primaryAction.kind === 'advance' ? (
-                <Button type="button" onClick={onAdvance} disabled={isAdvancing} aria-disabled={isAdvancing}>
+                <Button
+                  type="button"
+                  className="bg-admin-primary hover:bg-admin-primary/90"
+                  onClick={onAdvance}
+                  disabled={isAdvancing}
+                  aria-disabled={isAdvancing}
+                >
                   {isAdvancing ? viewModel.primaryAction.busyLabel : viewModel.primaryAction.label}
                 </Button>
               ) : null}
               {viewModel.primaryAction.kind === 'finalize' ? (
-                <Button type="button" onClick={onFinalize} disabled={isFinalizing} aria-disabled={isFinalizing}>
+                <Button
+                  type="button"
+                  className="bg-admin-primary hover:bg-admin-primary/90"
+                  onClick={onFinalize}
+                  disabled={isFinalizing}
+                  aria-disabled={isFinalizing}
+                >
                   {isFinalizing ? viewModel.primaryAction.busyLabel : viewModel.primaryAction.label}
                 </Button>
               ) : null}

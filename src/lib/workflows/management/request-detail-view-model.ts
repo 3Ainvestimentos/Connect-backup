@@ -1,3 +1,10 @@
+import type { BadgeProps } from '@/components/ui/badge';
+import {
+  deriveManagementRequestPresentation,
+  formatManagementDate,
+  getManagementSlaBadgeVariant,
+  getManagementSlaLabel,
+} from './presentation';
 import type { WorkflowManagementRequestDetailData } from './types';
 
 export type RequestOperationalTone =
@@ -20,6 +27,38 @@ export type RequestOperationalViewModel = {
   showActionZoneAsPrimary: boolean;
   shouldRenderActionZone: boolean;
   primaryAction: RequestOperationalPrimaryAction | null;
+};
+
+export type RequestDetailShellBadge = {
+  label: string;
+  variant: BadgeProps['variant'];
+};
+
+export type RequestDetailShellSummaryItem = {
+  label: string;
+  value: string;
+};
+
+export type RequestDetailShellViewModel = {
+  operational: RequestOperationalViewModel;
+  header: {
+    title: string;
+    subtitle: string;
+    description: string;
+    badges: RequestDetailShellBadge[];
+  };
+  summary: {
+    areaLabel: string;
+    metaItems: RequestDetailShellSummaryItem[];
+  };
+  currentAction: {
+    primaryMode: 'hero' | 'action-card' | 'admin';
+    shouldRenderActionCard: boolean;
+    shouldRenderAdminPanel: boolean;
+  };
+  history: {
+    hasLegacyFallback: boolean;
+  };
 };
 
 export function buildRequestOperationalViewModel(
@@ -120,5 +159,110 @@ export function buildRequestOperationalViewModel(
     showActionZoneAsPrimary: false,
     shouldRenderActionZone,
     primaryAction: null,
+  };
+}
+
+function getSummaryAreaLabel(detail: WorkflowManagementRequestDetailData): string {
+  return detail.summary.areaLabel?.trim() || detail.summary.areaId || '-';
+}
+
+function buildHeaderBadges(
+  detail: WorkflowManagementRequestDetailData,
+  operational: RequestOperationalViewModel,
+): RequestDetailShellBadge[] {
+  const presentation = deriveManagementRequestPresentation(detail.summary);
+  const badges: RequestDetailShellBadge[] = [
+    { label: presentation.label, variant: presentation.badgeVariant },
+    { label: detail.summary.currentStepName, variant: 'outline' },
+  ];
+
+  if (operational.highlightLabel) {
+    badges.push({ label: operational.highlightLabel, variant: 'outline' });
+  }
+
+  if (detail.summary.hasPendingActions) {
+    badges.push({ label: 'Ha acoes pendentes', variant: 'outline' });
+  }
+
+  const slaLabel = getManagementSlaLabel(detail.summary.slaState);
+  if (slaLabel) {
+    badges.push({
+      label: `SLA: ${slaLabel}`,
+      variant: getManagementSlaBadgeVariant(detail.summary.slaState),
+    });
+  }
+
+  return badges;
+}
+
+function buildSummaryMetaItems(detail: WorkflowManagementRequestDetailData): RequestDetailShellSummaryItem[] {
+  return [
+    { label: 'Solicitante', value: detail.summary.requesterName || '-' },
+    { label: 'Responsavel', value: detail.summary.responsibleName || 'Nao atribuido' },
+    { label: 'Area', value: getSummaryAreaLabel(detail) },
+    { label: 'Owner', value: detail.summary.ownerEmail || '-' },
+    { label: 'Aberto em', value: formatManagementDate(detail.summary.submittedAt) },
+    { label: 'Ultima atualizacao', value: formatManagementDate(detail.summary.lastUpdatedAt) },
+    { label: 'Finalizado em', value: formatManagementDate(detail.summary.finalizedAt) },
+    { label: 'Arquivado em', value: formatManagementDate(detail.summary.archivedAt) },
+  ];
+}
+
+function resolveCurrentActionPrimaryMode(
+  detail: WorkflowManagementRequestDetailData,
+  operational: RequestOperationalViewModel,
+): RequestDetailShellViewModel['currentAction']['primaryMode'] {
+  if (operational.showActionZoneAsPrimary) {
+    return 'action-card';
+  }
+
+  if (operational.primaryAction) {
+    return 'hero';
+  }
+
+  if (detail.permissions.canAssign && !detail.summary.hasResponsible) {
+    return 'admin';
+  }
+
+  if (detail.permissions.canAssign || detail.permissions.canArchive) {
+    return 'admin';
+  }
+
+  return 'hero';
+}
+
+function buildHeaderDescription(
+  detail: WorkflowManagementRequestDetailData,
+  operational: RequestOperationalViewModel,
+): string {
+  const workflowLabel = detail.summary.workflowName || detail.summary.workflowTypeId;
+  return `${workflowLabel} • etapa atual ${detail.summary.currentStepName}. ${operational.description}`;
+}
+
+export function buildRequestDetailShellViewModel(
+  detail: WorkflowManagementRequestDetailData,
+): RequestDetailShellViewModel {
+  const operational = buildRequestOperationalViewModel(detail);
+
+  return {
+    operational,
+    header: {
+      title: `Chamado #${detail.summary.requestId}`,
+      subtitle: detail.summary.workflowName || detail.summary.workflowTypeId || '-',
+      description: buildHeaderDescription(detail, operational),
+      badges: buildHeaderBadges(detail, operational),
+    },
+    summary: {
+      areaLabel: getSummaryAreaLabel(detail),
+      metaItems: buildSummaryMetaItems(detail),
+    },
+    currentAction: {
+      primaryMode: resolveCurrentActionPrimaryMode(detail, operational),
+      shouldRenderActionCard: operational.shouldRenderActionZone,
+      shouldRenderAdminPanel: detail.permissions.canAssign || detail.permissions.canArchive,
+    },
+    history: {
+      hasLegacyFallback: !Array.isArray(detail.stepsHistory),
+    },
   };
 }

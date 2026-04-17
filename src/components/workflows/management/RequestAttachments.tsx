@@ -6,6 +6,7 @@ import type { WorkflowManagementRequestAttachment } from '@/lib/workflows/manage
 
 type RequestAttachmentsProps = {
   attachments: WorkflowManagementRequestAttachment[];
+  showDownloadAction?: boolean;
 };
 
 function getAttachmentFileName(url: string): string {
@@ -18,7 +19,10 @@ function getAttachmentFileName(url: string): string {
   }
 }
 
-export function RequestAttachments({ attachments }: RequestAttachmentsProps) {
+export function RequestAttachments({
+  attachments,
+  showDownloadAction = false,
+}: RequestAttachmentsProps) {
   return (
     <Card>
       <CardHeader className="space-y-1">
@@ -43,11 +47,20 @@ export function RequestAttachments({ attachments }: RequestAttachmentsProps) {
                   </p>
                 </div>
 
-                <Button asChild type="button" variant="outline" size="sm">
-                  <a href={attachment.url} target="_blank" rel="noopener noreferrer">
-                    Abrir anexo
-                  </a>
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button asChild type="button" variant="outline" size="sm">
+                    <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                      {showDownloadAction ? 'Ver anexo' : 'Abrir anexo'}
+                    </a>
+                  </Button>
+                  {showDownloadAction ? (
+                    <Button asChild type="button" variant="outline" size="sm">
+                      <a href={attachment.url} download>
+                        Baixar anexo
+                      </a>
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>

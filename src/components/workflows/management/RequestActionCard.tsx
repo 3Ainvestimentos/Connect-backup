@@ -216,7 +216,13 @@ export function RequestActionCard({
 
       {canRequest ? (
         <div className="mt-4 flex justify-end">
-          <Button type="button" onClick={handleRequestAction} disabled={isBusy} aria-disabled={isBusy}>
+          <Button
+            type="button"
+            className={variant === 'primary' ? 'bg-admin-primary hover:bg-admin-primary/90' : undefined}
+            onClick={handleRequestAction}
+            disabled={isBusy}
+            aria-disabled={isBusy}
+          >
             {isRequestingAction ? 'Solicitando...' : `Solicitar ${action.label || 'action'}`}
           </Button>
         </div>
@@ -285,6 +291,7 @@ export function RequestActionCard({
               </Button>
               <Button
                 type="button"
+                className={variant === 'primary' ? 'bg-admin-primary hover:bg-admin-primary/90' : undefined}
                 disabled={
                   isBusy ||
                   (action.commentRequired && effectiveComment === '')
@@ -303,6 +310,7 @@ export function RequestActionCard({
           {action.type === 'acknowledgement' ? (
             <Button
               type="button"
+              className={variant === 'primary' ? 'bg-admin-primary hover:bg-admin-primary/90' : undefined}
               disabled={isBusy || (action.commentRequired && effectiveComment === '')}
               aria-disabled={isBusy || (action.commentRequired && effectiveComment === '')}
               onClick={() => handleRespondAction('acknowledged')}
@@ -314,6 +322,7 @@ export function RequestActionCard({
           {action.type === 'execution' ? (
             <Button
               type="button"
+              className={variant === 'primary' ? 'bg-admin-primary hover:bg-admin-primary/90' : undefined}
               disabled={
                 isBusy ||
                 (action.commentRequired && effectiveComment === '') ||

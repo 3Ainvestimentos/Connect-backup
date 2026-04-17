@@ -21,6 +21,7 @@ type RequestAdministrativePanelProps = {
   onArchive: () => Promise<unknown>;
   isAssigning?: boolean;
   isArchiving?: boolean;
+  variant?: 'default' | 'elevated';
 };
 
 export function RequestAdministrativePanel({
@@ -32,6 +33,7 @@ export function RequestAdministrativePanel({
   onArchive,
   isAssigning = false,
   isArchiving = false,
+  variant = 'default',
 }: RequestAdministrativePanelProps) {
   const canShowAssignForm = detail.permissions.canAssign;
   const canShowArchive = detail.permissions.canArchive;
@@ -44,7 +46,14 @@ export function RequestAdministrativePanel({
     collaborators.find((collaborator) => collaborator.id3a === selectedResponsibleId) ?? null;
 
   return (
-    <section className="rounded-xl border bg-background p-4" aria-labelledby="request-admin-panel-title">
+    <section
+      className={
+        variant === 'elevated'
+          ? 'rounded-xl border border-admin-primary/25 bg-admin-primary/5 p-4'
+          : 'rounded-xl border bg-background p-4'
+      }
+      aria-labelledby="request-admin-panel-title"
+    >
       <div className="space-y-1">
         <h2 id="request-admin-panel-title" className="text-sm font-semibold text-foreground">
           Administracao do chamado
@@ -84,6 +93,7 @@ export function RequestAdministrativePanel({
 
             <Button
               type="button"
+              className={variant === 'elevated' ? 'bg-admin-primary hover:bg-admin-primary/90' : undefined}
               onClick={onAssign}
               disabled={
                 !selectedResponsible ||

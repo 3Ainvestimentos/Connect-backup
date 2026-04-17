@@ -21,6 +21,7 @@ export function buildManagementRequestDetailFixture(
       workflowVersion: 3,
       workflowName: 'Solicitacao de Suprimentos',
       areaId: 'facilities',
+      areaLabel: 'Facilities',
       ownerEmail: 'owner@3ariva.com.br',
       ownerUserId: 'SMO2',
       requesterUserId: 'REQ1',
@@ -128,6 +129,55 @@ export function buildManagementRequestDetailFixture(
         details: {},
       },
     ],
+    stepsHistory: [
+      {
+        stepId: 'abertura',
+        stepName: 'Abertura',
+        kind: 'start',
+        order: 1,
+        state: 'completed',
+        isCurrent: false,
+        events: [
+          {
+            action: 'request_opened',
+            label: 'Solicitacao aberta',
+            timestamp: new Date('2026-04-01T09:00:00Z'),
+            userId: 'REQ1',
+            userName: 'Requester',
+          },
+        ],
+        actionResponses: [],
+      },
+      {
+        stepId: 'execucao',
+        stepName: 'Execucao',
+        kind: 'work',
+        order: 3,
+        state: 'active',
+        isCurrent: true,
+        events: [
+          {
+            action: 'entered_step',
+            label: 'Etapa iniciada',
+            timestamp: new Date('2026-04-02T10:00:00Z'),
+            userId: 'RESP1',
+            userName: 'Responsavel',
+          },
+        ],
+        actionResponses: [
+          {
+            actionRequestId: 'act_resp_1',
+            recipientUserId: 'RESP1',
+            status: 'approved',
+            respondedAt: new Date('2026-04-02T12:00:00Z'),
+            respondedByUserId: 'RESP1',
+            respondedByName: 'Responsavel',
+            responseComment: 'Tudo certo',
+            responseAttachmentUrl: 'https://example.com/resposta.pdf',
+          },
+        ],
+      },
+    ],
   };
 
   return {
@@ -154,5 +204,6 @@ export function buildManagementRequestDetailFixture(
     formData: overrides.formData ?? base.formData,
     attachments: overrides.attachments ?? base.attachments,
     timeline: overrides.timeline ?? base.timeline,
+    stepsHistory: overrides.stepsHistory ?? base.stepsHistory,
   };
 }

@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import type { Collaborator } from '@/contexts/CollaboratorsContext';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,25 +13,19 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  deriveManagementRequestPresentation,
-  formatManagementDate,
-  getManagementSlaBadgeVariant,
-  getManagementSlaLabel,
-} from '@/lib/workflows/management/presentation';
 import type {
   WorkflowManagementRequestDetailData,
   WorkflowManagementRequestSummary,
 } from '@/lib/workflows/management/types';
-import { buildRequestOperationalViewModel } from '@/lib/workflows/management/request-detail-view-model';
+import { buildRequestDetailShellViewModel } from '@/lib/workflows/management/request-detail-view-model';
 import { ManagementAsyncState, ManagementErrorState } from './ManagementAsyncState';
 import { RequestAdministrativePanel } from './RequestAdministrativePanel';
 import { RequestActionCard } from './RequestActionCard';
-import { RequestAttachments } from './RequestAttachments';
-import { RequestFormData } from './RequestFormData';
+import { RequestDetailHeader } from './RequestDetailHeader';
 import { RequestOperationalHero } from './RequestOperationalHero';
-import { RequestProgress } from './RequestProgress';
-import { RequestTimeline } from './RequestTimeline';
+import { RequestStepHistorySection } from './RequestStepHistorySection';
+import { RequestSubmittedDataSection } from './RequestSubmittedDataSection';
+import { RequestSummarySection } from './RequestSummarySection';
 
 type RequestDetailDialogProps = {
   open: boolean;
@@ -118,12 +111,9 @@ export function RequestDetailDialog({
   }
 
   const summary = detail?.summary;
-  const permissions = detail?.permissions;
-  const presentation = summary ? deriveManagementRequestPresentation(summary) : null;
-  const slaLabel = summary ? getManagementSlaLabel(summary.slaState) : null;
   const blockingErrorMessage = detail ? undefined : errorMessage;
   const hasNonBlockingError = Boolean(detail && errorMessage);
-  const viewModel = detail ? buildRequestOperationalViewModel(detail) : null;
+  const shellViewModel = detail ? buildRequestDetailShellViewModel(detail) : null;
 
   const handleAssign = async () => {
     if (!summary || !selectedResponsible) {
@@ -177,12 +167,18 @@ export function RequestDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[min(92vh,calc(100vh-2rem))] max-w-6xl flex-col overflow-hidden p-0">
         <DialogHeader className="shrink-0 border-b px-6 py-5">
-          <DialogTitle>Chamado #{summary?.requestId ?? requestId}</DialogTitle>
-          <DialogDescription>
-            {summary
-              ? `${summary.workflowName || summary.workflowTypeId} • etapa atual ${summary.currentStepName}.`
-              : 'Carregando detalhe oficial do chamado.'}
-          </DialogDescription>
+          {shellViewModel ? (
+            <RequestDetailHeader header={shellViewModel.header} />
+          ) : (
+            <>
+              <DialogTitle>Chamado #{summary?.requestId ?? requestId}</DialogTitle>
+              <DialogDescription>
+                {summary
+                  ? `${summary.workflowName || summary.workflowTypeId} • etapa atual ${summary.currentStepName}.`
+                  : 'Carregando detalhe oficial do chamado.'}
+              </DialogDescription>
+            </>
+          )}
         </DialogHeader>
 
         <div className="min-h-0 flex-1">
@@ -198,7 +194,7 @@ export function RequestDetailDialog({
                 onRetry={onRetry}
                 loadingContent={<LoadingState />}
               >
-                {detail && viewModel ? (
+                {detail && shellViewModel ? (
                   <>
                     {hasNonBlockingError ? (
                       <ManagementErrorState
@@ -208,93 +204,50 @@ export function RequestDetailDialog({
                       />
                     ) : null}
 
-                    <section className="space-y-4 rounded-xl border bg-muted/20 p-4" aria-labelledby="request-summary-title">
+                    <RequestSummarySection summary={shellViewModel.summary} />
+
+                    <section className="space-y-4" aria-labelledby="request-current-action-title">
                       <div className="space-y-1">
-                        <h2 id="request-summary-title" className="text-sm font-semibold text-foreground">
-                          Resumo do chamado
+                        <h2 id="request-current-action-title" className="text-sm font-semibold text-foreground">
+                          Acao atual
                         </h2>
                         <p className="text-sm text-muted-foreground">
-                          Contexto principal, identificacao e metadados oficiais do chamado.
+                          Proximo passo do fluxo, action da etapa e administracao reunidos numa unica macrozona.
                         </p>
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-2">
-                        {presentation ? <Badge variant={presentation.badgeVariant}>{presentation.label}</Badge> : null}
-                        <Badge variant="outline">{summary?.workflowName || summary?.workflowTypeId}</Badge>
-                        <Badge variant="outline">Workflow {summary?.workflowVersion}</Badge>
-                        {summary?.hasPendingActions ? (
-                          <Badge variant="outline">Ha acoes pendentes</Badge>
+                      <div className="space-y-4 rounded-xl border bg-background p-4">
+                        {shellViewModel.currentAction.primaryMode === 'admin' ? (
+                          <RequestAdministrativePanel
+                            detail={detail}
+                            collaborators={sortedCollaborators}
+                            selectedResponsibleId={selectedResponsibleId}
+                            onResponsibleChange={setSelectedResponsibleId}
+                            onAssign={handleAssign}
+                            onArchive={handleArchive}
+                            isAssigning={isAssigning}
+                            isArchiving={isArchiving}
+                            variant="elevated"
+                          />
                         ) : null}
-                        {slaLabel ? (
-                          <Badge variant={getManagementSlaBadgeVariant(summary?.slaState)}>
-                            SLA: {slaLabel}
-                          </Badge>
-                        ) : null}
-                      </div>
 
-                      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Solicitante</p>
-                          <p className="text-muted-foreground">{summary?.requesterName || '-'}</p>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Responsavel</p>
-                          <p className="text-muted-foreground">{summary?.responsibleName || 'Nao atribuido'}</p>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Aberto em</p>
-                          <p className="text-muted-foreground">
-                            {formatManagementDate(summary?.submittedAt ?? null)}
-                          </p>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Ultima atualizacao</p>
-                          <p className="text-muted-foreground">
-                            {formatManagementDate(summary?.lastUpdatedAt ?? null)}
-                          </p>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Finalizado em</p>
-                          <p className="text-muted-foreground">
-                            {formatManagementDate(summary?.finalizedAt ?? null)}
-                          </p>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Arquivado em</p>
-                          <p className="text-muted-foreground">
-                            {formatManagementDate(summary?.archivedAt ?? null)}
-                          </p>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Area</p>
-                          <p className="text-muted-foreground">{summary?.areaId || '-'}</p>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-foreground">Owner</p>
-                          <p className="text-muted-foreground">{summary?.ownerEmail || '-'}</p>
-                        </div>
-                      </div>
-                    </section>
-
-                    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.95fr)]">
-                      <div className="space-y-6">
                         <RequestOperationalHero
                           detail={detail}
-                          viewModel={viewModel}
+                          viewModel={shellViewModel.operational}
                           onAdvance={handleAdvance}
                           onFinalize={handleFinalize}
                           isAdvancing={isAdvancing}
                           isFinalizing={isFinalizing}
                         />
 
-                        {viewModel.shouldRenderActionZone ? (
+                        {shellViewModel.currentAction.shouldRenderActionCard ? (
                           <section className="space-y-3" aria-labelledby="request-action-zone-title">
                             <div className="space-y-1">
-                              <h2 id="request-action-zone-title" className="text-sm font-semibold text-foreground">
+                              <h3 id="request-action-zone-title" className="text-sm font-semibold text-foreground">
                                 Action da etapa
-                              </h2>
+                              </h3>
                               <p className="text-sm text-muted-foreground">
-                                A superficie oficial de requestAction/respondAction continua neste bloco.
+                                Superficie oficial de requestAction/respondAction dentro da etapa atual.
                               </p>
                             </div>
                             <RequestActionCard
@@ -304,30 +257,42 @@ export function RequestDetailDialog({
                               onRespondAction={onRespondAction}
                               isRequestingAction={isRequestingAction}
                               isRespondingAction={isRespondingAction}
-                              variant={viewModel.showActionZoneAsPrimary ? 'primary' : 'default'}
+                              variant={
+                                shellViewModel.currentAction.primaryMode === 'action-card'
+                                  ? 'primary'
+                                  : 'default'
+                              }
                             />
                           </section>
                         ) : null}
 
-                        <RequestAdministrativePanel
-                          detail={detail}
-                          collaborators={sortedCollaborators}
-                          selectedResponsibleId={selectedResponsibleId}
-                          onResponsibleChange={setSelectedResponsibleId}
-                          onAssign={handleAssign}
-                          onArchive={handleArchive}
-                          isAssigning={isAssigning}
-                          isArchiving={isArchiving}
-                        />
+                        {shellViewModel.currentAction.shouldRenderAdminPanel &&
+                        shellViewModel.currentAction.primaryMode !== 'admin' ? (
+                          <RequestAdministrativePanel
+                            detail={detail}
+                            collaborators={sortedCollaborators}
+                            selectedResponsibleId={selectedResponsibleId}
+                            onResponsibleChange={setSelectedResponsibleId}
+                            onAssign={handleAssign}
+                            onArchive={handleArchive}
+                            isAssigning={isAssigning}
+                            isArchiving={isArchiving}
+                          />
+                        ) : null}
                       </div>
+                    </section>
 
-                      <div className="space-y-6">
-                        <RequestProgress progress={detail.progress} />
-                        <RequestTimeline timeline={detail.timeline} />
-                        <RequestFormData formData={detail.formData} />
-                        <RequestAttachments attachments={detail.attachments} />
-                      </div>
-                    </div>
+                    <RequestStepHistorySection
+                      stepsHistory={detail.stepsHistory}
+                      progress={detail.progress}
+                      timeline={detail.timeline}
+                      hasLegacyFallback={shellViewModel.history.hasLegacyFallback}
+                    />
+
+                    <RequestSubmittedDataSection
+                      formData={detail.formData}
+                      attachments={detail.attachments}
+                    />
                   </>
                 ) : null}
               </ManagementAsyncState>
