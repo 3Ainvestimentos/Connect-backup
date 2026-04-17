@@ -222,15 +222,15 @@ describe('MyRequestDetailDialog', () => {
     );
 
     // Verify summary header title
-    expect(screen.getByText('Informacoes do chamado')).toBeInTheDocument();
+    expect(screen.getByText('Informações do chamado')).toBeInTheDocument();
 
     // Verify all 6 summary fields present
     expect(screen.getByText('Solicitante')).toBeInTheDocument();
-    expect(screen.getByText('Aberto em')).toBeInTheDocument();
+    expect(screen.getByText('Data')).toBeInTheDocument();
     expect(screen.getByText('Tipo')).toBeInTheDocument();
     expect(screen.getByText('Manutencao Geral')).toBeInTheDocument();
-    expect(screen.getByText('Ultima Atualizacao')).toBeInTheDocument();
-    expect(screen.getByText('Responsavel')).toBeInTheDocument();
+    expect(screen.getByText('Última atualização')).toBeInTheDocument();
+    expect(screen.getByText('Responsável')).toBeInTheDocument();
     // openedInLabel should be resolved from areaLabelById
     expect(screen.getByText('Facilities')).toBeInTheDocument();
     expect(screen.getByText('10/04/2026 as 11:30')).toBeInTheDocument();
