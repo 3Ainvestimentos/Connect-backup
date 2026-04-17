@@ -208,7 +208,7 @@ export function RequestActionCard({
 
       {canRequest ? (
         <div className="mt-4 flex justify-end">
-          <Button type="button" onClick={handleRequestAction} disabled={isBusy}>
+          <Button type="button" onClick={handleRequestAction} disabled={isBusy} aria-disabled={isBusy}>
             {isRequestingAction ? 'Solicitando...' : `Solicitar ${action.label || 'action'}`}
           </Button>
         </div>
@@ -233,6 +233,7 @@ export function RequestActionCard({
               onChange={(event) => setComment(event.target.value)}
               placeholder={action.commentPlaceholder || 'Adicionar contexto para a resposta'}
               disabled={isBusy}
+              aria-disabled={isBusy}
             />
           </div>
 
@@ -246,6 +247,7 @@ export function RequestActionCard({
                 type="file"
                 onChange={(event) => setAttachmentFile(event.target.files?.[0] ?? null)}
                 disabled={isBusy}
+                aria-disabled={isBusy}
               />
               <p className="text-xs text-muted-foreground">
                 {action.attachmentPlaceholder || 'Envie a evidencia da execucao quando aplicavel.'}
@@ -259,6 +261,7 @@ export function RequestActionCard({
                 type="button"
                 variant={approvalResponse === 'approved' ? 'default' : 'outline'}
                 disabled={isBusy}
+                aria-disabled={isBusy}
                 onClick={() => setApprovalResponse('approved')}
               >
                 Aprovar
@@ -267,6 +270,7 @@ export function RequestActionCard({
                 type="button"
                 variant={approvalResponse === 'rejected' ? 'default' : 'outline'}
                 disabled={isBusy}
+                aria-disabled={isBusy}
                 onClick={() => setApprovalResponse('rejected')}
               >
                 Rejeitar
@@ -274,6 +278,10 @@ export function RequestActionCard({
               <Button
                 type="button"
                 disabled={
+                  isBusy ||
+                  (action.commentRequired && effectiveComment === '')
+                }
+                aria-disabled={
                   isBusy ||
                   (action.commentRequired && effectiveComment === '')
                 }
@@ -288,6 +296,7 @@ export function RequestActionCard({
             <Button
               type="button"
               disabled={isBusy || (action.commentRequired && effectiveComment === '')}
+              aria-disabled={isBusy || (action.commentRequired && effectiveComment === '')}
               onClick={() => handleRespondAction('acknowledged')}
             >
               {isRespondingAction ? 'Enviando...' : 'Registrar ciente'}
@@ -298,6 +307,11 @@ export function RequestActionCard({
             <Button
               type="button"
               disabled={
+                isBusy ||
+                (action.commentRequired && effectiveComment === '') ||
+                (action.attachmentRequired && attachmentFile == null)
+              }
+              aria-disabled={
                 isBusy ||
                 (action.commentRequired && effectiveComment === '') ||
                 (action.attachmentRequired && attachmentFile == null)

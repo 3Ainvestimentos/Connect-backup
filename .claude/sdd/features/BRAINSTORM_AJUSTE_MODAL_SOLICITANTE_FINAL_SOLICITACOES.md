@@ -12,11 +12,12 @@ Requisitos explicitados pelo usuario:
 - o modal deve se adequar as informacoes da V2;
 - nao deve exibir `Timeline` separada para o usuario final;
 - o bloco final deve funcionar como "Historico", com design de linha temporal inspirado no legado;
-- a ordem visual do historico deve seguir o padrao desejado pelo usuario no brainstorm;
+- a ordem visual do historico deve exibir o evento mais antigo em cima e o evento mais recente embaixo;
 - a estrutura visual principal do modal legado deve ser mantida;
 - deve haver correcao ortografica em PT-BR;
 - a compatibilidade com chamados legados dentro de "Minhas Solicitacoes" deve ser preservada;
-- pequenas adaptacoes no shape de `progress`/labels sao aceitaveis somente com aprovacao do usuario antes da implementacao.
+- o anexo deve permanecer visivel quando existir;
+- pequenas adaptacoes no shape de `progress`/labels sao aceitaveis; o usuario aprovou essa direcao, desde que o design explicite quais mudancas serao feitas e quais impactos elas terao.
 
 ## 2. Discovery Summary
 
@@ -149,10 +150,12 @@ Construir um modal requester read-only em `/solicitacoes` com:
 - [ ] O `Historico` deve usar a origem de dados adequada por tipo de item:
 - [ ] Para `v2`, o historico deve ser derivado de `progress` ou de shape equivalente aprovado.
 - [ ] Para `legacy`, o historico deve ser derivado da timeline legada ja unificada.
+- [ ] O `Historico` deve exibir o evento mais antigo em cima e o evento mais recente embaixo.
 - [ ] O bloco `Dados enviados` deve permanecer disponivel.
+- [ ] O bloco de anexos deve permanecer visivel quando houver anexos disponiveis.
 - [ ] O modal deve corrigir copy/rotulos para PT-BR com acentuacao adequada.
 - [ ] O modal deve permanecer estritamente read-only para o solicitante final.
-- [ ] Qualquer pequena adaptacao de shape/labels deve ser aprovada pelo usuario antes da implementacao.
+- [ ] O usuario ja aprovou pequenas adaptacoes de shape/labels; o design deve explicitar quais mudancas serao feitas e quais impactos elas terao.
 - [ ] A cobertura de testes deve contemplar ao menos os cenarios `v2`, `legacy` e fechamento/abertura do dialog.
 
 ### Should Have
@@ -180,6 +183,7 @@ Construir um modal requester read-only em `/solicitacoes` com:
 | Implementacao ficar correta apenas para V2 e quebrar compatibilidade com legado | Tornar compatibilidade `legacy` + `v2` requisito explicito do define e dos testes |
 | Logica de historico ficar misturada no render | Extrair adapter/helper dedicado para o requester |
 | Ambiguidade entre `progress` e `timeline` no shape unificado | Fechar no define qual e o contrato visual do `Historico` para cada origem |
+| Anexos desaparecerem em nome da fidelidade visual ao legado | Tornar permanencia dos anexos requisito explicito no define e no design |
 | Regressao na UX por copia incompleta do shell legado | Usar `RequestDetailsModal.tsx` como referencia estrutural explicita |
 | Prazo apertado gerar cobertura insuficiente | Priorizar testes de compatibilidade, render principal e ausencia de timeline separada |
 

@@ -70,6 +70,9 @@ export function RequestOperationalHero({
               {viewModel.title}
             </CardTitle>
             <p className="text-sm text-muted-foreground">{viewModel.description}</p>
+            {viewModel.statusNote ? (
+              <p className="text-sm font-medium text-foreground/80">{viewModel.statusNote}</p>
+            ) : null}
           </div>
         </CardHeader>
 
@@ -104,13 +107,13 @@ export function RequestOperationalHero({
           {viewModel.primaryAction ? (
             <div className="flex flex-wrap justify-end gap-3 border-t pt-4">
               {viewModel.primaryAction.kind === 'advance' ? (
-                <Button type="button" onClick={onAdvance} disabled={isAdvancing}>
-                  {isAdvancing ? 'Avancando...' : viewModel.primaryAction.label}
+                <Button type="button" onClick={onAdvance} disabled={isAdvancing} aria-disabled={isAdvancing}>
+                  {isAdvancing ? viewModel.primaryAction.busyLabel : viewModel.primaryAction.label}
                 </Button>
               ) : null}
               {viewModel.primaryAction.kind === 'finalize' ? (
-                <Button type="button" onClick={onFinalize} disabled={isFinalizing}>
-                  {isFinalizing ? 'Finalizando...' : viewModel.primaryAction.label}
+                <Button type="button" onClick={onFinalize} disabled={isFinalizing} aria-disabled={isFinalizing}>
+                  {isFinalizing ? viewModel.primaryAction.busyLabel : viewModel.primaryAction.label}
                 </Button>
               ) : null}
             </div>

@@ -90,6 +90,11 @@ export function RequestAdministrativePanel({
                 selectedResponsible.id3a === detail.summary.responsibleUserId ||
                 isAssigning
               }
+              aria-disabled={
+                !selectedResponsible ||
+                selectedResponsible.id3a === detail.summary.responsibleUserId ||
+                isAssigning
+              }
             >
               {isAssigning
                 ? 'Salvando...'
@@ -103,7 +108,13 @@ export function RequestAdministrativePanel({
 
       {canShowArchive ? (
         <div className="mt-4 flex justify-end">
-          <Button type="button" variant="outline" onClick={onArchive} disabled={isArchiving}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onArchive}
+            disabled={isArchiving}
+            aria-disabled={isArchiving}
+          >
             {isArchiving ? 'Arquivando...' : 'Arquivar'}
           </Button>
         </div>

@@ -25,11 +25,12 @@ O modal de detalhes do solicitante final na rota `/solicitacoes` ainda expõe um
 | M1 | O modal do solicitante final em `/solicitacoes` deve manter compatibilidade funcional com itens `legacy` e `v2` usando um único shell visual | Ao abrir um item `legacy` e um item `v2` a partir de `MyRequestsV2Section`, o mesmo componente de detalhe é renderizado com mesma hierarquia visual principal, variando apenas o conteúdo adaptado |
 | M2 | A estrutura visual principal do modal deve seguir o padrão do legado `src/components/applications/RequestDetailsModal.tsx` | O modal final apresenta cabeçalho, grade de informações, bloco `Dados enviados`, bloco final `Histórico` e rodapé alinhados ao shell legado, sem manter a organização atual baseada em blocos independentes de management |
 | M3 | O solicitante final não deve ver um bloco `Timeline` separado | Nenhum título, seção ou componente equivalente a `Timeline` é exibido isoladamente na UX final; a evolução do chamado aparece somente no bloco `Histórico` |
-| M4 | O bloco final deve se chamar `Histórico` e usar apresentação inspirada na linha do tempo do legado | O bloco final mostra eventos em ordem visual definida pelo usuário no brainstorm, com marcadores/etapas e metadados legíveis, reaproveitando a lógica necessária de forma compatível com `legacy` e `v2` |
+| M4 | O bloco final deve se chamar `Histórico` e usar apresentação inspirada na linha do tempo do legado | O bloco final mostra eventos com o item mais antigo em cima e o item mais recente embaixo, com marcadores/etapas e metadados legíveis, reaproveitando a lógica necessária de forma compatível com `legacy` e `v2` |
 | M5 | O bloco `Dados enviados` deve permanecer disponível e legível no modal ajustado | Para itens `legacy` e `v2`, os dados submetidos continuam visíveis em uma seção dedicada, sem perda de campos relevantes já exibidos hoje |
+| M5a | O bloco de anexos deve permanecer visível quando houver anexos disponíveis | Para itens `legacy` e `v2` com anexos, o modal continua exibindo os anexos em uma seção visível e consistente com o shell final, sem removê-los para aproximar o layout do legado |
 | M6 | O modal deve corrigir cópia e rótulos em PT-BR | Títulos, descrições, labels e mensagens do modal não exibem textos sem acentuação indevida como `Solicitacao`, `Nao`, `Acoes` quando houver equivalente correto em PT-BR |
 | M7 | O modal deve continuar estritamente read-only para o solicitante final | O detalhe não introduz botões de edição, aprovação, resposta operacional ou qualquer mutação de estado; apenas visualização e fechamento do dialog |
-| M8 | Qualquer pequena adaptação no shape de `progress` ou de labels só pode ocorrer se ficar isolada na camada de apresentação e for explicitamente aprovada antes da implementação | O design resultante identifica com clareza quais campos derivados seriam necessários para o `Histórico`; se algum novo mapping de labels/shape for indispensável, ele fica documentado como decisão pendente de aprovação do usuário antes do `/build` |
+| M8 | Pequenas adaptações no shape de `progress` ou de labels podem ocorrer se ficarem isoladas na camada de apresentação, desde que o design explicite as mudanças e seus impactos | O usuário já aprovou a direção de pequenas adaptações; o `/design` deve listar claramente quais campos/labels derivados serão introduzidos, onde eles vivem, quais arquivos são impactados e qual é o fallback caso a implementação opte por não aplicar alguma dessas mudanças |
 | M9 | A cobertura de testes deve contemplar os cenários críticos do dialog ajustado | Existem testes cobrindo abertura/fechamento do dialog, renderização de item `v2`, renderização de item `legacy` e ausência de `Timeline` separada na experiência final |
 
 ### SHOULD Have
@@ -62,7 +63,7 @@ O modal de detalhes do solicitante final na rota `/solicitacoes` ainda expõe um
 | Fidelidade visual ao legado | O modal final reproduz a estrutura principal do legado em 100% dos cenários do solicitante | Comparação visual entre `RequesterUnifiedRequestDetailDialog` ajustado e `RequestDetailsModal.tsx`, verificando cabeçalho, metadata, `Dados enviados`, `Histórico` e rodapé |
 | Experiência única para `legacy` e `v2` | 1 shell visual atende ambas as origens sem bifurcação de layout principal | Testes e inspeção do componente confirmam um único dialog com adapters por origem, sem renderizar layouts distintos |
 | Ausência de timeline separada | 0 ocorrências de bloco `Timeline` isolado no modal final | Testes de render e inspeção do componente garantem que apenas `Histórico` é exibido como bloco final |
-| Compatibilidade de conteúdo | 100% dos detalhes essenciais já disponíveis hoje continuam acessíveis (`requester`, workflow/tipo, datas, dados enviados, anexos quando existirem, histórico) | Testes com fixtures `legacy` e `v2` e checklist funcional do dialog |
+| Compatibilidade de conteúdo | 100% dos detalhes essenciais já disponíveis hoje continuam acessíveis (`requester`, workflow/tipo, datas, dados enviados, anexos quando existirem, histórico) | Testes com fixtures `legacy` e `v2` e checklist funcional do dialog, validando explicitamente a permanência dos anexos quando existirem |
 | Correção textual em PT-BR | 0 labels principais com grafia sem acentuação indevida no modal | Verificação por testes de UI e revisão textual do componente |
 | Segurança de leitura | Nenhuma ação mutável é adicionada ao modal do solicitante | Revisão estática do componente e testes de interação limitados a abrir/fechar/rolar |
 
@@ -83,7 +84,7 @@ O modal de detalhes do solicitante final na rota `/solicitacoes` ainda expõe um
 | `src/components/workflows/requester/MyRequestsV2Section.tsx` | None | Continua sendo o ponto de abertura do detalhe; sem mudança funcional obrigatória para o define atual |
 | `src/components/applications/RequestDetailsModal.tsx` | Reference Only | Permanece intacto e serve como referência explícita de estrutura visual e comportamento esperado |
 | `src/components/workflows/management/RequestFormData.tsx` | Reuse / Reevaluate | Pode continuar sendo usado se encaixar no novo shell sem comprometer a fidelidade visual |
-| `src/components/workflows/management/RequestAttachments.tsx` | Reuse / Reevaluate | Pode continuar sendo usado no slot de anexos se não conflitar com a composição final |
+| `src/components/workflows/management/RequestAttachments.tsx` | Reuse / Reevaluate | Deve continuar sendo exibido quando houver anexos; o design precisa definir sua posição no shell final sem removê-lo da experiência do solicitante |
 | `src/components/workflows/management/RequestProgress.tsx` | De-emphasize / Remove from requester shell | Não deve mais aparecer como bloco independente na UX final do solicitante |
 | `src/components/workflows/management/RequestTimeline.tsx` | De-emphasize / Remove from requester shell | Não deve mais aparecer como bloco independente na UX final do solicitante |
 | `src/lib/workflows/requester/adapters/legacy-to-unified-detail.ts` | Modify (if needed) | Pode precisar expor dados adicionais de apresentação para o bloco `Histórico` requester |
@@ -132,7 +133,7 @@ O modal de detalhes do solicitante final na rota `/solicitacoes` ainda expõe um
 | `v2ReadDetailToUnifiedDetail` | Internal | Ready |
 | `useRequestDetail` | Internal | Ready |
 | Fixtures/casos reais `legacy` e `v2` para validar histórico final | Internal | Pending (a consolidar no /design ou /build) |
-| Aprovação explícita do usuário caso haja necessidade de ajuste mínimo em shape/labels de `progress` | External (product decision) | Pending only if needed |
+| Aprovação do usuário para permitir pequenas adaptações de shape/labels de `progress` | External (product decision) | Done |
 
 ## 9. Clarity Score
 

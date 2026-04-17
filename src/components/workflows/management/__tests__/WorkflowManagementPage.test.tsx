@@ -1,14 +1,21 @@
 import * as React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useWorkflowManagement } from '@/hooks/use-workflow-management';
+import { buildManagementRequestDetailFixture } from '@/lib/workflows/management/__tests__/request-detail-test-data';
 import { WorkflowManagementPage } from '../WorkflowManagementPage';
 
 const mockReplace = jest.fn();
+const mockToast = jest.fn();
 let mockSearchParams = new URLSearchParams();
 
 jest.mock('@/hooks/use-workflow-management', () => ({
   useWorkflowManagement: jest.fn(),
+}));
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({
+    toast: mockToast,
+  }),
 }));
 jest.mock('@/contexts/CollaboratorsContext', () => ({
   useCollaborators: () => ({
@@ -32,6 +39,20 @@ jest.mock('next/navigation', () => ({
 const mockUseWorkflowManagement = useWorkflowManagement as jest.MockedFunction<
   typeof useWorkflowManagement
 >;
+
+beforeAll(() => {
+  class ResizeObserverMock {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  }
+
+  Object.defineProperty(global, 'ResizeObserver', {
+    configurable: true,
+    writable: true,
+    value: ResizeObserverMock,
+  });
+});
 
 function buildBootstrap(canViewCurrentQueue = true) {
   return {
@@ -65,6 +86,15 @@ function buildBootstrap(canViewCurrentQueue = true) {
       ],
     },
   };
+}
+
+function buildSummary(requestId: number) {
+  return buildManagementRequestDetailFixture({
+    summary: {
+      requestId,
+      docId: `doc-${requestId}`,
+    },
+  }).summary;
 }
 
 function buildHookResult(canViewCurrentQueue = true) {
@@ -136,6 +166,7 @@ function buildHookResult(canViewCurrentQueue = true) {
 describe('WorkflowManagementPage', () => {
   beforeEach(() => {
     mockReplace.mockReset();
+    mockToast.mockReset();
     mockSearchParams = new URLSearchParams();
     mockUseWorkflowManagement.mockReturnValue(
       buildHookResult() as unknown as ReturnType<typeof useWorkflowManagement>,
@@ -244,5 +275,200 @@ describe('WorkflowManagementPage', () => {
     await user.click(screen.getAllByRole('button', { name: 'Tentar novamente' })[0]);
 
     expect(refetchActiveTab).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the dialog open after advance', async () => {
+    const user = userEvent.setup();
+    const advanceMutation = { mutateAsync: jest.fn().mockResolvedValue({ requestId: 812 }), isPending: false };
+
+    const detail = buildManagementRequestDetailFixture({
+      permissions: {
+        canAdvance: true,
+      },
+      action: {
+        available: false,
+      },
+    });
+
+    mockUseWorkflowManagement.mockImplementation((_, selectedRequestId) => ({
+      ...buildHookResult(),
+      assignmentsQuery: {
+        data: {
+          assignedItems: [buildSummary(812)],
+          pendingActionItems: [],
+        },
+        isLoading: false,
+        error: null,
+      },
+      detailQuery: {
+        data: selectedRequestId === 812 ? detail : undefined,
+        isLoading: false,
+        error: null,
+      },
+      advanceMutation,
+    }) as unknown as ReturnType<typeof useWorkflowManagement>);
+
+    render(<WorkflowManagementPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Avancar etapa' }));
+    await waitFor(() => expect(advanceMutation.mutateAsync).toHaveBeenCalledWith({ requestId: 812 }));
+    expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
+  });
+
+  it('closes the dialog after finalize', async () => {
+    const user = userEvent.setup();
+    const finalizeMutation = { mutateAsync: jest.fn().mockResolvedValue({ requestId: 812 }), isPending: false };
+
+    mockUseWorkflowManagement.mockImplementation((_, selectedRequestId) => ({
+      ...buildHookResult(),
+      assignmentsQuery: {
+        data: {
+          assignedItems: [buildSummary(812)],
+          pendingActionItems: [],
+        },
+        isLoading: false,
+        error: null,
+      },
+      detailQuery: {
+        data:
+          selectedRequestId === 812
+            ? buildManagementRequestDetailFixture({
+                permissions: {
+                  canFinalize: true,
+                },
+                action: {
+                  available: false,
+                },
+              })
+            : undefined,
+        isLoading: false,
+        error: null,
+      },
+      finalizeMutation,
+    }) as unknown as ReturnType<typeof useWorkflowManagement>);
+
+    render(<WorkflowManagementPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Finalizar chamado' }));
+    await waitFor(() => expect(finalizeMutation.mutateAsync).toHaveBeenCalledWith({ requestId: 812 }));
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Chamado #812' })).toBeNull());
+  });
+
+  it('closes the dialog after archive', async () => {
+    const user = userEvent.setup();
+    const archiveMutation = { mutateAsync: jest.fn().mockResolvedValue({ requestId: 812 }), isPending: false };
+
+    mockUseWorkflowManagement.mockImplementation((_, selectedRequestId) => ({
+      ...buildHookResult(),
+      assignmentsQuery: {
+        data: {
+          assignedItems: [buildSummary(812)],
+          pendingActionItems: [],
+        },
+        isLoading: false,
+        error: null,
+      },
+      detailQuery: {
+        data:
+          selectedRequestId === 812
+            ? buildManagementRequestDetailFixture({
+                summary: {
+                  statusCategory: 'finalized',
+                },
+                permissions: {
+                  canArchive: true,
+                },
+                action: {
+                  available: false,
+                },
+              })
+            : undefined,
+        isLoading: false,
+        error: null,
+      },
+      archiveMutation,
+    }) as unknown as ReturnType<typeof useWorkflowManagement>);
+
+    render(<WorkflowManagementPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Arquivar' }));
+    await waitFor(() => expect(archiveMutation.mutateAsync).toHaveBeenCalledWith({ requestId: 812 }));
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Chamado #812' })).toBeNull());
+  });
+
+  it('keeps the dialog open after requestAction and respondAction', async () => {
+    const user = userEvent.setup();
+    const requestActionMutation = { mutateAsync: jest.fn().mockResolvedValue({ requestId: 812 }), isPending: false };
+    const respondActionMutation = { mutateAsync: jest.fn().mockResolvedValue({ requestId: 812 }), isPending: false };
+
+    mockUseWorkflowManagement.mockImplementation((_, selectedRequestId) => ({
+      ...buildHookResult(),
+      assignmentsQuery: {
+        data: {
+          assignedItems: [buildSummary(812)],
+          pendingActionItems: [],
+        },
+        isLoading: false,
+        error: null,
+      },
+      detailQuery: {
+        data:
+          selectedRequestId === 812
+            ? buildManagementRequestDetailFixture({
+                permissions: {
+                  canRequestAction: true,
+                  canRespondAction: true,
+                },
+                action: {
+                  canRequest: true,
+                  canRespond: true,
+                  state: 'pending',
+                  recipients: [
+                    {
+                      actionRequestId: 'act_req_1',
+                      recipientUserId: 'RESP1',
+                      status: 'pending',
+                      respondedAt: null,
+                      respondedByUserId: null,
+                      respondedByName: null,
+                    },
+                  ],
+                },
+              })
+            : undefined,
+        isLoading: false,
+        error: null,
+      },
+      requestActionMutation,
+      respondActionMutation,
+    }) as unknown as ReturnType<typeof useWorkflowManagement>);
+
+    render(<WorkflowManagementPage />);
+
+    await user.click(screen.getByRole('button', { name: 'Abrir' }));
+    await user.click(screen.getByRole('button', { name: 'Solicitar Aprovar etapa' }));
+
+    await waitFor(() => expect(requestActionMutation.mutateAsync).toHaveBeenCalledWith({ requestId: 812 }));
+    expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Registrar resposta' }));
+    await waitFor(() =>
+      expect(respondActionMutation.mutateAsync).toHaveBeenCalledWith({
+        requestId: 812,
+        response: 'approved',
+        comment: undefined,
+        attachmentFile: undefined,
+      }),
+    );
+    expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
   });
 });
