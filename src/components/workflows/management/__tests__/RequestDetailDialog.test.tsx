@@ -429,6 +429,8 @@ describe('RequestDetailDialog', () => {
     await user.click(expandButtons[0]);
     await user.click(expandButtons[1]);
 
+    expect(screen.queryByText('Etapa iniciada')).toBeNull();
+    await user.click(screen.getByRole('button', { name: /Etapa 3: Execucao/i }));
     expect(screen.getByText('Etapa iniciada')).toBeTruthy();
     expect(screen.getByText('Nome e Sobrenome')).toBeTruthy();
   });

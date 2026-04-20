@@ -19,12 +19,7 @@ type RequestStepHistorySectionProps = {
 function buildInitialExpandedStepIds(
   stepsHistory?: WorkflowManagementRequestDetailData['stepsHistory'],
 ): string[] {
-  if (!stepsHistory || stepsHistory.length === 0) {
-    return [];
-  }
-
-  const currentStepIds = stepsHistory.filter((step) => step.isCurrent).map((step) => step.stepId);
-  return currentStepIds.length > 0 ? currentStepIds : [stepsHistory[0].stepId];
+  return [];
 }
 
 export function RequestStepHistorySection({
@@ -53,7 +48,7 @@ export function RequestStepHistorySection({
             {hasLegacyFallback ? <Badge variant="outline">Compatibilidade temporária</Badge> : null}
           </div>
           <p className="text-sm text-muted-foreground">
-            Histórico oficial por etapa do fluxo, com a etapa atual expandida por padrão.
+            Histórico oficial por etapa do fluxo. Expanda as etapas para consultar eventos e respostas.
           </p>
         </div>
       ) : (
