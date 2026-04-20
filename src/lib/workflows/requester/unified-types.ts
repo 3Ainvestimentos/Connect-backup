@@ -73,12 +73,15 @@ export interface RequesterUnifiedRequestDetailField {
   label: string;
   value: unknown;
   type: string; // 'text' | 'textarea' | 'select' | 'date' | 'date-range' | 'file' | outros
+  order?: number;
 }
 
 export interface RequesterUnifiedRequestDetailAttachment {
   fieldId: string;
   label: string;
   url: string;
+  fileName?: string;
+  order?: number;
 }
 
 export interface RequesterUnifiedRequestDetailTimelineItem {

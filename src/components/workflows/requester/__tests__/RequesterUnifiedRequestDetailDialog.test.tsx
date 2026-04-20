@@ -91,7 +91,10 @@ const detailV2: WorkflowRequestDetailData = {
     canRespondAction: false,
   },
   formData: {
-    fields: [{ fieldId: 'description', label: 'Descrição', type: 'text', value: 'Trocar lâmpada' }],
+    fields: [
+      { fieldId: 'description', label: 'Descrição', type: 'text', value: 'Trocar lâmpada', order: 0 },
+      { fieldId: 'criticality', label: 'Criticidade', type: 'select', value: 'Alta', order: 2 },
+    ],
     extraFields: [],
   },
   attachments: [
@@ -99,6 +102,8 @@ const detailV2: WorkflowRequestDetailData = {
       fieldId: 'attachment',
       label: 'Foto',
       url: 'https://example.com/uploads/foto%20teste.png?alt=media',
+      fileName: 'foto teste.png',
+      order: 1,
     },
   ],
   progress: {
@@ -210,7 +215,7 @@ describe('RequesterUnifiedRequestDetailDialog', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the requester shell for v2 without separate Timeline or Progresso blocks', () => {
+  it('renders the requester shell for v2 with inline attachments in Dados enviados', () => {
     (useRequestDetail as jest.Mock).mockReturnValue({
       data: detailV2,
       isLoading: false,
@@ -234,17 +239,21 @@ describe('RequesterUnifiedRequestDetailDialog', () => {
     expect(screen.getByText('Informações do chamado')).toBeInTheDocument();
     expect(screen.getByText('Dados enviados')).toBeInTheDocument();
     expect(screen.getByText('Histórico')).toBeInTheDocument();
-    expect(screen.getByText('Anexos')).toBeInTheDocument();
     expect(screen.getByText('Descrição')).toBeInTheDocument();
     expect(screen.getByText('Trocar lâmpada')).toBeInTheDocument();
+    expect(screen.getByText('Criticidade')).toBeInTheDocument();
+    expect(screen.getByText('Alta')).toBeInTheDocument();
+    expect(screen.getByText('Foto')).toBeInTheDocument();
+    expect(screen.getByText('foto teste.png')).toBeInTheDocument();
     expect(screen.getByText('Execução')).toBeInTheDocument();
     expect(screen.getByText('Atual')).toBeInTheDocument();
     expect(screen.getByText(/12\/04\/2026/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Abrir anexo' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Ver anexo' })).toBeInTheDocument();
     expect(screen.queryByText('Sem data')).not.toBeInTheDocument();
     expect(screen.queryByText('Timeline')).not.toBeInTheDocument();
     expect(screen.queryByText('Progresso')).not.toBeInTheDocument();
     expect(screen.queryByText('Evento técnico')).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Anexos$/)).toBeNull();
   });
 
   it('prefers summary.areaLabel over areaLabelById when adapting the v2 detail', () => {

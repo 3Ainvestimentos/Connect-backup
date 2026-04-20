@@ -38,6 +38,20 @@ describe('legacyRequestToUnifiedDetail', () => {
     expect(detail.timeline.length).toBe(2);
   });
 
+  it('preserves field/attachment ordering and excludes duplicated legacy file fields', () => {
+    const detail = legacyRequestToUnifiedDetail(mockLegacyRequest, mockWorkflowDefinition, mockWorkflowArea);
+
+    expect(detail.fields.map((field) => field.fieldId)).toEqual(['start_date', 'end_date', 'reason']);
+    expect(detail.fields.map((field) => field.order)).toEqual([0, 1, 2]);
+    expect(detail.attachments[0]).toEqual(
+      expect.objectContaining({
+        fieldId: 'attachment',
+        order: 3,
+        fileName: 'file.pdf',
+      }),
+    );
+  });
+
   it('has currentStepName as null for legacy', () => {
     const detail = legacyRequestToUnifiedDetail(mockLegacyRequest, mockWorkflowDefinition, mockWorkflowArea);
     expect(detail.summary.currentStepName).toBeNull();

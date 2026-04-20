@@ -16,9 +16,8 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { useRequestDetail } from '@/hooks/use-requester-workflows';
 import { RequesterRequestSummaryHeader } from './RequesterRequestSummaryHeader';
-import { RequesterRequestFormData } from './RequesterRequestFormData';
+import { RequesterSubmittedDataSection } from './RequesterSubmittedDataSection';
 import { RequesterRequestHistory } from './RequesterRequestHistory';
-import { RequesterRequestAttachments } from './RequesterRequestAttachments';
 import { legacyRequestToUnifiedDetail } from '@/lib/workflows/requester/adapters/legacy-to-unified-detail';
 import { v2ReadDetailToUnifiedDetail } from '@/lib/workflows/requester/adapters/v2-to-unified-detail';
 import { buildRequesterHistory } from '@/lib/workflows/requester/presentation/build-requester-history';
@@ -119,8 +118,10 @@ export function RequesterUnifiedRequestDetailDialog(props: Props) {
                   responsibleName={unifiedDetail.summary.responsibleName}
                   openedInLabel={unifiedDetail.summary.openedInLabel}
                 />
-                <RequesterRequestFormData fields={unifiedDetail.fields} />
-                <RequesterRequestAttachments attachments={unifiedDetail.attachments} />
+                <RequesterSubmittedDataSection
+                  fields={unifiedDetail.fields}
+                  attachments={unifiedDetail.attachments}
+                />
                 <RequesterRequestHistory items={historyItems} />
               </>
             ) : null}

@@ -19,6 +19,7 @@ function adaptFields(
     label: f.label,
     value: f.value,
     type: f.type,
+    order: f.order,
   }));
 }
 
@@ -29,6 +30,8 @@ function adaptAttachments(
     fieldId: a.fieldId,
     label: a.label,
     url: a.url,
+    fileName: a.fileName,
+    order: a.order,
   }));
 }
 

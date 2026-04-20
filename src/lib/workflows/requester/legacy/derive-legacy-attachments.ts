@@ -2,6 +2,16 @@ import type { WorkflowRequest } from '@/contexts/WorkflowsContext';
 import type { WorkflowDefinition } from '@/contexts/ApplicationsContext';
 import type { RequesterUnifiedRequestDetailAttachment } from '../unified-types';
 
+function getAttachmentFileName(url: string): string {
+  const rawName = url.split('/').pop()?.split('?')[0] ?? 'Arquivo';
+
+  try {
+    return decodeURIComponent(rawName);
+  } catch {
+    return rawName;
+  }
+}
+
 /**
  * Extrai anexos de um request legado. O legado guarda o URL diretamente
  * em `formData[fieldId]` quando o campo e do tipo `'file'`.
@@ -18,20 +28,32 @@ export function deriveLegacyAttachments(
   const attachments: RequesterUnifiedRequestDetailAttachment[] = [];
 
   if (definition?.fields?.length) {
-    for (const field of definition.fields) {
+    for (const [index, field] of definition.fields.entries()) {
       if (field.type !== 'file') continue;
       const url = formData[field.id];
       if (typeof url !== 'string' || !url.trim()) continue;
-      attachments.push({ fieldId: field.id, label: field.label, url });
+      attachments.push({
+        fieldId: field.id,
+        label: field.label,
+        url,
+        fileName: getAttachmentFileName(url),
+        order: index,
+      });
     }
     return attachments;
   }
 
   // Fallback sem definicao: detecta strings que parecem URL
-  for (const [key, value] of Object.entries(formData)) {
+  for (const [index, [key, value]] of Object.entries(formData).entries()) {
     if (typeof value !== 'string') continue;
     if (!/^https?:\/\//i.test(value)) continue;
-    attachments.push({ fieldId: key, label: key, url: value });
+    attachments.push({
+      fieldId: key,
+      label: key,
+      url: value,
+      fileName: getAttachmentFileName(value),
+      order: index,
+    });
   }
   return attachments;
 }

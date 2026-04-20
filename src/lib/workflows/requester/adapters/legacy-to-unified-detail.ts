@@ -29,7 +29,8 @@ function buildLegacyFields(
   const fields: RequesterUnifiedRequestDetailField[] = [];
 
   if (definition?.fields?.length) {
-    for (const fieldDef of definition.fields) {
+    for (const [index, fieldDef] of definition.fields.entries()) {
+      if (fieldDef.type === 'file') continue;
       const value = formData[fieldDef.id];
       if (value === undefined || value === null) continue;
       fields.push({
@@ -37,13 +38,14 @@ function buildLegacyFields(
         label: fieldDef.label,
         value,
         type: fieldDef.type,
+        order: index,
       });
     }
   } else {
     // Fallback sem definicao: usa fieldId como label
-    for (const [key, value] of Object.entries(formData)) {
+    for (const [index, [key, value]] of Object.entries(formData).entries()) {
       if (value === undefined || value === null) continue;
-      fields.push({ fieldId: key, label: key, value, type: 'text' });
+      fields.push({ fieldId: key, label: key, value, type: 'text', order: index });
     }
   }
 
