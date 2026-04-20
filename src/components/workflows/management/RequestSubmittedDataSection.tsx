@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { getFileNameFromUrl } from '@/lib/files/get-file-name-from-url';
 import { formatManagementDetailValue } from '@/lib/workflows/management/presentation';
 import type { WorkflowManagementRequestDetailData } from '@/lib/workflows/management/types';
 
@@ -26,16 +27,6 @@ type SubmittedDataItem =
       fileName: string;
     };
 
-function getAttachmentFileName(url: string): string {
-  const rawName = url.split('/').pop()?.split('?')[0] ?? 'Arquivo';
-
-  try {
-    return decodeURIComponent(rawName);
-  } catch {
-    return rawName;
-  }
-}
-
 export function RequestSubmittedDataSection({
   formData,
   attachments,
@@ -57,7 +48,7 @@ export function RequestSubmittedDataSection({
       label: attachment.label,
       order: attachment.order ?? formData.fields.length + index,
       url: attachment.url,
-      fileName: attachment.fileName || getAttachmentFileName(attachment.url),
+      fileName: attachment.fileName || getFileNameFromUrl(attachment.url),
     })),
   ].sort((left, right) => left.order - right.order);
 

@@ -2,22 +2,13 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getFileNameFromUrl } from '@/lib/files/get-file-name-from-url';
 import type { WorkflowManagementRequestAttachment } from '@/lib/workflows/management/types';
 
 type RequestAttachmentsProps = {
   attachments: WorkflowManagementRequestAttachment[];
   showDownloadAction?: boolean;
 };
-
-function getAttachmentFileName(url: string): string {
-  const rawName = url.split('/').pop()?.split('?')[0] ?? 'Arquivo';
-
-  try {
-    return decodeURIComponent(rawName);
-  } catch {
-    return rawName;
-  }
-}
 
 export function RequestAttachments({
   attachments,
@@ -43,7 +34,7 @@ export function RequestAttachments({
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-foreground">{attachment.label}</p>
                   <p className="text-xs text-muted-foreground">
-                    {getAttachmentFileName(attachment.url)}
+                    {getFileNameFromUrl(attachment.url)}
                   </p>
                 </div>
 

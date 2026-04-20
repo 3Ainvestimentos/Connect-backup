@@ -1,21 +1,12 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { getFileNameFromUrl } from '@/lib/files/get-file-name-from-url';
 import type { RequesterUnifiedRequestDetailAttachment } from '@/lib/workflows/requester/unified-types';
 
 type RequesterRequestAttachmentsProps = {
   attachments: RequesterUnifiedRequestDetailAttachment[];
 };
-
-function getAttachmentFileName(url: string): string {
-  const rawName = url.split('/').pop()?.split('?')[0] ?? 'Arquivo';
-
-  try {
-    return decodeURIComponent(rawName);
-  } catch {
-    return rawName;
-  }
-}
 
 export function RequesterRequestAttachments({
   attachments,
@@ -45,7 +36,7 @@ export function RequesterRequestAttachments({
             <div className="space-y-1">
               <p className="text-sm font-medium text-foreground">{attachment.label}</p>
               <p className="text-xs text-muted-foreground">
-                {getAttachmentFileName(attachment.url)}
+                {getFileNameFromUrl(attachment.url)}
               </p>
             </div>
 

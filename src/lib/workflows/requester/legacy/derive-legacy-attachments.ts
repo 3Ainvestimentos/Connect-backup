@@ -1,16 +1,7 @@
+import { getFileNameFromUrl } from '@/lib/files/get-file-name-from-url';
 import type { WorkflowRequest } from '@/contexts/WorkflowsContext';
 import type { WorkflowDefinition } from '@/contexts/ApplicationsContext';
 import type { RequesterUnifiedRequestDetailAttachment } from '../unified-types';
-
-function getAttachmentFileName(url: string): string {
-  const rawName = url.split('/').pop()?.split('?')[0] ?? 'Arquivo';
-
-  try {
-    return decodeURIComponent(rawName);
-  } catch {
-    return rawName;
-  }
-}
 
 /**
  * Extrai anexos de um request legado. O legado guarda o URL diretamente
@@ -36,7 +27,7 @@ export function deriveLegacyAttachments(
         fieldId: field.id,
         label: field.label,
         url,
-        fileName: getAttachmentFileName(url),
+        fileName: getFileNameFromUrl(url),
         order: index,
       });
     }
@@ -51,7 +42,7 @@ export function deriveLegacyAttachments(
       fieldId: key,
       label: key,
       url: value,
-      fileName: getAttachmentFileName(value),
+      fileName: getFileNameFromUrl(value),
       order: index,
     });
   }
