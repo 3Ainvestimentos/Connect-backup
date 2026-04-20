@@ -284,6 +284,10 @@ describe('workflow request detail composer', () => {
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],
+      configuredRecipients: [
+        { recipientUserId: 'RESP1' },
+        { recipientUserId: 'EXEC2' },
+      ],
       configurationError: null,
     });
   });
@@ -391,6 +395,10 @@ describe('workflow request detail composer', () => {
             status: 'pending',
           }),
         ],
+        configuredRecipients: [
+          { recipientUserId: 'RESP1' },
+          { recipientUserId: 'EXEC2' },
+        ],
       }),
     );
     expect(detail.timeline).toEqual([
@@ -420,6 +428,55 @@ describe('workflow request detail composer', () => {
         ],
       }),
     );
+  });
+
+  it('returns empty configuredRecipients when the current step action has configurationError', () => {
+    const detail = buildWorkflowRequestDetail({
+      docId: 'doc-config-error',
+      request: buildRequest(),
+      version: buildVersion({
+        stepsById: {
+          abertura: {
+            stepId: 'abertura',
+            stepName: 'Abertura',
+            statusKey: 'abertura',
+            kind: 'start',
+          },
+          analise: {
+            stepId: 'analise',
+            stepName: 'Analise',
+            statusKey: 'analise',
+            kind: 'work',
+          },
+          execucao: {
+            stepId: 'execucao',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            kind: 'work',
+            action: {
+              type: 'execution',
+              label: 'Executar atividade',
+              approverIds: [],
+              commentRequired: true,
+              attachmentRequired: true,
+              commentPlaceholder: 'Descreva o que foi executado',
+              attachmentPlaceholder: 'Envie a evidencia',
+            },
+          },
+          encerramento: {
+            stepId: 'encerramento',
+            stepName: 'Encerramento',
+            statusKey: 'encerramento',
+            kind: 'final',
+          },
+        },
+      }),
+      actorUserId: 'SMO2',
+      areaLabel: 'Facilities',
+    });
+
+    expect(detail.action.configurationError).toBeTruthy();
+    expect(detail.action.configuredRecipients).toEqual([]);
   });
 
   it('mantem visivel o ultimo batch encerrado da etapa atual como completed', () => {

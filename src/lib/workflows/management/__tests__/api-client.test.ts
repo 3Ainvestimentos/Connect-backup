@@ -90,6 +90,14 @@ describe('workflow management api client', () => {
             completedAt: { seconds: 1712059200, nanoseconds: 0 },
             requestedByUserId: 'RESP1',
             requestedByName: 'Responsavel',
+            configuredRecipients: [
+              {
+                recipientUserId: 'RESP1',
+              },
+              {
+                recipientUserId: 'EXEC2',
+              },
+            ],
             recipients: [
               {
                 actionRequestId: 'act_req_2',
@@ -153,6 +161,10 @@ describe('workflow management api client', () => {
     expect(detail.action.state).toBe('completed');
     expect(detail.action.batchId).toBe('act_batch_2');
     expect(detail.action.completedAt).toEqual(new Date('2024-04-02T12:00:00.000Z'));
+    expect(detail.action.configuredRecipients).toEqual([
+      { recipientUserId: 'RESP1' },
+      { recipientUserId: 'EXEC2' },
+    ]);
     expect(detail.permissions.canAdvance).toBe(true);
     expect(detail.summary.areaLabel).toBe('Facilities');
     expect(detail.stepsHistory).toEqual([

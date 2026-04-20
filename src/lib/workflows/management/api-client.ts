@@ -2,6 +2,7 @@ import type { User } from 'firebase/auth';
 import type {
   WorkflowManagementAdvanceInput,
   WorkflowManagementArchiveInput,
+  WorkflowManagementConfiguredRecipient,
   WorkflowManagementRequestActionDetail,
   WorkflowManagementRequestActionInput,
   WorkflowManagementAssignResponsibleInput,
@@ -393,7 +394,18 @@ function normalizeActionDetail(input: unknown): WorkflowManagementRequestActionD
     recipients: Array.isArray(detail.recipients)
       ? detail.recipients.map(normalizeHistoryAction)
       : [],
+    configuredRecipients: Array.isArray(detail.configuredRecipients)
+      ? detail.configuredRecipients.map(normalizeConfiguredRecipient)
+      : [],
     configurationError: asNullableString(detail.configurationError),
+  };
+}
+
+function normalizeConfiguredRecipient(input: unknown): WorkflowManagementConfiguredRecipient {
+  const item = isObject(input) ? input : {};
+
+  return {
+    recipientUserId: asString(item.recipientUserId),
   };
 }
 

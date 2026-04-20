@@ -192,6 +192,10 @@ export type WorkflowRequestActionRecipientDetail = {
   responseAttachmentUrl?: string;
 };
 
+export type WorkflowRequestConfiguredRecipient = {
+  recipientUserId: string;
+};
+
 export type WorkflowRequestStepEvent = {
   action: HistoryAction;
   label: string;
@@ -241,6 +245,7 @@ export type WorkflowRequestActionDetail = {
   requestedByUserId: string | null;
   requestedByName: string | null;
   recipients: WorkflowRequestActionRecipientDetail[];
+  configuredRecipients: WorkflowRequestConfiguredRecipient[];
   configurationError?: string | null;
 };
 

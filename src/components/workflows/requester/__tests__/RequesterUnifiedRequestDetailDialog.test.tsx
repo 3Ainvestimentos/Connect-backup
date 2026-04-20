@@ -148,6 +148,7 @@ const detailV2: WorkflowRequestDetailData = {
     requestedByUserId: null,
     requestedByName: null,
     recipients: [],
+    configuredRecipients: [],
   },
   timeline: [
     {

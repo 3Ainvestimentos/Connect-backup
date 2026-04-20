@@ -89,6 +89,11 @@ describe('RequestActionCard', () => {
           },
           action: {
             canRequest: true,
+            configuredRecipients: [
+              {
+                recipientUserId: 'RESP1',
+              },
+            ],
             recipients: [
               {
                 actionRequestId: 'act_req_1',
@@ -139,6 +144,36 @@ describe('RequestActionCard', () => {
 
     expect(screen.getByText('A solicitação será enviada para Fernanda Lima.')).toBeTruthy();
     expect(screen.queryByText('RESP1')).toBeNull();
+  });
+
+  it('shows recipientUserId when no friendly collaborator name exists', () => {
+    render(
+      <RequestActionCard
+        detail={buildManagementRequestDetailFixture({
+          action: {
+            state: 'pending',
+            requestedAt: new Date('2026-04-02T09:00:00Z'),
+            requestedByUserId: 'SMO2',
+            recipients: [
+              {
+                actionRequestId: 'act_req_1',
+                recipientUserId: 'RESP_FALLBACK',
+                status: 'pending',
+                respondedAt: null,
+                respondedByUserId: null,
+                respondedByName: null,
+              },
+            ],
+          },
+        })}
+        collaborators={[]}
+        onRequestAction={jest.fn().mockResolvedValue(undefined)}
+        onRespondAction={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    expect(screen.getByText('RESP_FALLBACK')).toBeTruthy();
+    expect(screen.queryByText('Colaborador configurado')).toBeNull();
   });
 
   it('blocks response controls and exposes sending label while respondAction is pending', () => {

@@ -175,6 +175,14 @@ describe('buildRequestOperationalViewModel', () => {
         },
         action: {
           canRequest: true,
+          configuredRecipients: [
+            {
+              recipientUserId: 'RESP1',
+            },
+            {
+              recipientUserId: 'RESP2',
+            },
+          ],
           recipients: [
             {
               actionRequestId: 'act_req_1',
@@ -203,5 +211,88 @@ describe('buildRequestOperationalViewModel', () => {
 
     expect(result.operational.requestTargetRecipients).toEqual(['Responsável 1', 'Responsável 2']);
     expect(result.currentAction.priority).toBe('action');
+  });
+
+  it('falls back to generic request copy when configuredRecipients is empty', () => {
+    const result = buildRequestOperationalViewModel(
+      buildManagementRequestDetailFixture({
+        permissions: {
+          canRequestAction: true,
+        },
+        action: {
+          canRequest: true,
+          configuredRecipients: [],
+          recipients: [],
+        },
+      }),
+    );
+
+    expect(result.contextLine).toBe(
+      'A etapa Execucao permite abrir uma action operacional oficial para os destinatarios configurados da etapa.',
+    );
+  });
+
+  it('does not reuse batch recipients for request copy when configuredRecipients is empty', () => {
+    const result = buildRequestOperationalViewModel(
+      buildManagementRequestDetailFixture({
+        permissions: {
+          canRequestAction: true,
+        },
+        action: {
+          canRequest: true,
+          configuredRecipients: [],
+          recipients: [
+            {
+              actionRequestId: 'act_req_1',
+              recipientUserId: 'RESP1',
+              status: 'pending',
+              respondedAt: null,
+              respondedByUserId: null,
+              respondedByName: null,
+            },
+          ],
+        },
+      }),
+      [{ id3a: 'RESP1', name: 'Responsável 1' }],
+    );
+
+    expect(result.contextLine).toBe(
+      'A etapa Execucao permite abrir uma action operacional oficial para os destinatarios configurados da etapa.',
+    );
+    expect(result.requestTargetRecipients).toEqual([]);
+  });
+
+  it('preserves distinct pending identities by userId when collaborators are unresolved', () => {
+    const result = buildRequestOperationalViewModel(
+      buildManagementRequestDetailFixture({
+        action: {
+          state: 'pending',
+          canRespond: false,
+          recipients: [
+            {
+              actionRequestId: 'act_req_1',
+              recipientUserId: 'RESP1',
+              status: 'pending',
+              respondedAt: null,
+              respondedByUserId: null,
+              respondedByName: null,
+            },
+            {
+              actionRequestId: 'act_req_2',
+              recipientUserId: 'RESP2',
+              status: 'pending',
+              respondedAt: null,
+              respondedByUserId: null,
+              respondedByName: null,
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(result.informationalState).toEqual({
+      label: 'Pendências com',
+      value: 'RESP1 e RESP2',
+    });
   });
 });

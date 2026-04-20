@@ -203,6 +203,7 @@ const mockDetail: WorkflowRequestDetailData = {
     requestedByUserId: null,
     requestedByName: null,
     recipients: [],
+    configuredRecipients: [],
   },
   timeline: [],
 };

@@ -1,6 +1,7 @@
 import {
   formatManagementDate,
 } from './presentation';
+import { resolveOperationalIdentity } from './request-identity';
 import type { WorkflowManagementRequestDetailData } from './types';
 
 type CollaboratorLike = {
@@ -74,36 +75,24 @@ function formatNameList(values: string[]): string {
   return `${values.slice(0, -1).join(', ')} e ${values[values.length - 1]}`;
 }
 
-function resolveFriendlyCollaboratorLabel(
-  collaborators: CollaboratorLike[],
-  userId: string | null | undefined,
-  fallbackName?: string | null,
-): string {
-  if (fallbackName?.trim()) {
-    return fallbackName.trim();
-  }
-
-  if (!userId) {
-    return 'Colaborador configurado';
-  }
-
-  const collaborator = collaborators.find((item) => item.id3a === userId);
-  if (collaborator?.name.trim()) {
-    return collaborator.name.trim();
-  }
-
-  return 'Colaborador configurado';
-}
-
-function buildRequestTargetRecipients(
-  detail: WorkflowManagementRequestDetailData,
+function buildRecipientLabels(
+  recipients: Array<{ recipientUserId: string }>,
   collaborators: CollaboratorLike[],
 ): string[] {
-  const labels = detail.action.recipients.map((recipient) =>
-    resolveFriendlyCollaboratorLabel(collaborators, recipient.recipientUserId),
-  );
+  const labelsByIdentity = new Map<string, string>();
 
-  return [...new Set(labels)];
+  recipients.forEach((recipient) => {
+    const identity = resolveOperationalIdentity({
+      collaborators,
+      userId: recipient.recipientUserId,
+    });
+
+    if (!labelsByIdentity.has(identity.identityKey)) {
+      labelsByIdentity.set(identity.identityKey, identity.displayLabel);
+    }
+  });
+
+  return [...labelsByIdentity.values()];
 }
 
 export function buildRequestOperationalViewModel(
@@ -111,7 +100,7 @@ export function buildRequestOperationalViewModel(
   collaborators: CollaboratorLike[] = [],
 ): RequestOperationalViewModel {
   const { summary, permissions, action } = detail;
-  const requestTargetRecipients = buildRequestTargetRecipients(detail, collaborators);
+  const requestTargetRecipients = buildRecipientLabels(action.configuredRecipients, collaborators);
   const hasPendingActionWithThirdParties =
     action.state === 'pending' &&
     action.recipients.some((recipient) => recipient.status === 'pending') &&
@@ -175,7 +164,7 @@ export function buildRequestOperationalViewModel(
       contextLine:
         requestTargetRecipients.length > 0
           ? `A solicitação desta etapa será enviada para ${formatNameList(requestTargetRecipients)}.`
-          : `A etapa ${summary.currentStepName} permite abrir uma action operacional oficial.`,
+          : `A etapa ${summary.currentStepName} permite abrir uma action operacional oficial para os destinatarios configurados da etapa.`,
       primaryAction: null,
       requestTargetRecipients,
       shouldRenderOperationalSummary: true,
@@ -183,23 +172,28 @@ export function buildRequestOperationalViewModel(
   }
 
   if (hasPendingActionWithThirdParties) {
-    const pendingRecipients = [
-      ...new Set(
-        action.recipients
-          .filter((recipient) => recipient.status === 'pending')
-          .map((recipient) =>
-            resolveFriendlyCollaboratorLabel(collaborators, recipient.recipientUserId),
-          ),
-      ),
-    ];
+    const pendingRecipients = new Map<string, string>();
+
+    action.recipients
+      .filter((recipient) => recipient.status === 'pending')
+      .forEach((recipient) => {
+        const identity = resolveOperationalIdentity({
+          collaborators,
+          userId: recipient.recipientUserId,
+        });
+
+        if (!pendingRecipients.has(identity.identityKey)) {
+          pendingRecipients.set(identity.identityKey, identity.displayLabel);
+        }
+      });
 
     return {
       tone: 'read-only',
       title: 'Action pendente com terceiros',
       contextLine: 'A continuidade do chamado depende da resposta da action atual.',
       informationalState: {
-        label: pendingRecipients.length > 1 ? 'Pendências com' : 'Pendente com',
-        value: formatNameList(pendingRecipients),
+        label: pendingRecipients.size > 1 ? 'Pendências com' : 'Pendente com',
+        value: formatNameList([...pendingRecipients.values()]),
       },
       primaryAction: null,
       requestTargetRecipients,

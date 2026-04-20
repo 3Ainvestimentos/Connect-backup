@@ -432,6 +432,18 @@ function resolveCompletedAt(entries: WorkflowActionRequest[]): TimestampLike {
   return latest;
 }
 
+function buildConfiguredRecipients(
+  actionDescription: ReturnType<typeof describeCurrentStepAction>,
+): WorkflowRequestActionDetail['configuredRecipients'] {
+  if (!actionDescription.available || actionDescription.configurationError) {
+    return [];
+  }
+
+  return actionDescription.approverIds.map((recipientUserId) => ({
+    recipientUserId,
+  }));
+}
+
 function buildDetailAction(
   request: WorkflowRequestV2,
   version: WorkflowVersionV2,
@@ -462,6 +474,7 @@ function buildDetailAction(
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],
+      configuredRecipients: [],
       configurationError: null,
     };
   }
@@ -483,6 +496,7 @@ function buildDetailAction(
     requestedByUserId: requestedEntry?.requestedByUserId ?? null,
     requestedByName: requestedEntry?.requestedByName ?? null,
     recipients: buildActionRecipients(batchEntries, actorUserId, request),
+    configuredRecipients: buildConfiguredRecipients(actionDescription),
     configurationError: actionDescription.configurationError,
   };
 }
@@ -515,6 +529,7 @@ function buildAdminDetailAction(
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],
+      configuredRecipients: [],
       configurationError: null,
     };
   }
@@ -536,6 +551,7 @@ function buildAdminDetailAction(
     requestedByUserId: requestedEntry?.requestedByUserId ?? null,
     requestedByName: requestedEntry?.requestedByName ?? null,
     recipients: buildAdminActionRecipients(batchEntries),
+    configuredRecipients: buildConfiguredRecipients(actionDescription),
     configurationError: actionDescription.configurationError,
   };
 }

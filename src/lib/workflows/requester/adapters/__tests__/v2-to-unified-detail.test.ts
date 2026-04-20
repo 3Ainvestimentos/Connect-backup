@@ -73,6 +73,7 @@ describe('v2ReadDetailToUnifiedDetail', () => {
         requestedByUserId: null,
         requestedByName: null,
         recipients: [],
+        configuredRecipients: [],
       },
       timeline: [
         {
@@ -184,6 +185,7 @@ describe('v2ReadDetailToUnifiedDetail', () => {
         requestedByUserId: null,
         requestedByName: null,
         recipients: [],
+        configuredRecipients: [],
       },
       timeline: [],
     } satisfies WorkflowRequestDetailData);

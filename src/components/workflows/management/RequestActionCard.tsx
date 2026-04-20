@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { resolveOperationalIdentity } from '@/lib/workflows/management/request-identity';
 import { formatManagementDate } from '@/lib/workflows/management/presentation';
 import type {
   WorkflowManagementRequestDetailData,
@@ -33,21 +34,6 @@ type RequestActionCardProps = {
   isRespondingAction?: boolean;
   variant?: 'default' | 'primary';
 };
-
-function resolveRecipientLabel(
-  collaborators: Collaborator[],
-  recipientUserId: string,
-  fallbackName?: string | null,
-): string {
-  if (fallbackName?.trim()) {
-    return fallbackName.trim();
-  }
-
-  return (
-    collaborators.find((collaborator) => collaborator.id3a === recipientUserId)?.name ??
-    'Colaborador configurado'
-  );
-}
 
 function formatRecipientList(recipients: string[]): string {
   if (recipients.length === 0) {
@@ -193,11 +179,13 @@ export function RequestActionCard({
         <div className="mt-4 space-y-3">
           <div className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
             Solicitada por{' '}
-            {resolveRecipientLabel(
-              collaborators,
-              action.requestedByUserId || '',
-              action.requestedByName || undefined,
-            )}{' '}
+            {
+              resolveOperationalIdentity({
+                collaborators,
+                userId: action.requestedByUserId,
+                fallbackName: action.requestedByName,
+              }).displayLabel
+            }{' '}
             em{' '}
             {formatManagementDate(action.requestedAt)}
             {action.state === 'completed' && action.completedAt
@@ -214,15 +202,22 @@ export function RequestActionCard({
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div>
                     <p className="font-medium text-foreground">
-                      {resolveRecipientLabel(collaborators, recipient.recipientUserId)}
+                      {
+                        resolveOperationalIdentity({
+                          collaborators,
+                          userId: recipient.recipientUserId,
+                        }).displayLabel
+                      }
                     </p>
                     <p className="text-muted-foreground">
                       {recipient.respondedByName || recipient.respondedByUserId
-                        ? `Resposta de ${resolveRecipientLabel(
-                            collaborators,
-                            recipient.respondedByUserId || '',
-                            recipient.respondedByName || undefined,
-                          )}`
+                        ? `Resposta de ${
+                            resolveOperationalIdentity({
+                              collaborators,
+                              userId: recipient.respondedByUserId,
+                              fallbackName: recipient.respondedByName,
+                            }).displayLabel
+                          }`
                         : 'Sem resposta registrada'}
                     </p>
                   </div>

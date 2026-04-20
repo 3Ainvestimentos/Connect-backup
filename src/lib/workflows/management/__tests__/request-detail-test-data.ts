@@ -120,6 +120,7 @@ export function buildManagementRequestDetailFixture(
       requestedByUserId: null,
       requestedByName: null,
       recipients: [],
+      configuredRecipients: [],
       configurationError: null,
     },
     timeline: [
@@ -203,6 +204,8 @@ export function buildManagementRequestDetailFixture(
       ...base.action,
       ...overrides.action,
       recipients: overrides.action?.recipients ?? base.action.recipients,
+      configuredRecipients:
+        overrides.action?.configuredRecipients ?? base.action.configuredRecipients,
     },
     formData: overrides.formData ?? base.formData,
     attachments: overrides.attachments ?? base.attachments,

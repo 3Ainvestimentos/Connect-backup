@@ -171,6 +171,10 @@ export type WorkflowManagementRequestActionRecipient = {
   responseAttachmentUrl?: string;
 };
 
+export type WorkflowManagementConfiguredRecipient = {
+  recipientUserId: string;
+};
+
 export type WorkflowManagementRequestStepEvent = {
   action: WorkflowManagementRequestTimelineItem['action'];
   label: string;
@@ -220,6 +224,7 @@ export type WorkflowManagementRequestActionDetail = {
   requestedByUserId: string | null;
   requestedByName: string | null;
   recipients: WorkflowManagementRequestActionRecipient[];
+  configuredRecipients: WorkflowManagementConfiguredRecipient[];
   configurationError?: string | null;
 };
 
