@@ -19,7 +19,7 @@ describe('RequestStepHistorySection', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Historico por etapa' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Histórico do chamado' })).toBeTruthy();
     expect(screen.getByText('Etapa 3: Execucao')).toBeTruthy();
     expect(screen.getByText('Etapa iniciada')).toBeTruthy();
     expect(screen.getByText('Respostas de action')).toBeTruthy();
@@ -40,7 +40,7 @@ describe('RequestStepHistorySection', () => {
       />,
     );
 
-    expect(screen.getByText('Compatibilidade temporaria')).toBeTruthy();
+    expect(screen.getByText('Compatibilidade temporária')).toBeTruthy();
     expect(screen.getByText('Progresso')).toBeTruthy();
     expect(screen.getByText('Timeline')).toBeTruthy();
   });

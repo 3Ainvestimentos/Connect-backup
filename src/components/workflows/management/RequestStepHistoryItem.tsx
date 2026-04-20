@@ -19,7 +19,7 @@ type RequestStepHistoryItemProps = {
 
 function getStepKindLabel(kind: WorkflowManagementRequestStepHistoryItem['kind']) {
   if (kind === 'start') {
-    return 'Inicio';
+    return 'Início';
   }
 
   if (kind === 'final') {
@@ -101,7 +101,7 @@ export function RequestStepHistoryItem({ step }: RequestStepHistoryItemProps) {
                     <p className="text-sm text-muted-foreground">
                       {response.respondedAt
                         ? `Resposta registrada em ${formatManagementDate(response.respondedAt)}`
-                        : 'Resposta ainda nao registrada'}
+                        : 'Resposta ainda não registrada'}
                     </p>
                   </div>
                   <Badge variant="outline">{getActionResponseLabel(response.status)}</Badge>
@@ -128,7 +128,7 @@ export function RequestStepHistoryItem({ step }: RequestStepHistoryItemProps) {
 
         {step.events.length === 0 && step.actionResponses.length === 0 ? (
           <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            Esta etapa ainda nao possui eventos nem respostas registradas.
+            Esta etapa ainda não possui eventos nem respostas registradas.
           </div>
         ) : null}
       </AccordionContent>

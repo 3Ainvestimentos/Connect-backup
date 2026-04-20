@@ -80,6 +80,67 @@ describe('RequestActionCard', () => {
     expect(button).toHaveAttribute('aria-disabled', 'true');
   });
 
+  it('shows friendly recipients before requesting without exposing raw ids', () => {
+    render(
+      <RequestActionCard
+        detail={buildManagementRequestDetailFixture({
+          permissions: {
+            canRequestAction: true,
+          },
+          action: {
+            canRequest: true,
+            recipients: [
+              {
+                actionRequestId: 'act_req_1',
+                recipientUserId: 'RESP1',
+                status: 'pending',
+                respondedAt: null,
+                respondedByUserId: null,
+                respondedByName: null,
+              },
+            ],
+          },
+        })}
+        collaborators={[
+          {
+            id: 'col-1',
+            id3a: 'RESP1',
+            name: 'Fernanda Lima',
+            email: 'fernanda@3ariva.com.br',
+            axis: 'Ops',
+            area: 'Facilities',
+            position: 'Analista',
+            segment: 'Facilities',
+            leader: 'Leader',
+            city: 'Sao Paulo',
+            permissions: {
+              canManageWorkflows: false,
+              canManageRequests: false,
+              canManageVacation: false,
+              canManageContent: false,
+              canManageTripsBirthdays: false,
+              canViewTasks: false,
+              canViewBI: false,
+              canViewRankings: false,
+              canViewCRM: false,
+              canViewStrategicPanel: false,
+              canViewOpportunityMap: false,
+              canViewMeetAnalyses: false,
+              canViewDirectoria: false,
+              canViewBILeaders: false,
+            },
+          },
+        ]}
+        requestTargetRecipients={['Fernanda Lima']}
+        onRequestAction={jest.fn().mockResolvedValue(undefined)}
+        onRespondAction={jest.fn().mockResolvedValue(undefined)}
+      />,
+    );
+
+    expect(screen.getByText('A solicitação será enviada para Fernanda Lima.')).toBeTruthy();
+    expect(screen.queryByText('RESP1')).toBeNull();
+  });
+
   it('blocks response controls and exposes sending label while respondAction is pending', () => {
     render(
       <RequestActionCard
@@ -111,7 +172,7 @@ describe('RequestActionCard', () => {
       />,
     );
 
-    expect(screen.getByRole('textbox', { name: 'Comentario *' })).toBeDisabled();
+    expect(screen.getByRole('textbox', { name: 'Comentário *' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Aprovar' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Rejeitar' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Enviando...' })).toBeDisabled();
@@ -153,10 +214,10 @@ describe('RequestActionCard', () => {
       />,
     );
 
-    const submitButton = screen.getByRole('button', { name: 'Registrar execucao' });
+    const submitButton = screen.getByRole('button', { name: 'Registrar execução' });
     expect(submitButton).toBeDisabled();
 
-    await user.type(screen.getByRole('textbox', { name: 'Comentario *' }), 'Execucao concluida');
+    await user.type(screen.getByRole('textbox', { name: 'Comentário *' }), 'Execução concluída');
     expect(submitButton).toBeDisabled();
 
     const file = new File(['ok'], 'evidencia.txt', { type: 'text/plain' });
@@ -169,7 +230,7 @@ describe('RequestActionCard', () => {
       expect.objectContaining({ requestId: 812 }),
       expect.objectContaining({
         response: 'executed',
-        comment: 'Execucao concluida',
+        comment: 'Execução concluída',
         attachmentFile: file,
       }),
     );

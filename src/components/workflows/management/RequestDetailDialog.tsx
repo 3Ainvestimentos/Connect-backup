@@ -21,6 +21,7 @@ import { buildRequestDetailShellViewModel } from '@/lib/workflows/management/req
 import { ManagementAsyncState, ManagementErrorState } from './ManagementAsyncState';
 import { RequestAdministrativePanel } from './RequestAdministrativePanel';
 import { RequestActionCard } from './RequestActionCard';
+import { RequestCollapsibleSection } from './RequestCollapsibleSection';
 import { RequestDetailHeader } from './RequestDetailHeader';
 import { RequestOperationalHero } from './RequestOperationalHero';
 import { RequestStepHistorySection } from './RequestStepHistorySection';
@@ -113,7 +114,7 @@ export function RequestDetailDialog({
   const summary = detail?.summary;
   const blockingErrorMessage = detail ? undefined : errorMessage;
   const hasNonBlockingError = Boolean(detail && errorMessage);
-  const shellViewModel = detail ? buildRequestDetailShellViewModel(detail) : null;
+  const shellViewModel = detail ? buildRequestDetailShellViewModel(detail, collaborators) : null;
 
   const handleAssign = async () => {
     if (!summary || !selectedResponsible) {
@@ -204,38 +205,24 @@ export function RequestDetailDialog({
                       />
                     ) : null}
 
-                    <div className="grid gap-6 xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] xl:items-start">
-                      <RequestSummarySection summary={shellViewModel.summary} />
+                    <RequestSummarySection summary={shellViewModel.summary} />
 
+                    {shellViewModel.currentAction.shouldRenderSection ? (
                       <section className="space-y-4" aria-labelledby="request-current-action-title">
                         <div className="space-y-1">
                           <h2 id="request-current-action-title" className="text-sm font-semibold text-foreground">
-                            Acao atual
+                            Ação atual
                           </h2>
                           <p className="text-sm text-muted-foreground">
-                            Proximo passo do fluxo, action da etapa e administracao reunidos numa unica macrozona.
+                            Continuidade oficial, action da etapa e administração conforme o contexto atual.
                           </p>
                         </div>
 
                         <div className="space-y-4 rounded-xl border bg-background p-4">
-                        {shellViewModel.currentAction.primaryMode === 'admin' ? (
-                          <RequestAdministrativePanel
-                            detail={detail}
-                              collaborators={sortedCollaborators}
-                              selectedResponsibleId={selectedResponsibleId}
-                              onResponsibleChange={setSelectedResponsibleId}
-                              onAssign={handleAssign}
-                              onArchive={handleArchive}
-                              isAssigning={isAssigning}
-                              isArchiving={isArchiving}
-                              variant="elevated"
-                            />
-                          ) : null}
-
-                        <RequestOperationalHero
-                          viewModel={shellViewModel.operational}
-                          onAdvance={handleAdvance}
-                          onFinalize={handleFinalize}
+                          <RequestOperationalHero
+                            viewModel={shellViewModel.operational}
+                            onAdvance={handleAdvance}
+                            onFinalize={handleFinalize}
                             isAdvancing={isAdvancing}
                             isFinalizing={isFinalizing}
                           />
@@ -247,18 +234,19 @@ export function RequestDetailDialog({
                                   Action da etapa
                                 </h3>
                                 <p className="text-sm text-muted-foreground">
-                                  Superficie oficial de requestAction/respondAction dentro da etapa atual.
+                                  Superfície oficial de requestAction/respondAction dentro da etapa atual.
                                 </p>
                               </div>
                               <RequestActionCard
                                 detail={detail}
                                 collaborators={collaborators}
+                                requestTargetRecipients={shellViewModel.operational.requestTargetRecipients}
                                 onRequestAction={onRequestAction}
                                 onRespondAction={onRespondAction}
                                 isRequestingAction={isRequestingAction}
                                 isRespondingAction={isRespondingAction}
                                 variant={
-                                  shellViewModel.currentAction.primaryMode === 'action-card'
+                                  shellViewModel.currentAction.priority === 'action'
                                     ? 'primary'
                                     : 'default'
                                 }
@@ -266,8 +254,7 @@ export function RequestDetailDialog({
                             </section>
                           ) : null}
 
-                          {shellViewModel.currentAction.shouldRenderAdminPanel &&
-                          shellViewModel.currentAction.primaryMode !== 'admin' ? (
+                          {shellViewModel.currentAction.shouldRenderAdminPanel ? (
                             <RequestAdministrativePanel
                               detail={detail}
                               collaborators={sortedCollaborators}
@@ -277,24 +264,40 @@ export function RequestDetailDialog({
                               onArchive={handleArchive}
                               isAssigning={isAssigning}
                               isArchiving={isArchiving}
+                              variant={
+                                shellViewModel.currentAction.priority === 'admin' ? 'elevated' : 'default'
+                              }
                             />
                           ) : null}
                         </div>
                       </section>
-                    </div>
+                    ) : null}
 
-                    <div className="grid gap-6 xl:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] xl:items-start">
-                      <RequestStepHistorySection
-                        stepsHistory={detail.stepsHistory}
-                        progress={detail.progress}
-                        timeline={detail.timeline}
-                        hasLegacyFallback={shellViewModel.history.hasLegacyFallback}
-                      />
+                    <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
+                      <RequestCollapsibleSection
+                        title="Histórico do chamado"
+                        description="Eventos e respostas por etapa, com fallback legado preservado quando necessário."
+                        badge={shellViewModel.history.hasLegacyFallback ? 'Compatibilidade temporária' : undefined}
+                      >
+                        <RequestStepHistorySection
+                          stepsHistory={detail.stepsHistory}
+                          progress={detail.progress}
+                          timeline={detail.timeline}
+                          hasLegacyFallback={shellViewModel.history.hasLegacyFallback}
+                          hideHeader
+                        />
+                      </RequestCollapsibleSection>
 
-                      <RequestSubmittedDataSection
-                        formData={detail.formData}
-                        attachments={detail.attachments}
-                      />
+                      <RequestCollapsibleSection
+                        title="Dados enviados"
+                        description="Campos e anexos da abertura original, preservando a ordem canônica."
+                      >
+                        <RequestSubmittedDataSection
+                          formData={detail.formData}
+                          attachments={detail.attachments}
+                          hideHeader
+                        />
+                      </RequestCollapsibleSection>
                     </div>
                   </>
                 ) : null}

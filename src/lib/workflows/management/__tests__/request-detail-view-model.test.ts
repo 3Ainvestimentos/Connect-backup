@@ -1,5 +1,8 @@
 import { buildManagementRequestDetailFixture } from './request-detail-test-data';
-import { buildRequestOperationalViewModel } from '../request-detail-view-model';
+import {
+  buildRequestDetailShellViewModel,
+  buildRequestOperationalViewModel,
+} from '../request-detail-view-model';
 
 describe('buildRequestOperationalViewModel', () => {
   it('prioritizes respondAction when the actor must answer the current action', () => {
@@ -19,9 +22,8 @@ describe('buildRequestOperationalViewModel', () => {
     );
 
     expect(result.tone).toBe('respond-action');
-    expect(result.highlightLabel).toBe('Voce precisa agir agora');
-    expect(result.statusNote).toContain('continuidade oficial');
-    expect(result.showActionZoneAsPrimary).toBe(true);
+    expect(result.title).toBe('Sua resposta está pendente');
+    expect(result.contextLine).toContain('liberar a continuidade oficial');
     expect(result.primaryAction).toBeNull();
   });
 
@@ -39,12 +41,15 @@ describe('buildRequestOperationalViewModel', () => {
     );
 
     expect(result.tone).toBe('ready-to-advance');
-    expect(result.showActionZoneAsPrimary).toBe(false);
-    expect(result.statusNote).toContain('action atual ja foi concluida');
+    expect(result.contextLine).toContain('já foi concluída');
+    expect(result.informationalState).toEqual({
+      label: 'Action da etapa',
+      value: 'Concluída',
+    });
     expect(result.primaryAction).toEqual({
       kind: 'advance',
-      label: 'Avancar etapa',
-      busyLabel: 'Avancando...',
+      label: 'Avançar etapa',
+      busyLabel: 'Avançando...',
     });
   });
 
@@ -58,7 +63,7 @@ describe('buildRequestOperationalViewModel', () => {
     );
 
     expect(result.tone).toBe('ready-to-finalize');
-    expect(result.statusNote).toContain('A finalizacao encerra o fluxo operacional');
+    expect(result.contextLine).toContain('pode ser encerrado oficialmente');
     expect(result.primaryAction).toEqual({
       kind: 'finalize',
       label: 'Finalizar chamado',
@@ -79,9 +84,8 @@ describe('buildRequestOperationalViewModel', () => {
     );
 
     expect(result.tone).toBe('request-action');
-    expect(result.statusNote).toContain('Solicite a action');
-    expect(result.showActionZoneAsPrimary).toBe(true);
-    expect(result.shouldRenderActionZone).toBe(true);
+    expect(result.title).toBe('Solicitação de action disponível');
+    expect(result.shouldRenderOperationalSummary).toBe(true);
   });
 
   it('returns finalized read-only copy when only archive remains available', () => {
@@ -101,9 +105,12 @@ describe('buildRequestOperationalViewModel', () => {
     );
 
     expect(result.tone).toBe('read-only');
-    expect(result.title).toBe('Chamado concluido');
-    expect(result.highlightLabel).toBe('Conclusao registrada');
-    expect(result.statusNote).toContain('arquivamento');
+    expect(result.title).toBe('Chamado concluído');
+    expect(result.contextLine).toContain('ações administrativas autorizadas');
+    expect(result.informationalState).toEqual({
+      label: 'Próximo passo',
+      value: 'Arquive apenas quando precisar retirar o chamado da fila ativa.',
+    });
     expect(result.primaryAction).toBeNull();
   });
 
@@ -124,11 +131,13 @@ describe('buildRequestOperationalViewModel', () => {
     );
 
     expect(result.tone).toBe('read-only');
-    expect(result.title).toBe('Chamado concluido');
-    expect(result.description).toContain('apenas para consulta');
-    expect(result.statusNote).toContain('Nenhuma nova acao operacional');
+    expect(result.title).toBe('Chamado concluído');
+    expect(result.contextLine).toContain('apenas para consulta');
+    expect(result.informationalState).toEqual({
+      label: 'Status',
+      value: 'Consulta apenas',
+    });
     expect(result.primaryAction).toBeNull();
-    expect(result.showActionZoneAsPrimary).toBe(false);
   });
 
   it('returns archived read-only copy without operational CTA', () => {
@@ -150,8 +159,49 @@ describe('buildRequestOperationalViewModel', () => {
 
     expect(result.tone).toBe('read-only');
     expect(result.title).toBe('Chamado arquivado');
-    expect(result.description).toContain('apenas para consulta');
-    expect(result.statusNote).toContain('Nenhum CTA operacional');
-    expect(result.shouldRenderActionZone).toBe(false);
+    expect(result.contextLine).toContain('apenas para consulta');
+    expect(result.informationalState).toEqual({
+      label: 'Status',
+      value: 'Arquivado',
+    });
+    expect(result.shouldRenderOperationalSummary).toBe(true);
+  });
+
+  it('derives friendly request recipients for the shell view model', () => {
+    const result = buildRequestDetailShellViewModel(
+      buildManagementRequestDetailFixture({
+        permissions: {
+          canRequestAction: true,
+        },
+        action: {
+          canRequest: true,
+          recipients: [
+            {
+              actionRequestId: 'act_req_1',
+              recipientUserId: 'RESP1',
+              status: 'pending',
+              respondedAt: null,
+              respondedByUserId: null,
+              respondedByName: null,
+            },
+            {
+              actionRequestId: 'act_req_2',
+              recipientUserId: 'RESP2',
+              status: 'pending',
+              respondedAt: null,
+              respondedByUserId: null,
+              respondedByName: null,
+            },
+          ],
+        },
+      }),
+      [
+        { id3a: 'RESP1', name: 'Responsável 1' },
+        { id3a: 'RESP2', name: 'Responsável 2' },
+      ],
+    );
+
+    expect(result.operational.requestTargetRecipients).toEqual(['Responsável 1', 'Responsável 2']);
+    expect(result.currentAction.priority).toBe('action');
   });
 });

@@ -8,6 +8,7 @@ import type { WorkflowManagementRequestDetailData } from '@/lib/workflows/manage
 type RequestSubmittedDataSectionProps = {
   formData: WorkflowManagementRequestDetailData['formData'];
   attachments: WorkflowManagementRequestDetailData['attachments'];
+  hideHeader?: boolean;
 };
 
 type SubmittedDataItem =
@@ -30,6 +31,7 @@ type SubmittedDataItem =
 export function RequestSubmittedDataSection({
   formData,
   attachments,
+  hideHeader = false,
 }: RequestSubmittedDataSectionProps) {
   const hasFields = formData.fields.length > 0;
   const hasExtraFields = formData.extraFields.length > 0;
@@ -54,18 +56,24 @@ export function RequestSubmittedDataSection({
 
   return (
     <section className="space-y-4" aria-labelledby="request-submitted-data-title">
-      <div className="space-y-1">
-        <h2 id="request-submitted-data-title" className="text-sm font-semibold text-foreground">
+      {!hideHeader ? (
+        <div className="space-y-1">
+          <h2 id="request-submitted-data-title" className="text-sm font-semibold text-foreground">
+            Dados enviados
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Campos e anexos enviados na abertura original do chamado.
+          </p>
+        </div>
+      ) : (
+        <h2 id="request-submitted-data-title" className="sr-only">
           Dados enviados
         </h2>
-        <p className="text-sm text-muted-foreground">
-          Campos e anexos enviados na abertura original do chamado.
-        </p>
-      </div>
+      )}
 
       {!hasFields && !hasExtraFields && !hasAttachments ? (
         <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-          Nenhum campo nem anexo da submissao inicial foi exposto pelo contrato oficial.
+          Nenhum campo nem anexo da submissão inicial foi exposto pelo contrato oficial.
         </div>
       ) : null}
 

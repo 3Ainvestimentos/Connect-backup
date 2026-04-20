@@ -23,6 +23,7 @@ type RespondActionPayload = {
 type RequestActionCardProps = {
   detail: WorkflowManagementRequestDetailData;
   collaborators: Collaborator[];
+  requestTargetRecipients?: string[];
   onRequestAction: (summary: WorkflowManagementRequestSummary) => Promise<unknown>;
   onRespondAction: (
     summary: WorkflowManagementRequestSummary,
@@ -36,11 +37,32 @@ type RequestActionCardProps = {
 function resolveRecipientLabel(
   collaborators: Collaborator[],
   recipientUserId: string,
+  fallbackName?: string | null,
 ): string {
+  if (fallbackName?.trim()) {
+    return fallbackName.trim();
+  }
+
   return (
     collaborators.find((collaborator) => collaborator.id3a === recipientUserId)?.name ??
-    recipientUserId
+    'Colaborador configurado'
   );
+}
+
+function formatRecipientList(recipients: string[]): string {
+  if (recipients.length === 0) {
+    return '';
+  }
+
+  if (recipients.length === 1) {
+    return recipients[0];
+  }
+
+  if (recipients.length === 2) {
+    return `${recipients[0]} e ${recipients[1]}`;
+  }
+
+  return `${recipients.slice(0, -1).join(', ')} e ${recipients[recipients.length - 1]}`;
 }
 
 function getStatusLabel(status: string): string {
@@ -65,15 +87,29 @@ function getActionStateLabel(state: WorkflowManagementRequestDetailData['action'
     case 'pending':
       return 'pendente';
     case 'completed':
-      return 'concluido';
+      return 'concluída';
     default:
-      return 'idle';
+      return 'disponível';
+  }
+}
+
+function getActionTypeLabel(type: WorkflowManagementRequestDetailData['action']['type']): string | null {
+  switch (type) {
+    case 'approval':
+      return 'Aprovação';
+    case 'acknowledgement':
+      return 'Ciência';
+    case 'execution':
+      return 'Execução';
+    default:
+      return null;
   }
 }
 
 export function RequestActionCard({
   detail,
   collaborators,
+  requestTargetRecipients = [],
   onRequestAction,
   onRespondAction,
   isRequestingAction = false,
@@ -99,6 +135,7 @@ export function RequestActionCard({
   const canRequest = detail.permissions.canRequestAction && action.canRequest;
   const canRespond = detail.permissions.canRespondAction && action.canRespond;
   const effectiveComment = comment.trim();
+  const actionTypeLabel = getActionTypeLabel(action.type);
 
   const handleRequestAction = async () => {
     try {
@@ -134,18 +171,15 @@ export function RequestActionCard({
             {action.label || 'Action operacional'}
           </p>
           <p className="text-sm text-muted-foreground">
-            {action.type
-              ? `Tipo: ${action.type} • estado ${getActionStateLabel(action.state)}.`
+            {actionTypeLabel
+              ? `Tipo: ${actionTypeLabel} • estado ${getActionStateLabel(action.state)}.`
               : 'A etapa atual pode abrir uma action operacional.'}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {action.type ? <Badge variant="outline">{action.type}</Badge> : null}
-          {action.state === 'pending' ? <Badge variant="outline">Batch pendente</Badge> : null}
-          {action.state === 'completed' ? <Badge variant="outline">Batch concluido</Badge> : null}
-          {action.commentRequired ? <Badge variant="outline">Comentario obrigatorio</Badge> : null}
-          {action.attachmentRequired ? <Badge variant="outline">Anexo obrigatorio</Badge> : null}
+          {actionTypeLabel ? <Badge variant="outline">{actionTypeLabel}</Badge> : null}
+          {action.attachmentRequired ? <Badge variant="outline">Anexo obrigatório</Badge> : null}
         </div>
       </div>
 
@@ -158,10 +192,16 @@ export function RequestActionCard({
       {action.state === 'pending' || action.state === 'completed' ? (
         <div className="mt-4 space-y-3">
           <div className="rounded-md bg-muted/40 p-3 text-sm text-muted-foreground">
-            Solicitada por {action.requestedByName || action.requestedByUserId || 'Sistema'} em{' '}
+            Solicitada por{' '}
+            {resolveRecipientLabel(
+              collaborators,
+              action.requestedByUserId || '',
+              action.requestedByName || undefined,
+            )}{' '}
+            em{' '}
             {formatManagementDate(action.requestedAt)}
             {action.state === 'completed' && action.completedAt
-              ? `. Batch concluido em ${formatManagementDate(action.completedAt)}.`
+              ? `. Concluída em ${formatManagementDate(action.completedAt)}.`
               : '.'}
           </div>
 
@@ -178,7 +218,11 @@ export function RequestActionCard({
                     </p>
                     <p className="text-muted-foreground">
                       {recipient.respondedByName || recipient.respondedByUserId
-                        ? `Resposta de ${recipient.respondedByName || recipient.respondedByUserId}`
+                        ? `Resposta de ${resolveRecipientLabel(
+                            collaborators,
+                            recipient.respondedByUserId || '',
+                            recipient.respondedByName || undefined,
+                          )}`
                         : 'Sem resposta registrada'}
                     </p>
                   </div>
@@ -210,36 +254,46 @@ export function RequestActionCard({
         </div>
       ) : (
         <div className="mt-4 rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-          Nenhum batch aberto nesta etapa.
+          Nenhuma action aberta nesta etapa.
         </div>
       )}
 
       {canRequest ? (
-        <div className="mt-4 flex justify-end">
-          <Button
-            type="button"
-            className={variant === 'primary' ? 'bg-admin-primary hover:bg-admin-primary/90' : undefined}
-            onClick={handleRequestAction}
-            disabled={isBusy}
-            aria-disabled={isBusy}
-          >
-            {isRequestingAction ? 'Solicitando...' : `Solicitar ${action.label || 'action'}`}
-          </Button>
+        <div className="mt-4 space-y-3">
+          {requestTargetRecipients.length > 0 ? (
+            <div className="rounded-md border border-dashed bg-muted/20 p-3 text-sm text-muted-foreground">
+              {requestTargetRecipients.length === 1
+                ? `A solicitação será enviada para ${requestTargetRecipients[0]}.`
+                : `A solicitação será enviada para ${formatRecipientList(requestTargetRecipients)}.`}
+            </div>
+          ) : null}
+
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              className={variant === 'primary' ? 'bg-admin-primary hover:bg-admin-primary/90' : undefined}
+              onClick={handleRequestAction}
+              disabled={isBusy}
+              aria-disabled={isBusy}
+            >
+              {isRequestingAction ? 'Solicitando...' : `Solicitar ${action.label || 'action'}`}
+            </Button>
+          </div>
         </div>
       ) : null}
 
       {canRespond ? (
         <div className="mt-4 space-y-4 border-t pt-4">
           <div className="space-y-1">
-            <p className="text-sm font-medium text-foreground">Responder action</p>
+            <p className="text-sm font-medium text-foreground">Responder ação</p>
             <p className="text-sm text-muted-foreground">
-              Preencha somente o necessario para a action atual.
+              Preencha apenas o necessário para a action atual.
             </p>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="management-action-comment">
-              Comentario{action.commentRequired ? ' *' : ''}
+              Comentário{action.commentRequired ? ' *' : ''}
             </Label>
             <Textarea
               id="management-action-comment"
@@ -264,7 +318,7 @@ export function RequestActionCard({
                 aria-disabled={isBusy}
               />
               <p className="text-xs text-muted-foreground">
-                {action.attachmentPlaceholder || 'Envie a evidencia da execucao quando aplicavel.'}
+                {action.attachmentPlaceholder || 'Envie a evidência da execução quando aplicável.'}
               </p>
             </div>
           ) : null}
@@ -335,7 +389,7 @@ export function RequestActionCard({
               }
               onClick={() => handleRespondAction('executed')}
             >
-              {isRespondingAction ? 'Enviando...' : 'Registrar execucao'}
+              {isRespondingAction ? 'Enviando...' : 'Registrar execução'}
             </Button>
           ) : null}
         </div>

@@ -56,10 +56,10 @@ export function RequestAdministrativePanel({
     >
       <div className="space-y-1">
         <h2 id="request-admin-panel-title" className="text-sm font-semibold text-foreground">
-          Administracao do chamado
+          Administração do chamado
         </h2>
         <p className="text-sm text-muted-foreground">
-          Atribuicao e arquivamento ficam separados do proximo passo do fluxo.
+          Atribuição e arquivamento ficam disponíveis apenas quando o payload autoriza.
         </p>
       </div>
 
@@ -67,18 +67,18 @@ export function RequestAdministrativePanel({
         <div className="mt-4 space-y-3 rounded-lg border border-dashed p-4">
           <div className="space-y-1">
             <p className="text-sm font-medium text-foreground">
-              {detail.summary.hasResponsible ? 'Reatribuir responsavel' : 'Atribuir responsavel'}
+              {detail.summary.hasResponsible ? 'Reatribuir responsável' : 'Atribuir responsável'}
             </p>
             <p className="text-sm text-muted-foreground">
-              Selecione um colaborador carregado pela sessao autenticada.
+              Selecione um colaborador carregado pela sessão autenticada.
             </p>
           </div>
 
           <div className="flex flex-col gap-3 md:flex-row md:items-end">
             <div className="min-w-0 flex-1 space-y-2">
-              <Label htmlFor="management-responsible-select">Responsavel</Label>
+              <Label htmlFor="management-responsible-select">Responsável</Label>
               <Select value={selectedResponsibleId} onValueChange={onResponsibleChange}>
-                <SelectTrigger id="management-responsible-select" aria-label="Responsavel">
+                <SelectTrigger id="management-responsible-select" aria-label="Responsável">
                   <SelectValue placeholder="Selecione um colaborador" />
                 </SelectTrigger>
                 <SelectContent>
@@ -109,8 +109,8 @@ export function RequestAdministrativePanel({
               {isAssigning
                 ? 'Salvando...'
                 : detail.summary.hasResponsible
-                  ? 'Reatribuir responsavel'
-                  : 'Atribuir responsavel'}
+                  ? 'Reatribuir responsável'
+                  : 'Atribuir responsável'}
             </Button>
           </div>
         </div>

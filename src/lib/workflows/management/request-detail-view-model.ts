@@ -3,6 +3,11 @@ import {
 } from './presentation';
 import type { WorkflowManagementRequestDetailData } from './types';
 
+type CollaboratorLike = {
+  id3a?: string | null;
+  name: string;
+};
+
 export type RequestOperationalTone =
   | 'respond-action'
   | 'ready-to-advance'
@@ -11,18 +16,20 @@ export type RequestOperationalTone =
   | 'read-only';
 
 export type RequestOperationalPrimaryAction =
-  | { kind: 'advance'; label: 'Avancar etapa'; busyLabel: 'Avancando...' }
+  | { kind: 'advance'; label: 'Avançar etapa'; busyLabel: 'Avançando...' }
   | { kind: 'finalize'; label: 'Finalizar chamado'; busyLabel: 'Finalizando...' };
 
 export type RequestOperationalViewModel = {
   tone: RequestOperationalTone;
   title: string;
-  description: string;
-  highlightLabel?: string;
-  statusNote?: string;
-  showActionZoneAsPrimary: boolean;
-  shouldRenderActionZone: boolean;
+  contextLine: string;
+  informationalState?: {
+    label: string;
+    value: string;
+  };
   primaryAction: RequestOperationalPrimaryAction | null;
+  requestTargetRecipients: string[];
+  shouldRenderOperationalSummary: boolean;
 };
 
 export type RequestDetailShellSummaryItem = {
@@ -41,113 +48,224 @@ export type RequestDetailShellViewModel = {
     metaItems: RequestDetailShellSummaryItem[];
   };
   currentAction: {
-    primaryMode: 'hero' | 'action-card' | 'admin';
+    priority: 'continuity' | 'action' | 'admin' | 'read-only';
     shouldRenderActionCard: boolean;
     shouldRenderAdminPanel: boolean;
+    shouldRenderSection: boolean;
   };
   history: {
     hasLegacyFallback: boolean;
   };
 };
 
+function formatNameList(values: string[]): string {
+  if (values.length === 0) {
+    return '';
+  }
+
+  if (values.length === 1) {
+    return values[0];
+  }
+
+  if (values.length === 2) {
+    return `${values[0]} e ${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join(', ')} e ${values[values.length - 1]}`;
+}
+
+function resolveFriendlyCollaboratorLabel(
+  collaborators: CollaboratorLike[],
+  userId: string | null | undefined,
+  fallbackName?: string | null,
+): string {
+  if (fallbackName?.trim()) {
+    return fallbackName.trim();
+  }
+
+  if (!userId) {
+    return 'Colaborador configurado';
+  }
+
+  const collaborator = collaborators.find((item) => item.id3a === userId);
+  if (collaborator?.name.trim()) {
+    return collaborator.name.trim();
+  }
+
+  return 'Colaborador configurado';
+}
+
+function buildRequestTargetRecipients(
+  detail: WorkflowManagementRequestDetailData,
+  collaborators: CollaboratorLike[],
+): string[] {
+  const labels = detail.action.recipients.map((recipient) =>
+    resolveFriendlyCollaboratorLabel(collaborators, recipient.recipientUserId),
+  );
+
+  return [...new Set(labels)];
+}
+
 export function buildRequestOperationalViewModel(
   detail: WorkflowManagementRequestDetailData,
+  collaborators: CollaboratorLike[] = [],
 ): RequestOperationalViewModel {
   const { summary, permissions, action } = detail;
-  const shouldRenderActionZone = action.available || Boolean(action.configurationError);
+  const requestTargetRecipients = buildRequestTargetRecipients(detail, collaborators);
+  const hasPendingActionWithThirdParties =
+    action.state === 'pending' &&
+    action.recipients.some((recipient) => recipient.status === 'pending') &&
+    !(permissions.canRespondAction && action.canRespond);
 
   if (permissions.canRespondAction && action.canRespond) {
     return {
       tone: 'respond-action',
-      title: 'Aguardando sua resposta',
-      description: `A etapa ${summary.currentStepName} depende da sua resposta na action atual.`,
-      highlightLabel: 'Voce precisa agir agora',
-      statusNote: 'A continuidade oficial do chamado volta a ficar disponivel depois da resposta.',
-      showActionZoneAsPrimary: true,
-      shouldRenderActionZone,
+      title: 'Sua resposta está pendente',
+      contextLine: `Responda a action da etapa ${summary.currentStepName} para liberar a continuidade oficial.`,
       primaryAction: null,
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
     };
   }
 
   if (permissions.canAdvance) {
     return {
       tone: 'ready-to-advance',
-      title: 'Pronto para avancar',
-      description: `A etapa ${summary.currentStepName} ja pode seguir para o proximo passo oficial.`,
-      highlightLabel: 'Proximo passo disponivel',
-      statusNote:
+      title: 'Continuidade oficial liberada',
+      contextLine:
         action.state === 'completed'
-          ? 'A action atual ja foi concluida e o chamado aguarda apenas a continuidade oficial.'
-          : 'Nenhuma pendencia adicional bloqueia o proximo passo oficial neste momento.',
-      showActionZoneAsPrimary: false,
-      shouldRenderActionZone,
+          ? 'A action da etapa já foi concluída e o chamado aguarda apenas o avanço oficial.'
+          : `A etapa ${summary.currentStepName} já pode avançar para o próximo passo oficial.`,
+      informationalState:
+        action.state === 'completed'
+          ? {
+              label: 'Action da etapa',
+              value: 'Concluída',
+            }
+          : undefined,
       primaryAction: {
         kind: 'advance',
-        label: 'Avancar etapa',
-        busyLabel: 'Avancando...',
+        label: 'Avançar etapa',
+        busyLabel: 'Avançando...',
       },
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
     };
   }
 
   if (permissions.canFinalize) {
     return {
       tone: 'ready-to-finalize',
-      title: 'Pronto para concluir',
-      description: 'O chamado ja atingiu a etapa imediatamente anterior a conclusao oficial.',
-      highlightLabel: 'Conclusao disponivel',
-      statusNote: 'A finalizacao encerra o fluxo operacional e mantem apenas a camada administrativa quando autorizada.',
-      showActionZoneAsPrimary: false,
-      shouldRenderActionZone,
+      title: 'Finalização disponível',
+      contextLine: 'O fluxo já atingiu a etapa final e pode ser encerrado oficialmente.',
       primaryAction: {
         kind: 'finalize',
         label: 'Finalizar chamado',
         busyLabel: 'Finalizando...',
       },
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
     };
   }
 
-  if (permissions.canRequestAction && action.available) {
+  if (permissions.canRequestAction && action.available && action.canRequest) {
     return {
       tone: 'request-action',
-      title: 'Action disponivel para esta etapa',
-      description: `A etapa ${summary.currentStepName} pode abrir uma action operacional oficial.`,
-      highlightLabel: 'Acao de etapa disponivel',
-      statusNote: 'Solicite a action somente quando o destinatario ja puder assumir o proximo passo desta etapa.',
-      showActionZoneAsPrimary: true,
-      shouldRenderActionZone: true,
+      title: 'Solicitação de action disponível',
+      contextLine:
+        requestTargetRecipients.length > 0
+          ? `A solicitação desta etapa será enviada para ${formatNameList(requestTargetRecipients)}.`
+          : `A etapa ${summary.currentStepName} permite abrir uma action operacional oficial.`,
       primaryAction: null,
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
+    };
+  }
+
+  if (hasPendingActionWithThirdParties) {
+    const pendingRecipients = [
+      ...new Set(
+        action.recipients
+          .filter((recipient) => recipient.status === 'pending')
+          .map((recipient) =>
+            resolveFriendlyCollaboratorLabel(collaborators, recipient.recipientUserId),
+          ),
+      ),
+    ];
+
+    return {
+      tone: 'read-only',
+      title: 'Action pendente com terceiros',
+      contextLine: 'A continuidade do chamado depende da resposta da action atual.',
+      informationalState: {
+        label: pendingRecipients.length > 1 ? 'Pendências com' : 'Pendente com',
+        value: formatNameList(pendingRecipients),
+      },
+      primaryAction: null,
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
     };
   }
 
   if (summary.statusCategory === 'finalized') {
     return {
       tone: 'read-only',
-      title: 'Chamado concluido',
-      description: permissions.canArchive
-        ? 'O fluxo operacional foi encerrado e restam apenas acoes administrativas autorizadas.'
-        : 'O fluxo operacional foi encerrado e este chamado permanece disponivel apenas para consulta.',
-      highlightLabel: 'Conclusao registrada',
-      statusNote: permissions.canArchive
-        ? 'Use o arquivamento apenas quando for necessario retirar o chamado da fila ativa.'
-        : 'Nenhuma nova acao operacional ou administrativa adicional esta disponivel para o ator autenticado.',
-      showActionZoneAsPrimary: false,
-      shouldRenderActionZone,
+      title: 'Chamado concluído',
+      contextLine: permissions.canArchive
+        ? 'O fluxo operacional foi encerrado e restam apenas ações administrativas autorizadas.'
+        : 'O fluxo operacional foi encerrado e este chamado permanece disponível apenas para consulta.',
+      informationalState: permissions.canArchive
+        ? {
+            label: 'Próximo passo',
+            value: 'Arquive apenas quando precisar retirar o chamado da fila ativa.',
+          }
+        : {
+            label: 'Status',
+            value: 'Consulta apenas',
+          },
       primaryAction: null,
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
+    };
+  }
+
+  if (summary.isArchived) {
+    return {
+      tone: 'read-only',
+      title: 'Chamado arquivado',
+      contextLine: 'Este chamado permanece disponível apenas para consulta.',
+      informationalState: {
+        label: 'Status',
+        value: 'Arquivado',
+      },
+      primaryAction: null,
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
+    };
+  }
+
+  if (summary.statusCategory === 'in_progress' && summary.hasResponsible) {
+    return {
+      tone: 'read-only',
+      title: 'Chamado em andamento',
+      contextLine: 'O próximo passo operacional segue com o responsável atual.',
+      informationalState: {
+        label: 'Responsável atual',
+        value: summary.responsibleName || 'Responsável definido',
+      },
+      primaryAction: null,
+      requestTargetRecipients,
+      shouldRenderOperationalSummary: true,
     };
   }
 
   return {
     tone: 'read-only',
-    title: summary.isArchived ? 'Chamado arquivado' : 'Sem acao operacional imediata',
-    description: summary.isArchived
-      ? 'Este chamado permanece disponivel apenas para consulta.'
-      : 'O detalhe oficial nao expoe uma proxima acao para o ator autenticado neste momento.',
-    statusNote: summary.isArchived
-      ? 'Nenhum CTA operacional ou administrativo adicional deve ser reintroduzido fora do payload oficial.'
-      : undefined,
-    showActionZoneAsPrimary: false,
-    shouldRenderActionZone,
+    title: 'Sem ação operacional imediata',
+    contextLine: 'O detalhe oficial não expõe uma próxima ação para o ator autenticado neste momento.',
     primaryAction: null,
+    requestTargetRecipients,
+    shouldRenderOperationalSummary: false,
   };
 }
 
@@ -171,13 +289,17 @@ function buildSummaryMetaItems(detail: WorkflowManagementRequestDetailData): Req
 function resolveCurrentActionPrimaryMode(
   detail: WorkflowManagementRequestDetailData,
   operational: RequestOperationalViewModel,
-): RequestDetailShellViewModel['currentAction']['primaryMode'] {
-  if (operational.showActionZoneAsPrimary) {
-    return 'action-card';
+): RequestDetailShellViewModel['currentAction']['priority'] {
+  if (operational.primaryAction) {
+    return 'continuity';
   }
 
-  if (operational.primaryAction) {
-    return 'hero';
+  if (detail.permissions.canRespondAction || detail.permissions.canRequestAction) {
+    return 'action';
+  }
+
+  if (operational.shouldRenderOperationalSummary) {
+    return 'read-only';
   }
 
   if (detail.permissions.canAssign && !detail.summary.hasResponsible) {
@@ -188,20 +310,23 @@ function resolveCurrentActionPrimaryMode(
     return 'admin';
   }
 
-  return 'hero';
+  return 'read-only';
 }
 
 function buildHeaderDescription(
   detail: WorkflowManagementRequestDetailData,
 ): string {
   const workflowLabel = detail.summary.workflowName || detail.summary.workflowTypeId;
-  return `${workflowLabel} • Em Etapa: ${detail.summary.currentStepName}.`;
+  return `${workflowLabel} • Etapa atual: ${detail.summary.currentStepName}.`;
 }
 
 export function buildRequestDetailShellViewModel(
   detail: WorkflowManagementRequestDetailData,
+  collaborators: CollaboratorLike[] = [],
 ): RequestDetailShellViewModel {
-  const operational = buildRequestOperationalViewModel(detail);
+  const operational = buildRequestOperationalViewModel(detail, collaborators);
+  const shouldRenderActionCard = detail.action.available || Boolean(detail.action.configurationError);
+  const shouldRenderAdminPanel = detail.permissions.canAssign || detail.permissions.canArchive;
 
   return {
     operational,
@@ -214,9 +339,11 @@ export function buildRequestDetailShellViewModel(
       metaItems: buildSummaryMetaItems(detail),
     },
     currentAction: {
-      primaryMode: resolveCurrentActionPrimaryMode(detail, operational),
-      shouldRenderActionCard: operational.shouldRenderActionZone,
-      shouldRenderAdminPanel: detail.permissions.canAssign || detail.permissions.canArchive,
+      priority: resolveCurrentActionPrimaryMode(detail, operational),
+      shouldRenderActionCard,
+      shouldRenderAdminPanel,
+      shouldRenderSection:
+        operational.shouldRenderOperationalSummary || shouldRenderActionCard || shouldRenderAdminPanel,
     },
     history: {
       hasLegacyFallback: !Array.isArray(detail.stepsHistory),

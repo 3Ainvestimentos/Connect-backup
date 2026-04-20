@@ -13,6 +13,7 @@ type RequestStepHistorySectionProps = {
   progress: WorkflowManagementRequestDetailData['progress'];
   timeline: WorkflowManagementRequestDetailData['timeline'];
   hasLegacyFallback: boolean;
+  hideHeader?: boolean;
 };
 
 function buildInitialExpandedStepIds(
@@ -31,6 +32,7 @@ export function RequestStepHistorySection({
   progress,
   timeline,
   hasLegacyFallback,
+  hideHeader = false,
 }: RequestStepHistorySectionProps) {
   const [expandedStepIds, setExpandedStepIds] = React.useState<string[]>(() =>
     buildInitialExpandedStepIds(stepsHistory),
@@ -42,23 +44,29 @@ export function RequestStepHistorySection({
 
   return (
     <section className="space-y-4" aria-labelledby="request-step-history-title">
-      <div className="space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 id="request-step-history-title" className="text-sm font-semibold text-foreground">
-            Historico por etapa
-          </h2>
-          {hasLegacyFallback ? <Badge variant="outline">Compatibilidade temporaria</Badge> : null}
+      {!hideHeader ? (
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 id="request-step-history-title" className="text-sm font-semibold text-foreground">
+              Histórico do chamado
+            </h2>
+            {hasLegacyFallback ? <Badge variant="outline">Compatibilidade temporária</Badge> : null}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Histórico oficial por etapa do fluxo, com a etapa atual expandida por padrão.
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Historico oficial por etapa do fluxo, com a etapa atual expandida por padrao.
-        </p>
-      </div>
+      ) : (
+        <h2 id="request-step-history-title" className="sr-only">
+          Histórico do chamado
+        </h2>
+      )}
 
       {hasLegacyFallback ? (
         <div className="space-y-4">
           <div className="rounded-lg border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
-            O detalhe ainda nao trouxe <code>stepsHistory</code>; exibindo progresso e timeline
-            legados dentro da zona oficial de historico.
+            O detalhe ainda não trouxe <code>stepsHistory</code>; exibindo progresso e timeline
+            legados dentro da zona oficial de histórico.
           </div>
           <RequestProgress progress={progress} />
           <RequestTimeline timeline={timeline} />

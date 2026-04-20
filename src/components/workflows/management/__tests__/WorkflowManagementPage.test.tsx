@@ -378,7 +378,7 @@ describe('WorkflowManagementPage', () => {
     await user.click(screen.getByRole('button', { name: 'Abrir' }));
     expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: 'Avancar etapa' }));
+    await user.click(screen.getByRole('button', { name: 'Avançar etapa' }));
     await waitFor(() => expect(advanceMutation.mutateAsync).toHaveBeenCalledWith({ requestId: 812 }));
     expect(screen.getByRole('heading', { name: 'Chamado #812' })).toBeTruthy();
   });
@@ -576,12 +576,12 @@ describe('WorkflowManagementPage', () => {
         }) as unknown as ReturnType<typeof useWorkflowManagement>);
 
         return {
-          actionName: 'Reatribuir responsavel',
+          actionName: 'Reatribuir responsável',
           trigger: async (user: ReturnType<typeof userEvent.setup>) => {
             await user.click(screen.getByRole('button', { name: 'Abrir' }));
-            await user.click(screen.getByRole('combobox', { name: 'Responsavel' }));
+            await user.click(screen.getByRole('combobox', { name: 'Responsável' }));
             await user.click(screen.getByRole('option', { name: 'Novo Responsavel' }));
-            await user.click(screen.getByRole('button', { name: 'Reatribuir responsavel' }));
+            await user.click(screen.getByRole('button', { name: 'Reatribuir responsável' }));
           },
           mutateAsync: assignMutation.mutateAsync,
           expectedPayload: {
@@ -634,10 +634,10 @@ describe('WorkflowManagementPage', () => {
         }) as unknown as ReturnType<typeof useWorkflowManagement>);
 
         return {
-          actionName: 'Avancar etapa',
+          actionName: 'Avançar etapa',
           trigger: async (user: ReturnType<typeof userEvent.setup>) => {
             await user.click(screen.getByRole('button', { name: 'Abrir' }));
-            await user.click(screen.getByRole('button', { name: 'Avancar etapa' }));
+            await user.click(screen.getByRole('button', { name: 'Avançar etapa' }));
           },
           mutateAsync: advanceMutation.mutateAsync,
           expectedPayload: { requestId: 812 },

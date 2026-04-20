@@ -148,21 +148,15 @@ describe('RequestDetailDialog', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Resumo do chamado' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Acao atual' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Administracao do chamado' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Historico por etapa' })).toBeTruthy();
-    expect(screen.getByText('Estado atual e proximo passo')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Ação atual' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Administração do chamado' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Histórico do chamado' })).toBeTruthy();
+    expect(screen.getByText('Resumo operacional')).toBeTruthy();
     expect(screen.getByText('Dados enviados')).toBeTruthy();
     expect(screen.queryByText('Anexos da abertura')).toBeNull();
-    expect(screen.getByText('Lucas Nogueira')).toBeTruthy();
-    expect(screen.getByText('Facilities')).toBeTruthy();
-    const submittedLabels = screen.getAllByText(/Nome e Sobrenome|Anexo da planilha/).map((node) => node.textContent);
-    expect(submittedLabels).toEqual(['Nome e Sobrenome', 'Anexo da planilha']);
-    expect(screen.getByRole('link', { name: 'Ver anexo' }).getAttribute('href')).toBe(
-      'https://example.com/planilha.pdf',
-    );
-    expect(screen.queryByRole('link', { name: 'Baixar anexo' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Reatribuir responsavel' })).toBeTruthy();
+    expect(screen.queryByText('Lucas Nogueira')).toBeNull();
+    expect(screen.queryByText('Anexo da planilha')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Reatribuir responsável' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Finalizar chamado' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
   });
@@ -234,10 +228,10 @@ describe('RequestDetailDialog', () => {
       />,
     );
 
-    const advancingButton = screen.getByRole('button', { name: 'Avancando...' });
+    const advancingButton = screen.getByRole('button', { name: 'Avançando...' });
     expect(advancingButton).toBeDisabled();
     expect(advancingButton).toHaveAttribute('aria-disabled', 'true');
-    expect(screen.getByText(/action atual ja foi concluida/i)).toBeTruthy();
+    expect(screen.getByText(/já foi concluída/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Fechar' })).toBeTruthy();
     expect(screen.queryByText('Finalizar')).toBeNull();
   });
@@ -270,8 +264,8 @@ describe('RequestDetailDialog', () => {
       />,
     );
 
-    expect(screen.getByText('Chamado concluido')).toBeTruthy();
-    expect(screen.getByText(/restam apenas acoes administrativas autorizadas/i)).toBeTruthy();
+    expect(screen.getByText('Chamado concluído')).toBeTruthy();
+    expect(screen.getByText(/restam apenas ações administrativas autorizadas/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Arquivar' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Action da etapa' })).toBeNull();
   });
@@ -304,10 +298,10 @@ describe('RequestDetailDialog', () => {
       />,
     );
 
-    expect(screen.getByText('Chamado concluido')).toBeTruthy();
-    expect(screen.getByText(/permanece disponivel apenas para consulta/i)).toBeTruthy();
+    expect(screen.getByText('Chamado concluído')).toBeTruthy();
+    expect(screen.getByText(/permanece disponível apenas para consulta/i)).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Administracao do chamado' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Administração do chamado' })).toBeNull();
     expect(screen.queryByRole('heading', { name: 'Action da etapa' })).toBeNull();
   });
 
@@ -403,9 +397,84 @@ describe('RequestDetailDialog', () => {
 
     expect(screen.getByText('Chamado arquivado')).toBeTruthy();
     expect(screen.getByText(/apenas para consulta/i)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Avancar etapa' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Avançar etapa' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Finalizar chamado' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull();
-    expect(screen.queryByRole('heading', { name: 'Administracao do chamado' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Administração do chamado' })).toBeNull();
+  });
+
+  it('keeps history and submitted data collapsed until the operator expands them', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildManagementRequestDetailFixture()}
+        collaborators={[]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    expect(screen.queryByText('Etapa iniciada')).toBeNull();
+    expect(screen.queryByText('Nome e Sobrenome')).toBeNull();
+
+    const expandButtons = screen.getAllByRole('button', { name: 'Expandir' });
+    await user.click(expandButtons[0]);
+    await user.click(expandButtons[1]);
+
+    expect(screen.getByText('Etapa iniciada')).toBeTruthy();
+    expect(screen.getByText('Nome e Sobrenome')).toBeTruthy();
+  });
+
+  it('shows a third-party pending action summary without exposing a CTA', () => {
+    render(
+      <RequestDetailDialog
+        open
+        requestId={812}
+        detail={buildManagementRequestDetailFixture({
+          summary: {
+            hasPendingActions: true,
+            pendingActionRecipientIds: ['RESP2'],
+          },
+          permissions: {
+            canRespondAction: false,
+          },
+          action: {
+            state: 'pending',
+            canRespond: false,
+            recipients: [
+              {
+                actionRequestId: 'act_req_1',
+                recipientUserId: 'RESP2',
+                status: 'pending',
+                respondedAt: null,
+                respondedByUserId: null,
+                respondedByName: null,
+              },
+            ],
+          },
+        })}
+        collaborators={[collaborator]}
+        onOpenChange={() => {}}
+        onAssign={async () => {}}
+        onAdvance={async () => {}}
+        onFinalize={async () => {}}
+        onArchive={async () => {}}
+        onRequestAction={async () => {}}
+        onRespondAction={async () => {}}
+      />,
+    );
+
+    expect(screen.getByText('Action pendente com terceiros')).toBeTruthy();
+    expect(screen.getByText('Pendente com')).toBeTruthy();
+    expect(screen.getAllByText('Novo Responsavel').length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: 'Registrar resposta' })).toBeNull();
   });
 });

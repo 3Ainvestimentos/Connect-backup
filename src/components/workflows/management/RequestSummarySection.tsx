@@ -17,11 +17,11 @@ export function RequestSummarySection({ summary }: RequestSummarySectionProps) {
           Resumo do chamado
         </h2>
         <p className="text-sm text-muted-foreground">
-          Leitura institucional e operacional do chamado usando area amigavel e metadados oficiais.
+          Leitura rápida do contexto oficial do chamado com os metadados já disponíveis no detalhe.
         </p>
       </div>
 
-      <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
+      <div className="grid gap-x-8 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
         {summary.metaItems.map((item) => (
           <div key={item.label} className="min-w-0 space-y-1 text-sm">
             <p className="font-medium text-foreground">{item.label}</p>

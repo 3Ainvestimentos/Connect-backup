@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { RequestOperationalViewModel } from '@/lib/workflows/management/request-detail-view-model';
 import { cn } from '@/lib/utils';
 
@@ -35,27 +34,35 @@ export function RequestOperationalHero({
   isAdvancing = false,
   isFinalizing = false,
 }: RequestOperationalHeroProps) {
+  if (!viewModel.shouldRenderOperationalSummary) {
+    return null;
+  }
+
   return (
-    <section aria-labelledby="request-operational-hero-title">
-      <Card className={cn('rounded-xl border shadow-sm', getToneClasses(viewModel.tone))}>
-        <CardHeader className="space-y-1">
-          <div className="space-y-1">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Estado atual e proximo passo
-            </p>
-            <CardTitle id="request-operational-hero-title" className="text-xl">
-              {viewModel.title}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">{viewModel.description}</p>
-            {viewModel.statusNote ? (
-              <p className="text-sm font-medium text-foreground/80">{viewModel.statusNote}</p>
+    <section aria-labelledby="request-operational-summary-title">
+      <div className={cn('rounded-xl border p-4 shadow-sm', getToneClasses(viewModel.tone))}>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                Resumo operacional
+              </p>
+              <h3 id="request-operational-summary-title" className="text-base font-semibold text-foreground">
+                {viewModel.title}
+              </h3>
+              <p className="text-sm text-muted-foreground">{viewModel.contextLine}</p>
+            </div>
+
+            {viewModel.informationalState ? (
+              <div className="rounded-lg border bg-background/70 px-3 py-2 text-sm">
+                <p className="font-medium text-foreground">{viewModel.informationalState.label}</p>
+                <p className="text-muted-foreground">{viewModel.informationalState.value}</p>
+              </div>
             ) : null}
           </div>
-        </CardHeader>
 
-        <CardContent className="space-y-4">
           {viewModel.primaryAction ? (
-            <div className="flex flex-wrap justify-end gap-3 border-t pt-4">
+            <div className="flex flex-wrap justify-end gap-3 lg:justify-start">
               {viewModel.primaryAction.kind === 'advance' ? (
                 <Button
                   type="button"
@@ -80,8 +87,8 @@ export function RequestOperationalHero({
               ) : null}
             </div>
           ) : null}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </section>
   );
 }

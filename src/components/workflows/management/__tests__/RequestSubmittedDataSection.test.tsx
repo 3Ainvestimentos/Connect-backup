@@ -35,7 +35,7 @@ describe('RequestSubmittedDataSection', () => {
     );
 
     expect(
-      screen.getByText('Nenhum campo nem anexo da submissao inicial foi exposto pelo contrato oficial.'),
+      screen.getByText('Nenhum campo nem anexo da submissão inicial foi exposto pelo contrato oficial.'),
     ).toBeTruthy();
   });
 });
