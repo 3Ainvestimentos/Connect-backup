@@ -284,6 +284,83 @@ describe('draft-repository safeguards', () => {
     expect(result.draft.access.allowedUserIds).toEqual(['APR1']);
   });
 
+  it('normalizes legacy non-execution attachmentRequired when hydrating draft data', async () => {
+    directGetMock.mockImplementation(async (path: string) => {
+      if (path === 'workflowTypes_v2/facilities_manutencao') {
+        return {
+          exists: true,
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            name: 'Nome Atual',
+            description: 'Descricao atual',
+            icon: 'Wrench',
+            areaId: 'facilities',
+            ownerEmail: 'atual@3ariva.com.br',
+            ownerUserId: 'OWN1',
+            allowedUserIds: ['all'],
+            active: true,
+            latestPublishedVersion: null,
+          }),
+        };
+      }
+
+      if (path === 'workflowTypes_v2/facilities_manutencao/versions/1') {
+        return {
+          exists: true,
+          ref: makeDocRef(path),
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            version: 1,
+            state: 'draft',
+            ownerEmailAtPublish: 'owner@3ariva.com.br',
+            defaultSlaDays: 3,
+            fields: [],
+            initialStepId: 'stp_review',
+            stepOrder: ['stp_review'],
+            stepsById: {
+              stp_review: {
+                stepId: 'stp_review',
+                stepName: 'Revisao',
+                statusKey: 'em_revisao',
+                kind: 'work',
+                action: {
+                  type: 'approval',
+                  label: 'Aprovar',
+                  approverIds: ['APR1'],
+                  attachmentRequired: true,
+                },
+              },
+            },
+            publishedAt: null,
+            draftConfig: {
+              workflowType: {
+                name: 'Nome Atual',
+                description: 'Descricao atual',
+                icon: 'Wrench',
+                areaId: 'facilities',
+                ownerEmail: 'atual@3ariva.com.br',
+                ownerUserId: 'OWN1',
+                allowedUserIds: ['all'],
+                active: true,
+              },
+            },
+          }),
+        };
+      }
+
+      return { exists: false, data: () => undefined };
+    });
+
+    const result = await getWorkflowDraftEditorData('facilities_manutencao', 1);
+
+    expect(result.draft.steps[0].action).toEqual(
+      expect.objectContaining({
+        type: 'approval',
+        attachmentRequired: false,
+      }),
+    );
+  });
+
   it('creates next draft from published version without writing action: undefined', async () => {
     directGetMock.mockImplementation(async (path: string) => {
       if (path === 'workflowTypes_v2/facilities_solicitacao_suprimentos') {
@@ -469,6 +546,95 @@ describe('draft-repository safeguards', () => {
             stepName: 'Encerramento',
             statusKey: 'finalizado',
             kind: 'final',
+          }),
+        },
+      }),
+    );
+  });
+
+  it('normalizes attachmentRequired to false when saving non-execution actions', async () => {
+    directGetMock.mockImplementation(async (path: string) => {
+      if (path === 'workflowTypes_v2/facilities_manutencao') {
+        return {
+          exists: true,
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            name: 'Manutencao',
+            description: 'Chamados prediais',
+            icon: 'Wrench',
+            areaId: 'facilities',
+            ownerEmail: 'owner@3ariva.com.br',
+            ownerUserId: 'SMO2',
+            allowedUserIds: ['all'],
+            active: true,
+            latestPublishedVersion: null,
+          }),
+        };
+      }
+      if (path === 'workflowTypes_v2/facilities_manutencao/versions/1') {
+        return {
+          exists: true,
+          ref: makeDocRef(path),
+          data: () => ({
+            workflowTypeId: 'facilities_manutencao',
+            version: 1,
+            state: 'draft',
+            ownerEmailAtPublish: 'owner@3ariva.com.br',
+            defaultSlaDays: 5,
+            fields: [],
+            initialStepId: '',
+            stepOrder: [],
+            stepsById: {},
+            publishedAt: null,
+          }),
+        };
+      }
+      if (path === 'workflowAreas/facilities') {
+        return { exists: true, data: () => ({ name: 'Facilities' }) };
+      }
+      if (path === 'collaborators/collab-apr1') {
+        return { exists: true, data: () => ({ id3a: 'APR1' }) };
+      }
+      return { exists: false, data: () => undefined };
+    });
+
+    await saveWorkflowDraft('facilities_manutencao', 1, {
+      general: {
+        name: 'Manutencao',
+        description: 'Chamados prediais',
+        icon: 'Wrench',
+        ownerUserId: 'SMO2',
+        defaultSlaDays: 5,
+        activeOnPublish: true,
+      },
+      access: { mode: 'all', allowedUserIds: ['all'] },
+      fields: [],
+      steps: [
+        {
+          stepName: 'Validacao',
+          statusKey: 'validacao',
+          kind: 'work',
+          action: {
+            type: 'approval',
+            label: 'Aprovar',
+            approverCollaboratorDocIds: ['collab-apr1'],
+            unresolvedApproverIds: [],
+            attachmentRequired: true,
+            attachmentPlaceholder: 'Nao deve persistir como obrigatorio',
+          },
+        },
+      ],
+    });
+
+    expect(transactionUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({ path: 'workflowTypes_v2/facilities_manutencao/versions/1' }),
+      expect.objectContaining({
+        stepsById: {
+          stp_validacao: expect.objectContaining({
+            action: expect.objectContaining({
+              type: 'approval',
+              attachmentRequired: false,
+            }),
           }),
         },
       }),

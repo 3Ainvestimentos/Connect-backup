@@ -1,4 +1,5 @@
 import { RuntimeError, RuntimeErrorCode } from './errors';
+import { normalizeActionAttachmentCapability } from './action-capabilities';
 import type {
   StepActionDef,
   StepDef,
@@ -105,16 +106,17 @@ export function describeCurrentStepAction(
   }
 
   const { approverIds, configurationError } = normalizeApproverIds(step.action.approverIds);
+  const normalizedAction = normalizeActionAttachmentCapability(step.action);
 
   return {
     available: true,
     step,
-    action: step.action,
+    action: normalizedAction,
     approverIds,
-    commentRequired: step.action.commentRequired === true,
-    attachmentRequired: step.action.attachmentRequired === true,
-    commentPlaceholder: step.action.commentPlaceholder?.trim() || null,
-    attachmentPlaceholder: step.action.attachmentPlaceholder?.trim() || null,
+    commentRequired: normalizedAction.commentRequired === true,
+    attachmentRequired: normalizedAction.attachmentRequired === true,
+    commentPlaceholder: normalizedAction.commentPlaceholder?.trim() || null,
+    attachmentPlaceholder: normalizedAction.attachmentPlaceholder?.trim() || null,
     configurationError,
   };
 }

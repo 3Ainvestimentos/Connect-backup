@@ -134,23 +134,27 @@ function buildDefaultValues(): WorkflowDraftFormValues {
   };
 }
 
+function ActionTypeValue() {
+  const type = useWatch<WorkflowDraftFormValues>({
+    name: 'steps.0.action.type',
+  }) as string | undefined;
+  const label = useWatch<WorkflowDraftFormValues>({
+    name: 'steps.0.action.label',
+  }) as string | undefined;
+  const attachmentRequired = useWatch<WorkflowDraftFormValues>({
+    name: 'steps.0.action.attachmentRequired',
+  }) as boolean | undefined;
+
+  return (
+    <>
+      <div data-testid="action-type">{type}</div>
+      <div data-testid="action-label">{label}</div>
+      <div data-testid="attachment-required">{String(attachmentRequired)}</div>
+    </>
+  );
+}
+
 function renderSection(readOnly = false) {
-  function ActionTypeValue() {
-    const type = useWatch<WorkflowDraftFormValues>({
-      name: 'steps.0.action.type',
-    }) as string | undefined;
-    const label = useWatch<WorkflowDraftFormValues>({
-      name: 'steps.0.action.label',
-    }) as string | undefined;
-
-    return (
-      <>
-        <div data-testid="action-type">{type}</div>
-        <div data-testid="action-label">{label}</div>
-      </>
-    );
-  }
-
   function Harness() {
     const form = useForm<WorkflowDraftFormValues>({
       defaultValues: buildDefaultValues(),
@@ -226,5 +230,54 @@ describe('WorkflowDraftStepsSection', () => {
     renderSection(true);
 
     expect(screen.getByRole('button', { name: /Adicionar etapa/i })).toBeDisabled();
+  });
+
+  it('shows attachment checkbox only for execution actions and resets legacy true when action changes', async () => {
+    const user = userEvent.setup();
+
+    function Harness() {
+      const form = useForm<WorkflowDraftFormValues>({
+        defaultValues: {
+          ...buildDefaultValues(),
+          steps: [
+            {
+              stepId: 'review',
+              stepName: 'Revisao',
+              statusKey: 'em_revisao',
+              kind: 'work',
+              action: {
+                type: 'execution',
+                label: 'Executar',
+                approvers: [],
+                unresolvedApproverIds: [],
+                commentRequired: false,
+                attachmentRequired: true,
+                commentPlaceholder: '',
+                attachmentPlaceholder: 'Envie a evidencia',
+              },
+            },
+          ],
+        },
+      });
+
+      return (
+        <FormProvider {...form}>
+          <WorkflowDraftStepsSection collaborators={collaborators} />
+          <ActionTypeValue />
+        </FormProvider>
+      );
+    }
+
+    render(<Harness />);
+
+    expect(screen.getByText('Anexo obrigatorio')).toBeInTheDocument();
+    expect(screen.getByTestId('attachment-required')).toHaveTextContent('true');
+
+    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: 'Aprovação' }));
+
+    expect(screen.queryByText('Anexo obrigatorio')).not.toBeInTheDocument();
+    expect(screen.getByTestId('action-type')).toHaveTextContent('approval');
+    expect(screen.getByTestId('attachment-required')).toHaveTextContent('false');
   });
 });

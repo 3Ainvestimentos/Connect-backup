@@ -2,6 +2,7 @@ import type { DocumentData, QueryDocumentSnapshot, Timestamp } from 'firebase-ad
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
 import { sanitizeStoragePath } from '@/lib/path-sanitizer';
+import { normalizeActionAttachmentCapability } from '@/lib/workflows/runtime/action-capabilities';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
 import type {
   StepDef,
@@ -321,7 +322,12 @@ function normalizeRuntimeSteps(version: WorkflowVersionV2): StepDef[] {
     .filter((step): step is StepDef => Boolean(step))
     .map((step) => ({
       ...step,
-      action: step.action ? { ...step.action, approverIds: [...(step.action.approverIds || [])] } : undefined,
+      action: step.action
+        ? normalizeActionAttachmentCapability({
+            ...step.action,
+            approverIds: [...(step.action.approverIds || [])],
+          })
+        : undefined,
     }));
 }
 
@@ -832,7 +838,7 @@ async function normalizeSteps(
       const actionType = step.action?.type;
       const action =
         actionType === 'approval' || actionType === 'acknowledgement' || actionType === 'execution'
-          ? {
+          ? normalizeActionAttachmentCapability({
               type: actionType,
               label: (step.action?.label || '').trim() || 'Acao',
               approverIds: await resolveCollaboratorDocIdsToApproverIds(step.action?.approverCollaboratorDocIds),
@@ -840,7 +846,7 @@ async function normalizeSteps(
               attachmentRequired: step.action?.attachmentRequired === true,
               commentPlaceholder: (step.action?.commentPlaceholder || '').trim(),
               attachmentPlaceholder: (step.action?.attachmentPlaceholder || '').trim(),
-            }
+            })
           : undefined;
 
       return {

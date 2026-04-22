@@ -479,6 +479,60 @@ describe('workflow request detail composer', () => {
     expect(detail.action.configuredRecipients).toEqual([]);
   });
 
+  it('normalizes legacy non-execution attachmentRequired in read detail', () => {
+    const detail = buildWorkflowRequestDetail({
+      docId: 'doc-legacy-approval',
+      request: buildRequest(),
+      version: buildVersion({
+        stepsById: {
+          abertura: {
+            stepId: 'abertura',
+            stepName: 'Abertura',
+            statusKey: 'abertura',
+            kind: 'start',
+          },
+          analise: {
+            stepId: 'analise',
+            stepName: 'Analise',
+            statusKey: 'analise',
+            kind: 'work',
+          },
+          execucao: {
+            stepId: 'execucao',
+            stepName: 'Execucao',
+            statusKey: 'execucao',
+            kind: 'work',
+            action: {
+              type: 'approval',
+              label: 'Aprovar atividade',
+              approverIds: ['RESP1'],
+              commentRequired: true,
+              attachmentRequired: true,
+              attachmentPlaceholder: 'Nao deveria aparecer como obrigatorio',
+            },
+          },
+          encerramento: {
+            stepId: 'encerramento',
+            stepName: 'Encerramento',
+            statusKey: 'encerramento',
+            kind: 'final',
+          },
+        },
+      }),
+      actorUserId: 'SMO2',
+      areaLabel: 'Facilities',
+    });
+
+    expect(detail.action).toEqual(
+      expect.objectContaining({
+        available: true,
+        type: 'approval',
+        attachmentRequired: false,
+        attachmentPlaceholder: null,
+      }),
+    );
+  });
+
   it('mantem visivel o ultimo batch encerrado da etapa atual como completed', () => {
     const detail = buildWorkflowRequestDetail({
       docId: 'doc-3',

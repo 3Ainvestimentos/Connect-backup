@@ -215,4 +215,73 @@ describe('publication-service', () => {
       }),
     );
   });
+
+  it('normalizes legacy attachmentRequired outside execution during publish', async () => {
+    transactionGetMock.mockImplementation(async (ref: { path: string }) => {
+      if (ref.path === 'workflowTypes_v2/facilities_manutencao') {
+        return { data: () => buildRoot() };
+      }
+
+      if (ref.path === 'workflowTypes_v2/facilities_manutencao/versions/1') {
+        return {
+          data: () =>
+            buildDraftVersion({
+              stepsById: {
+                start: {
+                  stepId: 'start',
+                  stepName: 'Inicio',
+                  statusKey: 'legacy-open',
+                  kind: 'final',
+                },
+                work: {
+                  stepId: 'work',
+                  stepName: 'Validacao',
+                  statusKey: 'legacy-progress',
+                  kind: 'start',
+                  action: {
+                    type: 'approval',
+                    label: 'Aprovar',
+                    approverIds: ['OWN1'],
+                    attachmentRequired: true,
+                  },
+                },
+                final: {
+                  stepId: 'final',
+                  stepName: 'Fim',
+                  statusKey: 'legacy-done',
+                  kind: 'work',
+                },
+              },
+            }),
+        };
+      }
+
+      return { data: () => undefined };
+    });
+
+    await publishDraftVersion({
+      workflowTypeId: 'facilities_manutencao',
+      version: 1,
+      actorUserId: 'admin-1',
+      actorName: 'Admin User',
+    });
+
+    expect(transactionUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        path: 'workflowTypes_v2/facilities_manutencao/versions/1',
+      }),
+      expect.objectContaining({
+        stepsById: {
+          start: expect.any(Object),
+          work: expect.objectContaining({
+            action: expect.objectContaining({
+              type: 'approval',
+              attachmentRequired: false,
+            }),
+          }),
+          final: expect.any(Object),
+        },
+      }),
+    );
+  });
 });

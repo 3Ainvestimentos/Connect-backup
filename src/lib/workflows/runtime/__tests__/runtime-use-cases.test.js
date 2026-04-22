@@ -1074,6 +1074,86 @@ describe('workflow runtime use cases', () => {
     );
   });
 
+  it('ignora attachmentRequired legado em approval e permite resposta sem anexo', async () => {
+    repo.getWorkflowRequestByRequestId.mockResolvedValue({
+      docId: 'doc-action-approval-legacy',
+      data: buildRequest({
+        requestId: 56,
+        statusCategory: 'waiting_action',
+        currentStepId: 'stp_work',
+        currentStepName: 'Em andamento',
+        currentStatusKey: 'em_andamento',
+        hasResponsible: true,
+        hasPendingActions: true,
+        pendingActionRecipientIds: ['APR1'],
+        pendingActionTypes: ['approval'],
+        operationalParticipantIds: ['SMO2', 'APR1'],
+        actionRequests: [
+          {
+            actionRequestId: 'act_req_apr_1',
+            actionBatchId: 'act_batch_apr_1',
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            type: 'approval',
+            label: 'Aprovar etapa',
+            recipientUserId: 'APR1',
+            requestedByUserId: 'SMO2',
+            requestedByName: 'Owner',
+            requestedAt: { seconds: 1, nanoseconds: 0 },
+            status: 'pending',
+          },
+        ],
+      }),
+    });
+    repo.getWorkflowVersion.mockResolvedValue(
+      buildWorkflowVersion({
+        stepsById: {
+          stp_open: {
+            stepId: 'stp_open',
+            stepName: 'Solicitação Aberta',
+            statusKey: 'solicitacao_aberta',
+            kind: 'start',
+          },
+          stp_work: {
+            stepId: 'stp_work',
+            stepName: 'Em andamento',
+            statusKey: 'em_andamento',
+            kind: 'work',
+            action: {
+              type: 'approval',
+              label: 'Aprovar etapa',
+              approverIds: ['APR1'],
+              attachmentRequired: true,
+            },
+          },
+          stp_final: {
+            stepId: 'stp_final',
+            stepName: 'Finalizado',
+            statusKey: 'finalizado',
+            kind: 'final',
+          },
+        },
+      }),
+    );
+
+    await expect(
+      respondAction({
+        requestId: 56,
+        actorUserId: 'APR1',
+        actorName: 'Aprovadora',
+        response: 'approved',
+      }),
+    ).resolves.toEqual({
+      docId: 'doc-action-approval-legacy',
+      requestId: 56,
+      actionRequestId: 'act_req_apr_1',
+      actionBatchId: 'act_batch_apr_1',
+      remainingPendingCount: 0,
+      statusCategory: 'in_progress',
+    });
+  });
+
   it('falha advance-step se o ator nao for owner nem responsavel', async () => {
     repo.getWorkflowRequestByRequestId.mockResolvedValue({
       docId: 'doc-advance-forbidden',

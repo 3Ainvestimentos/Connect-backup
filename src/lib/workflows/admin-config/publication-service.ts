@@ -1,7 +1,8 @@
 import { Timestamp, getFirestore } from 'firebase-admin/firestore';
 import { getFirebaseAdminApp } from '@/lib/firebase-admin';
+import { normalizeActionAttachmentCapability } from '@/lib/workflows/runtime/action-capabilities';
 import { RuntimeError, RuntimeErrorCode } from '@/lib/workflows/runtime/errors';
-import type { WorkflowTypeV2, WorkflowVersionV2 } from '@/lib/workflows/runtime/types';
+import type { StepDef, WorkflowTypeV2, WorkflowVersionV2 } from '@/lib/workflows/runtime/types';
 import { canonicalizeVersionSteps } from './canonical-step-semantics';
 import type { DraftReadinessIssue, WorkflowVersionTransitionResult } from './types';
 import {
@@ -39,6 +40,25 @@ function asIso(timestamp: Timestamp | null | undefined) {
   return timestamp ? timestamp.toDate().toISOString() : null;
 }
 
+function normalizePublishedVersionActions(version: WorkflowVersionV2): WorkflowVersionV2 {
+  const normalizedStepsById = Object.fromEntries(
+    Object.entries(version.stepsById).map(([stepId, step]) => [
+      stepId,
+      step.action
+        ? ({
+            ...step,
+            action: normalizeActionAttachmentCapability(step.action),
+          } satisfies StepDef)
+        : step,
+    ]),
+  );
+
+  return {
+    ...version,
+    stepsById: normalizedStepsById,
+  };
+}
+
 export async function publishDraftVersion(input: PublishDraftInput): Promise<WorkflowVersionTransitionResult> {
   const collaborators = await listWorkflowConfigOwners();
   const db = getDb();
@@ -71,7 +91,7 @@ export async function publishDraftVersion(input: PublishDraftInput): Promise<Wor
     if (blockingIssues.length > 0) {
       throw new VersionNotPublishableError(blockingIssues);
     }
-    const canonicalVersion = canonicalizeVersionSteps(version);
+    const canonicalVersion = normalizePublishedVersionActions(canonicalizeVersionSteps(version));
 
     const draftSnapshot = version.draftConfig?.workflowType;
     if (!draftSnapshot) {

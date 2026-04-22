@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { deriveCanonicalSemantics } from '@/lib/workflows/admin-config/canonical-step-semantics';
+import { normalizeActionAttachmentCapability, supportsActionAttachments } from '@/lib/workflows/runtime/action-capabilities';
 import type { WorkflowConfigCollaboratorLookup } from '@/lib/workflows/admin-config/types';
 import type { WorkflowDraftFormValues } from './types';
 import { WorkflowActionApproverPicker } from './WorkflowActionApproverPicker';
@@ -97,22 +98,26 @@ export function WorkflowDraftStepsSection({
                         }
 
                         const currentAction = step?.action;
+                        const nextAction =
+                          value === 'approval' || value === 'acknowledgement' || value === 'execution'
+                            ? normalizeActionAttachmentCapability({
+                                type: value,
+                                label:
+                                  currentAction?.label.trim()
+                                    ? currentAction.label
+                                    : DEFAULT_ACTION_LABEL,
+                                approvers: currentAction?.approvers ?? [],
+                                unresolvedApproverIds: currentAction?.unresolvedApproverIds ?? [],
+                                commentRequired: currentAction?.commentRequired ?? false,
+                                attachmentRequired: currentAction?.attachmentRequired ?? false,
+                                commentPlaceholder: currentAction?.commentPlaceholder ?? '',
+                                attachmentPlaceholder: currentAction?.attachmentPlaceholder ?? '',
+                              })
+                            : undefined;
 
                         setValue(
                           `steps.${index}.action`,
-                          {
-                            type: value as Exclude<typeof actionTypes[number], 'none'>,
-                            label:
-                              currentAction?.label.trim()
-                                ? currentAction.label
-                                : DEFAULT_ACTION_LABEL,
-                            approvers: currentAction?.approvers ?? [],
-                            unresolvedApproverIds: currentAction?.unresolvedApproverIds ?? [],
-                            commentRequired: currentAction?.commentRequired ?? false,
-                            attachmentRequired: currentAction?.attachmentRequired ?? false,
-                            commentPlaceholder: currentAction?.commentPlaceholder ?? '',
-                            attachmentPlaceholder: currentAction?.attachmentPlaceholder ?? '',
-                          },
+                          nextAction,
                           { shouldDirty: true },
                         );
                       }}
@@ -163,18 +168,20 @@ export function WorkflowDraftStepsSection({
                         />
                         Comentário obrigatório
                       </label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          checked={step.action.attachmentRequired === true}
-                          disabled={readOnly}
-                          onCheckedChange={(checked) =>
-                            setValue(`steps.${index}.action.attachmentRequired`, checked === true, {
-                              shouldDirty: true,
-                            })
-                          }
-                        />
-                        Anexo obrigatorio
-                      </label>
+                      {supportsActionAttachments(actionType) ? (
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={step.action.attachmentRequired === true}
+                            disabled={readOnly}
+                            onCheckedChange={(checked) =>
+                              setValue(`steps.${index}.action.attachmentRequired`, checked === true, {
+                                shouldDirty: true,
+                              })
+                            }
+                          />
+                          Anexo obrigatorio
+                        </label>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}
