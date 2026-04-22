@@ -6,7 +6,7 @@ export default function CrmPage() {
       <iframe
         src="https://nina-prod-backup.vercel.app/"
         className="w-full h-full border-none"
-        title="CRM Interno"
+        title="CRM Líderes"
         allow="microphone"
       ></iframe>
     </div>
